@@ -1,0 +1,50 @@
+{
+  "project": "⊕Workspace",
+  "sigil": "⊕",
+  "dashboards": [
+    {
+      "id": "unified-benchmarks",
+      "title": "Unified Benchmarks",
+      "description": "Quantum + Agent perf data from all encrypted DBs",
+      "type": "static_html",
+      "generator": "tools/bench_dashboard.py",
+      "output": "reports/benchmark_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/bench_dashboard.py --no-open",
+      "category": "performance",
+      "icon": "⚡"
+    },
+    {
+      "id": "security-vulns",
+      "title": "Security Vulnerabilities",
+      "description": "OWASP vulnerability inventory with remediation tracking",
+      "type": "static_html",
+      "generator": "tools/security_dashboard.py",
+      "output": "reports/security_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/security_dashboard.py --scan --no-open",
+      "category": "security",
+      "icon": "🛡️"
+    },
+    {
+      "id": "agent-ops",
+      "title": "Agent Ops Monitor",
+      "description": "Session health, gap detection, proof audit — self-regenerating",
+      "type": "static_html",
+      "generator": "tools/agent_ops_monitor.py",
+      "output": "reports/agent_ops_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/agent_ops_monitor.py --fix --no-open",
+      "category": "performance",
+      "icon": "🔬"
+    },
+    {
+      "id": "copilot-usage",
+      "title": "Copilot Usage Monitor",
+      "description": "GitHub Copilot session analytics — models, modes, turns, premium request estimation",
+      "type": "static_html",
+      "generator": "tools/copilot_usage_monitor.py",
+      "output": "reports/copilot_usage_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/copilot_usage_monitor.py --no-open",
+      "category": "performance",
+      "icon": "🤖"
+    }
+  ]
+}

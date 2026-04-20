@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>⊕ Agent Ops Monitor</title>
+<style>
+  :root {
+    --bg: #0a0d12;
+    --surface: #121820;
+    --border: #1e2530;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #6366f1;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --orange: #f97316;
+    --cyan: #22d3ee;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  h1 .sigil { color: var(--accent); font-size: 2rem; }
+  h2 {
+    font-size: 1.15rem;
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+  .subtitle { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.85rem; }
+
+  /* ── Health Score ── */
+  .health-ring {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin: 1.5rem 0 2rem;
+  }
+  .ring-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+  }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 10; }
+  .ring-fg { fill: none; stroke-width: 10; stroke-linecap: round;
+              stroke-dasharray: 377; transition: stroke-dashoffset 1s ease; }
+  .ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .ring-pct { font-size: 2rem; font-weight: 800; }
+  .ring-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ── Stat Cards ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+  }
+  .stat-val { font-size: 2rem; font-weight: 800; line-height: 1.2; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.3rem; }
+  .val-ok { color: var(--success); }
+  .val-warn { color: var(--warning); }
+  .val-bad { color: var(--danger); }
+  .val-info { color: var(--cyan); }
+
+  /* ── Fix Banner ── */
+  .fix-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid var(--success);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .fix-icon { font-size: 1.5rem; }
+  .fix-detail { color: var(--muted); font-size: 0.85rem; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 2rem;
+  }
+  thead { background: var(--surface); }
+  th {
+    text-align: left;
+    padding: 0.6rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:hover { background: rgba(255,255,255,0.02); }
+  .mono { font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.8rem; }
+  .ts { color: var(--muted); font-size: 0.78rem; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { color: var(--muted); font-style: italic; text-align: center; padding: 1rem; }
+
+  /* Status */
+  .st-ok { color: var(--success); font-weight: 600; }
+  .st-err { color: var(--danger); font-weight: 600; }
+  .st-timeout { color: var(--orange); font-weight: 600; }
+  .st-run { color: var(--cyan); font-weight: 600; }
+
+  /* Gap badges */
+  .gap-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .gap-badge.ok { background: rgba(16,185,129,0.15); color: var(--success); }
+  .gap-badge.running { background: rgba(34,211,238,0.15); color: var(--cyan); }
+  .gap-badge.zombie { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .gap-badge.orphan { background: rgba(249,115,22,0.15); color: var(--orange); }
+
+  /* Row highlights */
+  .row-zombie { background: rgba(239,68,68,0.06); }
+  .row-zombie:hover { background: rgba(239,68,68,0.1) !important; }
+  .row-orphan { background: rgba(249,115,22,0.06); }
+  .row-orphan:hover { background: rgba(249,115,22,0.1) !important; }
+
+  /* Proof bars */
+  .proof-cell { min-width: 120px; }
+  .proof-bar {
+    display: inline-block;
+    width: 60px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+  }
+  .proof-fill {
+    height: 100%;
+    background: var(--success);
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .proof-label { font-size: 0.75rem; color: var(--muted); }
+  .no-proof { color: var(--muted); }
+
+  /* Agent coverage */
+  .rate-good { color: var(--success); font-weight: 700; }
+  .rate-warn { color: var(--warning); font-weight: 700; }
+  .rate-bad { color: var(--danger); font-weight: 700; }
+
+  /* Close buttons */
+  .close-btn {
+    background: rgba(239,68,68,0.15);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .close-btn:hover {
+    background: var(--danger);
+    color: white;
+  }
+  .close-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Running dot animation */
+  .running-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--cyan);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    vertical-align: middle;
+    margin-right: 0.3rem;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.3; }
+  }
+
+  .footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <h1><span class="sigil">⊕</span> Agent Ops Monitor</h1>
+  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-19T16:47:23</div>
+
+  
+    <div class="fix-banner">
+      <span class="fix-icon">🔧</span>
+      <div>
+        <strong>Auto-Fix Applied</strong><br>
+        <span class="fix-detail">0 zombie(s) closed · 0 proof-complete session(s) closed · 0 proof(s) verified · 0 orphan run(s) remain (need manual proof)</span>
+      </div>
+    </div>
+
+  <div class="health-ring">
+    <div class="ring-container">
+      <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
+        <circle class="ring-bg" cx="70" cy="70" r="60"/>
+        <circle class="ring-fg" cx="70" cy="70" r="60"
+                style="stroke:#10b981; stroke-dashoffset:0;"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-pct" style="color:#10b981">100%</div>
+        <div class="ring-label">Excellent</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="flex:1;">
+      <div class="stat-card">
+        <div class="stat-val val-info">48</div>
+        <div class="stat-label">Total Runs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-ok">48</div>
+        <div class="stat-label">Healthy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-ok">0</div>
+        <div class="stat-label">Zombies</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-ok">0</div>
+        <div class="stat-label">No Proof</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-warn">1</div>
+        <div class="stat-label">Unverified</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-info">1</div>
+        <div class="stat-label">Total Gaps</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="color: var(--accent);">Session Inventory</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Run ID</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Started</th>
+        <th>Ended</th>
+        <th>Wall</th>
+        <th>Proofs</th>
+        <th>Health</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class=""><td class="mono">e74b4f37f926</td><td>rename-security-folder-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:26</td><td class="ts">2026-04-19 16:36</td><td class="mono">00:09:24</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">18060bb274c4</td><td>prioritize-security-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 14:23</td><td class="ts">2026-04-19 14:24</td><td class="mono">00:00:58</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">2b6eb83947c1</td><td>SONGDLC_PIPELINE.md chills vaccination</td><td class="st-ok">ok</td><td class="ts">2026-04-19 10:02</td><td class="ts">2026-04-19 10:07</td><td class="mono">00:04:52</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:0%"></div></div><span class="proof-label">0/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">b0feef4c4269</td><td>spin-up-life-project</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:22</td><td class="ts">2026-04-19 09:22</td><td class="mono">00:00:15</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">85ba22d37f2e</td><td>executive-audio-brief-portal</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:13</td><td class="ts">2026-04-19 09:32</td><td class="mono">00:19:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">e7d2c1206629</td><td>copilot-usage-monitor-interactive</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:07</td><td class="ts">2026-04-19 09:08</td><td class="mono">00:00:30</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">3/3</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">d142f311fa11</td><td>copilot-usage-monitor</td><td class="st-ok">ok</td><td class="ts">2026-04-19 08:40</td><td class="ts">2026-04-19 08:55</td><td class="mono">00:14:55</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">3/3</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">cfaaa51cacc9</td><td>agent-ops-monitor</td><td class="st-ok">ok</td><td class="ts">2026-04-19 08:26</td><td class="ts">2026-04-19 08:32</td><td class="mono">00:05:42</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">0cd7a967b352</td><td>proof-protocol-neo-agent</td><td class="st-ok">ok</td><td class="ts">2026-04-19 08:16</td><td class="ts">2026-04-19 08:20</td><td class="mono">00:04:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">5/5</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">e8eba2126eb7</td><td>unified-dashboard-framework</td><td class="st-ok">ok</td><td class="ts">2026-04-19 07:46</td><td class="ts">2026-04-19 08:00</td><td class="mono">00:13:52</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">779c9f7ae358</td><td>suno-release-signatures-integration</td><td class="st-ok">ok</td><td class="ts">2026-04-19 07:10</td><td class="ts">2026-04-19 07:25</td><td class="mono">00:14:53</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">fdd86e4874a2</td><td>mcp-server-mvp-playwright-elevenlabs</td><td class="st-ok">ok</td><td class="ts">2026-04-18 20:44</td><td class="ts">2026-04-18 21:16</td><td class="mono">00:32:28</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">1ea013214887</td><td>bench-analyzer-agent-and-dashboard-sort</td><td class="st-ok">ok</td><td class="ts">2026-04-18 20:21</td><td class="ts">2026-04-18 20:24</td><td class="mono">00:03:26</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">dfc5428a95ca</td><td>unified-benchmark-dashboard</td><td class="st-ok">ok</td><td class="ts">2026-04-18 20:15</td><td class="ts">2026-04-18 20:18</td><td class="mono">00:02:21</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">503cdfd865cc</td><td>encrypt-perf-db-finalize</td><td class="st-ok">ok</td><td class="ts">2026-04-18 20:13</td><td class="ts">2026-04-18 20:13</td><td class="mono">00:00:07</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">7dfa4d57018d</td><td>encrypt-perf-db</td><td class="st-ok">ok</td><td class="ts">2026-04-18 20:01</td><td class="ts">2026-04-18 20:44</td><td class="mono">00:42:23</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">378a982d4219</td><td>scaffold-ai-manifest-project</td><td class="st-ok">ok</td><td class="ts">2026-04-18 19:54</td><td class="ts">2026-04-18 20:00</td><td class="mono">00:05:58</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">5f65b3573e1f</td><td>mcp-server-setup</td><td class="st-ok">ok</td><td class="ts">2026-04-18 15:55</td><td class="ts">2026-04-18 20:44</td><td class="mono">04:48:27</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">da094a754166</td><td>quantum-startup-mcp-cleanup</td><td class="st-ok">ok</td><td class="ts">2026-04-18 15:39</td><td class="ts">2026-04-18 15:53</td><td class="mono">00:13:29</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">f6587d5ddd5d</td><td>workspace overseer bootstrap</td><td class="st-ok">ok</td><td class="ts">2026-04-18 10:06</td><td class="ts">2026-04-18 10:06</td><td class="mono">00:00:14</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">0f28c41231fc</td><td>quantum-benchmarks-dashboard-upgrade</td><td class="st-ok">ok</td><td class="ts">2026-04-18 10:03</td><td class="ts">2026-04-18 10:04</td><td class="mono">00:01:07</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">882b1eb38715</td><td>quantum-db-benchmark-table</td><td class="st-ok">ok</td><td class="ts">2026-04-18 09:30</td><td class="ts">2026-04-18 09:33</td><td class="mono">00:03:31</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">49aa28fe0778</td><td>shors-v2-dashboard-and-hw-bench</td><td class="st-ok">ok</td><td class="ts">2026-04-18 09:18</td><td class="ts">2026-04-18 09:22</td><td class="mono">00:03:55</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">fc973949358a</td><td>shors-v2-benchmark-run</td><td class="st-ok">ok</td><td class="ts">2026-04-18 09:13</td><td class="ts">2026-04-18 09:16</td><td class="mono">00:03:04</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">f7b4cfced539</td><td>quantum-hygiene-followup</td><td class="st-ok">ok</td><td class="ts">2026-04-18 09:11</td><td class="ts">2026-04-18 09:12</td><td class="mono">00:01:05</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">bf62d2edbdf7</td><td>workspace-wide-hygiene-cleanup</td><td class="st-ok">ok</td><td class="ts">2026-04-18 08:35</td><td class="ts">2026-04-18 09:10</td><td class="mono">00:34:26</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">d33cb4823f66</td><td>health-dashboard-weight-graph-db-encryption</td><td class="st-ok">ok</td><td class="ts">2026-04-18 07:20</td><td class="ts">2026-04-18 07:29</td><td class="mono">00:08:14</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">7b595240ca89</td><td>workspace-security-encryption-review</td><td class="st-ok">ok</td><td class="ts">2026-04-18 07:06</td><td class="ts">2026-04-18 07:09</td><td class="mono">00:03:38</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">859e98d3d01e</td><td>overseer-sysspec-security-audit-parallelism</td><td class="st-ok">ok</td><td class="ts">2026-04-18 06:51</td><td class="ts">2026-04-18 07:04</td><td class="mono">00:12:45</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">076e19ca2928</td><td>overseer-heisenberg-quantum-safe-encryption-research</td><td class="st-ok">ok</td><td class="ts">2026-04-18 06:43</td><td class="ts">2026-04-18 06:50</td><td class="mono">00:07:24</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">38af156e450b</td><td>transcendent-song-capture</td><td class="st-ok">ok</td><td class="ts">2026-04-17 19:38</td><td class="ts">2026-04-17 19:48</td><td class="mono">00:10:07</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">6a64aae535d8</td><td>lyrics-setlist-integration</td><td class="st-ok">ok</td><td class="ts">2026-04-17 17:49</td><td class="ts">2026-04-17 19:32</td><td class="mono">01:42:43</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">368e017d2c35</td><td>hygiene-all-projects</td><td class="st-ok">ok</td><td class="ts">2026-04-17 17:21</td><td class="ts">2026-04-17 17:42</td><td class="mono">00:20:50</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">69b30db4c339</td><td>agent-startup-triage</td><td class="st-ok">ok</td><td class="ts">2026-04-17 16:58</td><td class="ts">2026-04-17 17:18</td><td class="mono">00:19:36</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">5958c5c0fd5f</td><td>commit and push workspace repo</td><td class="st-ok">ok</td><td class="ts">2026-04-17 04:44</td><td class="ts">2026-04-17 16:44</td><td class="mono">11:59:51</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">5caf5f23eb3b</td><td>scope-creep skill + hygiene-base update</td><td class="st-ok">ok</td><td class="ts">2026-04-17 04:43</td><td class="ts">2026-04-17 04:44</td><td class="mono">00:00:14</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">a46e671750e0</td><td>run-qaoa-supplement-real</td><td class="st-ok">ok</td><td class="ts">2026-04-17 04:20</td><td class="ts">2026-04-17 04:20</td><td class="mono">00:00:17</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">4ab0df13edc3</td><td>run-qaoa-setlist-real</td><td class="st-ok">ok</td><td class="ts">2026-04-17 04:20</td><td class="ts">2026-04-17 04:20</td><td class="mono">00:00:22</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">177609b64c84</td><td>run-qaoa-demo</td><td class="st-ok">ok</td><td class="ts">2026-04-17 04:19</td><td class="ts">2026-04-17 04:20</td><td class="mono">00:00:14</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">f32d97a9065e</td><td>qaoa-wire-real-data</td><td class="st-ok">ok</td><td class="ts">2026-04-17 04:09</td><td class="ts">2026-04-17 04:17</td><td class="mono">00:07:40</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">bc8e0c3fbf13</td><td>qaoa-implementation</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:58</td><td class="ts">2026-04-17 04:09</td><td class="mono">00:10:50</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">c16a46c96aa3</td><td>workspace-hygiene</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:49</td><td class="ts">2026-04-17 03:51</td><td class="mono">00:02:50</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">bf4f692b061e</td><td>alignment-fixes</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:21</td><td class="ts">2026-04-17 03:24</td><td class="mono">00:03:18</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">c8812dadb70f</td><td>alignment-audit</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:13</td><td class="ts">2026-04-17 03:19</td><td class="mono">00:06:29</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">b0dab2a31b22</td><td>workspace-health-check</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:05</td><td class="ts">2026-04-17 03:07</td><td class="mono">00:02:13</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">dea97f57db02</td><td>cli-smoke-test</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:04</td><td class="ts">2026-04-17 03:04</td><td class="mono">00:00:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">254ddf98c1e6</td><td>overseer-live-invocation</td><td class="st-ok">ok</td><td class="ts">1970-01-14 23:06</td><td class="ts">1970-01-14 23:06</td><td class="mono">00:00:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">cefaaf19e4cd</td><td>overseer-live-invocation</td><td class="st-ok">ok</td><td class="ts">1970-01-14 23:05</td><td class="ts">1970-01-14 23:05</td><td class="mono">00:00:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="color: var(--success);">Agent Proof Coverage</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Agent</th>
+        <th class="num">Runs</th>
+        <th class="num">Proofs</th>
+        <th class="num">Verified</th>
+        <th class="num">Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>⊕ops-monitor</td><td class="num">39</td><td class="num">39</td><td class="num">39</td><td class="num rate-good">100%</td></tr>
+<tr><td>⊕workspace-overseer</td><td class="num">9</td><td class="num">24</td><td class="num">23</td><td class="num rate-good">96%</td></tr>
+<tr><td>workspace-overseer</td><td class="num">1</td><td class="num">2</td><td class="num">2</td><td class="num rate-good">100%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    ⊕Workspace Agent Ops Monitor &mdash; Self-regenerating dashboard &bull;
+    <code>python tools/agent_ops_monitor.py --fix</code> to auto-close gaps &bull;
+    <code>python tools/agent_ops_monitor.py --serve</code> for interactive mode
+  </div>
+
+  <script>
+    async function closeSession(runId) {
+      if (!confirm('Close session ' + runId + '?')) return;
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Closing...';
+      try {
+        const resp = await fetch('/api/close', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({run_id: runId, status: 'closed'})
+        });
+        if (resp.ok) {
+          btn.textContent = 'Closed';
+          setTimeout(() => location.reload(), 800);
+        } else {
+          const err = await resp.text();
+          alert('Failed: ' + err);
+          btn.disabled = false;
+          btn.textContent = 'Close';
+        }
+      } catch (e) {
+        // Static file mode — show CLI command
+        prompt('Run this command to close the session:', 
+          'C:\\G\\python.exe tools/agent_ops_monitor.py --close ' + runId);
+        btn.disabled = false;
+        btn.textContent = 'Close';
+      }
+    }
+  </script>
+</body>
+</html>

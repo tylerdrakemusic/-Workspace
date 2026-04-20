@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="300">
+<title>⊕ Copilot Usage Monitor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #f1f5f9;
+    --muted: #64748b; --accent: #818cf8; --success: #10b981; --warning: #f59e0b;
+    --danger: #ef4444; --cyan: #22d3ee; --purple: #a78bfa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); padding: 1.5rem;
+    line-height: 1.6;
+  }
+  .header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2rem; padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .header h1 { font-size: 1.75rem; font-weight: 800; }
+  .header .sigil { font-size: 2rem; }
+  .header .meta { color: var(--muted); font-size: 0.8rem; margin-left: auto; text-align: right; }
+
+  /* ── Stat Cards ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.2rem; text-align: center;
+  }
+  .stat-val { font-size: 2rem; font-weight: 800; line-height: 1.2; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.3rem; }
+  .val-ok { color: var(--success); }
+  .val-warn { color: var(--warning); }
+  .val-info { color: var(--cyan); }
+  .val-accent { color: var(--accent); }
+  .val-purple { color: var(--purple); }
+  .val-muted { color: var(--muted); }
+  .val-token { color: #f472b6; }
+  .val-token-in { color: #fb923c; }
+  .val-token-out { color: #34d399; }
+  .token-highlight { border-color: rgba(244,114,182,0.3); }
+  .token-cell { color: #f472b6; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* ── Charts ── */
+  .charts-row {
+    display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.2rem;
+  }
+  .chart-card h3 {
+    font-size: 0.9rem; color: var(--muted); margin-bottom: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .chart-canvas { max-height: 260px; }
+
+  /* ── Hourly Heatmap ── */
+  .heatmap-row {
+    display: flex; gap: 3px; margin-bottom: 2rem;
+    justify-content: center;
+  }
+  .heat-cell {
+    width: 28px; height: 36px; border-radius: 4px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; font-size: 0.6rem; color: var(--muted);
+    transition: transform 0.1s;
+  }
+  .heat-cell:hover { transform: scale(1.15); }
+  .heat-val { font-size: 0.7rem; font-weight: 700; }
+
+  /* ── Two-Col Layout ── */
+  .two-col {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  /* ── Tables ── */
+  .section { margin-bottom: 2rem; }
+  .section h3 {
+    font-size: 0.9rem; color: var(--muted); margin-bottom: 0.8rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface); border-radius: 10px; overflow: hidden;
+  }
+  th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: rgba(255,255,255,0.03); color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+  td { font-size: 0.85rem; }
+  .cell-date { white-space: nowrap; }
+  .cell-title { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .time-sub { color: var(--muted); font-size: 0.7rem; }
+  .model-badge {
+    background: rgba(129,140,248,0.15); color: var(--accent);
+    padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; white-space: nowrap;
+  }
+  .mode-badge {
+    padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;
+  }
+  .mode-agent { background: rgba(16,185,129,0.15); color: var(--success); }
+  .mode-other { background: rgba(100,116,139,0.15); color: var(--muted); }
+
+  .scroll-table { max-height: 500px; overflow-y: auto; border-radius: 10px; border: 1px solid var(--border); }
+
+  /* Budget gauge */
+  .budget-row {
+    display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .budget-gauge { display: flex; flex-direction: column; align-items: center; }
+  .budget-bar {
+    height: 8px; border-radius: 4px; background: var(--border);
+    overflow: hidden; width: 100%; margin-top: 0.5rem;
+  }
+  .budget-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  /* Activity grid */
+  .activity-grid {
+    display: flex; gap: 3px; flex-wrap: wrap; margin-top: 0.5rem;
+  }
+  .activity-cell {
+    width: 18px; height: 18px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem; font-weight: 600; cursor: default;
+    transition: transform 0.1s;
+  }
+  .activity-cell:hover { transform: scale(1.25); }
+
+  /* Close/Delete buttons */
+  .close-btn {
+    background: rgba(239,68,68,0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .close-btn:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+  }
+  .close-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .close-btn.done {
+    background: rgba(16,185,129,0.1);
+    color: var(--success);
+    border-color: rgba(16,185,129,0.3);
+  }
+  .inv-filter {
+    background: var(--surface); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .inv-filter:hover { color: var(--text); border-color: var(--accent); }
+  .inv-filter.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .charts-row, .two-col { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="sigil">⊕</span>
+  <div>
+    <h1>Copilot Usage Monitor</h1>
+    <div style="color: var(--muted); font-size: 0.85rem;">Session analytics across all VS Code workspaces</div>
+  </div>
+  <div class="meta">
+    Generated: 2026-04-19T16:47:32<br>
+    Date range: 2026-02-04 → 2026-04-19
+  </div>
+</div>
+
+<!-- Budget + Activity Row -->
+<div class="budget-row">
+  <div class="chart-card" style="text-align: center; padding: 1.5rem;">
+    <h3>Monthly Premium Budget</h3>
+    <div class="budget-gauge">
+      <svg viewBox="0 0 120 120" width="150" height="150">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="10"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="10"
+          stroke-dasharray="39.9 314" stroke-linecap="round"
+          transform="rotate(-90 60 60)"/>
+        <text x="60" y="54" text-anchor="middle" fill="var(--text)" font-size="22" font-weight="800">38</text>
+        <text x="60" y="70" text-anchor="middle" fill="var(--muted)" font-size="10">of 300</text>
+      </svg>
+    </div>
+    <div style="color: #10b981; font-size: 0.85rem; font-weight: 700;">13% used</div>
+    <div style="color: var(--muted); font-size: 0.75rem;">262 remaining this month</div>
+  </div>
+  <div>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-bottom: 1rem;">
+      <div class="stat-card">
+        <div class="stat-val val-ok">19</div>
+        <div class="stat-label">Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-info">3</div>
+        <div class="stat-label">Today Turns</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-purple">37</div>
+        <div class="stat-label">Last 7 Days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val val-warn">6</div>
+        <div class="stat-label">Day Streak 🔥</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Activity — Last 30 Days</h3>
+      <div class="activity-grid" id="activityGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card" title="All historical sessions across all VS Code workspace windows (not currently open sessions).">
+    <div class="stat-val val-accent">131</div>
+    <div class="stat-label">All Sessions (all workspaces)</div>
+  </div>
+  <div class="stat-card" title="Historical sessions with ≥1 turn. Not a count of currently open IDE sessions.">
+    <div class="stat-val val-ok">18</div>
+    <div class="stat-label">With Turns</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-info">23</div>
+    <div class="stat-label">Total Turns</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-purple">1.3</div>
+    <div class="stat-label">Avg Turns / Session</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-warn">222m</div>
+    <div class="stat-label">Avg Duration</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-accent">38</div>
+    <div class="stat-label">Premium Req (est)</div>
+  </div>
+  <div class="stat-card token-highlight">
+    <div class="stat-val val-token">25.3M</div>
+    <div class="stat-label">Total Tokens</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-token-in">25.2M</div>
+    <div class="stat-label">Prompt (Input)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-token-out">137.1K</div>
+    <div class="stat-label">Output Tokens</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val val-token">3.8M</div>
+    <div class="stat-label">Today Tokens</div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="charts-row">
+  <div class="chart-card">
+    <h3>Sessions per Day</h3>
+    <canvas id="dailyChart" class="chart-canvas"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Model Distribution</h3>
+    <canvas id="modelChart" class="chart-canvas"></canvas>
+  </div>
+</div>
+
+<!-- Token Usage Chart -->
+<div class="chart-card" style="margin-bottom: 2rem;">
+  <h3>Daily Token Usage (Prompt vs Output)</h3>
+  <canvas id="tokenChart" style="max-height:240px;"></canvas>
+</div>
+
+<!-- Hourly Activity Heatmap -->
+<div class="chart-card" style="margin-bottom: 2rem;">
+  <h3>Activity by Hour (UTC)</h3>
+  <div class="heatmap-row" id="heatmap"></div>
+</div>
+
+<!-- Two-Col: Mode + Models Catalog -->
+<div class="two-col">
+  <div class="chart-card">
+    <h3>Agent Mode Breakdown</h3>
+    <canvas id="modeChart" style="max-height:220px;"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Models Used — Billing Multiplier</h3>
+    <div class="scroll-table" style="max-height:220px;">
+      <table>
+        <thead><tr><th>Model</th><th>Vendor</th><th>Multiplier</th></tr></thead>
+        <tbody><tr><td>Claude Opus 4.5</td><td>Anthropic</td><td class='val-info'>3x</td></tr><tr><td>Claude Opus 4.6</td><td>Anthropic</td><td class='val-info'>3x</td></tr><tr><td>Claude Sonnet 4.6</td><td>Anthropic</td><td class='val-info'>1x</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Session Inventory -->
+<div class="section">
+  <h3>Session Inventory (newest first) <span style="color:var(--muted);font-size:0.75rem;font-weight:400">— historical sessions across all VS Code workspaces, not currently open IDE sessions</span></h3>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;align-items:center">
+    <button class="inv-filter active" onclick="filterSessions('all', this)">All (131)</button>
+    <button class="inv-filter" onclick="filterSessions('current', this)">Current Workspace</button>
+    <button class="inv-filter" onclick="filterSessions('today', this)">Today</button>
+    <button class="inv-filter" onclick="filterSessions('withturns', this)">With Turns</button>
+    <button class="inv-filter" onclick="filterSessions('empty', this)">Empty</button>
+    <span id="inv-count" style="color:var(--muted);font-size:0.8rem;margin-left:auto"></span>
+  </div>
+  <div class="scroll-table">
+    <table id="session-table">
+      <thead>
+        <tr><th>Date</th><th>Title</th><th>Turns</th><th>Model</th><th>Mode</th><th>Tokens</th><th>Duration</th><th>Size</th><th>Workspace</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="session-tbody"><tr data-session-id="d97b9770-c640-494d-b7d0-eb8fdfd8cf63" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">22:44 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">22 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('d97b9770-c640-494d-b7d0-eb8fdfd8cf63', this)">Delete</button></td>
+</tr><tr data-session-id="e8955c43-baab-4b08-a61f-8d6822d727d6" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">22:24 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">63 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('e8955c43-baab-4b08-a61f-8d6822d727d6', this)">Delete</button></td>
+</tr><tr data-session-id="12d1e4c9-01e5-44ea-a2f7-37de762d4fa7" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">22:20 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="28.7K in / 278 out">29.0K</td>
+  <td>0m</td>
+  <td class="val-muted">322 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('12d1e4c9-01e5-44ea-a2f7-37de762d4fa7', this)">Delete</button></td>
+</tr><tr data-session-id="4dc06a5c-560e-4991-b340-1f41290efa34" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">20:32 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="51.1K in / 284 out">51.4K</td>
+  <td>0m</td>
+  <td class="val-muted">604 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('4dc06a5c-560e-4991-b340-1f41290efa34', this)">Delete</button></td>
+</tr><tr data-session-id="a7092956-60ce-42d8-825e-5f6452e8ce42" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">20:22 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">688 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('a7092956-60ce-42d8-825e-5f6452e8ce42', this)">Delete</button></td>
+</tr><tr data-session-id="74d8629e-f945-419c-be04-0320b3b4e5cd" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">16:01 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1146 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('74d8629e-f945-419c-be04-0320b3b4e5cd', this)">Delete</button></td>
+</tr><tr data-session-id="2ceb32e6-c2a6-4a25-b491-ed3b9ab961ea" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="1">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">15:21 UTC</span></td>
+  <td class="cell-title">Starting a Life Project</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="35.6K in / 488 out">36.1K</td>
+  <td>0m</td>
+  <td class="val-muted">134 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('2ceb32e6-c2a6-4a25-b491-ed3b9ab961ea', this)">Delete</button></td>
+</tr><tr data-session-id="57e97f25-ed87-485d-a075-b9c4080a95b9" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">15:19 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="46.0K in / 1.1K out">47.1K</td>
+  <td>0m</td>
+  <td class="val-muted">420 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('57e97f25-ed87-485d-a075-b9c4080a95b9', this)">Delete</button></td>
+</tr><tr data-session-id="5478d3a1-5e2e-480f-8794-064f3f371bfa" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="1">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">15:14 UTC</span></td>
+  <td class="cell-title">Configuring Auto Approvals in Workspace</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="27.6K in / 848 out">28.4K</td>
+  <td>1m</td>
+  <td class="val-muted">1688 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('5478d3a1-5e2e-480f-8794-064f3f371bfa', this)">Delete</button></td>
+</tr><tr data-session-id="94326b4f-a412-49dc-bf4e-6c8f2f1e7397" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">15:02 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="95.0K in / 1.9K out">96.9K</td>
+  <td>0m</td>
+  <td class="val-muted">692 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('94326b4f-a412-49dc-bf4e-6c8f2f1e7397', this)">Delete</button></td>
+</tr><tr data-session-id="22daacde-ea65-4cc0-8bd8-078d88137e0e" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="1">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">14:48 UTC</span></td>
+  <td class="cell-title">Closing agent sessions from the dashboard</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="354.9K in / 2.8K out">357.7K</td>
+  <td>1m</td>
+  <td class="val-muted">4951 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('22daacde-ea65-4cc0-8bd8-078d88137e0e', this)">Delete</button></td>
+</tr><tr data-session-id="b948f0ab-35a8-4440-96ac-eae336e2461c" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">13:47 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="389.9K in / 5.0K out">394.9K</td>
+  <td>0m</td>
+  <td class="val-muted">2448 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('b948f0ab-35a8-4440-96ac-eae336e2461c', this)">Delete</button></td>
+</tr><tr data-session-id="55070729-a4bb-4c71-be43-3b00d967cc6d" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">13:15 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="386.6K in / 2.9K out">389.5K</td>
+  <td>0m</td>
+  <td class="val-muted">3817 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('55070729-a4bb-4c71-be43-3b00d967cc6d', this)">Delete</button></td>
+</tr><tr data-session-id="6556a073-9956-440f-b215-e0310511fc31" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">12:51 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="718.2K in / 5.1K out">723.3K</td>
+  <td>0m</td>
+  <td class="val-muted">8722 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('6556a073-9956-440f-b215-e0310511fc31', this)">Delete</button></td>
+</tr><tr data-session-id="961d7e07-8ade-4c4f-a5d2-144e79e9d86b" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">02:35 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="1.0M in / 6.7K out">1.0M</td>
+  <td>0m</td>
+  <td class="val-muted">2228 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('961d7e07-8ade-4c4f-a5d2-144e79e9d86b', this)">Delete</button></td>
+</tr><tr data-session-id="d9891fe0-78f1-476b-9e36-0f65fe16c3e9" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">01:51 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="616.3K in / 3.0K out">619.3K</td>
+  <td>0m</td>
+  <td class="val-muted">2623 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('d9891fe0-78f1-476b-9e36-0f65fe16c3e9', this)">Delete</button></td>
+</tr><tr data-session-id="45064092-9fe7-4dbd-ae0b-9c43bbfa47f7" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">01:51 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('45064092-9fe7-4dbd-ae0b-9c43bbfa47f7', this)">Delete</button></td>
+</tr><tr data-session-id="d9538a6f-27f8-4f4c-aa6e-8299af0be874" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">01:50 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('d9538a6f-27f8-4f4c-aa6e-8299af0be874', this)">Delete</button></td>
+</tr><tr data-session-id="6682911b-6e5c-4d7b-aa93-d801e02e7315" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-19" data-turns="0">
+  <td class="cell-date">2026-04-19<br><span class="time-sub">01:48 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('6682911b-6e5c-4d7b-aa93-d801e02e7315', this)">Delete</button></td>
+</tr><tr data-session-id="44d934f7-a6ca-4b10-8b6c-5dd6cdb91996" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-18" data-turns="1">
+  <td class="cell-date">2026-04-18<br><span class="time-sub">21:38 UTC</span></td>
+  <td class="cell-title">MCP Servers and Root .py File Cleanup</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="894.0K in / 3.8K out">897.8K</td>
+  <td>1m</td>
+  <td class="val-muted">2014 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('44d934f7-a6ca-4b10-8b6c-5dd6cdb91996', this)">Delete</button></td>
+</tr><tr data-session-id="2e6a6c0f-f790-4e36-b768-32940a26d21f" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-18" data-turns="1">
+  <td class="cell-date">2026-04-18<br><span class="time-sub">14:34 UTC</span></td>
+  <td class="cell-title">Cleanup agent invocation process</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="703.3K in / 3.9K out">707.2K</td>
+  <td>0m</td>
+  <td class="val-muted">10852 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('2e6a6c0f-f790-4e36-b768-32940a26d21f', this)">Delete</button></td>
+</tr><tr data-session-id="ea2aa23d-ac03-4990-85ab-435eb3ad7043" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-18" data-turns="1">
+  <td class="cell-date">2026-04-18<br><span class="time-sub">13:42 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="753.0K in / 1.8K out">754.8K</td>
+  <td>0m</td>
+  <td class="val-muted">1427 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('ea2aa23d-ac03-4990-85ab-435eb3ad7043', this)">Delete</button></td>
+</tr><tr data-session-id="bf35dd9e-addd-41e4-9c9e-476ef4361be7" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-18" data-turns="1">
+  <td class="cell-date">2026-04-18<br><span class="time-sub">13:05 UTC</span></td>
+  <td class="cell-title">Securing Workspace and Encryption Recommendations</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="454.5K in / 2.6K out">457.2K</td>
+  <td>0m</td>
+  <td class="val-muted">984 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('bf35dd9e-addd-41e4-9c9e-476ef4361be7', this)">Delete</button></td>
+</tr><tr data-session-id="72a7cd87-53ae-4d34-b73c-1123abd1bfb1" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-18" data-turns="0">
+  <td class="cell-date">2026-04-18<br><span class="time-sub">12:25 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="104.4K in / 1.6K out">106.0K</td>
+  <td>0m</td>
+  <td class="val-muted">834 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('72a7cd87-53ae-4d34-b73c-1123abd1bfb1', this)">Delete</button></td>
+</tr><tr data-session-id="39c2efcd-3ca7-4749-8e4d-72629348eabf" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-18" data-turns="0">
+  <td class="cell-date">2026-04-18<br><span class="time-sub">09:28 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('39c2efcd-3ca7-4749-8e4d-72629348eabf', this)">Delete</button></td>
+</tr><tr data-session-id="7813fa42-343a-45d0-a426-a4d48c238940" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-17" data-turns="0">
+  <td class="cell-date">2026-04-17<br><span class="time-sub">22:57 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="636.3K in / 4.7K out">641.0K</td>
+  <td>0m</td>
+  <td class="val-muted">24206 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('7813fa42-343a-45d0-a426-a4d48c238940', this)">Delete</button></td>
+</tr><tr data-session-id="d3913335-6d57-41a9-b727-6ed3a37584d2" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-17" data-turns="0">
+  <td class="cell-date">2026-04-17<br><span class="time-sub">07:46 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="1.9M in / 14.0K out">1.9M</td>
+  <td>0m</td>
+  <td class="val-muted">9169 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('d3913335-6d57-41a9-b727-6ed3a37584d2', this)">Delete</button></td>
+</tr><tr data-session-id="ebf5599c-06d6-4882-bb5a-7ebff51d9b64" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-17" data-turns="0">
+  <td class="cell-date">2026-04-17<br><span class="time-sub">02:13 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="196.1K in / 868 out">197.0K</td>
+  <td>0m</td>
+  <td class="val-muted">614 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('ebf5599c-06d6-4882-bb5a-7ebff51d9b64', this)">Delete</button></td>
+</tr><tr data-session-id="c189eb3f-2adb-4b32-b2c9-f13db2f1f999" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-16" data-turns="0">
+  <td class="cell-date">2026-04-16<br><span class="time-sub">00:29 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="237.9K in / 2.1K out">240.0K</td>
+  <td>0m</td>
+  <td class="val-muted">1095 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('c189eb3f-2adb-4b32-b2c9-f13db2f1f999', this)">Delete</button></td>
+</tr><tr data-session-id="28e8bd18-b964-4433-ab3a-7bc4bb501166" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-15" data-turns="0">
+  <td class="cell-date">2026-04-15<br><span class="time-sub">04:11 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="133.7K in / 1.5K out">135.2K</td>
+  <td>0m</td>
+  <td class="val-muted">474 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('28e8bd18-b964-4433-ab3a-7bc4bb501166', this)">Delete</button></td>
+</tr><tr data-session-id="46fb5b5e-f937-4ebd-88cf-add6e7038baf" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-15" data-turns="0">
+  <td class="cell-date">2026-04-15<br><span class="time-sub">03:17 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('46fb5b5e-f937-4ebd-88cf-add6e7038baf', this)">Delete</button></td>
+</tr><tr data-session-id="fd752e2e-be4f-4b75-8494-5965c9c2333b" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-14" data-turns="0">
+  <td class="cell-date">2026-04-14<br><span class="time-sub">23:41 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="1.3M in / 6.2K out">1.3M</td>
+  <td>0m</td>
+  <td class="val-muted">3118 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('fd752e2e-be4f-4b75-8494-5965c9c2333b', this)">Delete</button></td>
+</tr><tr data-session-id="a3237e35-f718-4151-ad3a-4d9bf59aefc7" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-14" data-turns="0">
+  <td class="cell-date">2026-04-14<br><span class="time-sub">05:49 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('a3237e35-f718-4151-ad3a-4d9bf59aefc7', this)">Delete</button></td>
+</tr><tr data-session-id="55001e7d-7a34-4bf4-a60d-70add3855395" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-14" data-turns="0">
+  <td class="cell-date">2026-04-14<br><span class="time-sub">03:56 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="383.6K in / 2.4K out">385.9K</td>
+  <td>0m</td>
+  <td class="val-muted">1251 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('55001e7d-7a34-4bf4-a60d-70add3855395', this)">Delete</button></td>
+</tr><tr data-session-id="6b578826-7695-458d-8400-8fb993b25607" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-12" data-turns="1">
+  <td class="cell-date">2026-04-12<br><span class="time-sub">23:09 UTC</span></td>
+  <td class="cell-title">Project Cleanup Strategies</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="1.4M in / 2.8K out">1.4M</td>
+  <td>0m</td>
+  <td class="val-muted">7722 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('6b578826-7695-458d-8400-8fb993b25607', this)">Delete</button></td>
+</tr><tr data-session-id="cd294b7d-cd19-4b64-99c7-e7cc411dc584" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-12" data-turns="0">
+  <td class="cell-date">2026-04-12<br><span class="time-sub">12:11 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="651.7K in / 2.7K out">654.4K</td>
+  <td>0m</td>
+  <td class="val-muted">898 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('cd294b7d-cd19-4b64-99c7-e7cc411dc584', this)">Delete</button></td>
+</tr><tr data-session-id="c1dbe7fd-209b-47c1-8ef4-01abac29bf7f" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-12" data-turns="0">
+  <td class="cell-date">2026-04-12<br><span class="time-sub">03:45 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('c1dbe7fd-209b-47c1-8ef4-01abac29bf7f', this)">Delete</button></td>
+</tr><tr data-session-id="c5cb46df-e4bb-4600-b79f-df67c50d0ea1" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-11" data-turns="1">
+  <td class="cell-date">2026-04-11<br><span class="time-sub">15:42 UTC</span></td>
+  <td class="cell-title">Setting up Garmin scale with Connect app</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="1.0M in / 2.6K out">1.0M</td>
+  <td>1m</td>
+  <td class="val-muted">2942 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('c5cb46df-e4bb-4600-b79f-df67c50d0ea1', this)">Delete</button></td>
+</tr><tr data-session-id="8e4fefe6-77a0-4bb2-9b02-68c127e25ff9" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-11" data-turns="0">
+  <td class="cell-date">2026-04-11<br><span class="time-sub">03:55 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('8e4fefe6-77a0-4bb2-9b02-68c127e25ff9', this)">Delete</button></td>
+</tr><tr data-session-id="a742a399-4b2d-4ee3-b5f9-65e50ce35d38" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-10" data-turns="0">
+  <td class="cell-date">2026-04-10<br><span class="time-sub">22:41 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">170 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('a742a399-4b2d-4ee3-b5f9-65e50ce35d38', this)">Delete</button></td>
+</tr><tr data-session-id="53a43cd9-cedf-4428-8d10-8de136145503" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-10" data-turns="0">
+  <td class="cell-date">2026-04-10<br><span class="time-sub">02:46 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('53a43cd9-cedf-4428-8d10-8de136145503', this)">Delete</button></td>
+</tr><tr data-session-id="a17fe8fb-08cf-44c8-bdc1-81668a477c85" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-09" data-turns="0">
+  <td class="cell-date">2026-04-09<br><span class="time-sub">22:38 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('a17fe8fb-08cf-44c8-bdc1-81668a477c85', this)">Delete</button></td>
+</tr><tr data-session-id="61b6f4a8-fa0b-4414-ae1c-51d0d50e5829" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-09" data-turns="0">
+  <td class="cell-date">2026-04-09<br><span class="time-sub">02:25 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('61b6f4a8-fa0b-4414-ae1c-51d0d50e5829', this)">Delete</button></td>
+</tr><tr data-session-id="0c476db9-d661-40e2-984f-05db558fc30a" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-07" data-turns="0">
+  <td class="cell-date">2026-04-07<br><span class="time-sub">23:59 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="230.2K in / 991 out">231.2K</td>
+  <td>0m</td>
+  <td class="val-muted">616 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('0c476db9-d661-40e2-984f-05db558fc30a', this)">Delete</button></td>
+</tr><tr data-session-id="fc96f0ec-dd9e-429b-a80b-25153e46c2b8" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-07" data-turns="0">
+  <td class="cell-date">2026-04-07<br><span class="time-sub">02:44 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="120.3K in / 2.7K out">123.0K</td>
+  <td>0m</td>
+  <td class="val-muted">501 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('fc96f0ec-dd9e-429b-a80b-25153e46c2b8', this)">Delete</button></td>
+</tr><tr data-session-id="7cb461d1-9b40-4a77-82f9-f192f8e33824" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-06" data-turns="1">
+  <td class="cell-date">2026-04-06<br><span class="time-sub">22:40 UTC</span></td>
+  <td class="cell-title">Sweep command usage in programming</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="24.2K in / 708 out">24.9K</td>
+  <td>0m</td>
+  <td class="val-muted">145 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('7cb461d1-9b40-4a77-82f9-f192f8e33824', this)">Delete</button></td>
+</tr><tr data-session-id="6984d58f-a8e5-4db1-8bf9-b91bc995e1bf" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-06" data-turns="1">
+  <td class="cell-date">2026-04-06<br><span class="time-sub">22:34 UTC</span></td>
+  <td class="cell-title">Sweep command usage in programming</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="13.9K in / 325 out">14.2K</td>
+  <td>0m</td>
+  <td class="val-muted">12 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('6984d58f-a8e5-4db1-8bf9-b91bc995e1bf', this)">Delete</button></td>
+</tr><tr data-session-id="fbc841d2-5648-4ff3-965a-c379f4ef81cb" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-06" data-turns="1">
+  <td class="cell-date">2026-04-06<br><span class="time-sub">19:47 UTC</span></td>
+  <td class="cell-title">Request for immediate action or trial</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="1.5M in / 3.4K out">1.5M</td>
+  <td>0m</td>
+  <td class="val-muted">2814 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('fbc841d2-5648-4ff3-965a-c379f4ef81cb', this)">Delete</button></td>
+</tr><tr data-session-id="21396164-81b0-4e75-be97-ee2d72159ed5" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-06" data-turns="1">
+  <td class="cell-date">2026-04-06<br><span class="time-sub">19:30 UTC</span></td>
+  <td class="cell-title">Starting a new project or task</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">131 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('21396164-81b0-4e75-be97-ee2d72159ed5', this)">Delete</button></td>
+</tr><tr data-session-id="ca1302da-474e-4b86-a377-7cbdc5154c45" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-06" data-turns="1">
+  <td class="cell-date">2026-04-06<br><span class="time-sub">19:30 UTC</span></td>
+  <td class="cell-title">Starting a new project or task</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-sonnet-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">14 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('ca1302da-474e-4b86-a377-7cbdc5154c45', this)">Delete</button></td>
+</tr><tr data-session-id="189438e6-9bac-4e04-a22f-a01ffc7260df" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-06" data-turns="0">
+  <td class="cell-date">2026-04-06<br><span class="time-sub">19:24 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">48 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('189438e6-9bac-4e04-a22f-a01ffc7260df', this)">Delete</button></td>
+</tr><tr data-session-id="b3ded61f-2517-42e8-a41f-0c18634127ee" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-05" data-turns="0">
+  <td class="cell-date">2026-04-05<br><span class="time-sub">23:07 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('b3ded61f-2517-42e8-a41f-0c18634127ee', this)">Delete</button></td>
+</tr><tr data-session-id="4f797a3b-1b4b-4f67-a926-7122c746e5b2" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-05" data-turns="0">
+  <td class="cell-date">2026-04-05<br><span class="time-sub">16:32 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1117 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('4f797a3b-1b4b-4f67-a926-7122c746e5b2', this)">Delete</button></td>
+</tr><tr data-session-id="771d71ea-a309-4105-99d4-4da937f2f2a6" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-05" data-turns="0">
+  <td class="cell-date">2026-04-05<br><span class="time-sub">04:57 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">29 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('771d71ea-a309-4105-99d4-4da937f2f2a6', this)">Delete</button></td>
+</tr><tr data-session-id="8eb34c3a-d6cd-4a67-904f-6fb3f8a773a8" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-05" data-turns="1">
+  <td class="cell-date">2026-04-05<br><span class="time-sub">03:22 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="406.9K in / 2.1K out">408.9K</td>
+  <td>1m</td>
+  <td class="val-muted">2653 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('8eb34c3a-d6cd-4a67-904f-6fb3f8a773a8', this)">Delete</button></td>
+</tr><tr data-session-id="96da5ab4-a798-4a1e-bcf9-e4c6a1c743f7" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-05" data-turns="0">
+  <td class="cell-date">2026-04-05<br><span class="time-sub">03:22 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('96da5ab4-a798-4a1e-bcf9-e4c6a1c743f7', this)">Delete</button></td>
+</tr><tr data-session-id="5033bb25-7558-4dbc-b9f4-56b6f98fe527" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-04" data-turns="0">
+  <td class="cell-date">2026-04-04<br><span class="time-sub">17:56 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="35.7K in / 321 out">36.0K</td>
+  <td>0m</td>
+  <td class="val-muted">368 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('5033bb25-7558-4dbc-b9f4-56b6f98fe527', this)">Delete</button></td>
+</tr><tr data-session-id="a51d2616-8a2e-427f-a602-b492eddf70de" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-04" data-turns="0">
+  <td class="cell-date">2026-04-04<br><span class="time-sub">17:39 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="2.7M in / 13.6K out">2.7M</td>
+  <td>0m</td>
+  <td class="val-muted">8074 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('a51d2616-8a2e-427f-a602-b492eddf70de', this)">Delete</button></td>
+</tr><tr data-session-id="b2cde2b3-94ec-4854-bd59-c4496ca0af2d" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-04" data-turns="1">
+  <td class="cell-date">2026-04-04<br><span class="time-sub">17:37 UTC</span></td>
+  <td class="cell-title">Folder organization on F: drive</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="140.3K in / 713 out">141.0K</td>
+  <td>0m</td>
+  <td class="val-muted">192 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('b2cde2b3-94ec-4854-bd59-c4496ca0af2d', this)">Delete</button></td>
+</tr><tr data-session-id="963aef43-19ac-4c2b-ad31-bb7116412e1d" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-04" data-turns="0">
+  <td class="cell-date">2026-04-04<br><span class="time-sub">17:26 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="100.2K in / 1.0K out">101.2K</td>
+  <td>0m</td>
+  <td class="val-muted">1324 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('963aef43-19ac-4c2b-ad31-bb7116412e1d', this)">Delete</button></td>
+</tr><tr data-session-id="1308e523-377d-454e-b77d-0337e547702b" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-03" data-turns="0">
+  <td class="cell-date">2026-04-03<br><span class="time-sub">08:40 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="378.1K in / 4.1K out">382.1K</td>
+  <td>0m</td>
+  <td class="val-muted">2643 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('1308e523-377d-454e-b77d-0337e547702b', this)">Delete</button></td>
+</tr><tr data-session-id="cf23a348-2e8f-432a-beba-9543ca78fdd7" data-workspace="a166ada7c44f2544c4a1e2fad489808d" data-date="2026-04-03" data-turns="0">
+  <td class="cell-date">2026-04-03<br><span class="time-sub">08:25 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="a166ada7c44f2544c4a1e2fad489808d">a166ada7c44f</td>
+  <td><button class="close-btn" onclick="closeSession('cf23a348-2e8f-432a-beba-9543ca78fdd7', this)">Delete</button></td>
+</tr><tr data-session-id="3adc7fc7-36f4-4f50-8d56-bd6cb570bc9a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-03" data-turns="0">
+  <td class="cell-date">2026-04-03<br><span class="time-sub">08:23 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('3adc7fc7-36f4-4f50-8d56-bd6cb570bc9a', this)">Delete</button></td>
+</tr><tr data-session-id="ae992a8b-46fc-4904-b52c-22c0ac3cbc95" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-03" data-turns="0">
+  <td class="cell-date">2026-04-03<br><span class="time-sub">03:46 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('ae992a8b-46fc-4904-b52c-22c0ac3cbc95', this)">Delete</button></td>
+</tr><tr data-session-id="0c20ebe2-26f1-44a7-8a0b-7e7fb3483263" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-02" data-turns="0">
+  <td class="cell-date">2026-04-02<br><span class="time-sub">00:23 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="936.6K in / 2.5K out">939.0K</td>
+  <td>0m</td>
+  <td class="val-muted">918 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('0c20ebe2-26f1-44a7-8a0b-7e7fb3483263', this)">Delete</button></td>
+</tr><tr data-session-id="c5197a17-62d8-4929-b625-2d6f98d8ddda" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-04-01" data-turns="0">
+  <td class="cell-date">2026-04-01<br><span class="time-sub">02:24 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('c5197a17-62d8-4929-b625-2d6f98d8ddda', this)">Delete</button></td>
+</tr><tr data-session-id="be484e4f-a561-4877-b068-a58f8c72421d" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-31" data-turns="0">
+  <td class="cell-date">2026-03-31<br><span class="time-sub">02:51 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('be484e4f-a561-4877-b068-a58f8c72421d', this)">Delete</button></td>
+</tr><tr data-session-id="12bad9be-6332-4847-abc8-0ba254cace7c" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-29" data-turns="0">
+  <td class="cell-date">2026-03-29<br><span class="time-sub">15:25 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('12bad9be-6332-4847-abc8-0ba254cace7c', this)">Delete</button></td>
+</tr><tr data-session-id="38dc4e2a-b6ea-462e-bc03-d03d347dd1ec" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-29" data-turns="0">
+  <td class="cell-date">2026-03-29<br><span class="time-sub">04:43 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('38dc4e2a-b6ea-462e-bc03-d03d347dd1ec', this)">Delete</button></td>
+</tr><tr data-session-id="1c39b77b-a900-4bfe-88b5-dcf3d06e5f3c" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-28" data-turns="0">
+  <td class="cell-date">2026-03-28<br><span class="time-sub">15:51 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('1c39b77b-a900-4bfe-88b5-dcf3d06e5f3c', this)">Delete</button></td>
+</tr><tr data-session-id="0b17bb14-4948-48da-af88-6ee96ccb101c" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-28" data-turns="0">
+  <td class="cell-date">2026-03-28<br><span class="time-sub">03:52 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="26.9K in / 489 out">27.4K</td>
+  <td>0m</td>
+  <td class="val-muted">198 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('0b17bb14-4948-48da-af88-6ee96ccb101c', this)">Delete</button></td>
+</tr><tr data-session-id="04ee1e78-1aba-4061-b607-2d88e7cd4396" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-26" data-turns="0">
+  <td class="cell-date">2026-03-26<br><span class="time-sub">23:11 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('04ee1e78-1aba-4061-b607-2d88e7cd4396', this)">Delete</button></td>
+</tr><tr data-session-id="043adae9-dfc2-4146-992a-579f16e7a467" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-26" data-turns="0">
+  <td class="cell-date">2026-03-26<br><span class="time-sub">02:41 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('043adae9-dfc2-4146-992a-579f16e7a467', this)">Delete</button></td>
+</tr><tr data-session-id="e53ec607-28ec-4e05-9b4c-c4c70f4d6493" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-25" data-turns="0">
+  <td class="cell-date">2026-03-25<br><span class="time-sub">02:53 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('e53ec607-28ec-4e05-9b4c-c4c70f4d6493', this)">Delete</button></td>
+</tr><tr data-session-id="1dfd5c9f-9da7-4d2e-9f15-89ab96787266" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-24" data-turns="1">
+  <td class="cell-date">2026-03-24<br><span class="time-sub">22:00 UTC</span></td>
+  <td class="cell-title">Committing and pushing to rock branch</td>
+  <td class="val-ok">1</td>
+  <td><span class="model-badge">claude-opus-4.6</span></td>
+  <td><span class="mode-badge mode-agent">agent</span></td>
+  <td class="token-cell" title="22.7K in / 39 out">22.8K</td>
+  <td>0m</td>
+  <td class="val-muted">984 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('1dfd5c9f-9da7-4d2e-9f15-89ab96787266', this)">Delete</button></td>
+</tr><tr data-session-id="95453108-8f88-471c-a141-7efb2ff77cff" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-23" data-turns="0">
+  <td class="cell-date">2026-03-23<br><span class="time-sub">22:55 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="90.4K in / 319 out">90.7K</td>
+  <td>0m</td>
+  <td class="val-muted">249 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('95453108-8f88-471c-a141-7efb2ff77cff', this)">Delete</button></td>
+</tr><tr data-session-id="5f3cf096-6999-4c50-bba6-db1a25105710" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-22" data-turns="0">
+  <td class="cell-date">2026-03-22<br><span class="time-sub">15:50 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="153.7K in / 908 out">154.6K</td>
+  <td>0m</td>
+  <td class="val-muted">1631 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('5f3cf096-6999-4c50-bba6-db1a25105710', this)">Delete</button></td>
+</tr><tr data-session-id="448be586-d84b-414c-883d-16cc938843a6" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-22" data-turns="0">
+  <td class="cell-date">2026-03-22<br><span class="time-sub">02:24 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="911.0K in / 4.1K out">915.1K</td>
+  <td>0m</td>
+  <td class="val-muted">2619 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('448be586-d84b-414c-883d-16cc938843a6', this)">Delete</button></td>
+</tr><tr data-session-id="afbe2dea-b2ed-445e-ae12-cd0cd547b986" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-21" data-turns="0">
+  <td class="cell-date">2026-03-21<br><span class="time-sub">21:53 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('afbe2dea-b2ed-445e-ae12-cd0cd547b986', this)">Delete</button></td>
+</tr><tr data-session-id="09ae18e9-bfca-4ac0-815d-35af29b49726" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-21" data-turns="0">
+  <td class="cell-date">2026-03-21<br><span class="time-sub">20:20 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('09ae18e9-bfca-4ac0-815d-35af29b49726', this)">Delete</button></td>
+</tr><tr data-session-id="4eb2a351-c9c7-4dc7-974e-9c443b26757f" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-20" data-turns="0">
+  <td class="cell-date">2026-03-20<br><span class="time-sub">22:12 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="36.0K in / 1.4K out">37.4K</td>
+  <td>0m</td>
+  <td class="val-muted">77 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('4eb2a351-c9c7-4dc7-974e-9c443b26757f', this)">Delete</button></td>
+</tr><tr data-session-id="699e0b68-f115-4544-a444-48ef0bf19fea" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-20" data-turns="0">
+  <td class="cell-date">2026-03-20<br><span class="time-sub">05:39 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="21.0K in / 88 out">21.1K</td>
+  <td>0m</td>
+  <td class="val-muted">68 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('699e0b68-f115-4544-a444-48ef0bf19fea', this)">Delete</button></td>
+</tr><tr data-session-id="38c7444d-d849-43aa-a0f1-796df8f07175" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-20" data-turns="0">
+  <td class="cell-date">2026-03-20<br><span class="time-sub">05:38 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('38c7444d-d849-43aa-a0f1-796df8f07175', this)">Delete</button></td>
+</tr><tr data-session-id="a0cc1911-f76e-4f7a-bdc6-175cc41631e6" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-20" data-turns="0">
+  <td class="cell-date">2026-03-20<br><span class="time-sub">03:52 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('a0cc1911-f76e-4f7a-bdc6-175cc41631e6', this)">Delete</button></td>
+</tr><tr data-session-id="acfa519a-1117-4f65-a163-a0fbc563a96a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-18" data-turns="0">
+  <td class="cell-date">2026-03-18<br><span class="time-sub">22:50 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('acfa519a-1117-4f65-a163-a0fbc563a96a', this)">Delete</button></td>
+</tr><tr data-session-id="3dea2afd-acc8-493b-979d-9c399b20aa4a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-17" data-turns="0">
+  <td class="cell-date">2026-03-17<br><span class="time-sub">23:27 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">23 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('3dea2afd-acc8-493b-979d-9c399b20aa4a', this)">Delete</button></td>
+</tr><tr data-session-id="bed80cd2-0235-49f0-9191-4631df462bc7" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-16" data-turns="0">
+  <td class="cell-date">2026-03-16<br><span class="time-sub">23:18 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('bed80cd2-0235-49f0-9191-4631df462bc7', this)">Delete</button></td>
+</tr><tr data-session-id="c7f080b5-2843-49db-b9a2-9654b6bd4a49" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-16" data-turns="0">
+  <td class="cell-date">2026-03-16<br><span class="time-sub">00:30 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('c7f080b5-2843-49db-b9a2-9654b6bd4a49', this)">Delete</button></td>
+</tr><tr data-session-id="6c15778d-30b9-46fb-8c69-d5ad6df77277" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-15" data-turns="0">
+  <td class="cell-date">2026-03-15<br><span class="time-sub">17:09 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('6c15778d-30b9-46fb-8c69-d5ad6df77277', this)">Delete</button></td>
+</tr><tr data-session-id="8be456fa-9a75-4caa-91a3-9802383c96f1" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-15" data-turns="0">
+  <td class="cell-date">2026-03-15<br><span class="time-sub">03:10 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('8be456fa-9a75-4caa-91a3-9802383c96f1', this)">Delete</button></td>
+</tr><tr data-session-id="720e0392-c456-4c7f-ad5d-50861a8047c3" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-14" data-turns="0">
+  <td class="cell-date">2026-03-14<br><span class="time-sub">22:34 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('720e0392-c456-4c7f-ad5d-50861a8047c3', this)">Delete</button></td>
+</tr><tr data-session-id="cbf3d20f-8954-4006-a48c-f4998d796823" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-14" data-turns="0">
+  <td class="cell-date">2026-03-14<br><span class="time-sub">17:40 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('cbf3d20f-8954-4006-a48c-f4998d796823', this)">Delete</button></td>
+</tr><tr data-session-id="3d6e66d2-61c6-4725-a5a2-5e6fb11c8a3c" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-14" data-turns="0">
+  <td class="cell-date">2026-03-14<br><span class="time-sub">09:13 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('3d6e66d2-61c6-4725-a5a2-5e6fb11c8a3c', this)">Delete</button></td>
+</tr><tr data-session-id="de361878-fe70-451f-a49e-07afbff98d19" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-13" data-turns="0">
+  <td class="cell-date">2026-03-13<br><span class="time-sub">22:00 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('de361878-fe70-451f-a49e-07afbff98d19', this)">Delete</button></td>
+</tr><tr data-session-id="6b1c74aa-efa6-4656-9d8a-78cf47a117d8" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-13" data-turns="0">
+  <td class="cell-date">2026-03-13<br><span class="time-sub">04:23 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('6b1c74aa-efa6-4656-9d8a-78cf47a117d8', this)">Delete</button></td>
+</tr><tr data-session-id="e88cd40e-f8a8-434b-a5e1-13beb7d04362" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-12" data-turns="0">
+  <td class="cell-date">2026-03-12<br><span class="time-sub">05:43 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="107.4K in / 1.0K out">108.5K</td>
+  <td>0m</td>
+  <td class="val-muted">1073 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('e88cd40e-f8a8-434b-a5e1-13beb7d04362', this)">Delete</button></td>
+</tr><tr data-session-id="1f7d3bf3-adb3-4e84-b57d-2ab71aa2b2aa" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-12" data-turns="0">
+  <td class="cell-date">2026-03-12<br><span class="time-sub">03:54 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('1f7d3bf3-adb3-4e84-b57d-2ab71aa2b2aa', this)">Delete</button></td>
+</tr><tr data-session-id="9e1747ed-c6d7-4fc0-8fb5-c3e3152188d9" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-11" data-turns="0">
+  <td class="cell-date">2026-03-11<br><span class="time-sub">23:13 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('9e1747ed-c6d7-4fc0-8fb5-c3e3152188d9', this)">Delete</button></td>
+</tr><tr data-session-id="f29fa343-374a-477e-a1a4-7e458ca451d6" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-10" data-turns="0">
+  <td class="cell-date">2026-03-10<br><span class="time-sub">23:27 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('f29fa343-374a-477e-a1a4-7e458ca451d6', this)">Delete</button></td>
+</tr><tr data-session-id="9e38f741-4c41-4186-82a5-94a0f91a264a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-10" data-turns="0">
+  <td class="cell-date">2026-03-10<br><span class="time-sub">03:27 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="78.9K in / 418 out">79.3K</td>
+  <td>0m</td>
+  <td class="val-muted">385 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('9e38f741-4c41-4186-82a5-94a0f91a264a', this)">Delete</button></td>
+</tr><tr data-session-id="a6eee9be-ed89-43d2-b4a4-c3c6ff0f6bb0" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-09" data-turns="0">
+  <td class="cell-date">2026-03-09<br><span class="time-sub">05:44 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('a6eee9be-ed89-43d2-b4a4-c3c6ff0f6bb0', this)">Delete</button></td>
+</tr><tr data-session-id="a1e6c602-70ce-4cbe-bd4e-3f4e5b034c61" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-09" data-turns="0">
+  <td class="cell-date">2026-03-09<br><span class="time-sub">02:33 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('a1e6c602-70ce-4cbe-bd4e-3f4e5b034c61', this)">Delete</button></td>
+</tr><tr data-session-id="a15af1ab-4b03-4d17-a041-3d8041bc757a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-09" data-turns="0">
+  <td class="cell-date">2026-03-09<br><span class="time-sub">01:12 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('a15af1ab-4b03-4d17-a041-3d8041bc757a', this)">Delete</button></td>
+</tr><tr data-session-id="b827175b-0072-44d9-88f8-26b8bba2e8eb" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-08" data-turns="0">
+  <td class="cell-date">2026-03-08<br><span class="time-sub">16:20 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('b827175b-0072-44d9-88f8-26b8bba2e8eb', this)">Delete</button></td>
+</tr><tr data-session-id="49de1d4e-5839-4357-9cbb-741e108ef7a2" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-07" data-turns="0">
+  <td class="cell-date">2026-03-07<br><span class="time-sub">22:59 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">2 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('49de1d4e-5839-4357-9cbb-741e108ef7a2', this)">Delete</button></td>
+</tr><tr data-session-id="90648cc3-d47b-495a-a6f7-e2a532906b71" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-07" data-turns="0">
+  <td class="cell-date">2026-03-07<br><span class="time-sub">02:14 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('90648cc3-d47b-495a-a6f7-e2a532906b71', this)">Delete</button></td>
+</tr><tr data-session-id="a76acd11-92d2-44dc-a34b-0b0519058c3a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-06" data-turns="0">
+  <td class="cell-date">2026-03-06<br><span class="time-sub">04:10 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('a76acd11-92d2-44dc-a34b-0b0519058c3a', this)">Delete</button></td>
+</tr><tr data-session-id="777d3141-5eb6-4190-8d6c-503f829744b1" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-05" data-turns="0">
+  <td class="cell-date">2026-03-05<br><span class="time-sub">23:47 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="14.4K in / 863 out">15.2K</td>
+  <td>0m</td>
+  <td class="val-muted">23 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('777d3141-5eb6-4190-8d6c-503f829744b1', this)">Delete</button></td>
+</tr><tr data-session-id="c743542e-95bf-4e50-be07-bec73d28a51d" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-04" data-turns="0">
+  <td class="cell-date">2026-03-04<br><span class="time-sub">03:16 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">13 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('c743542e-95bf-4e50-be07-bec73d28a51d', this)">Delete</button></td>
+</tr><tr data-session-id="94c64662-6209-431e-b1f9-6c94b3c1f26e" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-03" data-turns="0">
+  <td class="cell-date">2026-03-03<br><span class="time-sub">04:26 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('94c64662-6209-431e-b1f9-6c94b3c1f26e', this)">Delete</button></td>
+</tr><tr data-session-id="b9a53595-1434-4a50-a9ba-ce722e2f5e29" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-02" data-turns="0">
+  <td class="cell-date">2026-03-02<br><span class="time-sub">01:57 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('b9a53595-1434-4a50-a9ba-ce722e2f5e29', this)">Delete</button></td>
+</tr><tr data-session-id="c2ff6e19-53aa-44f6-b3c5-b1b8c802b67a" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-03-01" data-turns="0">
+  <td class="cell-date">2026-03-01<br><span class="time-sub">23:57 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="445.9K in / 1.3K out">447.2K</td>
+  <td>0m</td>
+  <td class="val-muted">653 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('c2ff6e19-53aa-44f6-b3c5-b1b8c802b67a', this)">Delete</button></td>
+</tr><tr data-session-id="f442df94-7238-48d0-ab7e-afdd36f10774" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-25" data-turns="0">
+  <td class="cell-date">2026-02-25<br><span class="time-sub">04:27 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('f442df94-7238-48d0-ab7e-afdd36f10774', this)">Delete</button></td>
+</tr><tr data-session-id="cadeb14c-822c-479c-85de-78772d82402f" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-24" data-turns="0">
+  <td class="cell-date">2026-02-24<br><span class="time-sub">05:34 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('cadeb14c-822c-479c-85de-78772d82402f', this)">Delete</button></td>
+</tr><tr data-session-id="315e0295-e7f8-44f2-9922-cefcfbce5f06" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-23" data-turns="0">
+  <td class="cell-date">2026-02-23<br><span class="time-sub">00:20 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('315e0295-e7f8-44f2-9922-cefcfbce5f06', this)">Delete</button></td>
+</tr><tr data-session-id="7d017208-532e-4506-9a24-5d4eaa67efd9" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-22" data-turns="0">
+  <td class="cell-date">2026-02-22<br><span class="time-sub">03:34 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('7d017208-532e-4506-9a24-5d4eaa67efd9', this)">Delete</button></td>
+</tr><tr data-session-id="e59cd2d7-a07d-4cdb-a394-dc2665f2ad9b" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-22" data-turns="0">
+  <td class="cell-date">2026-02-22<br><span class="time-sub">01:19 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('e59cd2d7-a07d-4cdb-a394-dc2665f2ad9b', this)">Delete</button></td>
+</tr><tr data-session-id="9e4e202d-f08b-493c-8ffd-02fcae1ccee8" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-19" data-turns="0">
+  <td class="cell-date">2026-02-19<br><span class="time-sub">20:09 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">14 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('9e4e202d-f08b-493c-8ffd-02fcae1ccee8', this)">Delete</button></td>
+</tr><tr data-session-id="90f66f04-347c-4e7e-8775-110401af45cd" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-18" data-turns="0">
+  <td class="cell-date">2026-02-18<br><span class="time-sub">03:37 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('90f66f04-347c-4e7e-8775-110401af45cd', this)">Delete</button></td>
+</tr><tr data-session-id="961b1fb1-de73-48d4-9fe6-0b1d7d6a18f8" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-17" data-turns="0">
+  <td class="cell-date">2026-02-17<br><span class="time-sub">04:13 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('961b1fb1-de73-48d4-9fe6-0b1d7d6a18f8', this)">Delete</button></td>
+</tr><tr data-session-id="382d68e0-c321-4694-b5c9-964b3bb2a4d5" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-16" data-turns="0">
+  <td class="cell-date">2026-02-16<br><span class="time-sub">20:34 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="1.0M in / 5.4K out">1.0M</td>
+  <td>0m</td>
+  <td class="val-muted">1856 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('382d68e0-c321-4694-b5c9-964b3bb2a4d5', this)">Delete</button></td>
+</tr><tr data-session-id="52375516-f070-4fe4-9e5c-9bce4f42751e" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-14" data-turns="0">
+  <td class="cell-date">2026-02-14<br><span class="time-sub">01:25 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('52375516-f070-4fe4-9e5c-9bce4f42751e', this)">Delete</button></td>
+</tr><tr data-session-id="3486f146-005d-44ac-bbe5-4f8b4b4bb9f4" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-13" data-turns="0">
+  <td class="cell-date">2026-02-13<br><span class="time-sub">05:28 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('3486f146-005d-44ac-bbe5-4f8b4b4bb9f4', this)">Delete</button></td>
+</tr><tr data-session-id="fcf36c15-9334-4914-9759-fa4ab7bf18ce" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-12" data-turns="0">
+  <td class="cell-date">2026-02-12<br><span class="time-sub">03:36 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('fcf36c15-9334-4914-9759-fa4ab7bf18ce', this)">Delete</button></td>
+</tr><tr data-session-id="cd549eea-05a9-45bc-87d4-205aee836cf3" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-11" data-turns="0">
+  <td class="cell-date">2026-02-11<br><span class="time-sub">03:32 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('cd549eea-05a9-45bc-87d4-205aee836cf3', this)">Delete</button></td>
+</tr><tr data-session-id="1626281e-c48e-4847-a3e7-df6d9c3c7a58" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-11" data-turns="0">
+  <td class="cell-date">2026-02-11<br><span class="time-sub">02:58 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('1626281e-c48e-4847-a3e7-df6d9c3c7a58', this)">Delete</button></td>
+</tr><tr data-session-id="69c5089d-aa3a-418b-982b-adb9bf1afea2" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-10" data-turns="0">
+  <td class="cell-date">2026-02-10<br><span class="time-sub">06:44 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('69c5089d-aa3a-418b-982b-adb9bf1afea2', this)">Delete</button></td>
+</tr><tr data-session-id="6d4d22e5-a5a2-4cdf-8157-8fa6099eb2f8" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-10" data-turns="0">
+  <td class="cell-date">2026-02-10<br><span class="time-sub">00:49 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">88 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('6d4d22e5-a5a2-4cdf-8157-8fa6099eb2f8', this)">Delete</button></td>
+</tr><tr data-session-id="d12528dc-4ec8-41c7-9989-c0d9b29c0440" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-09" data-turns="0">
+  <td class="cell-date">2026-02-09<br><span class="time-sub">06:46 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>0m</td>
+  <td class="val-muted">1 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('d12528dc-4ec8-41c7-9989-c0d9b29c0440', this)">Delete</button></td>
+</tr><tr data-session-id="d85b3424-ab44-447d-9339-c3ad37cdcba0" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-08" data-turns="0">
+  <td class="cell-date">2026-02-08<br><span class="time-sub">16:23 UTC</span></td>
+  <td class="cell-title">(untitled)</td>
+  <td class="val-muted">0</td>
+  <td><span class="model-badge">(none)</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="1.2M in / 4.6K out">1.2M</td>
+  <td>0m</td>
+  <td class="val-muted">1540 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('d85b3424-ab44-447d-9339-c3ad37cdcba0', this)">Delete</button></td>
+</tr><tr data-session-id="14cd5dfd-fa7f-48a6-b7e2-b37a39f3d604" data-workspace="3c9b78f7f49f12d90a8a9fe183d8f7a8" data-date="2026-02-04" data-turns="6">
+  <td class="cell-date">2026-02-04<br><span class="time-sub">23:27 UTC</span></td>
+  <td class="cell-title">Music Playlist and HTML Table Generation</td>
+  <td class="val-ok">6</td>
+  <td><span class="model-badge">claude-opus-4.5</span></td>
+  <td><span class="mode-badge mode-other">(none)</span></td>
+  <td class="token-cell" title="">—</td>
+  <td>3994m</td>
+  <td class="val-muted">683 KB</td>
+  <td class="val-muted" style="font-size:0.7rem" title="3c9b78f7f49f12d90a8a9fe183d8f7a8">executedcode</td>
+  <td><button class="close-btn" onclick="closeSession('14cd5dfd-fa7f-48a6-b7e2-b37a39f3d604', this)">Delete</button></td>
+</tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ── Daily Sessions Bar Chart ──
+  const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+  new Chart(dailyCtx, {
+    type: 'bar',
+    data: {
+      labels: ["2026-02-04", "2026-02-08", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-14", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-22", "2026-02-23", "2026-02-24", "2026-02-25", "2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14", "2026-03-15", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-20", "2026-03-21", "2026-03-22", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-28", "2026-03-29", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17", "2026-04-18", "2026-04-19"],
+      datasets: [{ label: 'Sessions', data: [1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 3, 2, 1, 2, 2, 3, 2, 2, 1, 1, 4, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 1, 4, 4, 5, 6, 2, 2, 2, 2, 3, 3, 2, 1, 3, 6, 19],
+        backgroundColor: 'rgba(129,140,248,0.6)', borderColor: '#818cf8',
+        borderWidth: 1, borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#64748b', maxRotation: 45 }, grid: { color: '#1e293b' } },
+        y: { ticks: { color: '#64748b', stepSize: 1 }, grid: { color: '#334155' }, beginAtZero: true }
+      }
+    }
+  });
+
+  // ── Model Doughnut Chart ──
+  const modelCtx = document.getElementById('modelChart').getContext('2d');
+  new Chart(modelCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ["claude-opus-4.6", "claude-sonnet-4.6", "claude-opus-4.5"],
+      datasets: [{ data: [9, 8, 1], backgroundColor: ["#c084fc", "#818cf8", "#9333ea"],
+        borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 8, font: { size: 11 } } }
+      },
+      cutout: '55%'
+    }
+  });
+
+  // ── Mode Bar Chart ──
+  const modeCtx = document.getElementById('modeChart').getContext('2d');
+  const modeColors = { 'agent': '#10b981', 'edit': '#f59e0b', 'ask': '#818cf8', 'chat': '#22d3ee' };
+  const mLabels = ["agent", "(none)"];
+  const mColors = mLabels.map(l => modeColors[l] || '#64748b');
+  new Chart(modeCtx, {
+    type: 'bar',
+    data: {
+      labels: mLabels,
+      datasets: [{ data: [17, 1], backgroundColor: mColors, borderRadius: 6, barPercentage: 0.5 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#64748b' }, grid: { color: '#334155' }, beginAtZero: true },
+        y: { ticks: { color: '#f1f5f9' }, grid: { display: false } }
+      }
+    }
+  });
+
+  // ── Token Usage Stacked Bar Chart ──
+  const tokenCtx = document.getElementById('tokenChart').getContext('2d');
+  new Chart(tokenCtx, {
+    type: 'bar',
+    data: {
+      labels: ["2026-02-04", "2026-02-08", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-14", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-22", "2026-02-23", "2026-02-24", "2026-02-25", "2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14", "2026-03-15", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-20", "2026-03-21", "2026-03-22", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-28", "2026-03-29", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17", "2026-04-18", "2026-04-19"],
+      datasets: [
+        { label: 'Prompt (input)', data: [0, 1209421, 0, 0, 0, 0, 0, 0, 1040481, 0, 0, 0, 0, 0, 0, 0, 445919, 0, 0, 0, 14352, 0, 0, 0, 0, 78919, 0, 107422, 0, 0, 0, 0, 0, 0, 56955, 0, 1064761, 90408, 22738, 0, 0, 26918, 0, 0, 0, 936566, 378075, 2932623, 406888, 1513229, 350534, 0, 0, 1022399, 2007480, 1679596, 133717, 237902, 2718488, 2909246, 3771191],
+          backgroundColor: 'rgba(251,146,60,0.7)', borderRadius: 4, stack: 'tokens' },
+        { label: 'Output', data: [0, 4555, 0, 0, 0, 0, 0, 0, 5385, 0, 0, 0, 0, 0, 0, 0, 1267, 0, 0, 0, 863, 0, 0, 0, 0, 418, 0, 1043, 0, 0, 0, 0, 0, 0, 1465, 0, 5024, 319, 39, 0, 0, 489, 0, 0, 0, 2459, 4071, 15641, 2056, 4474, 3654, 0, 0, 2582, 5493, 8581, 1502, 2065, 19597, 13620, 30393],
+          backgroundColor: 'rgba(52,211,153,0.7)', borderRadius: 4, stack: 'tokens' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' tokens' } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#64748b', maxRotation: 45 }, grid: { color: '#1e293b' } },
+        y: { stacked: true, ticks: { color: '#64748b', callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v }, grid: { color: '#334155' }, beginAtZero: true }
+      }
+    }
+  });
+
+  // ── Hourly Heatmap ──
+  const hourlyData = [5, 8, 13, 17, 8, 7, 2, 1, 3, 2, 0, 0, 3, 4, 2, 8, 4, 6, 0, 4, 5, 2, 15, 12];
+  const maxH = Math.max(...hourlyData, 1);
+  const heatmap = document.getElementById('heatmap');
+  for (let h = 0; h < 24; h++) {
+    const v = hourlyData[h];
+    const intensity = v / maxH;
+    const bg = v === 0 ? 'rgba(100,116,139,0.1)' :
+      `rgba(129,140,248,${(0.15 + intensity * 0.75).toFixed(2)})`;
+    const cell = document.createElement('div');
+    cell.className = 'heat-cell';
+    cell.style.background = bg;
+    cell.innerHTML = `<span class="heat-val" style="color:${v > 0 ? '#f1f5f9' : 'var(--muted)'}">${v}</span>${String(h).padStart(2,'0')}h`;
+    cell.title = `${String(h).padStart(2,'0')}:00 UTC — ${v} session(s)`;
+    heatmap.appendChild(cell);
+  }
+
+  // ── Close/Delete Session ──
+  async function closeSession(sessionId, btn) {
+    if (!confirm('Delete this session JSONL file? This cannot be undone.')) return;
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      const resp = await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        btn.textContent = 'Deleted';
+        btn.classList.add('done');
+        const row = btn.closest('tr');
+        if (row) row.style.opacity = '0.4';
+      } else {
+        alert('Delete failed: ' + (data.error || 'unknown'));
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+    } catch (e) {
+      // Static mode fallback — no server running
+      const cmd = `del "${sessionId}"`;
+      prompt('No server running. Delete manually:', cmd);
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+    }
+  }
+
+  // ── Session Inventory Filter ──
+  const CURRENT_WS_ID = "3c9b78f7f49f12d90a8a9fe183d8f7a8";
+  const TODAY = new Date().toISOString().slice(0, 10);
+  function filterSessions(mode, btn) {
+    document.querySelectorAll('.inv-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const rows = document.querySelectorAll('#session-tbody tr');
+    let visible = 0;
+    rows.forEach(row => {
+      const ws = row.dataset.workspace || '';
+      const date = row.dataset.date || '';
+      const turns = parseInt(row.dataset.turns || '0', 10);
+      let show = true;
+      if (mode === 'current') show = ws === CURRENT_WS_ID;
+      else if (mode === 'today') show = date === TODAY;
+      else if (mode === 'withturns') show = turns > 0;
+      else if (mode === 'empty') show = turns === 0;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    const cnt = document.getElementById('inv-count');
+    if (cnt) cnt.textContent = visible + ' session' + (visible !== 1 ? 's' : '') + ' shown';
+  }
+  // Init count
+  document.getElementById('inv-count').textContent = document.querySelectorAll('#session-tbody tr').length + ' sessions shown';
+
+  // ── Activity Grid (Last 30 Days) ──
+  const activityData = {"2026-03-21": 2, "2026-03-22": 2, "2026-03-23": 1, "2026-03-24": 1, "2026-03-25": 1, "2026-03-26": 2, "2026-03-27": 0, "2026-03-28": 2, "2026-03-29": 2, "2026-03-30": 0, "2026-03-31": 1, "2026-04-01": 1, "2026-04-02": 1, "2026-04-03": 4, "2026-04-04": 4, "2026-04-05": 5, "2026-04-06": 6, "2026-04-07": 2, "2026-04-08": 0, "2026-04-09": 2, "2026-04-10": 2, "2026-04-11": 2, "2026-04-12": 3, "2026-04-13": 0, "2026-04-14": 3, "2026-04-15": 2, "2026-04-16": 1, "2026-04-17": 3, "2026-04-18": 6, "2026-04-19": 19};
+  const actGrid = document.getElementById('activityGrid');
+  const maxAct = Math.max(...Object.values(activityData), 1);
+  Object.entries(activityData).forEach(([date, count]) => {
+    const intensity = count / maxAct;
+    let bg;
+    if (count === 0) bg = 'rgba(100,116,139,0.1)';
+    else if (intensity < 0.33) bg = 'rgba(129,140,248,0.3)';
+    else if (intensity < 0.66) bg = 'rgba(129,140,248,0.55)';
+    else bg = 'rgba(129,140,248,0.85)';
+    const cell = document.createElement('div');
+    cell.className = 'activity-cell';
+    cell.style.background = bg;
+    cell.style.color = count > 0 ? '#f1f5f9' : 'var(--muted)';
+    cell.textContent = count || '';
+    cell.title = `${date}: ${count} session(s)`;
+    actGrid.appendChild(cell);
+  });
+</script>
+
+</body>
+</html>

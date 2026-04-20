@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>⊕ Dashboard Portal</title>
+<style>
+  :root {
+    --bg: #0a0d12;
+    --sidebar-bg: #0f1318;
+    --surface: #151a22;
+    --border: #1e2530;
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,0.15);
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --live-dot: #ef4444;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 1.2rem 1rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .sidebar-header h1 .sigil { color: var(--accent); font-size: 1.5rem; }
+  .sidebar-header .subtitle {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 0.3rem;
+  }
+
+  /* Stats */
+  .stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .stat-num { color: var(--text); font-weight: 700; margin-right: 0.2rem; }
+
+  /* Nav items */
+  .nav-section { padding: 0.6rem 0; flex: 1; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover {
+    background: var(--accent-glow);
+  }
+  .nav-item.active {
+    background: var(--accent-glow);
+    border-left-color: var(--accent);
+  }
+  .nav-icon { font-size: 1.3rem; flex-shrink: 0; }
+  .nav-text { flex: 1; min-width: 0; }
+  .nav-title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-project {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .nav-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .nav-badge.static { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .nav-badge.live { background: rgba(239,68,68,0.15); color: #f87171; }
+  .nav-badge.console { background: rgba(16,185,129,0.15); color: #34d399; }
+
+  /* Footer */
+  .sidebar-footer {
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  /* ── Main content ── */
+  .main-content {
+    flex: 1;
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .dash-pane {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+  .dash-pane iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: var(--bg);
+  }
+
+  /* Placeholder */
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 1.1rem;
+    gap: 1rem;
+    text-align: center;
+  }
+  .placeholder code {
+    background: var(--surface);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text);
+    user-select: all;
+  }
+
+  /* Live dash pane */
+  .live-dash, .console-dash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1rem;
+    text-align: center;
+  }
+  .live-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .live-dot {
+    width: 10px; height: 10px;
+    background: var(--live-dot);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .open-btn {
+    margin-left: 1rem;
+    padding: 0.4rem 1rem;
+    background: var(--accent);
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .open-btn:hover { opacity: 0.85; }
+  .live-info, .console-info {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .live-cmd, .console-cmd {
+    background: var(--surface);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+    user-select: all;
+    border: 1px solid var(--border);
+  }
+  .live-frame {
+    width: 90%;
+    height: 70vh;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .console-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #34d399;
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1><span class="sigil">⊕</span> Dashboard Portal</h1>
+      <div class="subtitle">Spec-driven discovery across all projects</div>
+    </div>
+    
+    <div class="stats-bar">
+      <div class="stat-chip"><span class="stat-num">10</span> Dashboards</div>
+      <div class="stat-chip"><span class="stat-num">5</span> Projects</div>
+      <div class="stat-chip"><span class="stat-num">6</span> Static</div>
+      <div class="stat-chip"><span class="stat-num">2</span> Live</div>
+      <div class="stat-chip"><span class="stat-num">1</span> Console</div>
+      <div class="stat-chip"><span class="stat-num">6</span> Categories</div>
+    </div>
+    <div class="nav-section">
+      
+        <div class="nav-item active" data-idx="0" onclick="switchDash(0, this)">
+          <span class="nav-icon">🧬</span>
+          <div class="nav-text">
+            <span class="nav-title">Biomarker Dashboard</span>
+            <span class="nav-project">∞Life</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="1" onclick="switchDash(1, this)">
+          <span class="nav-icon">📊</span>
+          <div class="nav-text">
+            <span class="nav-title">Biomarker Console</span>
+            <span class="nav-project">∞Life</span>
+          </div>
+          <span class="nav-badge console">CLI</span>
+        </div>
+
+        <div class="nav-item" data-idx="2" onclick="switchDash(2, this)">
+          <span class="nav-icon">⚡</span>
+          <div class="nav-text">
+            <span class="nav-title">Unified Benchmarks</span>
+            <span class="nav-project">⊕Workspace</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="3" onclick="switchDash(3, this)">
+          <span class="nav-icon">🛡️</span>
+          <div class="nav-text">
+            <span class="nav-title">Security Vulnerabilities</span>
+            <span class="nav-project">⊕Workspace</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="4" onclick="switchDash(4, this)">
+          <span class="nav-icon">🔬</span>
+          <div class="nav-text">
+            <span class="nav-title">Agent Ops Monitor</span>
+            <span class="nav-project">⊕Workspace</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="5" onclick="switchDash(5, this)">
+          <span class="nav-icon">🤖</span>
+          <div class="nav-text">
+            <span class="nav-title">Copilot Usage Monitor</span>
+            <span class="nav-project">⊕Workspace</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="6" onclick="switchDash(6, this)">
+          <span class="nav-icon">🎵</span>
+          <div class="nav-text">
+            <span class="nav-title">Music Dashboard</span>
+            <span class="nav-project">❤Music</span>
+          </div>
+          <span class="nav-badge live">Live</span>
+        </div>
+
+        <div class="nav-item" data-idx="7" onclick="switchDash(7, this)">
+          <span class="nav-icon">📻</span>
+          <div class="nav-text">
+            <span class="nav-title">TJD Radio</span>
+            <span class="nav-project">❤Music</span>
+          </div>
+          <span class="nav-badge live">Live</span>
+        </div>
+
+        <div class="nav-item" data-idx="8" onclick="switchDash(8, this)">
+          <span class="nav-icon">⚛️</span>
+          <div class="nav-text">
+            <span class="nav-title">Quantum Benchmarks</span>
+            <span class="nav-project">⟨ψ⟩Quantum</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="9" onclick="switchDash(9, this)">
+          <span class="nav-icon">🎙️</span>
+          <div class="nav-text">
+            <span class="nav-title">Executive Audio Brief Portal</span>
+            <span class="nav-project">👁AI-Manifest</span>
+          </div>
+          <span class="nav-badge static">interactive_html</span>
+        </div>
+    </div>
+    <div class="sidebar-footer">
+      Generated 2026-04-19 16:47:45 &middot; 10 dashboards
+    </div>
+  </aside>
+  <main class="main-content">
+    <div class="dash-pane" id="pane-0" style="display:block"><iframe src="file:///f:/executedcode/%E2%88%9ELife/tmp/biomarker_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-1" style="display:none"><div class="console-dash"><div class="console-header">Terminal Dashboard</div><div class="console-info">Run in terminal:</div><code class="console-cmd">C:\G\python.exe src/analysis/biomarker_dashboard.py</code></div></div>
+<div class="dash-pane" id="pane-2" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-3" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/security_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-4" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/agent_ops_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-5" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/copilot_usage_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><div class="live-info">Start the server first:</div><code class="live-cmd">C:\G\python.exe src/analysis/music_dashboard.py --port 5050</code><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><div class="live-info">Start the server first:</div><code class="live-cmd">C:\G\python.exe src/radio/tjd_radio.py --port 8100 --bitrate 192 --crossfade 2 --bumper-dir catalog/bumpers --bumper-every 3</code><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-8" style="display:none"><iframe src="file:///f:/executedcode/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+  </main>
+  <script>
+    function switchDash(idx, el) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.dash-pane').forEach(p => p.style.display = 'none');
+      el.classList.add('active');
+      const pane = document.getElementById('pane-' + idx);
+      if (pane) pane.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

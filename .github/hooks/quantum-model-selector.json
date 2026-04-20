@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "windows": "C:\\G\\python.exe f:\\.github\\hooks\\scripts\\quantum_model_select.py",
+        "command": "python3 f:/.github/hooks/scripts/quantum_model_select.py",
+        "timeout": 10
+      }
+    ],
+    "SubagentStart": [
+      {
+        "type": "command",
+        "windows": "C:\\G\\python.exe f:\\.github\\hooks\\scripts\\quantum_model_select.py",
+        "command": "python3 f:/.github/hooks/scripts/quantum_model_select.py",
+        "timeout": 10
+      }
+    ]
+  }
+}
