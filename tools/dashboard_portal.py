@@ -35,10 +35,23 @@ for _bp in _BRAVE_PATHS:
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PORTAL_OUT = PROJECT_ROOT / "reports" / "portal.html"
+SERVERS_CONFIG = PROJECT_ROOT / "tools" / "portal_servers.json"
 
 # Import registry
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 from dashboard_registry import build_manifest
+
+
+def _load_servers() -> list[dict]:
+    """Load enabled servers from portal_servers.json."""
+    import json
+    if not SERVERS_CONFIG.exists():
+        return []
+    try:
+        data = json.loads(SERVERS_CONFIG.read_text(encoding="utf-8"))
+        return [s for s in data.get("servers", []) if s.get("enabled", True)]
+    except Exception:
+        return []
 
 
 def _esc(val) -> str:
@@ -88,8 +101,8 @@ def _nav_items(manifest: dict) -> str:
         sigil = _esc(dash.get("sigil", ""))
         active = " active" if i == 0 else ""
         dtype = dash["type"]
-        badge_cls = {"static_html": "static", "flask_app": "live", "console": "console"}.get(dtype, "static")
-        badge_label = {"static_html": "Static", "flask_app": "Live", "console": "CLI"}.get(dtype, dtype)
+        badge_cls = {"static_html": "static", "flask_app": "live", "console": "console", "inline_html": "static"}.get(dtype, "static")
+        badge_label = {"static_html": "Static", "flask_app": "Live", "console": "CLI", "inline_html": "Inline"}.get(dtype, dtype)
         items.append(f"""
         <div class="nav-item{active}" data-idx="{i}" onclick="switchDash({i}, this)">
           <span class="nav-icon">{icon}</span>
@@ -100,6 +113,136 @@ def _nav_items(manifest: dict) -> str:
           <span class="nav-badge {badge_cls}">{badge_label}</span>
         </div>""")
     return "\n".join(items)
+
+
+_PASSWORD_GEN_HTML = """
+<div class="inline-tool pwgen">
+  <div class="pwgen-title">🔑 Password Generator</div>
+  <div class="pwgen-sub">Quantum-assisted · stateless · never stored</div>
+  <div class="pwgen-field">
+    <label>Service / Label</label>
+    <input type="text" id="pg-service" placeholder="GitHub, ProtonMail…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="pwgen-field">
+    <label>Length <span id="pg-len-val">16</span></label>
+    <input type="range" id="pg-len" min="8" max="64" value="16" oninput="pgLen(this.value)">
+  </div>
+  <div class="pwgen-toggles">
+    <span class="pg-tog on" id="pg-nums" onclick="pgToggle(this)">Numbers</span>
+    <span class="pg-tog"    id="pg-sym"  onclick="pgToggle(this)">Symbols</span>
+  </div>
+  <div class="pwgen-out-row">
+    <span id="pg-display">—</span>
+    <button class="pg-copy" onclick="pgCopy()" title="Copy">⧉</button>
+    <button class="pg-regen" onclick="pgGenerate()" title="New">↺</button>
+  </div>
+  <div class="pwgen-strength-row">
+    <div class="pwgen-bar-bg"><div class="pwgen-bar-fill" id="pg-fill"></div></div>
+    <span class="pwgen-str-lbl" id="pg-str-lbl">—</span>
+  </div>
+  <div id="pg-feedback"></div>
+</div>
+<style>
+  .inline-tool {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; padding:2rem; background:var(--bg);
+  }
+  .pwgen { gap:0.85rem; }
+  .pwgen-title { font-size:1.25rem; font-weight:700; }
+  .pwgen-sub { font-size:0.75rem; color:var(--muted); margin-top:-0.3rem; }
+  .pwgen-field { width:100%; max-width:360px; }
+  .pwgen-field label {
+    display:block; font-size:0.72rem; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:0.3rem;
+  }
+  .pwgen-field input[type=text] {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:6px; padding:0.5rem 0.7rem; color:var(--text);
+    font-size:0.88rem; outline:none;
+  }
+  .pwgen-field input[type=text]:focus { border-color:var(--accent); }
+  .pwgen-field input[type=range] {
+    width:100%; -webkit-appearance:none; height:4px;
+    background:var(--border); border-radius:2px; cursor:pointer;
+  }
+  .pwgen-field input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:14px; height:14px;
+    border-radius:50%; background:var(--accent); cursor:pointer;
+  }
+  .pwgen-toggles { display:flex; gap:0.5rem; }
+  .pg-tog {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:0.25rem 0.8rem; font-size:0.78rem;
+    color:var(--muted); cursor:pointer; user-select:none; transition:all .15s;
+  }
+  .pg-tog.on { background:rgba(99,102,241,.15); border-color:var(--accent); color:#818cf8; }
+  .pwgen-out-row {
+    display:flex; align-items:center; gap:0.5rem; width:100%; max-width:360px;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:0.55rem 0.75rem;
+  }
+  #pg-display {
+    flex:1; font-family:'Cascadia Code','Consolas',monospace; font-size:1rem;
+    color:#a5f3fc; word-break:break-all; letter-spacing:.05em;
+  }
+  .pg-copy, .pg-regen {
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-size:1rem; padding:0.1rem 0.3rem; transition:color .15s;
+  }
+  .pg-copy:hover, .pg-regen:hover { color:var(--accent); }
+  .pwgen-strength-row { display:flex; align-items:center; gap:0.5rem; width:100%; max-width:360px; }
+  .pwgen-bar-bg { flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .pwgen-bar-fill { height:100%; width:0%; border-radius:2px; transition:width .3s,background .3s; }
+  .pwgen-str-lbl { font-size:0.7rem; color:var(--muted); min-width:5rem; text-align:right; }
+  #pg-feedback { font-size:0.7rem; color:var(--success); height:0.9rem; }
+</style>
+<script>
+(function(){
+  const CHARS = {lower:'abcdefghijklmnopqrstuvwxyz', upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                 digits:'0123456789', sym:'!@#$%^&*()-_=+[]{}|;:,.<>?'};
+  function pgLen(v){ document.getElementById('pg-len-val').textContent=v; }
+  function pgToggle(el){ el.classList.toggle('on'); }
+  function pgStrength(pwd){
+    if(!pwd||pwd==='—') return;
+    const pools=((/[a-z]/.test(pwd)?26:0)+(/[A-Z]/.test(pwd)?26:0)+(/[0-9]/.test(pwd)?10:0)+(/[^a-zA-Z0-9]/.test(pwd)?32:0));
+    const bits=pools>0?pwd.length*Math.log2(pools):0;
+    const map=bits<40?[15,'Weak','#ef4444']:bits<60?[35,'Fair','#f59e0b']:bits<80?[60,'Good','#eab308']:bits<110?[80,'Strong','#10b981']:[100,'Very strong','#6366f1'];
+    document.getElementById('pg-fill').style.width=map[0]+'%';
+    document.getElementById('pg-fill').style.background=map[2];
+    document.getElementById('pg-str-lbl').style.color=map[2];
+    document.getElementById('pg-str-lbl').textContent=map[1];
+  }
+  function pgGenerate(){
+    const len=parseInt(document.getElementById('pg-len').value);
+    const nums=document.getElementById('pg-nums').classList.contains('on');
+    const syms=document.getElementById('pg-sym').classList.contains('on');
+    let pool=CHARS.lower+CHARS.upper+(nums?CHARS.digits:'')+(syms?CHARS.sym:'');
+    const arr=new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    const pwd=Array.from(arr).map(n=>pool[n%pool.length]).join('');
+    document.getElementById('pg-display').textContent=pwd;
+    pgStrength(pwd);
+    window._pg_pwd=pwd;
+  }
+  function pgCopy(){
+    if(!window._pg_pwd) return;
+    navigator.clipboard.writeText(window._pg_pwd).then(()=>{
+      const fb=document.getElementById('pg-feedback');
+      fb.textContent='✓ Copied'; setTimeout(()=>fb.textContent='',2000);
+    });
+  }
+  window.pgLen=pgLen; window.pgToggle=pgToggle;
+  window.pgGenerate=pgGenerate; window.pgCopy=pgCopy;
+  document.addEventListener('DOMContentLoaded', pgGenerate);
+})();
+</script>
+"""
+
+_INLINE_CONTENT = {"password-generator": _PASSWORD_GEN_HTML}
+
+
+def _inline_html_content(inline_id: str) -> str:
+    return _INLINE_CONTENT.get(inline_id, '<div class="placeholder">No inline content registered.</div>')
 
 
 def _content_frames(manifest: dict) -> str:
@@ -125,11 +268,13 @@ def _content_frames(manifest: dict) -> str:
                          f'<div class="live-header">'
                          f'<span class="live-dot"></span> Live Dashboard'
                          f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-                         f'<div class="live-info">Start the server first:</div>'
-                         f'<code class="live-cmd">{cli}</code>'
                          f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" '
                          f'onerror="this.style.display=\'none\'"></iframe>'
                          f'</div></div>')
+        elif dash["type"] == "inline_html":
+            inline_id = dash.get("inline_id", "")
+            panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">' +
+                         _inline_html_content(inline_id) + '</div>')
         elif dash["type"] == "console":
             cli = _esc(dash.get("cli", ""))
             panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
@@ -160,12 +305,42 @@ def _stats_bar(manifest: dict) -> str:
     </div>"""
 
 
+def _render_server_sidebar(servers: list[dict]) -> str:
+    """Render the server status sidebar section from config."""
+    if not servers:
+        return ""
+    rows = ""
+    for s in servers:
+        dot_id = f"dot-{s['port']}"
+        port = s['port']
+        name = _esc(s['name'])
+        rows += (
+            f'<div class="server-row">'
+            f'<span class="server-dot" id="{dot_id}"></span>'
+            f'<span class="server-name">{name} :{port}</span>'
+            f'<button class="server-launch" onclick="openServer({port})" title="Open">&nearr;</button>'
+            f'</div>\n      '
+        )
+    return (
+        '<div class="server-status">\n      '
+        + rows
+        + '<div style="margin-top:.2rem">'
+        '<button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" '
+        'onclick="launchServers()">&#9889; Start all servers</button>'
+        '</div>\n    </div>'
+    )
+
+
 def render_portal(manifest: dict) -> str:
     """Render the unified portal HTML."""
+    import json as _json
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nav = _nav_items(manifest)
     frames = _content_frames(manifest)
     stats = _stats_bar(manifest)
+    servers = _load_servers()
+    server_js_list = _json.dumps([{"port": s["port"], "name": s["name"]} for s in servers])
+    server_sidebar = _render_server_sidebar(servers)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -288,6 +463,34 @@ def render_portal(manifest: dict) -> str:
   .nav-badge.live {{ background: rgba(239,68,68,0.15); color: #f87171; }}
   .nav-badge.console {{ background: rgba(16,185,129,0.15); color: #34d399; }}
 
+  /* Server status */
+  .server-status {{
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }}
+  .server-row {{
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+  }}
+  .server-dot {{
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--muted);
+  }}
+  .server-dot.up {{ background: var(--success); }}
+  .server-dot.down {{ background: #ef4444; }}
+  .server-name {{ flex: 1; color: var(--muted); }}
+  .server-launch {{
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--muted); font-size: 0.62rem; padding: 0.1rem 0.35rem;
+    cursor: pointer; transition: all .15s;
+  }}
+  .server-launch:hover {{ border-color: var(--accent); color: var(--accent); }}
+
   /* Footer */
   .sidebar-footer {{
     padding: 0.6rem 1rem;
@@ -409,8 +612,10 @@ def render_portal(manifest: dict) -> str:
     <div class="nav-section">
       {nav}
     </div>
+    {server_sidebar}
     <div class="sidebar-footer">
-      Generated {generated} &middot; {len(manifest['dashboards'])} dashboards
+      Generated {generated} &middot; {len(manifest['dashboards'])} dashboards<br>
+      <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
   <main class="main-content">
@@ -424,6 +629,42 @@ def render_portal(manifest: dict) -> str:
       const pane = document.getElementById('pane-' + idx);
       if (pane) pane.style.display = 'block';
     }}
+
+    function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
+    function launchServers() {{
+      const btn = document.getElementById('launch-btn');
+      if (btn) {{ btn.textContent = 'Launching…'; btn.disabled = true; }}
+      window.location = 'portal://launch';
+      setTimeout(() => {{ if (btn) {{ btn.textContent = 'Start all servers'; btn.disabled = false; }} pollServers(); }}, 4000);
+    }}
+    const SERVERS = {server_js_list};
+    async function checkServer(port, dotId) {{
+      const dot = document.getElementById(dotId);
+      if (!dot) return;
+      try {{
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 1500);
+        await fetch('http://localhost:' + port, {{ mode: 'no-cors', signal: ctrl.signal }});
+        clearTimeout(tid);
+        dot.classList.add('up'); dot.classList.remove('down');
+      }} catch {{ dot.classList.add('down'); dot.classList.remove('up'); }}
+    }}
+    function pollServers() {{ SERVERS.forEach(s => checkServer(s.port, 'dot-' + s.port)); }}
+    async function autoLaunch() {{
+      let anyUp = false;
+      for (const s of SERVERS) {{
+        try {{
+          const ctrl = new AbortController();
+          setTimeout(() => ctrl.abort(), 800);
+          await fetch('http://localhost:' + s.port, {{ mode: 'no-cors', signal: ctrl.signal }});
+          anyUp = true;
+        }} catch {{}}
+      }}
+      if (!anyUp && SERVERS.length > 0) launchServers();
+    }}
+    pollServers();
+    setInterval(pollServers, 5000);
+    window.addEventListener('load', () => setTimeout(autoLaunch, 500));
   </script>
 </body>
 </html>"""

@@ -18,11 +18,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-WORKSPACE_ROOT = Path(r"f:\executedcode")
+WORKSPACE_ROOT = Path("f:/")
 
 # Known project roots — discovered dynamically via AGENT_STARTUP.md presence
-REQUIRED_SPEC_FIELDS = {"id", "title", "type", "generator", "category"}
-VALID_TYPES = {"static_html", "flask_app", "console"}
+REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
+VALID_TYPES = {"static_html", "flask_app", "console", "inline_html"}
 
 
 def discover_projects() -> list[Path]:

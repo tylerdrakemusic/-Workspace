@@ -1,0 +1,26 @@
+﻿{
+    "_comment":  "Single source of truth for all portal localhost services. Add new services here. Re-run launch_portal.ps1 to pick them up.",
+    "servers":  [
+                    {
+                        "name":  "Music Dashboard",
+                        "port":  5050,
+                        "project":  "❤Music",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_music_dashboard.ps1",
+                        "enabled":  true
+                    },
+                    {
+                        "name":  "TJD Radio",
+                        "port":  8100,
+                        "project":  "❤Music",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_tjd_radio.ps1",
+                        "enabled":  true
+                    },
+                    {
+                        "name":  "Guitar Trainer",
+                        "port":  5055,
+                        "project":  "❤Music",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_guitar_trainer.ps1",
+                        "enabled":  true
+                    }
+                ]
+}

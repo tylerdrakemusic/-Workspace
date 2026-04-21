@@ -2,7 +2,7 @@
 import time, json, sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(r"f:\executedcode\∞Life\src")))
+sys.path.insert(0, str(Path(r"f:\∞Life\src")))
 from utils.agent_perf import PerfTracker
 
 start = json.loads(open(r"f:\tmp\overseer_start.json").read())["start"]

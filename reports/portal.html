@@ -119,6 +119,34 @@
   .nav-badge.live { background: rgba(239,68,68,0.15); color: #f87171; }
   .nav-badge.console { background: rgba(16,185,129,0.15); color: #34d399; }
 
+  /* Server status */
+  .server-status {
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .server-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+  }
+  .server-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--muted);
+  }
+  .server-dot.up { background: var(--success); }
+  .server-dot.down { background: #ef4444; }
+  .server-name { flex: 1; color: var(--muted); }
+  .server-launch {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--muted); font-size: 0.62rem; padding: 0.1rem 0.35rem;
+    cursor: pointer; transition: all .15s;
+  }
+  .server-launch:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Footer */
   .sidebar-footer {
     padding: 0.6rem 1rem;
@@ -238,11 +266,11 @@
     </div>
     
     <div class="stats-bar">
-      <div class="stat-chip"><span class="stat-num">10</span> Dashboards</div>
+      <div class="stat-chip"><span class="stat-num">11</span> Dashboards</div>
       <div class="stat-chip"><span class="stat-num">5</span> Projects</div>
-      <div class="stat-chip"><span class="stat-num">6</span> Static</div>
-      <div class="stat-chip"><span class="stat-num">2</span> Live</div>
-      <div class="stat-chip"><span class="stat-num">1</span> Console</div>
+      <div class="stat-chip"><span class="stat-num">7</span> Static</div>
+      <div class="stat-chip"><span class="stat-num">3</span> Live</div>
+      <div class="stat-chip"><span class="stat-num">0</span> Console</div>
       <div class="stat-chip"><span class="stat-num">6</span> Categories</div>
     </div>
     <div class="nav-section">
@@ -257,15 +285,6 @@
         </div>
 
         <div class="nav-item" data-idx="1" onclick="switchDash(1, this)">
-          <span class="nav-icon">📊</span>
-          <div class="nav-text">
-            <span class="nav-title">Biomarker Console</span>
-            <span class="nav-project">∞Life</span>
-          </div>
-          <span class="nav-badge console">CLI</span>
-        </div>
-
-        <div class="nav-item" data-idx="2" onclick="switchDash(2, this)">
           <span class="nav-icon">⚡</span>
           <div class="nav-text">
             <span class="nav-title">Unified Benchmarks</span>
@@ -274,7 +293,7 @@
           <span class="nav-badge static">Static</span>
         </div>
 
-        <div class="nav-item" data-idx="3" onclick="switchDash(3, this)">
+        <div class="nav-item" data-idx="2" onclick="switchDash(2, this)">
           <span class="nav-icon">🛡️</span>
           <div class="nav-text">
             <span class="nav-title">Security Vulnerabilities</span>
@@ -283,7 +302,7 @@
           <span class="nav-badge static">Static</span>
         </div>
 
-        <div class="nav-item" data-idx="4" onclick="switchDash(4, this)">
+        <div class="nav-item" data-idx="3" onclick="switchDash(3, this)">
           <span class="nav-icon">🔬</span>
           <div class="nav-text">
             <span class="nav-title">Agent Ops Monitor</span>
@@ -292,13 +311,22 @@
           <span class="nav-badge static">Static</span>
         </div>
 
-        <div class="nav-item" data-idx="5" onclick="switchDash(5, this)">
+        <div class="nav-item" data-idx="4" onclick="switchDash(4, this)">
           <span class="nav-icon">🤖</span>
           <div class="nav-text">
             <span class="nav-title">Copilot Usage Monitor</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
           <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="5" onclick="switchDash(5, this)">
+          <span class="nav-icon">🔑</span>
+          <div class="nav-text">
+            <span class="nav-title">Password Generator</span>
+            <span class="nav-project">⊕Workspace</span>
+          </div>
+          <span class="nav-badge static">Inline</span>
         </div>
 
         <div class="nav-item" data-idx="6" onclick="switchDash(6, this)">
@@ -334,23 +362,157 @@
             <span class="nav-title">Executive Audio Brief Portal</span>
             <span class="nav-project">👁AI-Manifest</span>
           </div>
-          <span class="nav-badge static">interactive_html</span>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="10" onclick="switchDash(10, this)">
+          <span class="nav-icon">🎸</span>
+          <div class="nav-text">
+            <span class="nav-title">Guitar Trainer</span>
+            <span class="nav-project">❤Music</span>
+          </div>
+          <span class="nav-badge live">Live</span>
         </div>
     </div>
+    
     <div class="sidebar-footer">
-      Generated 2026-04-19 16:47:45 &middot; 10 dashboards
+      Generated 2026-04-21 &middot; 11 dashboards<br>
+      <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
   <main class="main-content">
-    <div class="dash-pane" id="pane-0" style="display:block"><iframe src="file:///f:/executedcode/%E2%88%9ELife/tmp/biomarker_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-1" style="display:none"><div class="console-dash"><div class="console-header">Terminal Dashboard</div><div class="console-info">Run in terminal:</div><code class="console-cmd">C:\G\python.exe src/analysis/biomarker_dashboard.py</code></div></div>
-<div class="dash-pane" id="pane-2" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-3" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/security_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-4" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/agent_ops_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-5" style="display:none"><iframe src="file:///f:/executedcode/%E2%8A%95Workspace/reports/copilot_usage_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><div class="live-info">Start the server first:</div><code class="live-cmd">C:\G\python.exe src/analysis/music_dashboard.py --port 5050</code><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><div class="live-info">Start the server first:</div><code class="live-cmd">C:\G\python.exe src/radio/tjd_radio.py --port 8100 --bitrate 192 --crossfade 2 --bumper-dir catalog/bumpers --bumper-every 3</code><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-8" style="display:none"><iframe src="file:///f:/executedcode/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+    <div class="dash-pane" id="pane-0" style="display:block"><iframe src="file:///f:/%E2%88%9ELife/tmp/biomarker_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-1" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-2" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/security_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-3" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/agent_ops_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-4" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/copilot_usage_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-5" style="display:none">
+<div class="inline-tool pwgen">
+  <div class="pwgen-title">🔑 Password Generator</div>
+  <div class="pwgen-sub">Quantum-assisted · stateless · never stored</div>
+  <div class="pwgen-field">
+    <label>Service / Label</label>
+    <input type="text" id="pg-service" placeholder="GitHub, ProtonMail…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="pwgen-field">
+    <label>Length <span id="pg-len-val">16</span></label>
+    <input type="range" id="pg-len" min="8" max="64" value="16" oninput="pgLen(this.value)">
+  </div>
+  <div class="pwgen-toggles">
+    <span class="pg-tog on" id="pg-nums" onclick="pgToggle(this)">Numbers</span>
+    <span class="pg-tog"    id="pg-sym"  onclick="pgToggle(this)">Symbols</span>
+  </div>
+  <div class="pwgen-out-row">
+    <span id="pg-display">—</span>
+    <button class="pg-copy" onclick="pgCopy()" title="Copy">⧉</button>
+    <button class="pg-regen" onclick="pgGenerate()" title="New">↺</button>
+  </div>
+  <div class="pwgen-strength-row">
+    <div class="pwgen-bar-bg"><div class="pwgen-bar-fill" id="pg-fill"></div></div>
+    <span class="pwgen-str-lbl" id="pg-str-lbl">—</span>
+  </div>
+  <div id="pg-feedback"></div>
+</div>
+<style>
+  .inline-tool {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; padding:2rem; background:var(--bg);
+  }
+  .pwgen { gap:0.85rem; }
+  .pwgen-title { font-size:1.25rem; font-weight:700; }
+  .pwgen-sub { font-size:0.75rem; color:var(--muted); margin-top:-0.3rem; }
+  .pwgen-field { width:100%; max-width:360px; }
+  .pwgen-field label {
+    display:block; font-size:0.72rem; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:0.3rem;
+  }
+  .pwgen-field input[type=text] {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:6px; padding:0.5rem 0.7rem; color:var(--text);
+    font-size:0.88rem; outline:none;
+  }
+  .pwgen-field input[type=text]:focus { border-color:var(--accent); }
+  .pwgen-field input[type=range] {
+    width:100%; -webkit-appearance:none; height:4px;
+    background:var(--border); border-radius:2px; cursor:pointer;
+  }
+  .pwgen-field input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:14px; height:14px;
+    border-radius:50%; background:var(--accent); cursor:pointer;
+  }
+  .pwgen-toggles { display:flex; gap:0.5rem; }
+  .pg-tog {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:0.25rem 0.8rem; font-size:0.78rem;
+    color:var(--muted); cursor:pointer; user-select:none; transition:all .15s;
+  }
+  .pg-tog.on { background:rgba(99,102,241,.15); border-color:var(--accent); color:#818cf8; }
+  .pwgen-out-row {
+    display:flex; align-items:center; gap:0.5rem; width:100%; max-width:360px;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:0.55rem 0.75rem;
+  }
+  #pg-display {
+    flex:1; font-family:'Cascadia Code','Consolas',monospace; font-size:1rem;
+    color:#a5f3fc; word-break:break-all; letter-spacing:.05em;
+  }
+  .pg-copy, .pg-regen {
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-size:1rem; padding:0.1rem 0.3rem; transition:color .15s;
+  }
+  .pg-copy:hover, .pg-regen:hover { color:var(--accent); }
+  .pwgen-strength-row { display:flex; align-items:center; gap:0.5rem; width:100%; max-width:360px; }
+  .pwgen-bar-bg { flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .pwgen-bar-fill { height:100%; width:0%; border-radius:2px; transition:width .3s,background .3s; }
+  .pwgen-str-lbl { font-size:0.7rem; color:var(--muted); min-width:5rem; text-align:right; }
+  #pg-feedback { font-size:0.7rem; color:var(--success); height:0.9rem; }
+</style>
+<script>
+(function(){
+  const CHARS = {lower:'abcdefghijklmnopqrstuvwxyz', upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                 digits:'0123456789', sym:'!@#$%^&*()-_=+[]{}|;:,.<>?'};
+  function pgLen(v){ document.getElementById('pg-len-val').textContent=v; }
+  function pgToggle(el){ el.classList.toggle('on'); }
+  function pgStrength(pwd){
+    if(!pwd||pwd==='—') return;
+    const pools=((/[a-z]/.test(pwd)?26:0)+(/[A-Z]/.test(pwd)?26:0)+(/[0-9]/.test(pwd)?10:0)+(/[^a-zA-Z0-9]/.test(pwd)?32:0));
+    const bits=pools>0?pwd.length*Math.log2(pools):0;
+    const map=bits<40?[15,'Weak','#ef4444']:bits<60?[35,'Fair','#f59e0b']:bits<80?[60,'Good','#eab308']:bits<110?[80,'Strong','#10b981']:[100,'Very strong','#6366f1'];
+    document.getElementById('pg-fill').style.width=map[0]+'%';
+    document.getElementById('pg-fill').style.background=map[2];
+    document.getElementById('pg-str-lbl').style.color=map[2];
+    document.getElementById('pg-str-lbl').textContent=map[1];
+  }
+  function pgGenerate(){
+    const len=parseInt(document.getElementById('pg-len').value);
+    const nums=document.getElementById('pg-nums').classList.contains('on');
+    const syms=document.getElementById('pg-sym').classList.contains('on');
+    let pool=CHARS.lower+CHARS.upper+(nums?CHARS.digits:'')+(syms?CHARS.sym:'');
+    const arr=new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    const pwd=Array.from(arr).map(n=>pool[n%pool.length]).join('');
+    document.getElementById('pg-display').textContent=pwd;
+    pgStrength(pwd);
+    window._pg_pwd=pwd;
+  }
+  function pgCopy(){
+    if(!window._pg_pwd) return;
+    navigator.clipboard.writeText(window._pg_pwd).then(()=>{
+      const fb=document.getElementById('pg-feedback');
+      fb.textContent='✓ Copied'; setTimeout(()=>fb.textContent='',2000);
+    });
+  }
+  window.pgLen=pgLen; window.pgToggle=pgToggle;
+  window.pgGenerate=pgGenerate; window.pgCopy=pgCopy;
+  document.addEventListener('DOMContentLoaded', pgGenerate);
+})();
+</script>
+</div>
+<div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-8" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-9" style="display:none"><iframe src="file:///f:/%F0%9F%91%81AI-Manifest/output/executive_brief_portal.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-10" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5055" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5055" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
   </main>
   <script>
     function switchDash(idx, el) {
@@ -360,6 +522,42 @@
       const pane = document.getElementById('pane-' + idx);
       if (pane) pane.style.display = 'block';
     }
+
+    function openServer(port) { window.open('http://localhost:' + port, '_blank'); }
+    function launchServers() {
+      const btn = document.getElementById('launch-btn');
+      if (btn) { btn.textContent = 'Launching…'; btn.disabled = true; }
+      window.location = 'portal://launch';
+      setTimeout(() => { if (btn) { btn.textContent = 'Start all servers'; btn.disabled = false; } pollServers(); }, 4000);
+    }
+    const SERVERS = [{port:5050,label:'Music Dashboard'},{port:8100,label:'TJD Radio'},{port:5055,label:'Guitar Trainer'}];
+    async function checkServer(port, dotId) {
+      const dot = document.getElementById(dotId);
+      if (!dot) return;
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 1500);
+        await fetch('http://localhost:' + port, { mode: 'no-cors', signal: ctrl.signal });
+        clearTimeout(tid);
+        dot.classList.add('up'); dot.classList.remove('down');
+      } catch { dot.classList.add('down'); dot.classList.remove('up'); }
+    }
+    function pollServers() { SERVERS.forEach(s => checkServer(s.port, 'dot-' + s.port)); }
+    async function autoLaunch() {
+      let anyUp = false;
+      for (const s of SERVERS) {
+        try {
+          const ctrl = new AbortController();
+          setTimeout(() => ctrl.abort(), 800);
+          await fetch('http://localhost:' + s.port, { mode: 'no-cors', signal: ctrl.signal });
+          anyUp = true;
+        } catch {}
+      }
+      if (!anyUp && SERVERS.length > 0) launchServers();
+    }
+    pollServers();
+    setInterval(pollServers, 5000);
+    window.addEventListener('load', () => setTimeout(autoLaunch, 500));
   </script>
 </body>
 </html>

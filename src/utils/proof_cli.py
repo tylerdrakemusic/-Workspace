@@ -191,7 +191,7 @@ def cmd_report(args) -> None:
             desc = p["description"]
             agent = p["agent"]
             path = p["artifact_path"] or ""
-            short_path = path.replace("f:\\executedcode\\", "").replace("\\", "/") if path else ""
+            short_path = path.replace("f:\\", "").replace("\\", "/") if path else ""
             print(f"  {v_mark} [{ptype:15s}] {agent:30s} {desc}")
             if short_path:
                 print(f"    → {short_path}")

@@ -44,11 +44,11 @@ for _bp in _BRAVE_PATHS:
         break
 
 SCAN_ROOTS = [
-    Path(r"f:\executedcode\∞Life"),
-    Path(r"f:\executedcode\❤Music"),
-    Path(r"f:\executedcode\⟨ψ⟩Quantum"),
-    Path(r"f:\executedcode\👁AI-Manifest"),
-    Path(r"f:\executedcode\⊕Workspace"),
+    Path(r"f:\∞Life"),
+    Path(r"f:\❤Music"),
+    Path(r"f:\⟨ψ⟩Quantum"),
+    Path(r"f:\👁AI-Manifest"),
+    Path(r"f:\⊕Workspace"),
 ]
 
 
@@ -138,7 +138,7 @@ SEED_FINDINGS = [
     {
         "category": "SECRETS",
         "severity": "critical",
-        "file_path": r"f:\executedcode\$$~~$$tyja.py",
+        "file_path": r"f:\cobraKing\$$~~$$tyja.py",
         "line_number": 321,
         "description": "OpenAI API key hardcoded in source",
         "owasp_id": "A04",
@@ -146,7 +146,7 @@ SEED_FINDINGS = [
     {
         "category": "SECRETS",
         "severity": "critical",
-        "file_path": r"f:\executedcode\facebook_graph_api_call.py",
+        "file_path": r"f:\facebook_graph_api_call.py",
         "line_number": 402,
         "description": "Facebook user token hardcoded in source",
         "owasp_id": "A04",
@@ -154,7 +154,7 @@ SEED_FINDINGS = [
     {
         "category": "SECRETS",
         "severity": "critical",
-        "file_path": r"f:\executedcode\ty_py\openai_helper.py",
+        "file_path": r"f:\ty_py\openai_helper.py",
         "line_number": 7,
         "description": "OpenAI API key hardcoded in source",
         "owasp_id": "A04",
@@ -162,7 +162,7 @@ SEED_FINDINGS = [
     {
         "category": "SECRETS",
         "severity": "critical",
-        "file_path": r"f:\executedcode\ty_py\tokenReturns.py",
+        "file_path": r"f:\ty_py\tokenReturns.py",
         "line_number": 5,
         "description": "IBM Quantum token hardcoded in source (twice)",
         "owasp_id": "A04",
@@ -170,7 +170,7 @@ SEED_FINDINGS = [
     {
         "category": "SECRETS",
         "severity": "critical",
-        "file_path": r"f:\executedcode\ty_py\yt_utils.py",
+        "file_path": r"f:\ty_py\yt_utils.py",
         "line_number": 4,
         "description": "Google API key hardcoded in source",
         "owasp_id": "A04",
@@ -178,7 +178,7 @@ SEED_FINDINGS = [
     {
         "category": "SECRETS",
         "severity": "high",
-        "file_path": r"f:\executedcode\∞Life\tools\withings_sync.py",
+        "file_path": r"f:\∞Life\tools\withings_sync.py",
         "line_number": 51,
         "description": "Withings CLIENT_SECRET hardcoded — should be in .env",
         "owasp_id": "A04",
@@ -194,7 +194,7 @@ SEED_FINDINGS = [
     {
         "category": "GIT",
         "severity": "high",
-        "file_path": r"f:\executedcode\tokens",
+        "file_path": r"f:\⊕Workspace\tokens",
         "line_number": 0,
         "description": "git rm --cached tokens/ changes not yet committed — tokens still in staging",
         "owasp_id": None,
@@ -323,7 +323,7 @@ def _vuln_table(vulns: list[dict]) -> str:
         vid = _esc(v["vuln_id"])
         fp = v.get("file_path", "") or ""
         # Shorten file_path for display
-        short_fp = fp.replace("f:\\executedcode\\", "").replace("\\", "/")
+        short_fp = fp.replace("f:\\", "").replace("\\", "/")
         ln = v.get("line_number") or ""
         note = v.get("override_note") or ""
         sev_val = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}.get(v["severity"], 4)

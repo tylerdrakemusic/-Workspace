@@ -45,6 +45,15 @@
       "cli": "C:\\G\\python.exe tools/copilot_usage_monitor.py --no-open",
       "category": "performance",
       "icon": "🤖"
+    },
+    {
+      "id": "password-generator",
+      "title": "Password Generator",
+      "description": "Quantum-assisted stateless password generator — per-service, never stored",
+      "type": "inline_html",
+      "inline_id": "password-generator",
+      "category": "security",
+      "icon": "🔑"
     }
   ]
 }
