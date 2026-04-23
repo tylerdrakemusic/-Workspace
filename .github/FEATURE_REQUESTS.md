@@ -30,8 +30,9 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | BRANCHED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-22 |
+| FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | REVIEW_REQUESTED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-23 |
 | FR-20260422-disable-plumbing-agents-dropdown | Disable Plumbing Agents from VS Code Agent Dropdown | chore | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-22 |
+| FR-20260423-agent-ops-monitor-sync | Reconcile agent ops monitor with current workspace architecture and improve portal visibility | fix | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-23 | 2026-04-23 |
 
 
 
