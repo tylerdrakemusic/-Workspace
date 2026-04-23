@@ -30,7 +30,7 @@
 ### Concurrency Notes
 - Conflicts with: none (documentation only; no file overlap with active FR-20260422-band-mgmt-panel).
 - Depends on: none.
-- **BLOCKED BY:** FR-20260422-github-dir-reconcile — target path `f:\.github\instructions\sigil-encoding.instructions.md` is not in any git repo until the `.github/` reconciliation lands.
+- **BLOCKED BY:** FR-20260422-multi-root-workspace — target path must live in a git-tracked `.github/` tree. FR-20260422-github-dir-reconcile merged Phase 1 (tracked copy is now current), but Phase 2 (junction swap) was infeasible on exFAT. The multi-root workspace FR supersedes it as the unblocker.
 
 ### Tyler's Original Request
 > Create a sigil encoding reference map to help future agents handle encoding issues with project sigils. The workspace uses Unicode sigils as project prefixes: ∞ (∞Life), ❤ (❤Music), ⟨ψ⟩ (⟨ψ⟩Quantum), 👁 (👁AI-Manifest), ⊕ (⊕Workspace). Agents have historically suffered encoding issues when these sigils appear in terminal output, file paths, git operations, Python source, JSON, etc. A sigil map document listing each sigil with its common encodings (UTF-8 bytes, UTF-16, surrogate pairs, mojibake patterns, cp1252 fallback, HTML entities, escape sequences, URL-encoded forms, PowerShell quirks, Windows console codepage behavior) so future agents have a reference on how to recognize and get past encoding issues.
@@ -68,6 +68,21 @@
 - This FR stays in BLOCKED state; it will transition back to TRIAGED and be routed to CI as soon as the reconciliation FR reaches MERGED.
 
 **Next:** awaiting FR-20260422-github-dir-reconcile merge; then resume scope confirmation for this FR.
+
+---
+
+### 2026-04-22 — ⊕workspace-overseer
+
+**Event:** blocker updated
+
+**Summary:** Blocker migrated from github-dir-reconcile to multi-root-workspace.
+
+**Details:**
+- FR-20260422-github-dir-reconcile merged Phase 1 only (`2b9e612`). Phase 2 junction swap failed — F: drive is exFAT, NTFS junctions unsupported.
+- Succeeded by FR-20260422-multi-root-workspace which unblocks this FR via a `.code-workspace` multi-root file (no filesystem reparse points needed).
+- This FR remains BLOCKED. Will resume scope confirmation (pragmatic mojibake, no runnable script, instructions path, cover macOS platform independence) once multi-root FR merges.
+
+**Next:** awaiting FR-20260422-multi-root-workspace merge.
 
 ---
 

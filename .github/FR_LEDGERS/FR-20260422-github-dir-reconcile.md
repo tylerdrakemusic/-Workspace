@@ -10,14 +10,14 @@
 - **Type:** chore (infrastructure / source-of-truth reconciliation)
 - **Risk:** high (touches agent framework discovery path + git tracking of the entire agent surface)
 - **Projects:** ⊕Workspace (tracked repo) + workspace-root `.github/` (VS Code discovery path)
-- **State:** BRANCHED
+- **State:** MERGED_PARTIAL → CLOSED
 - **Branch:** `chore/FR-20260422-github-dir-reconcile` (worktree: `f:\⊕Workspace-worktrees\FR-20260422-github-dir-reconcile\`)
-- **PRs:** [#2](https://github.com/tylerdrakemusic/-Workspace/pull/2) (draft)
+- **PRs:** [#2](https://github.com/tylerdrakemusic/-Workspace/pull/2) merged @ `2b9e612` (squash)
 - **Cycle timer:** 4a30bc0e-fe8e-48bd-b8ca-448115fede0d
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
-- **Closed:** —
-- **Final state:** —
+- **Closed:** 2026-04-22
+- **Final state:** MERGED_PARTIAL — Phase 1 (content sync) complete; Phases 2 (junction swap) + 3 (README docs) infeasible. Succeeded by FR-20260422-multi-root-workspace.
 
 ### Acceptance Criteria
 1. There is exactly ONE canonical `.github/` tree on disk. All edits land in the same place VS Code reads from.
@@ -91,15 +91,61 @@
 
 ---
 
+### 2026-04-23 — ⊕workspace-reviewer
+
+**Event:** auto-review complete
+
+**Summary:** All 6 gates passed on PR #2 @ `87937c7`. Decision: APPROVE (posted as COMMENT — GitHub blocks self-approval on own PR; Tyler is the merge gateway). State: REVIEW_REQUESTED → AUTO_REVIEWED.
+
+**Gate results:**
+- **Scope:** ✅ 4 deletions (expected hygiene agents), 16 additions (=8 net-new items), 30 modifications. Matches intake diff summary exactly.
+- **Security:** ✅ No secrets, no prompt-injection patterns, `agent-manifest.json` regeneration is legitimate (file_count 38→39, math checks out: −4 hygiene +3 agents +2 instructions = +1). One non-blocking suggestion: `workflow-templates/fr-merge-reconcile.yml` uses the classic GitHub Actions shell-injection anti-pattern (`title="${{ github.event.pull_request.title }}"`); recommend hardening via `env:` indirection before this template is copied into live workflow paths. Template is inactive at current path, so it is not exploitable here.
+- **Alignment:** ✅ New agents reference now-tracked instructions files (`agent-self-regen`, `feature-request-flow`).
+- **Tests:** ✅ N/A — doc/config only.
+- **Proof:** ✅ Commit `87937c7` on origin; PR out of draft; ledger current.
+- **Demo:** ✅ Phase 2 (junction swap + VS Code reload) is the demo; rollback is a single `Rename-Item`, symmetric and sound.
+
+**Phase 2/3 readiness:** `mklink /J` and `ln -s` are both well-supported; rollback plan verified reversible; no-soak backup policy acceptable given reversibility.
+
+**Proof artifacts:**
+- GitHub review: https://github.com/tylerdrakemusic/-Workspace/pull/2#pullrequestreview (COMMENT with full structured report)
+- Branch HEAD verified: `87937c7d126a9b9321a131bc72c17105490a0b16`
+
+**Next:** Tyler's gateway #3 — approve & merge PR #2, then hand back to ⊕workspace-ci for Phase 2 (junction swap + smoke test).
+
+---
+
+### 2026-04-22 — MERGED_PARTIAL → CLOSED (⊕workspace-overseer)
+
+**Phase 1 merged** as commit `2b9e612` on main via squash merge of PR #2. Tracked `⊕Workspace/.github/` is now canonical as of merge.
+
+**Phase 2 attempt failed — filesystem incompatibility:**
+1. Renamed `f:\.github\` → `f:\.github.backup-20260422-185649\` (success).
+2. Attempted `mklink /J "f:\.github" "f:\⊕Workspace\.github"`.
+3. Error: `Local NTFS volumes are required to complete the operation.`
+4. Diagnosed via `Get-Volume -DriveLetter F` → `FileSystemType: exFAT`. Confirmed via `fsutil fsinfo volumeinfo f:` → `File System: exFAT`.
+5. Rolled back immediately: restored `f:\.github\` from backup. VS Code agent discovery verified post-rollback (`copilot-instructions.md` readable, FR registry readable, 28 agents present).
+
+**Root cause:** NTFS reparse points (junctions, symlinks, hardlinks) are unsupported on exFAT volumes. Option A assumption that the workspace drive is NTFS was never validated during intake.
+
+**Lesson recorded:** Filesystem constraints kill reparse-point-based solutions. Check `FileSystemType` before proposing junction/symlink strategies. Added to user memory.
+
+**Phase 3 (README cross-platform docs):** irrelevant without Phase 2. Not implemented.
+
+**Succeeded by:** FR-20260422-multi-root-workspace — adopts VS Code multi-root `.code-workspace` file to eliminate the dual-dir problem without requiring reparse points. Works on exFAT and cross-platform (macOS, Linux) with no platform-specific glue.
+
+**Closure:** FR closed as MERGED_PARTIAL. Content reconciliation (the most important part) is permanent in git. Dual-dir problem re-opens under new FR.
+
+---
+
 ## Artifacts
 
 - **Perf runs:**
   - `4a30bc0e-fe8e-48bd-b8ca-448115fede0d` — FR cycle timer (intake → close)
   - `a6d1e47a-a306-4845-b8f2-bf840a72424e` — ci-branch-fr-github-dir-reconcile
-- **Proof artifacts:** pending
-- **PRs:** [#2](https://github.com/tylerdrakemusic/-Workspace/pull/2) (draft)
-- **Commits:** `308d032` (scaffold, empty)
-- **Reports / dashboards:** pending
+- **PRs:** [#2](https://github.com/tylerdrakemusic/-Workspace/pull/2) merged @ `2b9e612` (squash)
+- **Commits:** `308d032` (scaffold), `87937c7` (Phase 1 sync), `2b9e612` (squash merge on main)
+- **Reports / dashboards:** N/A
 
 ---
 
