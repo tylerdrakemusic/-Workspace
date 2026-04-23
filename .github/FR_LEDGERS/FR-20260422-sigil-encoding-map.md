@@ -10,14 +10,14 @@
 - **Type:** chore (documentation / agent reference)
 - **Risk:** low
 - **Projects:** ⊕Workspace (cross-cutting reference, agent-facing)
-- **State:** BLOCKED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** MERGED → CLOSED
+- **Branch:** `chore/FR-20260422-sigil-encoding-map` (worktree: `f:\⊕Workspace-worktrees\FR-20260422-sigil-encoding-map\`)
+- **PRs:** [#4](https://github.com/tylerdrakemusic/-Workspace/pull/4) merged @ `03d8a9f` (commit `61ed29d`)
 - **Cycle timer:** ff080fb5-4277-4e51-8e09-9eebb133e5af
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
-- **Closed:** —
-- **Final state:** —
+- **Closed:** 2026-04-22
+- **Final state:** MERGED — sigil-encoding.instructions.md delivered; copilot-instructions.md updated with discoverability pointer.
 
 ### Acceptance Criteria
 1. A single canonical reference document exists at an agent-discoverable path.
@@ -86,6 +86,34 @@
 
 ---
 
+### 2026-04-22 — ⊕workspace-overseer
+
+**Event:** state-transition
+
+**Summary:** UNBLOCKED → IN_PROGRESS → REVIEW_REQUESTED → MERGED → CLOSED.
+
+**Details:**
+- Multi-root FR merged (`91c0772`); `f:\.github\` deleted; tracked `⊕Workspace/.github/` is sole canonical tree. Sigil FR unblocked.
+- Worktree created: `f:\⊕Workspace-worktrees\FR-20260422-sigil-encoding-map\`. Branch `chore/FR-20260422-sigil-encoding-map` from `c20ead2`.
+- Implemented `.github/instructions/sigil-encoding.instructions.md` (307 lines) with frontmatter `applyTo: "**"` for auto-discovery.
+- Sections: quick reference table; mojibake cheatsheet (cp1252/latin1 patterns + reverse-lookup); Windows console (chcp 65001, PYTHONUTF8, PS 5.1 vs 7); macOS/Linux (LANG/LC_ALL, APFS NFC/NFD with `core.precomposeunicode`); git quirks (quotepath, logoutputencoding); Python/JSON/file I/O; recovery decision tree; per-sigil pitfalls (⟨ψ⟩ = 3 codepoints, 👁 = surrogate pair).
+- Added discoverability pointer in `copilot-instructions.md` under "Agent Sigils" section.
+- Committed `61ed29d`, pushed, PR #4 opened by Tyler, merged @ `03d8a9f`.
+
+**Acceptance criteria check:**
+1. ✅ Single canonical reference at agent-discoverable path
+2. ✅ All 5 sigils covered
+3. ✅ Codepoints, UTF-8/16, mojibake, HTML/Python/JSON escapes per sigil (URL-encoded forms documented in mojibake section)
+4. ✅ Recovery recipes (decision tree + Python snippets)
+5. ✅ Referenced from `copilot-instructions.md`
+6. ✅ Auto-attachable instructions file (frontmatter `applyTo`)
+
+**Next:** none — FR closed.
+
+---
+
 ## Artifacts
 
 - **Perf runs:** ff080fb5-4277-4e51-8e09-9eebb133e5af — FR cycle timer (intake → close)
+- **PRs:** [#4](https://github.com/tylerdrakemusic/-Workspace/pull/4) merged @ `03d8a9f`
+- **Commits:** `61ed29d` (implementation)

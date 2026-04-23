@@ -10,14 +10,14 @@
 - **Type:** chore (tooling / editor config)
 - **Risk:** medium (changes how Tyler opens the workspace; affects all agent-file discovery)
 - **Projects:** ⊕Workspace (primary); indirectly all 5 projects via the workspace file
-- **State:** REVIEW_REQUESTED
+- **State:** MERGED → CLOSED
 - **Branch:** `chore/FR-20260422-multi-root-workspace` (worktree: `f:\⊕Workspace-worktrees\FR-20260422-multi-root-workspace\`)
-- **PRs:** [#3](https://github.com/tylerdrakemusic/-Workspace/pull/3) (draft, commit `4e0d5b6`)
+- **PRs:** [#3](https://github.com/tylerdrakemusic/-Workspace/pull/3) merged @ `91c0772`; bookkeeping catch-up @ `c20ead2`
 - **Cycle timer:** a430da3a-6590-4318-8c37-843d8f146a78
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
-- **Closed:** —
-- **Final state:** —
+- **Closed:** 2026-04-22
+- **Final state:** MERGED — Phase 2 migration complete; `f:\.github\` deleted; tracked `⊕Workspace/.github/` is now the sole canonical tree.
 
 ### Acceptance Criteria
 1. A `.code-workspace` file exists that, when opened in VS Code, yields the same multi-project view Tyler currently gets by opening `f:\`.
