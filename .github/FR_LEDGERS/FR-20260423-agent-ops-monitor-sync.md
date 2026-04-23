@@ -12,7 +12,7 @@
 - **Projects:** ⊕Workspace
 - **State:** BRANCHED
 - **Branch:** fix/FR-20260423-agent-ops-monitor-sync (worktree: F:\worktrees\FR-20260423-agent-ops-monitor-sync)
-- **PRs:** _pending push_
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/7 (draft)
 - **Cycle timer:** 2624f477-2cb7-41de-86b3-670330623ef8
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-23
@@ -97,6 +97,24 @@ Deliverable Tracker
 - State: TRIAGED → SCOPE_APPROVED.
 
 **Next:** handoff to ⊕workspace-ci to cut `fix/FR-20260423-agent-ops-monitor-sync` branch + worktree + draft PR.
+
+---
+
+### 2026-04-23T01:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Branch + worktree + draft PR cut → BRANCHED
+
+**Details:**
+- Created worktree `F:\worktrees\FR-20260423-agent-ops-monitor-sync` on new branch `fix/FR-20260423-agent-ops-monitor-sync` off `main` (preserves in-flight chore branches in the primary worktree).
+- Copied FR-20260423 ledger and amended `_TEMPLATE.md` from primary worktree onto the branch.
+- Initial commit `1f0cac0`: `chore(FR-20260423): intake scope approval + deliverable tracker`.
+- Pushed `origin/fix/FR-20260423-agent-ops-monitor-sync`.
+- Opened draft PR #7: https://github.com/tylerdrakemusic/-Workspace/pull/7
+- State: SCOPE_APPROVED → BRANCHED.
+
+**Next:** handoff to ⊕workspace-doer to start AC1 (path-remediation migration).
 
 ---
 
