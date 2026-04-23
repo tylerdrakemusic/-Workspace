@@ -28,6 +28,16 @@
 - Conflicts with: <other FR IDs or "none">
 - Depends on: <other FR IDs or "none">
 
+### Deliverable Tracker
+
+<!-- Mutable table. Agents flip their own row's Status + Proof + Updated in place.
+     Status vocab: not-started → in-progress → blocked → done → verified.
+     Proof column: proof_artifact id (from proof_cli) or PR comment URL. -->
+
+| #   | Deliverable   | Owner   | Status      | Proof | Updated |
+| --- | ------------- | ------- | ----------- | ----- | ------- |
+| AC1 | <deliverable> | <agent> | not-started | —     | —       |
+
 ### Tyler's Original Request
 > <verbatim quote of Tyler's plain-language request>
 
