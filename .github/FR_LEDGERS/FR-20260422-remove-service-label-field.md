@@ -10,14 +10,14 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** TRIAGED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** MERGED → CLOSED
+- **Branch:** n/a (delivered by other agent)
+- **PRs:** delivered by other agent; confirmed by Tyler 2026-04-22
 - **Cycle timer:** c6d6b6e9-2eae-4b4e-be8c-c394816442ea
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
-- **Closed:** —
-- **Final state:** —
+- **Closed:** 2026-04-22
+- **Final state:** MERGED — closure recorded retroactively by ⊕workspace-overseer per Tyler confirmation that implementing agent forgot to flip state.
 
 ### Acceptance Criteria
 1. The "Service / Label" `<label>` element and its associated `<input>` are removed from the password generator panel HTML in `dashboard_portal.py`.
@@ -55,3 +55,16 @@
 ## Artifacts
 
 - **Perf runs:** c6d6b6e9-2eae-4b4e-be8c-c394816442ea — FR-20260422-remove-service-label-field cycle timer
+
+
+---
+
+### 2026-04-22 — ⊕workspace-overseer
+
+**Event:** retroactive-closure
+
+**Summary:** State corrected to MERGED / CLOSED.
+
+**Details:** Implementing agent delivered this FR but did not update the registry or ledger header. Tyler confirmed delivery during session wrap-up. State corrected retroactively; no code changes in this commit — bookkeeping only.
+
+**Next:** none — FR closed.

@@ -10,14 +10,14 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ❤Music, ⊕Workspace
-- **State:** TRIAGED
-- **Branch:** pending approval
-- **PRs:** pending
+- **State:** MERGED → CLOSED
+- **Branch:** main (inline delivery by other agent)
+- **PRs:** delivered inline on main by other agent; confirmed by Tyler 2026-04-22
 - **Cycle timer:** 62a7b268-cf8d-406d-b395-8cdb01ef3128
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
-- **Closed:** —
-- **Final state:** —
+- **Closed:** 2026-04-22
+- **Final state:** MERGED — closure recorded retroactively by ⊕workspace-overseer per Tyler confirmation that implementing agent forgot to flip state.
 
 ### Acceptance Criteria
 
@@ -159,3 +159,16 @@ The `catalog/setlists/` directory will be created if it does not exist. The file
 - **Perf runs:** 62a7b268-cf8d-406d-b395-8cdb01ef3128 — FR cycle timer started at intake
 - **Source data:** `C:\Users\tyler\Desktop\Rough CC Prost 05022026.xlsx` (last modified 2026-04-19)
 - **Audio catalog:** `G:\Muzic` — 190+ mp3/wav files cross-referenced
+
+
+---
+
+### 2026-04-22 — ⊕workspace-overseer
+
+**Event:** retroactive-closure
+
+**Summary:** State corrected to MERGED / CLOSED.
+
+**Details:** Implementing agent delivered this FR but did not update the registry or ledger header. Tyler confirmed delivery during session wrap-up. State corrected retroactively; no code changes in this commit — bookkeeping only.
+
+**Next:** none — FR closed.
