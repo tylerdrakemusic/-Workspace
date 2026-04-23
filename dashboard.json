@@ -28,7 +28,7 @@
       "id": "agent-ops",
       "title": "Agent Ops Monitor",
       "description": "Session health, gap detection, proof audit — self-regenerating",
-      "type": "static_html",
+      "type": "living_html",
       "generator": "tools/agent_ops_monitor.py",
       "output": "reports/agent_ops_dashboard.html",
       "cli": "C:\\G\\python.exe tools/agent_ops_monitor.py --fix --no-open",

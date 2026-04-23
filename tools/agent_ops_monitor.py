@@ -87,8 +87,12 @@ def collect_health(conn) -> dict:
     ).fetchall()
 
     # All proofs grouped by run
+    #   verified column values:
+    #     0 = unverified (gap)
+    #     1 = verified on disk
+    #     2 = artifact-deleted-acknowledged (historical honesty — not a gap)
     proofs = conn.execute(
-        "SELECT run_id, COUNT(*) as cnt, SUM(verified) as v_cnt FROM proof_artifacts GROUP BY run_id"
+        "SELECT run_id, COUNT(*) as cnt, SUM(CASE WHEN verified IN (1,2) THEN 1 ELSE 0 END) as v_cnt FROM proof_artifacts GROUP BY run_id"
     ).fetchall()
     proof_map = {p["run_id"]: {"count": p["cnt"], "verified": p["v_cnt"] or 0} for p in proofs}
 
@@ -188,6 +192,7 @@ def rewrite_artifact_path(path: str | None) -> str | None:
       1. ``f:/executedcode/...`` → ``f:\\...`` (strips executedcode prefix).
       2. Forward slashes → backslashes (Windows canonical).
       3. ``!!security`` → ``!!☾⛧security`` anywhere in the path.
+      4. ``f:\\.github\\...`` → ``f:\\⊕Workspace\\.github\\...`` (workspace root).
     """
     if not path:
         return path
@@ -202,6 +207,10 @@ def rewrite_artifact_path(path: str | None) -> str | None:
             new = new.replace("/", "\\")
     if _OLD_SECURITY in new and _NEW_SECURITY not in new:
         new = new.replace(_OLD_SECURITY, _NEW_SECURITY)
+    # Root-level .github is not a real filesystem location — it lives under ⊕Workspace.
+    low = new.lower()
+    if low.startswith("f:\\.github\\") or low == "f:\\.github":
+        new = "f:\\⊕Workspace\\" + new[3:].lstrip("\\")
     return new
 
 
@@ -394,32 +403,19 @@ def fix_gaps(conn, health: dict) -> dict:
 
 
 def backfill_legacy(conn, health: dict) -> int:
-    """Insert a legacy proof artifact for orphan runs predating the proof system.
+    """Backfill every orphan run as legacy.
 
-    Heuristic: only orphan runs whose ``ended_at`` is older than the earliest
-    ``proof_artifacts.created_at`` are considered pre-proof-system. Those runs
-    have their status flipped to ``legacy`` and receive a backfilled metric
+    An orphan is defined as a run with ``ended_at IS NOT NULL`` and zero
+    ``proof_artifacts`` rows. By definition the run is already closed and no
+    new proofs can be retroactively verified on disk, so we acknowledge it
+    as historical: flip status to ``legacy`` and insert a synthetic metric
     proof with description ``"predates proof system"``.
-    """
-    earliest_proof_row = conn.execute(
-        "SELECT MIN(created_at) AS first FROM proof_artifacts"
-    ).fetchone()
-    earliest_str = earliest_proof_row["first"] if earliest_proof_row else None
-    # created_at is an ISO string; convert to epoch for comparison against ended_at (REAL epoch).
-    if earliest_str:
-        try:
-            earliest_epoch = datetime.fromisoformat(earliest_str).timestamp()
-        except (TypeError, ValueError):
-            earliest_epoch = None
-    else:
-        earliest_epoch = None
 
+    Running sessions are never touched (``collect_health`` excludes them
+    from ``orphans``).
+    """
     count = 0
     for o in health["orphans"]:
-        ended = o.get("ended_at")
-        if earliest_epoch is not None and ended is not None and ended >= earliest_epoch:
-            # Not legacy — this orphan postdates the proof system, skip.
-            continue
         conn.execute(
             """INSERT INTO proof_artifacts
                (proof_id, run_id, agent, proof_type, description, verified, verified_at)
@@ -601,6 +597,75 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
         )
     drift_html = "\n".join(drift_rows) if drift_rows else '<tr><td colspan="4" class="empty">No architecture drift detected</td></tr>'
     drift_count = len(drift)
+
+    # ── Gap Breakdown (AC8: explain each gap contributing to Total Gaps) ──
+    zombie_rows = []
+    for z in health["zombies"]:
+        zombie_rows.append(
+            f'<tr><td class="mono">{_esc(z["run_id"])[:12]}</td>'
+            f'<td>{_esc(z["name"])}</td>'
+            f'<td class="ts">started {_ts(z["started_at"])} · never ended</td></tr>'
+        )
+    zombie_breakdown = "\n".join(zombie_rows) if zombie_rows else ""
+
+    orphan_rows_bd = []
+    for o in health["orphans"]:
+        orphan_rows_bd.append(
+            f'<tr><td class="mono">{_esc(o["run_id"])[:12]}</td>'
+            f'<td>{_esc(o["name"])}</td>'
+            f'<td class="ts">ended {_ts(o["ended_at"])} · 0 proofs recorded</td></tr>'
+        )
+    orphan_breakdown = "\n".join(orphan_rows_bd) if orphan_rows_bd else ""
+
+    unverified_rows = []
+    for u in health["unverified"]:
+        pid = _esc(u.get("proof_id", ""))[:12]
+        agent = _esc(u.get("agent", ""))
+        path = _esc(u.get("artifact_path") or "")
+        desc = _esc(u.get("description") or "")
+        unverified_rows.append(
+            f'<tr><td class="mono">{pid}</td>'
+            f'<td>{agent}</td>'
+            f'<td class="drift-old mono">{path}</td>'
+            f'<td class="ts">{desc}</td></tr>'
+        )
+    unverified_breakdown = "\n".join(unverified_rows) if unverified_rows else ""
+
+    gap_sections_html = []
+    if zombie_breakdown:
+        gap_sections_html.append(
+            f'<div class="gap-group"><div class="gap-group-title"><span class="gap-badge zombie">zombie</span> '
+            f'{len(health["zombies"])} · started but never closed (>2h)</div>'
+            f'<table class="gap-table"><thead><tr><th>Run</th><th>Name</th><th>Reason</th></tr></thead>'
+            f'<tbody>{zombie_breakdown}</tbody></table></div>'
+        )
+    if orphan_breakdown:
+        gap_sections_html.append(
+            f'<div class="gap-group"><div class="gap-group-title"><span class="gap-badge orphan">orphan</span> '
+            f'{len(health["orphans"])} · ended with zero proofs (legacy or agent skipped proof protocol)</div>'
+            f'<table class="gap-table"><thead><tr><th>Run</th><th>Name</th><th>Reason</th></tr></thead>'
+            f'<tbody>{orphan_breakdown}</tbody></table></div>'
+        )
+    if unverified_breakdown:
+        gap_sections_html.append(
+            f'<div class="gap-group"><div class="gap-group-title"><span class="gap-badge" style="background:rgba(59,130,246,0.15);color:#3b82f6">unverified</span> '
+            f'{len(health["unverified"])} · proof recorded but artifact_path does not exist on disk</div>'
+            f'<table class="gap-table"><thead><tr><th>Proof</th><th>Agent</th><th>Path</th><th>Description</th></tr></thead>'
+            f'<tbody>{unverified_breakdown}</tbody></table></div>'
+        )
+    if gap_sections_html:
+        gap_breakdown_html = (
+            '<details class="gap-breakdown"><summary>'
+            '<span class="chev">▸</span> '
+            f'<span class="finished-title">Gap Breakdown — what makes up the {gap_count} gaps</span>'
+            '</summary><div class="gap-body">'
+            + "\n".join(gap_sections_html)
+            + '</div></details>'
+        )
+    else:
+        gap_breakdown_html = (
+            '<div class="gap-empty">✓ No gaps — every session is closed with verified proofs.</div>'
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -895,6 +960,21 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
   .finished-details table {{ margin: 0; }}
   .live-pulse {{ position: relative; }}
   .live-pulse::before {{ content: ''; display: inline-block; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; margin-right: 0.4rem; animation: pulse 1.5s infinite; }}
+
+  /* Gap Breakdown */
+  .gap-breakdown {{ margin: 0.5rem 0 1.5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }}
+  .gap-breakdown summary {{ padding: 0.7rem 1rem; cursor: pointer; font-weight: 700; color: var(--muted); list-style: none; user-select: none; }}
+  .gap-breakdown summary::-webkit-details-marker {{ display: none; }}
+  .gap-breakdown .chev {{ display: inline-block; transition: transform 0.15s; margin-right: 0.4rem; }}
+  .gap-breakdown[open] .chev {{ transform: rotate(90deg); }}
+  .gap-breakdown[open] summary {{ border-bottom: 1px solid var(--border); }}
+  .gap-breakdown summary:hover {{ color: var(--text); background: rgba(255,255,255,0.02); }}
+  .gap-body {{ padding: 0.5rem 1rem 1rem; }}
+  .gap-group {{ margin-top: 0.8rem; }}
+  .gap-group-title {{ font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; }}
+  .gap-table {{ font-size: 0.78rem; margin-bottom: 0.5rem; }}
+  .gap-table td, .gap-table th {{ padding: 0.35rem 0.5rem; }}
+  .gap-empty {{ margin: 0.5rem 0 1.5rem; padding: 0.7rem 1rem; border: 1px solid var(--success); border-radius: 10px; color: var(--success); background: rgba(16,185,129,0.06); font-size: 0.85rem; }}
 </style>
 </head>
 <body>
@@ -958,6 +1038,8 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
       </div>
     </div>
   </div>
+
+  {gap_breakdown_html}
 
   <h2 style="color: var(--cyan);">
     <span class="running-dot"></span> Live Agents

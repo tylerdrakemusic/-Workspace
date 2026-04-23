@@ -291,73 +291,97 @@
   .finished-details table { margin: 0; }
   .live-pulse { position: relative; }
   .live-pulse::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; margin-right: 0.4rem; animation: pulse 1.5s infinite; }
+
+  /* Gap Breakdown */
+  .gap-breakdown { margin: 0.5rem 0 1.5rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  .gap-breakdown summary { padding: 0.7rem 1rem; cursor: pointer; font-weight: 700; color: var(--muted); list-style: none; user-select: none; }
+  .gap-breakdown summary::-webkit-details-marker { display: none; }
+  .gap-breakdown .chev { display: inline-block; transition: transform 0.15s; margin-right: 0.4rem; }
+  .gap-breakdown[open] .chev { transform: rotate(90deg); }
+  .gap-breakdown[open] summary { border-bottom: 1px solid var(--border); }
+  .gap-breakdown summary:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+  .gap-body { padding: 0.5rem 1rem 1rem; }
+  .gap-group { margin-top: 0.8rem; }
+  .gap-group-title { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .gap-table { font-size: 0.78rem; margin-bottom: 0.5rem; }
+  .gap-table td, .gap-table th { padding: 0.35rem 0.5rem; }
+  .gap-empty { margin: 0.5rem 0 1.5rem; padding: 0.7rem 1rem; border: 1px solid var(--success); border-radius: 10px; color: var(--success); background: rgba(16,185,129,0.06); font-size: 0.85rem; }
 </style>
 </head>
 <body>
   <h1><span class="sigil">⊕</span> Agent Ops Monitor</h1>
-  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-23T00:55:32</div>
+  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-23T01:24:57</div>
 
   <div class="live-banner">
     <div class="live-cell">
-      <div class="live-val live-live">0</div>
+      <div class="live-val live-live">2</div>
       <div class="live-label">Live <span class="live-sub">(last 10min)</span></div>
     </div>
     <div class="live-cell">
-      <div class="live-val live-recent">0</div>
+      <div class="live-val live-recent">2</div>
       <div class="live-label">Recent <span class="live-sub">(24h)</span></div>
     </div>
     <div class="live-cell">
-      <div class="live-val live-total">56</div>
+      <div class="live-val live-total">58</div>
       <div class="live-label">Historical total</div>
     </div>
   </div>
 
   
+    <div class="fix-banner">
+      <span class="fix-icon">🔧</span>
+      <div>
+        <strong>Auto-Fix Applied</strong><br>
+        <span class="fix-detail">0 zombie(s) closed · 0 proof-complete session(s) closed · 0 proof(s) verified · 5 legacy orphan(s) backfilled · 0 orphan run(s) remain</span>
+      </div>
+    </div>
 
   <div class="health-ring">
     <div class="ring-container">
       <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
         <circle class="ring-bg" cx="70" cy="70" r="60"/>
         <circle class="ring-fg" cx="70" cy="70" r="60"
-                style="stroke:#f59e0b; stroke-dashoffset:34;"/>
+                style="stroke:#10b981; stroke-dashoffset:0;"/>
       </svg>
       <div class="ring-text">
-        <div class="ring-pct" style="color:#f59e0b">91%</div>
-        <div class="ring-label">Good</div>
+        <div class="ring-pct" style="color:#10b981">100%</div>
+        <div class="ring-label">Excellent</div>
       </div>
     </div>
 
     <div class="stat-grid" style="flex:1;">
       <div class="stat-card">
-        <div class="stat-val val-info">56</div>
+        <div class="stat-val val-info">58</div>
         <div class="stat-label">Total Runs</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-ok">51</div>
+        <div class="stat-val val-ok">58</div>
         <div class="stat-label">Healthy</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-bad">4</div>
+        <div class="stat-val val-ok">0</div>
         <div class="stat-label">Zombies</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-warn">1</div>
+        <div class="stat-val val-ok">0</div>
         <div class="stat-label">No Proof</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-warn">2</div>
+        <div class="stat-val val-ok">0</div>
         <div class="stat-label">Unverified</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-info">7</div>
+        <div class="stat-val val-info">0</div>
         <div class="stat-label">Total Gaps</div>
       </div>
     </div>
   </div>
 
+  <div class="gap-empty">✓ No gaps — every session is closed with verified proofs.</div>
+
   <h2 style="color: var(--cyan);">
     <span class="running-dot"></span> Live Agents
-    <span class="section-count">(4)</span>
+    <span class="section-count">(1)</span>
     <span class="section-sub">auto-refresh · 30s</span>
   </h2>
   <table id="live-table">
@@ -375,10 +399,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr class="row-zombie"><td class="mono">39a077295698</td><td>repair-pass-workspace-db-keying</td><td class="st-run">running</td><td class="ts">2026-04-19 17:43</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:11:41</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('39a077295698')">Close</button></td></tr>
-<tr class="row-zombie"><td class="mono">31ea90e275aa</td><td>repair-pass-workspace-db-keying</td><td class="st-run">running</td><td class="ts">2026-04-19 17:43</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:11:43</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('31ea90e275aa')">Close</button></td></tr>
-<tr class="row-zombie"><td class="mono">85747c09b9f7</td><td>consider-quantum-integration-ipstrategy</td><td class="st-run">running</td><td class="ts">2026-04-19 17:05</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:50:14</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('85747c09b9f7')">Close</button></td></tr>
-<tr class="row-zombie"><td class="mono">8e4fc9029d4b</td><td>switch-security-folder-to-themed-sigil</td><td class="st-run">running</td><td class="ts">2026-04-19 16:58</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:57:29</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('8e4fc9029d4b')">Close</button></td></tr>
+      <tr class=""><td class="mono">8dab857d-e13b-4e81-85ea-5878fe0c7558</td><td>agent-ops-addendum-legacy-backfill-living</td><td class="st-run">running</td><td class="ts">2026-04-23 01:23</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">00:01:00</td><td class="proof-cell"></td><td><span class="gap-badge running">ACTIVE</span></td><td><button class="close-btn" onclick="closeSession('8dab857d-e13b-4e81-85ea-5878fe0c7558')">Close</button></td></tr>
     </tbody>
   </table>
 
@@ -386,7 +407,7 @@
     <summary>
       <span class="chev">▸</span>
       <span class="finished-title">Finished Sessions</span>
-      <span class="section-count">(52)</span>
+      <span class="section-count">(57)</span>
     </summary>
     <table id="finished-table">
       <thead>
@@ -403,13 +424,18 @@
         </tr>
       </thead>
       <tbody>
-        <tr class="row-orphan"><td class="mono">c96b323f-5c29-4d03-9f8c-5d9f17956d97</td><td>perf_cli smoke test</td><td class="st-ok">ok</td><td class="ts">2026-04-20 22:24</td><td class="ts">2026-04-20 22:24</td><td class="mono">00:00:00</td><td class="proof-cell"><span class="no-proof">—</span></td><td><span class="gap-badge orphan">NO PROOF</span></td><td></td></tr>
+        <tr class=""><td class="mono">59f54134-b7d7-49af-9e5c-78ef66d0d43d</td><td>agent-ops-gap-breakdown-cleanup</td><td class="st-ok">ok</td><td class="ts">2026-04-23 01:16</td><td class="ts">2026-04-23 01:16</td><td class="mono">00:00:43</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">3/3</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">c96b323f-5c29-4d03-9f8c-5d9f17956d97</td><td>perf_cli smoke test</td><td class="st-timeout">legacy</td><td class="ts">2026-04-20 22:24</td><td class="ts">2026-04-20 22:24</td><td class="mono">00:00:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">02cd96d4e94e</td><td>commit-unlock-readiness</td><td class="st-ok">ok</td><td class="ts">2026-04-19 17:46</td><td class="ts">2026-04-19 17:46</td><td class="mono">00:00:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">7858180b2841</td><td>repair-pass-workspace-db-keying</td><td class="st-ok">ok</td><td class="ts">2026-04-19 17:43</td><td class="ts">2026-04-19 17:44</td><td class="mono">00:00:15</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
-<tr class=""><td class="mono">b56b2a1a89e8</td><td>upgrade-security-sigil-priority</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:47</td><td class="ts">2026-04-19 16:56</td><td class="mono">00:08:46</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:0%"></div></div><span class="proof-label">0/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">39a077295698</td><td>repair-pass-workspace-db-keying</td><td class="st-timeout">legacy</td><td class="ts">2026-04-19 17:43</td><td class="ts">2026-04-23 01:02</td><td class="mono">79:18:50</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">31ea90e275aa</td><td>repair-pass-workspace-db-keying</td><td class="st-timeout">legacy</td><td class="ts">2026-04-19 17:43</td><td class="ts">2026-04-23 01:04</td><td class="mono">79:20:57</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">85747c09b9f7</td><td>consider-quantum-integration-ipstrategy</td><td class="st-timeout">legacy</td><td class="ts">2026-04-19 17:05</td><td class="ts">2026-04-23 01:04</td><td class="mono">79:59:28</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">8e4fc9029d4b</td><td>switch-security-folder-to-themed-sigil</td><td class="st-timeout">legacy</td><td class="ts">2026-04-19 16:58</td><td class="ts">2026-04-23 01:04</td><td class="mono">80:06:43</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">b56b2a1a89e8</td><td>upgrade-security-sigil-priority</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:47</td><td class="ts">2026-04-19 16:56</td><td class="mono">00:08:46</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">e74b4f37f926</td><td>rename-security-folder-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:26</td><td class="ts">2026-04-19 16:36</td><td class="mono">00:09:24</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">18060bb274c4</td><td>prioritize-security-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 14:23</td><td class="ts">2026-04-19 14:24</td><td class="mono">00:00:58</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
-<tr class=""><td class="mono">2b6eb83947c1</td><td>SONGDLC_PIPELINE.md chills vaccination</td><td class="st-ok">ok</td><td class="ts">2026-04-19 10:02</td><td class="ts">2026-04-19 10:07</td><td class="mono">00:04:52</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:0%"></div></div><span class="proof-label">0/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">2b6eb83947c1</td><td>SONGDLC_PIPELINE.md chills vaccination</td><td class="st-ok">ok</td><td class="ts">2026-04-19 10:02</td><td class="ts">2026-04-19 10:07</td><td class="mono">00:04:52</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">b0feef4c4269</td><td>spin-up-life-project</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:22</td><td class="ts">2026-04-19 09:22</td><td class="mono">00:00:15</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">85ba22d37f2e</td><td>executive-audio-brief-portal</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:13</td><td class="ts">2026-04-19 09:32</td><td class="mono">00:19:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">e7d2c1206629</td><td>copilot-usage-monitor-interactive</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:07</td><td class="ts">2026-04-19 09:08</td><td class="mono">00:00:30</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">3/3</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
@@ -471,8 +497,8 @@
       </tr>
     </thead>
     <tbody>
-      <tr><td>⊕ops-monitor</td><td class="num">39</td><td class="num">39</td><td class="num">39</td><td class="num rate-good">100%</td></tr>
-<tr><td>⊕workspace-overseer</td><td class="num">10</td><td class="num">27</td><td class="num">25</td><td class="num rate-good">93%</td></tr>
+      <tr><td>⊕ops-monitor</td><td class="num">44</td><td class="num">44</td><td class="num">44</td><td class="num rate-good">100%</td></tr>
+<tr><td>⊕workspace-overseer</td><td class="num">11</td><td class="num">30</td><td class="num">31</td><td class="num rate-good">103%</td></tr>
 <tr><td>⊕workspace-commitment</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num rate-good">100%</td></tr>
     </tbody>
   </table>

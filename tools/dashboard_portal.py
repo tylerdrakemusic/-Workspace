@@ -305,8 +305,8 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
     """Run CLI generators for all static_html dashboards. Returns results."""
     results = []
     for dash in manifest["dashboards"]:
-        if dash["type"] != "static_html":
-            results.append({**dash, "regen_status": "skipped", "regen_detail": "not static_html"})
+        if dash["type"] not in ("static_html", "living_html"):
+            results.append({**dash, "regen_status": "skipped", "regen_detail": f"not regen-able ({dash['type']})"})
             continue
         cli = dash.get("cli")
         if not cli:
@@ -344,8 +344,8 @@ def _nav_items(manifest: dict) -> str:
         sigil = _esc(dash.get("sigil", ""))
         active = " active" if i == 0 else ""
         dtype = dash["type"]
-        badge_cls = {"static_html": "static", "flask_app": "live", "console": "console", "inline_html": "static"}.get(dtype, "static")
-        badge_label = {"static_html": "Static", "flask_app": "Live", "console": "CLI", "inline_html": "Inline"}.get(dtype, dtype)
+        badge_cls = {"static_html": "static", "living_html": "living", "flask_app": "live", "console": "console", "inline_html": "static"}.get(dtype, "static")
+        badge_label = {"static_html": "Static", "living_html": "Living", "flask_app": "Live", "console": "CLI", "inline_html": "Inline"}.get(dtype, dtype)
         items.append(f"""
         <div class="nav-item{active}" data-idx="{i}" onclick="switchDash({i}, this)">
           <span class="nav-icon">{icon}</span>
@@ -702,6 +702,9 @@ def render_portal(manifest: dict) -> str:
   }}
   .nav-badge.static {{ background: rgba(99,102,241,0.15); color: #818cf8; }}
   .nav-badge.live {{ background: rgba(239,68,68,0.15); color: #f87171; }}
+  .nav-badge.living {{ background: rgba(34,197,94,0.15); color: #4ade80; position: relative; }}
+  .nav-badge.living::before {{ content: ''; display: inline-block; width: 6px; height: 6px; background: #4ade80; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; animation: livingPulse 2s ease-in-out infinite; }}
+  @keyframes livingPulse {{ 0%,100% {{ opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }} 50% {{ opacity: 0.6; box-shadow: 0 0 0 4px rgba(74,222,128,0); }} }}
   .nav-badge.console {{ background: rgba(16,185,129,0.15); color: #34d399; }}
 
   /* Server status */
