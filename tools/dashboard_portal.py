@@ -18,6 +18,7 @@ import html as html_mod
 import os
 import subprocess
 import sys
+import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
@@ -35,11 +36,253 @@ for _bp in _BRAVE_PATHS:
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PORTAL_OUT = PROJECT_ROOT / "reports" / "portal.html"
+AGENT_OPS_OUT = PROJECT_ROOT / "reports" / "agent_ops_dashboard.html"
 SERVERS_CONFIG = PROJECT_ROOT / "tools" / "portal_servers.json"
 
 # Import registry
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 from dashboard_registry import build_manifest
+
+# Import agent-ops collector + DB connection for live health card (AC4).
+sys.path.insert(0, str(PROJECT_ROOT / "src" / "utils"))
+try:
+    from agent_ops_monitor import collect_health as _collect_agent_health  # type: ignore
+    from init_db import get_connection as _get_workspace_conn  # type: ignore
+except Exception:  # pragma: no cover - keep portal rendering even if import fails
+    _collect_agent_health = None
+    _get_workspace_conn = None
+
+
+# ── AC4: Agent-ops health + freshness card ─────────────────────────────────
+
+_AGENT_OPS_DASH_ID = "agent-ops"
+_FRESH_GREEN_SECS = 15 * 60      # <15m = fresh
+_FRESH_YELLOW_SECS = 2 * 60 * 60  # <2h = stale warning, >=2h = stale/red
+
+
+def _health_label(pct: float) -> tuple[str, str]:
+    """(label, css_modifier) for a health percentage."""
+    if pct >= 95:
+        return "Excellent", "excellent"
+    if pct >= 80:
+        return "Good", "good"
+    if pct >= 50:
+        return "Needs Attention", "warn"
+    return "Critical", "critical"
+
+
+def _fmt_age(secs: float) -> str:
+    secs = int(secs)
+    if secs < 60:
+        return f"{secs}s ago"
+    m = secs // 60
+    if m < 60:
+        return f"{m}m ago"
+    h = m // 60
+    if h < 24:
+        rem = m % 60
+        return f"{h}h{rem:02d}m ago" if rem else f"{h}h ago"
+    d = h // 24
+    return f"{d}d ago"
+
+
+def _freshness_class(age_secs: float | None) -> str:
+    if age_secs is None:
+        return "stale"
+    if age_secs < _FRESH_GREEN_SECS:
+        return "fresh"
+    if age_secs < _FRESH_YELLOW_SECS:
+        return "warn"
+    return "stale"
+
+
+def collect_portal_health(manifest: dict) -> dict:
+    """Live agent-ops health snapshot + freshness for the portal card.
+
+    Always returns a dict even on failure so the portal still renders.
+    Read-only against workspace.db.
+    """
+    snapshot: dict = {
+        "available": False,
+        "reason": None,
+        "health_pct": None,
+        "label": "Unknown",
+        "label_mod": "warn",
+        "gap_count": None,
+        "zombies": 0,
+        "orphans": 0,
+        "unverified": 0,
+        "age_secs": None,
+        "age_label": "never generated",
+        "freshness_class": "stale",
+        "regen_cmd": "C:\\G\\python.exe tools/agent_ops_monitor.py --fix --no-open",
+        "dash_idx": None,
+        "dash_url": None,
+    }
+
+    # Locate the agent-ops dashboard in the manifest for click-through.
+    for i, d in enumerate(manifest.get("dashboards", [])):
+        if d.get("id") == _AGENT_OPS_DASH_ID:
+            snapshot["dash_idx"] = i
+            out = d.get("output_abs") or d.get("output")
+            if out and Path(out).exists():
+                snapshot["dash_url"] = Path(out).as_uri()
+            cli = d.get("cli")
+            if cli:
+                snapshot["regen_cmd"] = cli
+            break
+
+    # Freshness from the generated HTML mtime.
+    if AGENT_OPS_OUT.exists():
+        age = time.time() - AGENT_OPS_OUT.stat().st_mtime
+        snapshot["age_secs"] = age
+        snapshot["age_label"] = f"Generated {_fmt_age(age)}"
+        snapshot["freshness_class"] = _freshness_class(age)
+
+    # Live DB snapshot.
+    if _collect_agent_health is None or _get_workspace_conn is None:
+        snapshot["reason"] = "agent_ops_monitor / init_db import failed"
+        return snapshot
+
+    try:
+        conn = _get_workspace_conn()
+        try:
+            health = _collect_agent_health(conn)
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        pct = float(health.get("health_pct", 0.0))
+        label, mod = _health_label(pct)
+        snapshot.update({
+            "available": True,
+            "health_pct": pct,
+            "label": label,
+            "label_mod": mod,
+            "gap_count": health.get("gap_count", 0),
+            "zombies": len(health.get("zombies", [])),
+            "orphans": len(health.get("orphans", [])),
+            "unverified": len(health.get("unverified", [])),
+        })
+    except Exception as e:  # pragma: no cover
+        snapshot["reason"] = f"health query failed: {e}"
+
+    return snapshot
+
+
+def _render_health_card(snapshot: dict) -> str:
+    """Render the agent-ops health card for the sidebar top."""
+    idx = snapshot.get("dash_idx")
+    click_attr = f'onclick="switchDashById({idx})"' if idx is not None else ""
+    clickable_cls = " clickable" if idx is not None else ""
+
+    if not snapshot["available"]:
+        reason = _esc(snapshot.get("reason") or "Run agent_ops_monitor to populate health.")
+        return (
+            '<div class="health-card unavailable">'
+            '<div class="health-card-title">🔬 Agent Ops Health</div>'
+            f'<div class="health-sub">Unavailable · {reason}</div>'
+            f'<div class="health-regen">Run: <code>{_esc(snapshot["regen_cmd"])}</code></div>'
+            '</div>'
+        )
+
+    pct = snapshot["health_pct"]
+    label = _esc(snapshot["label"])
+    label_mod = _esc(snapshot["label_mod"])
+    gap = snapshot["gap_count"]
+    zombies = snapshot["zombies"]
+    orphans = snapshot["orphans"]
+    unverified = snapshot["unverified"]
+    age_label = _esc(snapshot["age_label"])
+    fresh_cls = _esc(snapshot["freshness_class"])
+    stale = fresh_cls == "stale"
+    regen_cmd = _esc(snapshot["regen_cmd"])
+
+    regen_html = ""
+    if stale:
+        regen_html = (
+            '<div class="health-regen">'
+            '⚠ Stale — regenerate: '
+            f'<code>{regen_cmd}</code>'
+            '</div>'
+        )
+
+    return f"""
+    <div class="health-card{clickable_cls}" {click_attr}>
+      <div class="health-card-top">
+        <span class="health-card-title">🔬 Agent Ops Health</span>
+        <span class="health-fresh {fresh_cls}" title="Dashboard mtime">{age_label}</span>
+      </div>
+      <div class="health-score-row">
+        <div class="health-pct {label_mod}">{pct:.0f}<span class="pct-sym">%</span></div>
+        <div class="health-meta">
+          <div class="health-label {label_mod}">{label}</div>
+          <div class="health-gaps">{gap} gap{'' if gap == 1 else 's'}
+            <span class="gap-breakdown">({zombies}z · {orphans}o · {unverified}u)</span>
+          </div>
+        </div>
+      </div>
+      {regen_html}
+    </div>"""
+
+
+_HEALTH_CARD_CSS = """
+  .health-card {
+    margin: 0.7rem 0.9rem 0.3rem;
+    padding: 0.7rem 0.8rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(99,102,241,0.02));
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    transition: all .15s;
+  }
+  .health-card.clickable { cursor: pointer; }
+  .health-card.clickable:hover {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.05));
+  }
+  .health-card.unavailable { opacity: 0.75; }
+  .health-card-top {
+    display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  }
+  .health-card-title {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text);
+  }
+  .health-fresh {
+    font-size: 0.62rem; font-weight: 600; padding: 0.15rem 0.45rem;
+    border-radius: 10px; white-space: nowrap;
+  }
+  .health-fresh.fresh { background: rgba(16,185,129,0.15); color: #34d399; }
+  .health-fresh.warn  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .health-fresh.stale { background: rgba(239,68,68,0.15);  color: #f87171; }
+  .health-score-row { display: flex; align-items: center; gap: 0.7rem; }
+  .health-pct {
+    font-size: 1.75rem; font-weight: 800; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .health-pct .pct-sym { font-size: 0.9rem; opacity: 0.6; margin-left: 0.1rem; }
+  .health-pct.excellent, .health-label.excellent { color: #34d399; }
+  .health-pct.good,      .health-label.good      { color: #a5f3fc; }
+  .health-pct.warn,      .health-label.warn      { color: #fbbf24; }
+  .health-pct.critical,  .health-label.critical  { color: #f87171; }
+  .health-meta { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+  .health-label { font-size: 0.78rem; font-weight: 700; }
+  .health-gaps { font-size: 0.7rem; color: var(--muted); }
+  .gap-breakdown { opacity: 0.7; margin-left: 0.25rem; }
+  .health-regen {
+    font-size: 0.62rem; color: var(--muted); border-top: 1px solid var(--border);
+    padding-top: 0.35rem; word-break: break-all;
+  }
+  .health-regen code {
+    font-size: 0.6rem; color: #a5f3fc; background: var(--surface);
+    padding: 0.1rem 0.3rem; border-radius: 3px; user-select: all;
+  }
+  .health-sub { font-size: 0.68rem; color: var(--muted); }
+"""
 
 
 def _load_servers() -> list[dict]:
@@ -337,6 +580,8 @@ def render_portal(manifest: dict) -> str:
     servers = _load_servers()
     server_js_list = _json.dumps([{"port": s["port"], "name": s["name"]} for s in servers])
     server_sidebar = _render_server_sidebar(servers)
+    health_snapshot = collect_portal_health(manifest)
+    health_card = _render_health_card(health_snapshot)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -596,6 +841,7 @@ def render_portal(manifest: dict) -> str:
     font-weight: 600;
     color: #34d399;
   }}
+{_HEALTH_CARD_CSS}
 </style>
 </head>
 <body>
@@ -604,6 +850,7 @@ def render_portal(manifest: dict) -> str:
       <h1><span class="sigil">⊕</span> Dashboard Portal</h1>
       <div class="subtitle">Spec-driven discovery across all projects</div>
     </div>
+    {health_card}
     {stats}
     <div class="nav-section">
       {nav}
@@ -624,6 +871,12 @@ def render_portal(manifest: dict) -> str:
       el.classList.add('active');
       const pane = document.getElementById('pane-' + idx);
       if (pane) pane.style.display = 'block';
+    }}
+
+    function switchDashById(idx) {{
+      const navs = document.querySelectorAll('.nav-item');
+      const target = Array.from(navs).find(n => parseInt(n.dataset.idx) === idx);
+      if (target) switchDash(idx, target);
     }}
 
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}

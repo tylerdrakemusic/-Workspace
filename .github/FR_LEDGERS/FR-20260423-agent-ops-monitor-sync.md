@@ -43,7 +43,7 @@
 | AC1 | Path/name migration (rewrite stale `artifact_path`, normalize agent sigils)        | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
 | AC2 | Wire `backfill_legacy` into `--fix` with `status=legacy` + backfilled metric proof | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
 | AC3 | Dashboard: live/recent/historical banner + Architecture Drift + migration button   | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
-| AC4 | Portal surfaces agent-ops health score with freshness indicator                    | ⊕workspace-dashboards | not-started | —     | —       |
+| AC4 | Portal surfaces agent-ops health score with freshness indicator                    | ⊕workspace-dashboards | done        | 0c5add000873 / ce698b9667a7 | 2026-04-23 |
 | AC5 | `tests/test_agent_ops_monitor.py` fixture coverage                                 | ⊕workspace-doer       | done        | cc6c6f3e439f / e4430386f0c0 | 2026-04-23 |
 | AC6 | Post-migration verification — unverified-proof count drops on live DB              | ⊕workspace-reviewer   | not-started | —     | —       |
 | AC7 | `tools/fr_status.py` CLI — workspace-wide FR dashboard from ledgers                | ⊕workspace-doer       | done        | d54d2c092e9f | 2026-04-23 |
@@ -151,3 +151,26 @@
 - **Proof artifacts:** e6f27aa76706 — AC5 tests/conftest.py
 - **Proof artifacts:** d54d2c092e9f — AC7 tools/fr_status.py
 - **Proof artifacts:** e4430386f0c0 — AC5 test_pass (12/12)
+- **Perf runs:** ca474941-5dfe-48c7-be28-eecb1c1e39f2 — ⊕workspace-dashboards AC4 implementation
+- **Proof artifacts:** 0c5add000873 — AC4 tools/dashboard_portal.py (health card + freshness)
+- **Proof artifacts:** ce698b9667a7 — AC4 reports/portal.html (rendered card verified)
+
+---
+
+### 2026-04-23T03:30:00Z — ⊕workspace-dashboards
+
+**Event:** implementation
+
+**Summary:** AC4 delivered — portal surfaces agent-ops health + freshness card
+
+**Details:**
+- Added `collect_portal_health()` and `_render_health_card()` to `tools/dashboard_portal.py`. Live read-only snapshot via `agent_ops_monitor.collect_health()` + `init_db.get_connection()`; re-queried each portal render (no hardcoded values).
+- New sidebar card above stats bar shows `health_pct` + label (Excellent/Good/Needs Attention/Critical) with color, gap breakdown `Nz · No · Nu` (zombies/orphans/unverified), and freshness pill `Generated Xm ago` with green <15m / yellow <2h / red >2h thresholds driven by `reports/agent_ops_dashboard.html` mtime.
+- Card is clickable: routes to the Agent Ops Monitor pane via new `switchDashById(idx)` JS helper (idx resolved at render time from the manifest).
+- Stale-state (>2h): card reveals `⚠ Stale — regenerate: <cli>` with the spec's own `cli` command copyable inline (falls back to `agent_ops_monitor.py --fix --no-open`).
+- Import guards keep portal rendering if `agent_ops_monitor` / `init_db` fail (unavailable card fallback).
+- Verified rendered card end-to-end in Brave: 91% Good · 9 gaps (4z · 1o · 4u) · Generated 22m ago (warn). Click switched active pane to Agent Ops Monitor.
+
+**Perf run:** ca474941-5dfe-48c7-be28-eecb1c1e39f2 (253.1s, ok).
+
+**Next:** handoff to ⊕workspace-reviewer for AC6 (post-migration verification on live DB).
