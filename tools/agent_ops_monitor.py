@@ -56,6 +56,26 @@ OUT_PATH = PROJECT_ROOT / "reports" / "agent_ops_dashboard.html"
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "utils"))
 from init_db import get_connection, init_db
 
+# ── Tunable thresholds ────────────────────────────────────────────────────────
+# Sessions with no ended_at whose last_heartbeat (or started_at if last_heartbeat
+# is NULL) is older than this threshold are classified as zombies and auto-closed
+# by --fix.  10 min is aggressive enough to catch stale sessions quickly while
+# still giving actively running agents time to start their first heartbeat.
+ZOMBIE_THRESHOLD_MIN: int = 10   # minutes
+
+# A session counts as "live" only when its last_heartbeat (or started_at if
+# last_heartbeat is NULL / absent) falls within this rolling window AND the
+# session has not yet been closed (ended_at IS NULL).
+LIVE_WINDOW_MIN: int = 10        # minutes
+
+
+def _ensure_last_heartbeat_column(conn) -> None:
+    """Add last_heartbeat REAL column to perf_runs if it does not exist yet."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(perf_runs)").fetchall()}
+    if "last_heartbeat" not in cols:
+        conn.execute("ALTER TABLE perf_runs ADD COLUMN last_heartbeat REAL")
+        conn.commit()
+
 
 def _esc(v) -> str:
     return html_mod.escape(str(v)) if v else ""
@@ -79,11 +99,14 @@ def _dur(ms: float) -> str:
 def collect_health(conn) -> dict:
     """Gather all session health metrics from workspace.db."""
     now = time.time()
-    stale_threshold = now - 7200  # 2 hours
+    stale_threshold = now - (ZOMBIE_THRESHOLD_MIN * 60)  # configurable zombie window
 
-    # All runs
+    # Ensure last_heartbeat column exists before querying it.
+    _ensure_last_heartbeat_column(conn)
+
+    # All runs — include last_heartbeat for accurate live/zombie detection.
     runs = conn.execute(
-        "SELECT run_id, name, started_at, ended_at, status, detail FROM perf_runs ORDER BY started_at DESC"
+        "SELECT run_id, name, started_at, ended_at, status, detail, last_heartbeat FROM perf_runs ORDER BY started_at DESC"
     ).fetchall()
 
     # All proofs grouped by run
@@ -112,6 +135,9 @@ def collect_health(conn) -> dict:
 
     for r in runs:
         rid = r["run_id"]
+        # last_heartbeat is the authoritative recency signal; fall back to
+        # started_at for sessions that predate the column or have never pulsed.
+        heartbeat_ts = r["last_heartbeat"] or r["started_at"]
         entry = {
             "run_id": rid,
             "name": r["name"],
@@ -121,10 +147,14 @@ def collect_health(conn) -> dict:
             "detail": r["detail"],
             "wall_ms": ((r["ended_at"] or now) - r["started_at"]) * 1000,
             "proofs": proof_map.get(rid, {"count": 0, "verified": 0}),
+            "last_heartbeat": r["last_heartbeat"],
+            "_heartbeat_ts": heartbeat_ts,
         }
         sessions.append(entry)
 
-        if not r["ended_at"] and r["started_at"] < stale_threshold:
+        # Zombie: open session whose last activity is beyond the stale threshold.
+        # Uses last_heartbeat with fallback to started_at (AC1 + AC2).
+        if not r["ended_at"] and heartbeat_ts < stale_threshold:
             entry["gap"] = "zombie"
             zombies.append(entry)
         elif r["ended_at"] and entry["proofs"]["count"] == 0:
@@ -145,10 +175,14 @@ def collect_health(conn) -> dict:
     gap_count = len(zombies) + len(orphans) + len(unverified)
     health_pct = ((total_runs - len(zombies) - len(orphans)) / max(total_runs, 1)) * 100
 
-    # Live / recent / historical counts (AC3 banner).
-    live_cutoff = now - 600       # 10 minutes
+    # Live / recent / historical counts (AC2/AC4 banner).
+    # "Live" = last_heartbeat (fallback started_at) within LIVE_WINDOW_MIN AND not closed.
+    live_cutoff = now - (LIVE_WINDOW_MIN * 60)
     recent_cutoff = now - 86400   # 24 hours
-    live_count = sum(1 for s in sessions if (s["started_at"] or 0) >= live_cutoff)
+    live_count = sum(
+        1 for s in sessions
+        if s["ended_at"] is None and (s["_heartbeat_ts"] or 0) >= live_cutoff
+    )
     recent_count = sum(1 for s in sessions if (s["started_at"] or 0) >= recent_cutoff)
 
     return {
@@ -335,6 +369,72 @@ def drift_candidates(conn) -> list[dict]:
     return out
 
 
+# ── Agent Name Validation (AC7) ─────────────────────────────
+
+# Known internal aliases that do not map to real .agent.md files but are
+# intentional synthetic entries (e.g. created by backfill logic).
+# Values must be canonical agent names that DO have a .agent.md file.
+_KNOWN_AGENT_ALIASES: dict[str, str] = {
+    "⊕ops-monitor": "⊕workspace-overseer",
+    "ops-monitor": "⊕workspace-overseer",
+    "workspace-overseer": "⊕workspace-overseer",
+}
+
+
+def validate_agent_names(conn, *, fix: bool = False) -> dict:
+    """Detect and optionally rename phantom agent entries in the DB.
+
+    A phantom agent is an agent name in ``proof_artifacts`` that has no
+    corresponding ``<name>.agent.md`` file under ``.github/agents/``.
+
+    When ``fix=True``, known aliases (``_KNOWN_AGENT_ALIASES``) are renamed
+    in-place and the changes are committed.  Unrecognised phantoms are only
+    reported.
+
+    Returns a summary dict:
+        ``canonical``   – set of agent names extracted from .agent.md filenames
+        ``db_agents``   – set of distinct agent names found in proof_artifacts
+        ``phantoms``    – list of {agent, count, suggested} dicts
+        ``renamed``     – number of rows updated (0 if fix=False)
+    """
+    agents_dir = PROJECT_ROOT / ".github" / "agents"
+    canonical: set[str] = set()
+    if agents_dir.is_dir():
+        for p in agents_dir.glob("*.agent.md"):
+            # Strip the full ".agent.md" double-extension to get the canonical name.
+            canonical.add(p.name.removesuffix(".agent.md"))
+
+    rows = conn.execute(
+        "SELECT DISTINCT agent FROM proof_artifacts WHERE agent IS NOT NULL"
+    ).fetchall()
+    db_agents: set[str] = {r["agent"] for r in rows}
+
+    phantoms: list[dict] = []
+    renamed = 0
+    for agent in sorted(db_agents):
+        if agent not in canonical:
+            count = conn.execute(
+                "SELECT COUNT(*) FROM proof_artifacts WHERE agent = ?", (agent,)
+            ).fetchone()[0]
+            suggested = _KNOWN_AGENT_ALIASES.get(agent)
+            phantoms.append({"agent": agent, "count": count, "suggested": suggested})
+            if fix and suggested:
+                conn.execute(
+                    "UPDATE proof_artifacts SET agent = ? WHERE agent = ?",
+                    (suggested, agent),
+                )
+                renamed += count
+    if fix and renamed:
+        conn.commit()
+
+    return {
+        "canonical": sorted(canonical),
+        "db_agents": sorted(db_agents),
+        "phantoms": phantoms,
+        "renamed": renamed,
+    }
+
+
 # ── Auto-Fix ─────────────────────────────────────────────────
 
 def fix_gaps(conn, health: dict) -> dict:
@@ -393,11 +493,15 @@ def fix_gaps(conn, health: dict) -> dict:
     # Backfill legacy orphans (predate proof system) so they stop showing as gaps.
     fixed_legacy = backfill_legacy(conn, health)
 
+    # Rename phantom agents to canonical names (AC7).
+    phantom_report = validate_agent_names(conn, fix=True)
+
     return {
         "fixed_zombies": fixed_zombies,
         "fixed_unverified": fixed_unverified,
         "fixed_proof_complete": fixed_proof_complete,
         "fixed_legacy": fixed_legacy,
+        "phantom_report": phantom_report,
         "remaining_orphans": max(len(health["orphans"]) - fixed_legacy, 0),
     }
 
@@ -423,7 +527,7 @@ def backfill_legacy(conn, health: dict) -> int:
             (
                 __import__("uuid").uuid4().hex[:12],
                 o["run_id"],
-                "⊕ops-monitor",
+                "⊕workspace-overseer",  # canonical agent; ⊕ops-monitor was a phantom alias
                 "metric",
                 "predates proof system",
                 datetime.now().isoformat(),
@@ -1388,6 +1492,8 @@ def main() -> None:
 
     init_db()
     conn = get_connection()
+    # Ensure last_heartbeat column exists on first run after schema upgrade.
+    _ensure_last_heartbeat_column(conn)
 
     # --serve: start interactive server
     if args.serve:
@@ -1454,6 +1560,14 @@ def main() -> None:
         print(f"  Verified {fix_summary['fixed_unverified']} proof(s)")
         print(f"  Backfilled {fix_summary.get('fixed_legacy', 0)} legacy orphan(s)")
         print(f"  Remaining orphans: {fix_summary['remaining_orphans']} (need manual proof)")
+        phantom = fix_summary.get("phantom_report", {})
+        if phantom.get("phantoms"):
+            print(f"  Phantom agents found: {len(phantom['phantoms'])}")
+            for p in phantom["phantoms"]:
+                action = f"→ renamed to {p['suggested']} ({p['count']} rows)" if p["suggested"] else f"flagged ({p['count']} rows, no canonical match)"
+                print(f"    {p['agent']}  {action}")
+        if phantom.get("renamed"):
+            print(f"  Phantom rows renamed: {phantom['renamed']}")
         # Re-collect after fixes
         health = collect_health(conn)
 

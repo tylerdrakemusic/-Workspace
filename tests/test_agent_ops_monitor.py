@@ -163,10 +163,106 @@ def test_live_recent_historical_counts(db_conn, insert_run):
     """AC3 banner counts."""
     now = time.time()
     insert_run(started_at=now - 60)          # live
-    insert_run(started_at=now - 1000)        # recent only
+    insert_run(started_at=now - 1000)        # recent only (zombie by threshold)
     insert_run(started_at=now - 86400 * 2)   # historical only
 
     health = aom.collect_health(db_conn)
     assert health["live_count"] == 1
     assert health["recent_count"] == 2
     assert health["historical_total"] == 3
+
+
+# ── AC6(a): zombie detection uses last_heartbeat, not started_at ─────────────
+
+def test_zombie_uses_last_heartbeat_not_started_at(db_conn, insert_run):
+    """A session with old started_at but recent last_heartbeat is NOT a zombie."""
+    now = time.time()
+    threshold = aom.ZOMBIE_THRESHOLD_MIN * 60
+
+    # started_at is old (would be zombie under old logic) but heartbeat is fresh
+    insert_run(
+        started_at=now - threshold * 3,
+        ended_at=None,
+        last_heartbeat=now - 30,   # 30s ago — very fresh
+        name="old-start-fresh-heartbeat",
+    )
+    health = aom.collect_health(db_conn)
+    assert len(health["zombies"]) == 0, "Fresh last_heartbeat must prevent zombie classification"
+    assert health["live_count"] == 1, "Session with fresh heartbeat must appear in live count"
+
+
+def test_zombie_triggered_by_stale_last_heartbeat(db_conn, insert_run):
+    """A session with recent started_at but stale last_heartbeat IS a zombie."""
+    now = time.time()
+    threshold = aom.ZOMBIE_THRESHOLD_MIN * 60
+
+    # started_at is recent, but last_heartbeat is stale
+    insert_run(
+        started_at=now - 30,               # started 30s ago
+        ended_at=None,
+        last_heartbeat=now - threshold * 2,  # heartbeat far beyond threshold
+        name="recent-start-stale-heartbeat",
+    )
+    health = aom.collect_health(db_conn)
+    assert len(health["zombies"]) == 1, "Stale last_heartbeat must trigger zombie even if started_at is recent"
+    assert health["live_count"] == 0
+
+
+# ── AC6(b): zombie close runs before live count ───────────────────────────────
+
+def test_fix_closes_zombie_before_live_count(db_conn, insert_run, insert_proof):
+    """After fix_gaps, a previously zombie session is closed and excluded from live_count."""
+    now = time.time()
+    threshold = aom.ZOMBIE_THRESHOLD_MIN * 60
+
+    # Zombie: no heartbeat, started far beyond threshold
+    zombie_id = insert_run(
+        started_at=now - threshold * 3,
+        ended_at=None,
+        name="stale-zombie",
+    )
+    # An actually live session (recent start, no heartbeat — uses started_at fallback)
+    insert_run(
+        started_at=now - 30,
+        ended_at=None,
+        name="actually-live",
+    )
+
+    # Before fix: zombie is visible, live_count may count zombie if started_at is checked
+    health_before = aom.collect_health(db_conn)
+    assert any(z["run_id"] == zombie_id for z in health_before["zombies"]), "Zombie must be detected before fix"
+
+    # Run fix — closes zombies FIRST, then live count on the re-collected health is clean
+    fix_summary = aom.fix_gaps(db_conn, health_before)
+    assert fix_summary["fixed_zombies"] >= 1
+
+    # Re-collect after fix (mirrors the --fix flow in main())
+    health_after = aom.collect_health(db_conn)
+
+    # Zombie is now closed — must not appear in zombies or live
+    assert not any(z["run_id"] == zombie_id for z in health_after["zombies"]), "Zombie must be gone after fix"
+    assert health_after["live_count"] == 1, "Only the actually-live session should appear after zombie is closed"
+
+
+# ── AC7: validate_agent_names detects phantoms ───────────────────────────────
+
+def test_validate_agent_names_detects_phantom(db_conn, insert_run, insert_proof):
+    """validate_agent_names flags agent names that have no .agent.md file."""
+    rid = insert_run()
+    insert_proof(run_id=rid, agent="\u2295ops-monitor")   # known phantom alias
+
+    report = aom.validate_agent_names(db_conn, fix=False)
+    phantom_names = [p["agent"] for p in report["phantoms"]]
+    assert "\u2295ops-monitor" in phantom_names
+
+
+def test_validate_agent_names_fix_renames_known_alias(db_conn, insert_run, insert_proof):
+    """validate_agent_names(fix=True) renames known aliases to canonical names."""
+    rid = insert_run()
+    pid = insert_proof(run_id=rid, agent="\u2295ops-monitor")
+
+    report = aom.validate_agent_names(db_conn, fix=True)
+    assert report["renamed"] >= 1
+
+    row = db_conn.execute("SELECT agent FROM proof_artifacts WHERE proof_id = ?", (pid,)).fetchone()
+    assert row["agent"] == "\u2295workspace-overseer"
