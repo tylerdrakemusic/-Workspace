@@ -15,12 +15,13 @@ sys.path.insert(0, str(PROJECT_ROOT / "src" / "utils"))
 # Schema mirrors src/utils/init_db.py (SQLCipher stripped — plain sqlite for tests).
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS perf_runs (
-    run_id     TEXT PRIMARY KEY,
-    name       TEXT NOT NULL,
-    started_at REAL NOT NULL,
-    ended_at   REAL,
-    status     TEXT,
-    detail     TEXT
+    run_id          TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    started_at      REAL NOT NULL,
+    ended_at        REAL,
+    status          TEXT,
+    detail          TEXT,
+    last_heartbeat  REAL
 );
 
 CREATE TABLE IF NOT EXISTS perf_steps (
@@ -67,12 +68,12 @@ def _pid() -> str:
 @pytest.fixture
 def insert_run(db_conn):
     """Factory to insert a perf_run row."""
-    def _insert(run_id=None, name="test", started_at=None, ended_at=None, status=None, detail=None):
+    def _insert(run_id=None, name="test", started_at=None, ended_at=None, status=None, detail=None, last_heartbeat=None):
         rid = run_id or _pid()
         started = started_at if started_at is not None else time.time()
         db_conn.execute(
-            "INSERT INTO perf_runs (run_id, name, started_at, ended_at, status, detail) VALUES (?,?,?,?,?,?)",
-            (rid, name, started, ended_at, status, detail),
+            "INSERT INTO perf_runs (run_id, name, started_at, ended_at, status, detail, last_heartbeat) VALUES (?,?,?,?,?,?,?)",
+            (rid, name, started, ended_at, status, detail, last_heartbeat),
         )
         db_conn.commit()
         return rid
