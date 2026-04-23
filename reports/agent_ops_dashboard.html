@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="refresh" content="30">
 <title>⊕ Agent Ops Monitor</title>
 <style>
   :root {
@@ -228,64 +229,138 @@
     font-size: 0.75rem;
     text-align: center;
   }
+
+  /* Live banner (AC3) */
+  .live-banner {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .live-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    text-align: center;
+  }
+  .live-val { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+  .live-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.3rem; }
+  .live-sub { text-transform: none; letter-spacing: 0; color: var(--muted); font-weight: 400; }
+  .live-live { color: var(--cyan); }
+  .live-recent { color: var(--success); }
+  .live-total { color: var(--accent); }
+
+  /* Drift section (AC3) */
+  .drift-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .mig-btn {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mig-btn.mig-dry { border-color: var(--warning); color: var(--warning); }
+  .mig-btn.mig-live { border-color: var(--success); color: var(--success); }
+  .mig-btn:hover { background: rgba(255,255,255,0.03); }
+  .drift-hint { color: var(--muted); font-size: 0.75rem; }
+  .drift-old { color: var(--warning); font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.78rem; }
+  .drift-new { color: var(--success); font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.78rem; }
+
+  /* Living dashboard — section headers, collapsible finished */
+  h2 .section-count { color: var(--muted); font-size: 0.8rem; font-weight: 500; margin-left: 0.4rem; }
+  h2 .section-sub { color: var(--muted); font-size: 0.7rem; font-weight: 400; margin-left: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .finished-details { margin: 1rem 0 2rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  .finished-details summary { padding: 0.8rem 1rem; cursor: pointer; font-weight: 700; color: var(--muted); list-style: none; user-select: none; }
+  .finished-details summary::-webkit-details-marker { display: none; }
+  .finished-details .chev { display: inline-block; transition: transform 0.15s; margin-right: 0.4rem; }
+  .finished-details[open] .chev { transform: rotate(90deg); }
+  .finished-details summary:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+  .finished-title { color: var(--text); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.04em; }
+  .finished-details[open] summary { border-bottom: 1px solid var(--border); }
+  .finished-details table { margin: 0; }
+  .live-pulse { position: relative; }
+  .live-pulse::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; margin-right: 0.4rem; animation: pulse 1.5s infinite; }
 </style>
 </head>
 <body>
   <h1><span class="sigil">⊕</span> Agent Ops Monitor</h1>
-  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-19T16:47:23</div>
+  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-23T00:55:32</div>
+
+  <div class="live-banner">
+    <div class="live-cell">
+      <div class="live-val live-live">0</div>
+      <div class="live-label">Live <span class="live-sub">(last 10min)</span></div>
+    </div>
+    <div class="live-cell">
+      <div class="live-val live-recent">0</div>
+      <div class="live-label">Recent <span class="live-sub">(24h)</span></div>
+    </div>
+    <div class="live-cell">
+      <div class="live-val live-total">56</div>
+      <div class="live-label">Historical total</div>
+    </div>
+  </div>
 
   
-    <div class="fix-banner">
-      <span class="fix-icon">🔧</span>
-      <div>
-        <strong>Auto-Fix Applied</strong><br>
-        <span class="fix-detail">0 zombie(s) closed · 0 proof-complete session(s) closed · 0 proof(s) verified · 0 orphan run(s) remain (need manual proof)</span>
-      </div>
-    </div>
 
   <div class="health-ring">
     <div class="ring-container">
       <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
         <circle class="ring-bg" cx="70" cy="70" r="60"/>
         <circle class="ring-fg" cx="70" cy="70" r="60"
-                style="stroke:#10b981; stroke-dashoffset:0;"/>
+                style="stroke:#f59e0b; stroke-dashoffset:34;"/>
       </svg>
       <div class="ring-text">
-        <div class="ring-pct" style="color:#10b981">100%</div>
-        <div class="ring-label">Excellent</div>
+        <div class="ring-pct" style="color:#f59e0b">91%</div>
+        <div class="ring-label">Good</div>
       </div>
     </div>
 
     <div class="stat-grid" style="flex:1;">
       <div class="stat-card">
-        <div class="stat-val val-info">48</div>
+        <div class="stat-val val-info">56</div>
         <div class="stat-label">Total Runs</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-ok">48</div>
+        <div class="stat-val val-ok">51</div>
         <div class="stat-label">Healthy</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-ok">0</div>
+        <div class="stat-val val-bad">4</div>
         <div class="stat-label">Zombies</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-ok">0</div>
+        <div class="stat-val val-warn">1</div>
         <div class="stat-label">No Proof</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-warn">1</div>
+        <div class="stat-val val-warn">2</div>
         <div class="stat-label">Unverified</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-info">1</div>
+        <div class="stat-val val-info">7</div>
         <div class="stat-label">Total Gaps</div>
       </div>
     </div>
   </div>
 
-  <h2 style="color: var(--accent);">Session Inventory</h2>
-  <table>
+  <h2 style="color: var(--cyan);">
+    <span class="running-dot"></span> Live Agents
+    <span class="section-count">(4)</span>
+    <span class="section-sub">auto-refresh · 30s</span>
+  </h2>
+  <table id="live-table">
     <thead>
       <tr>
         <th>Run ID</th>
@@ -300,7 +375,39 @@
       </tr>
     </thead>
     <tbody>
-      <tr class=""><td class="mono">e74b4f37f926</td><td>rename-security-folder-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:26</td><td class="ts">2026-04-19 16:36</td><td class="mono">00:09:24</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+      <tr class="row-zombie"><td class="mono">39a077295698</td><td>repair-pass-workspace-db-keying</td><td class="st-run">running</td><td class="ts">2026-04-19 17:43</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:11:41</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('39a077295698')">Close</button></td></tr>
+<tr class="row-zombie"><td class="mono">31ea90e275aa</td><td>repair-pass-workspace-db-keying</td><td class="st-run">running</td><td class="ts">2026-04-19 17:43</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:11:43</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('31ea90e275aa')">Close</button></td></tr>
+<tr class="row-zombie"><td class="mono">85747c09b9f7</td><td>consider-quantum-integration-ipstrategy</td><td class="st-run">running</td><td class="ts">2026-04-19 17:05</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:50:14</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('85747c09b9f7')">Close</button></td></tr>
+<tr class="row-zombie"><td class="mono">8e4fc9029d4b</td><td>switch-security-folder-to-themed-sigil</td><td class="st-run">running</td><td class="ts">2026-04-19 16:58</td><td class="ts"><span class="running-dot"></span> running</td><td class="mono">79:57:29</td><td class="proof-cell"></td><td><span class="gap-badge zombie">ZOMBIE</span></td><td><button class="close-btn" onclick="closeSession('8e4fc9029d4b')">Close</button></td></tr>
+    </tbody>
+  </table>
+
+  <details class="finished-details">
+    <summary>
+      <span class="chev">▸</span>
+      <span class="finished-title">Finished Sessions</span>
+      <span class="section-count">(52)</span>
+    </summary>
+    <table id="finished-table">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Started</th>
+          <th>Ended</th>
+          <th>Wall</th>
+          <th>Proofs</th>
+          <th>Health</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-orphan"><td class="mono">c96b323f-5c29-4d03-9f8c-5d9f17956d97</td><td>perf_cli smoke test</td><td class="st-ok">ok</td><td class="ts">2026-04-20 22:24</td><td class="ts">2026-04-20 22:24</td><td class="mono">00:00:00</td><td class="proof-cell"><span class="no-proof">—</span></td><td><span class="gap-badge orphan">NO PROOF</span></td><td></td></tr>
+<tr class=""><td class="mono">02cd96d4e94e</td><td>commit-unlock-readiness</td><td class="st-ok">ok</td><td class="ts">2026-04-19 17:46</td><td class="ts">2026-04-19 17:46</td><td class="mono">00:00:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">7858180b2841</td><td>repair-pass-workspace-db-keying</td><td class="st-ok">ok</td><td class="ts">2026-04-19 17:43</td><td class="ts">2026-04-19 17:44</td><td class="mono">00:00:15</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">b56b2a1a89e8</td><td>upgrade-security-sigil-priority</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:47</td><td class="ts">2026-04-19 16:56</td><td class="mono">00:08:46</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:0%"></div></div><span class="proof-label">0/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class=""><td class="mono">e74b4f37f926</td><td>rename-security-folder-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 16:26</td><td class="ts">2026-04-19 16:36</td><td class="mono">00:09:24</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">4/4</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">18060bb274c4</td><td>prioritize-security-sigil</td><td class="st-ok">ok</td><td class="ts">2026-04-19 14:23</td><td class="ts">2026-04-19 14:24</td><td class="mono">00:00:58</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">2b6eb83947c1</td><td>SONGDLC_PIPELINE.md chills vaccination</td><td class="st-ok">ok</td><td class="ts">2026-04-19 10:02</td><td class="ts">2026-04-19 10:07</td><td class="mono">00:04:52</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:0%"></div></div><span class="proof-label">0/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">b0feef4c4269</td><td>spin-up-life-project</td><td class="st-ok">ok</td><td class="ts">2026-04-19 09:22</td><td class="ts">2026-04-19 09:22</td><td class="mono">00:00:15</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
@@ -348,8 +455,9 @@
 <tr class=""><td class="mono">dea97f57db02</td><td>cli-smoke-test</td><td class="st-ok">ok</td><td class="ts">2026-04-17 03:04</td><td class="ts">2026-04-17 03:04</td><td class="mono">00:00:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">254ddf98c1e6</td><td>overseer-live-invocation</td><td class="st-ok">ok</td><td class="ts">1970-01-14 23:06</td><td class="ts">1970-01-14 23:06</td><td class="mono">00:00:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">cefaaf19e4cd</td><td>overseer-live-invocation</td><td class="st-ok">ok</td><td class="ts">1970-01-14 23:05</td><td class="ts">1970-01-14 23:05</td><td class="mono">00:00:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </details>
 
   <h2 style="color: var(--success);">Agent Proof Coverage</h2>
   <table>
@@ -364,18 +472,72 @@
     </thead>
     <tbody>
       <tr><td>⊕ops-monitor</td><td class="num">39</td><td class="num">39</td><td class="num">39</td><td class="num rate-good">100%</td></tr>
-<tr><td>⊕workspace-overseer</td><td class="num">9</td><td class="num">24</td><td class="num">23</td><td class="num rate-good">96%</td></tr>
-<tr><td>workspace-overseer</td><td class="num">1</td><td class="num">2</td><td class="num">2</td><td class="num rate-good">100%</td></tr>
+<tr><td>⊕workspace-overseer</td><td class="num">10</td><td class="num">27</td><td class="num">25</td><td class="num rate-good">93%</td></tr>
+<tr><td>⊕workspace-commitment</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num rate-good">100%</td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="color: var(--orange);">Architecture Drift (0)</h2>
+  <div class="drift-actions">
+    <button class="mig-btn mig-dry" onclick="applyMigration(true)">Apply Migration (dry-run)</button>
+    <button class="mig-btn mig-live" onclick="applyMigration(false)">Apply Migration (live)</button>
+    <span class="drift-hint">Dry-run only reports changes; live writes to DB after timestamped backup.</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Proof ID</th>
+        <th>Agent</th>
+        <th>Artifact path</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="4" class="empty">No architecture drift detected</td></tr>
     </tbody>
   </table>
 
   <div class="footer">
     ⊕Workspace Agent Ops Monitor &mdash; Self-regenerating dashboard &bull;
+    <span id="refresh-status" class="live-pulse">auto-refresh every 30s</span> &bull;
     <code>python tools/agent_ops_monitor.py --fix</code> to auto-close gaps &bull;
     <code>python tools/agent_ops_monitor.py --serve</code> for interactive mode
   </div>
 
   <script>
+    // Living dashboard: poll /api/health in serve mode and update live section
+    // without a full reload. Falls back to meta-refresh when served as a static file.
+    (function () {
+      const statusEl = document.getElementById('refresh-status');
+      let backoff = 30000;
+      async function poll() {
+        try {
+          const resp = await fetch('/api/health', {cache: 'no-store'});
+          if (!resp.ok) throw new Error('status ' + resp.status);
+          const h = await resp.json();
+          // Live count cell
+          const live = document.querySelector('.live-live');
+          if (live) live.textContent = h.live_count ?? h.historical_total ?? '-';
+          const recent = document.querySelector('.live-recent');
+          if (recent) recent.textContent = h.recent_count ?? '-';
+          const total = document.querySelector('.live-total');
+          if (total) total.textContent = h.historical_total ?? h.total_runs ?? '-';
+          if (statusEl) {
+            const t = new Date().toLocaleTimeString();
+            statusEl.textContent = 'live · updated ' + t;
+          }
+          backoff = 30000;
+        } catch (e) {
+          // Static-file mode — silent fallback; meta-refresh reloads the page.
+          if (statusEl) statusEl.textContent = 'auto-refresh every 30s (static)';
+          backoff = 60000;
+        }
+        setTimeout(poll, backoff);
+      }
+      // Kick off after first render so meta-refresh still works if JS disabled.
+      setTimeout(poll, 5000);
+    })();
+
     async function closeSession(runId) {
       if (!confirm('Close session ' + runId + '?')) return;
       const btn = event.target;
@@ -402,6 +564,23 @@
           'C:\\G\\python.exe tools/agent_ops_monitor.py --close ' + runId);
         btn.disabled = false;
         btn.textContent = 'Close';
+      }
+    }
+
+    async function applyMigration(dryRun) {
+      const label = dryRun ? 'dry-run' : 'LIVE (writes to DB after backup)';
+      if (!confirm('Apply architecture migration (' + label + ')?')) return;
+      try {
+        const resp = await fetch('/apply-migration', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({dry_run: !!dryRun})
+        });
+        const data = await resp.json();
+        alert('Migration result:\n' + JSON.stringify(data, null, 2));
+        if (!dryRun) location.reload();
+      } catch (e) {
+        alert('Migration endpoint requires --serve mode. Run:\nC:\\G\\python.exe tools/agent_ops_monitor.py --migrate' + (dryRun ? ' --dry-run' : ''));
       }
     }
   </script>

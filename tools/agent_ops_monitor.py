@@ -489,9 +489,11 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
       </div>
     </div>"""
 
-    # Session rows
-    session_rows = []
-    for s in health["sessions"][:50]:
+    # Session rows — split into LIVE (still running) and FINISHED (ended).
+    # Tyler's UX rule: living agents front-and-center, finished collapsed.
+    live_rows: list[str] = []
+    finished_rows: list[str] = []
+    for s in health["sessions"][:200]:
         rid = _esc(s["run_id"])
         name = _esc(s["name"])
         status = _esc(s["status"] or "running")
@@ -522,7 +524,7 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
         elif s["ended_at"]:
             proof_bar = '<span class="no-proof">—</span>'
 
-        status_cls = {"ok": "st-ok", "error": "st-err", "timeout": "st-timeout"}.get(status, "st-run")
+        status_cls = {"ok": "st-ok", "error": "st-err", "timeout": "st-timeout", "legacy": "st-timeout"}.get(status, "st-run")
 
         # Close button for active/zombie runs (only in serve mode)
         close_btn = ""
@@ -531,7 +533,7 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
         elif gap == "zombie":
             close_btn = f'<button class="close-btn" onclick="closeSession(\'{rid}\')">Force Close</button>'
 
-        session_rows.append(
+        row_html = (
             f'<tr class="{row_cls}">'
             f'<td class="mono">{rid}</td>'
             f'<td>{name}</td>'
@@ -544,7 +546,20 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
             f'<td>{close_btn}</td>'
             f'</tr>'
         )
-    session_html = "\n".join(session_rows)
+        # Zombies are "living" by definition (never ended) — keep them visible.
+        if s["ended_at"] is None:
+            live_rows.append(row_html)
+        else:
+            finished_rows.append(row_html)
+
+    live_count_table = len(live_rows)
+    finished_count_table = len(finished_rows)
+    live_session_html = "\n".join(live_rows) if live_rows else (
+        '<tr><td colspan="9" class="empty">No live agents — all sessions closed</td></tr>'
+    )
+    finished_session_html = "\n".join(finished_rows) if finished_rows else (
+        '<tr><td colspan="9" class="empty">No finished sessions</td></tr>'
+    )
 
     # Agent coverage rows
     agent_rows = []
@@ -591,6 +606,7 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="refresh" content="30">
 <title>⊕ Agent Ops Monitor</title>
 <style>
   :root {{
@@ -864,6 +880,21 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
   .drift-hint {{ color: var(--muted); font-size: 0.75rem; }}
   .drift-old {{ color: var(--warning); font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.78rem; }}
   .drift-new {{ color: var(--success); font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.78rem; }}
+
+  /* Living dashboard — section headers, collapsible finished */
+  h2 .section-count {{ color: var(--muted); font-size: 0.8rem; font-weight: 500; margin-left: 0.4rem; }}
+  h2 .section-sub {{ color: var(--muted); font-size: 0.7rem; font-weight: 400; margin-left: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; }}
+  .finished-details {{ margin: 1rem 0 2rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }}
+  .finished-details summary {{ padding: 0.8rem 1rem; cursor: pointer; font-weight: 700; color: var(--muted); list-style: none; user-select: none; }}
+  .finished-details summary::-webkit-details-marker {{ display: none; }}
+  .finished-details .chev {{ display: inline-block; transition: transform 0.15s; margin-right: 0.4rem; }}
+  .finished-details[open] .chev {{ transform: rotate(90deg); }}
+  .finished-details summary:hover {{ color: var(--text); background: rgba(255,255,255,0.02); }}
+  .finished-title {{ color: var(--text); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.04em; }}
+  .finished-details[open] summary {{ border-bottom: 1px solid var(--border); }}
+  .finished-details table {{ margin: 0; }}
+  .live-pulse {{ position: relative; }}
+  .live-pulse::before {{ content: ''; display: inline-block; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; margin-right: 0.4rem; animation: pulse 1.5s infinite; }}
 </style>
 </head>
 <body>
@@ -928,8 +959,12 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
     </div>
   </div>
 
-  <h2 style="color: var(--accent);">Session Inventory</h2>
-  <table>
+  <h2 style="color: var(--cyan);">
+    <span class="running-dot"></span> Live Agents
+    <span class="section-count">({live_count_table})</span>
+    <span class="section-sub">auto-refresh · 30s</span>
+  </h2>
+  <table id="live-table">
     <thead>
       <tr>
         <th>Run ID</th>
@@ -944,9 +979,35 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
       </tr>
     </thead>
     <tbody>
-      {session_html}
+      {live_session_html}
     </tbody>
   </table>
+
+  <details class="finished-details">
+    <summary>
+      <span class="chev">▸</span>
+      <span class="finished-title">Finished Sessions</span>
+      <span class="section-count">({finished_count_table})</span>
+    </summary>
+    <table id="finished-table">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Started</th>
+          <th>Ended</th>
+          <th>Wall</th>
+          <th>Proofs</th>
+          <th>Health</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {finished_session_html}
+      </tbody>
+    </table>
+  </details>
 
   <h2 style="color: var(--success);">Agent Proof Coverage</h2>
   <table>
@@ -986,11 +1047,45 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
 
   <div class="footer">
     ⊕Workspace Agent Ops Monitor &mdash; Self-regenerating dashboard &bull;
+    <span id="refresh-status" class="live-pulse">auto-refresh every 30s</span> &bull;
     <code>python tools/agent_ops_monitor.py --fix</code> to auto-close gaps &bull;
     <code>python tools/agent_ops_monitor.py --serve</code> for interactive mode
   </div>
 
   <script>
+    // Living dashboard: poll /api/health in serve mode and update live section
+    // without a full reload. Falls back to meta-refresh when served as a static file.
+    (function () {{
+      const statusEl = document.getElementById('refresh-status');
+      let backoff = 30000;
+      async function poll() {{
+        try {{
+          const resp = await fetch('/api/health', {{cache: 'no-store'}});
+          if (!resp.ok) throw new Error('status ' + resp.status);
+          const h = await resp.json();
+          // Live count cell
+          const live = document.querySelector('.live-live');
+          if (live) live.textContent = h.live_count ?? h.historical_total ?? '-';
+          const recent = document.querySelector('.live-recent');
+          if (recent) recent.textContent = h.recent_count ?? '-';
+          const total = document.querySelector('.live-total');
+          if (total) total.textContent = h.historical_total ?? h.total_runs ?? '-';
+          if (statusEl) {{
+            const t = new Date().toLocaleTimeString();
+            statusEl.textContent = 'live · updated ' + t;
+          }}
+          backoff = 30000;
+        }} catch (e) {{
+          // Static-file mode — silent fallback; meta-refresh reloads the page.
+          if (statusEl) statusEl.textContent = 'auto-refresh every 30s (static)';
+          backoff = 60000;
+        }}
+        setTimeout(poll, backoff);
+      }}
+      // Kick off after first render so meta-refresh still works if JS disabled.
+      setTimeout(poll, 5000);
+    }})();
+
     async function closeSession(runId) {{
       if (!confirm('Close session ' + runId + '?')) return;
       const btn = event.target;
