@@ -120,10 +120,6 @@ _PASSWORD_GEN_HTML = """
   <div class="pwgen-title">🔑 Password Generator</div>
   <div class="pwgen-sub">Quantum-assisted · stateless · never stored</div>
   <div class="pwgen-field">
-    <label>Service / Label</label>
-    <input type="text" id="pg-service" placeholder="GitHub, ProtonMail…" autocomplete="off" spellcheck="false">
-  </div>
-  <div class="pwgen-field">
     <label>Length <span id="pg-len-val">16</span></label>
     <input type="range" id="pg-len" min="8" max="64" value="16" oninput="pgLen(this.value)">
   </div>
