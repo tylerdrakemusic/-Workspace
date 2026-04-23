@@ -1,4 +1,4 @@
----
+﻿---
 applyTo: ".github/agents/∞life-*.agent.md"
 ---
 
@@ -11,8 +11,8 @@ Shared context, conventions, and rules for all `∞life-*` agents. Every ∞Life
 ## Context Bootstrap (All Agents)
 
 Before doing any work, load context in this order:
-1. `f:\executedcode\∞Life\AGENT_STARTUP.md` — current project state, active experiments, recent changes
-2. `f:\executedcode\∞Life\SUBJECT_PROFILE.json` — Tyler's full health profile, active stack, goals
+1. `f:\∞Life\AGENT_STARTUP.md` — current project state, active experiments, recent changes
+2. `f:\∞Life\SUBJECT_PROFILE.json` — Tyler's full health profile, active stack, goals
 
 ---
 
@@ -33,7 +33,7 @@ from utils.init_db import get_connection
 conn = get_connection()
 # OR direct:
 import sqlite3
-conn = sqlite3.connect("f:/executedcode/∞Life/src/data/infinitelife.db")
+conn = sqlite3.connect("f:/∞Life/src/data/infinitelife.db")
 ```
 
 **Python executable:** `C:\G\python.exe`
@@ -50,12 +50,12 @@ conn = sqlite3.connect("f:/executedcode/∞Life/src/data/infinitelife.db")
 
 | Content Type | Location |
 |---|---|
-| Research notes | `f:\executedcode\∞Life\research/<domain>/` as markdown |
-| Analysis reports / charts | `f:\executedcode\∞Life\reports/` |
-| Protocol documents | `f:\executedcode\∞Life\docs\protocols\` |
+| Research notes | `f:\∞Life\research/<domain>/` as markdown |
+| Analysis reports / charts | `f:\∞Life\reports/` |
+| Protocol documents | `f:\∞Life\docs\protocols\` |
 | Health/experiment data | SQLite DB (`infinitelife.db`) — NOT loose JSON |
-| Tyler action items | `f:\executedcode\∞Life\TODO_TYLER.md` |
-| Agent task queue | `f:\executedcode\∞Life\TODO_AI.md` |
+| Tyler action items | `f:\∞Life\TODO_TYLER.md` |
+| Agent task queue | `f:\∞Life\TODO_AI.md` |
 
 ---
 
@@ -81,7 +81,7 @@ When delegating to a specialist agent, discover available agents by scanning `f:
 | `∞life-budget` | Cost tracking, purchase gating, cost-benefit analysis |
 | `∞life-brainstorm` | Ideation, strategy, experiment design |
 | `∞life-risk` | Safety assessment — **mandatory for all health interventions** |
-| `∞life-hygiene` | File cleanup, TODO archiving, DB housekeeping |
+| `⊕workspace-hygiene` | File cleanup, TODO archiving, DB housekeeping, agent audit |
 | `∞life-orchestrator` | Top-level coordinator for multi-domain tasks |
 
 ---
@@ -103,5 +103,5 @@ When delegating to a specialist agent, discover available agents by scanning `f:
 
 ## Reference Links
 - Bryan Johnson Blueprint: https://protocol.bryanjohnson.com
-- ∞Life project root: `f:\executedcode\∞Life\`
-- DB path: `f:\executedcode\∞Life\src\data\infinitelife.db`
+- ∞Life project root: `f:\∞Life\`
+- DB path: `f:\∞Life\src\data\infinitelife.db`

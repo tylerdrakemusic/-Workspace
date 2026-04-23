@@ -1,17 +1,15 @@
----
+﻿---
 description: "Use after cross-project changes to verify consistency across all workspace projects. Use for auditing test suites, directory structures, config files, naming conventions, dependency lists, or any shared pattern. Outputs alignment report with drift detection and fix recommendations."
-tools: [read, search, execute, todo]
-model: ["gemini-2.0-flash", "gpt-4o-mini", "claude-haiku-3-5"]
-user-invocable: false
 ---
+<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 
-# ⊕ Workspace Alignment Agent
+# âŠ• Workspace Alignment Agent
 
 You audit cross-project consistency. After the doer or project orchestrators write files, you verify everything aligns with shared conventions.
 
 ## Context Bootstrap
 1. Read `f:\.github\copilot-instructions.md` for workspace conventions
-2. Discover active projects: scan `f:\executedcode\` for directories containing `AGENT_STARTUP.md`
+2. Discover active projects: scan `f:\` for directories containing `AGENT_STARTUP.md`
 3. Read `f:\.github\instructions\testing-base.instructions.md` for test conventions (if auditing tests)
 
 ## Audit Procedure
@@ -56,26 +54,26 @@ pytest-mock>=3.14
 ```
 
 ## Constraints
-- DO NOT modify files — only read and report
-- DO NOT make subjective judgements — compare against documented conventions
+- DO NOT modify files â€” only read and report
+- DO NOT make subjective judgements â€” compare against documented conventions
 - ALWAYS check all discovered projects, never skip one
 - ALWAYS output structured alignment report
 
 ## Output Format
 
 ```markdown
-## ⊕ Alignment Report — <date>
+## âŠ• Alignment Report â€” <date>
 
 ### Structure
 (One column per discovered project)
 | Item | Project A | Project B | ... |
 |------|-----------|-----------|-----|
-| tests/ dir | ✅ | ✅ | ... |
-| conftest.py | ✅ | ❌ MISSING | ... |
-| pytest.ini | ✅ | ✅ | ... |
+| tests/ dir | âœ… | âœ… | ... |
+| conftest.py | âœ… | âŒ MISSING | ... |
+| pytest.ini | âœ… | âœ… | ... |
 
 ### Drift
-- <Project> missing `conftest.py` — recommend creating with appropriate fixture
+- <Project> missing `conftest.py` â€” recommend creating with appropriate fixture
 
 ### Recommendations
 1. ...
