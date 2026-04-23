@@ -30,6 +30,10 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260423-audio-brief-base64-embed | Embed TTS Audio as Base64 in Executive Brief Portal HTML | feature | 👁AI-Manifest | CLOSED (redundant) | feature/ai-manifest/audio-brief-base64-embed | [#4](https://github.com/tylerdrakemusic/AI-Manifest/pull/4) | ⊕workspace-overseer | 2026-04-23 | 2026-04-23 |
+| FR-20260423-vscode-session-autodetect | Auto-detect live VS Code Copilot chat sessions in agent ops monitor | feature | ⊕Workspace | MERGED | https://github.com/tylerdrakemusic/-Workspace/pull/11 | 5cf3f05 | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+| FR-20260423-ai-manifest-portal-static-fix | Executive Audio Brief Portal: Static-File Mode Fixes | fix | 👁AI-Manifest | CHANGES_REQUESTED | fix/ai-manifest/portal-static-mode | [#3](https://github.com/tylerdrakemusic/AI-Manifest/pull/3) | ⊕workspace-reviewer | 2026-04-23 | 2026-04-23 |
+| FR-20260423-feature-request-flow-checkout | Add BRANCH_CHECKED_OUT state to FR flow instructions | chore | ⊕Workspace | OPEN — needs proper branch (instructions edited directly on main; see ledger note) | none | none | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
 | FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | REVIEW_REQUESTED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-23 |
 | FR-20260422-disable-plumbing-agents-dropdown | Disable Plumbing Agents from VS Code Agent Dropdown | chore | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-22 |
 
@@ -39,6 +43,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260423-agent-ops-live-session-fix | Fix agent ops live session detection + phantom agent purge | fix | ⊕Workspace | MERGED | [#10](https://github.com/tylerdrakemusic/-Workspace/pull/10) @ 921b891f43d3 | 2026-04-23 | 2026-04-23 |
+| FR-20260423-audio-brief-elevenlabs-fix | Fix Executive Audio Brief Dashboard + Centralize ElevenLabs Client | fix | 👁AI-Manifest, ⊕Workspace | CLOSED | [#9](https://github.com/tylerdrakemusic/-Workspace/pull/9) @ d1f15cafa328, [#2](https://github.com/tylerdrakemusic/AI-Manifest/pull/2) @ 162124421e1a | 2026-04-23 | 2026-04-23 |
 | FR-20260422-music-repo-purge | Purge oversized binaries from ❤Music history | chore | ❤Music | MERGED | force-push @ 0abdef4 | 2026-04-22 | 2026-04-22 |
 | FR-20260423-agent-ops-monitor-sync | Reconcile agent ops monitor with current workspace architecture and improve portal visibility | fix | ⊕Workspace | MERGED | [#7](https://github.com/tylerdrakemusic/-Workspace/pull/7) @ 46c8eed | 2026-04-23 | 2026-04-23 |
 | FR-20260422-db-backup-strategy | DB backup strategy for all project databases | chore | All 5 projects | CLOSED (rejected — deferred) | N/A | 2026-04-22 | 2026-04-22 |
