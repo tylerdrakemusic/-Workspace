@@ -10,9 +10,9 @@
 - **Type:** fix
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** BRANCHED
+- **State:** REVIEW_REQUESTED
 - **Branch:** fix/FR-20260423-agent-ops-monitor-sync (worktree: F:\worktrees\FR-20260423-agent-ops-monitor-sync)
-- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/7 (draft)
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/7
 - **Cycle timer:** 2624f477-2cb7-41de-86b3-670330623ef8
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-23
@@ -174,3 +174,23 @@
 **Perf run:** ca474941-5dfe-48c7-be28-eecb1c1e39f2 (253.1s, ok).
 
 **Next:** handoff to ⊕workspace-reviewer for AC6 (post-migration verification on live DB).
+
+---
+
+### 2026-04-23T06:45:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Implementation complete, PR ready for review → REVIEW_REQUESTED
+
+**Details:**
+- Pushed 4 unpublished commits to `origin/fix/FR-20260423-agent-ops-monitor-sync`:
+  - `1c08373` feat(agent-ops): AC1+AC2+AC3 path/name migration, legacy backfill, dashboard
+  - `df0611c` feat(fr-status): AC7 workspace-wide FR dashboard CLI
+  - `4ece1f8` chore(FR-20260423): mark AC1/AC2/AC3/AC5/AC7 done in deliverable tracker
+  - `aaa2be4` feat(portal): AC4 agent-ops health surface + freshness
+- Previously published: `1f0cac0` (intake scope approval + tracker), `ea218f5` (branch + draft PR #7 recorded).
+- PR #7 marked ready for review (draft status removed via GitHub API).
+- State: BRANCHED → REVIEW_REQUESTED.
+
+**Next:** handoff to ⊕workspace-reviewer for AC6 (post-migration verification on live DB) + structured review of PR #7.
