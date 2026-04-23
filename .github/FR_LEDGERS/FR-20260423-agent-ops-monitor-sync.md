@@ -31,7 +31,8 @@
 ### Concurrency Notes
 - Conflicts with: none (playwright-mcp-setup touches `.vscode/mcp.json`; disable-plumbing-agents-dropdown touches agent frontmatter — no file overlap with `tools/agent_ops_monitor.py`, `src/data/workspace.db`, `reports/`, `tests/`).
 - Depends on: none.
-Deliverable Tracker
+
+### Deliverable Tracker
 
 <!-- Mutable table. Agents flip their own row's Status + Proof + Updated in place.
      Status vocab: not-started → in-progress → blocked → done → verified.
@@ -39,13 +40,13 @@ Deliverable Tracker
 
 | #   | Deliverable                                                                        | Owner                 | Status      | Proof | Updated |
 | --- | ---------------------------------------------------------------------------------- | --------------------- | ----------- | ----- | ------- |
-| AC1 | Path/name migration (rewrite stale `artifact_path`, normalize agent sigils)        | ⊕workspace-doer       | not-started | —     | —       |
-| AC2 | Wire `backfill_legacy` into `--fix` with `status=legacy` + backfilled metric proof | ⊕workspace-doer       | not-started | —     | —       |
-| AC3 | Dashboard: live/recent/historical banner + Architecture Drift + migration button   | ⊕workspace-doer       | not-started | —     | —       |
+| AC1 | Path/name migration (rewrite stale `artifact_path`, normalize agent sigils)        | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
+| AC2 | Wire `backfill_legacy` into `--fix` with `status=legacy` + backfilled metric proof | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
+| AC3 | Dashboard: live/recent/historical banner + Architecture Drift + migration button   | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
 | AC4 | Portal surfaces agent-ops health score with freshness indicator                    | ⊕workspace-dashboards | not-started | —     | —       |
-| AC5 | `tests/test_agent_ops_monitor.py` fixture coverage                                 | ⊕workspace-doer       | not-started | —     | —       |
+| AC5 | `tests/test_agent_ops_monitor.py` fixture coverage                                 | ⊕workspace-doer       | done        | cc6c6f3e439f / e4430386f0c0 | 2026-04-23 |
 | AC6 | Post-migration verification — unverified-proof count drops on live DB              | ⊕workspace-reviewer   | not-started | —     | —       |
-| AC7 | `tools/fr_status.py` CLI — workspace-wide FR dashboard from ledgers                | ⊕workspace-doer       | not-started | —     | —       |
+| AC7 | `tools/fr_status.py` CLI — workspace-wide FR dashboard from ledgers                | ⊕workspace-doer       | done        | d54d2c092e9f | 2026-04-23 |
 
 ### 
 ### Tyler's Original Request
@@ -118,8 +119,35 @@ Deliverable Tracker
 
 ---
 
+### 2026-04-23T02:30:00Z — ⊕workspace-doer
+
+**Event:** implementation
+
+**Summary:** AC1, AC2, AC3, AC5, AC7 delivered
+
+**Details:**
+- **AC1** — Added `rewrite_artifact_path()`, `normalize_agent()`, `migrate_architecture()`, `_backup_db()`, `drift_candidates()` to `tools/agent_ops_monitor.py`. New CLI flags `--migrate` and `--migrate --dry-run`. Backup dir: `src/data/backups/workspace.db.<ts>.bak` (auto-created). Post-migration verification pass re-runs the `Path.exists()` loop so fixable proofs flip to `verified=1`.
+- **AC2** — Rewrote `backfill_legacy()` to use the legacy heuristic (orphan + `ended_at` earlier than earliest `proof_artifacts.created_at`). Backfilled proof has `description="predates proof system"`, `proof_type=metric`, `verified=1`. Run status flips to `legacy`. Wired into `fix_gaps()` so `--fix` now auto-backfills legacy orphans and reports `fixed_legacy` in the summary.
+- **AC3** — Added top `live-banner` with three cells (Live 10min / Recent 24h / Historical total) driven by new `live_count`/`recent_count`/`historical_total` keys on `collect_health()`. Added "Architecture Drift" section listing unverified proofs matching migration patterns with current vs suggested values side-by-side. Added POST `/apply-migration` endpoint to the `OpsHandler` returning `{status, fixed_paths, fixed_agents, verified_after, backup_path}`. Dry-run + live buttons wired via `applyMigration(dryRun)` JS.
+- **AC5** — `tests/test_agent_ops_monitor.py` + `tests/conftest.py` with in-memory sqlite schema mirror. 12 tests covering path rewriter (3 patterns), agent sigil normalization, `backfill_legacy` wiring into `fix_gaps`, legacy-predates-proof heuristic, health score math on known mix, and live/recent/historical counts. `monkeypatch` stubs `_backup_db` to keep tests isolated from live DB.
+- **AC7** — `tools/fr_status.py` stdlib-only CLI. Parses Header via `- **Key:** value` regex, tracker rows from `### Deliverable Tracker` (or bare header) markdown table. Flags `--json`, `--agent`, `--state`. `sys.stdout.reconfigure(encoding='utf-8')` for sigil safety.
+- Dry-run migration against live DB reports 16 paths to rewrite + 3 agents to rename (no mutation).
+- `pytest tests/test_agent_ops_monitor.py -v` → **12 passed in 0.16s**.
+
+**Perf run:** 730b9c00-679a-4deb-8734-f3b9ca417764 (doer implementation).
+
+**Next:** handoff to ⊕workspace-reviewer for AC6 (post-migration verification on live DB) and AC4 (portal freshness indicator — ⊕workspace-dashboards owner).
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
 - **Perf runs:** 2624f477-2cb7-41de-86b3-670330623ef8 — FR cycle timer (intake → merge)
+- **Perf runs:** 730b9c00-679a-4deb-8734-f3b9ca417764 — ⊕workspace-doer implementation dispatch
+- **Proof artifacts:** 73dadbf47fdb — AC1+AC2+AC3 agent_ops_monitor.py modifications
+- **Proof artifacts:** cc6c6f3e439f — AC5 tests/test_agent_ops_monitor.py
+- **Proof artifacts:** e6f27aa76706 — AC5 tests/conftest.py
+- **Proof artifacts:** d54d2c092e9f — AC7 tools/fr_status.py
+- **Proof artifacts:** e4430386f0c0 — AC5 test_pass (12/12)
