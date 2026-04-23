@@ -489,7 +489,7 @@ def _content_frames(manifest: dict) -> str:
     panes = []
     for i, dash in enumerate(manifest["dashboards"]):
         display = "block" if i == 0 else "none"
-        if dash["type"] == "static_html":
+        if dash["type"] in ("static_html", "living_html"):
             out = dash.get("output_abs", "")
             if out and Path(out).exists():
                 file_uri = Path(out).as_uri()
