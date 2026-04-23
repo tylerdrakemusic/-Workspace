@@ -1,6 +1,5 @@
 ﻿---
-description: "Use when researching quantum computing topics â€” algorithms (Shor's, Grover's, VQE, QAOA), quantum error correction, quantum ML, new use cases for IBM Quantum, comparing quantum frameworks (Qiskit vs Cirq vs Pennylane), or evaluating quantum advantage claims. Use for literature review, algorithm exploration, and identifying practical applications beyond random number generation."
----
+description: "Use when researching quantum computing topics â€” algorithms (Shor's, Grover's, VQE, QAOA), quantum error correction, quantum ML, new use cases for IBM Quantum, comparing quantum frameworks (Qiskit vs Cirq vs Pennylane), or evaluating quantum advantage claims. Use for literature review, algorithm exploration, and identifying practical applications beyond random number generation."user-invocable: false---
 
 <!-- inherits: f:\.github\instructions\âŸ¨ÏˆâŸ©quantum-base.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->

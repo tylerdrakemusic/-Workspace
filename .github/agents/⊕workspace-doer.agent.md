@@ -1,5 +1,6 @@
 ﻿---
 description: "Use when identical or templated scaffolding must be written across multiple projects simultaneously. Use for creating test directories, config files, shared boilerplate, requirements files, or any file structure that follows the same pattern across all workspace projects. Batch cross-project file writer."
+user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 

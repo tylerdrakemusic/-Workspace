@@ -1,5 +1,6 @@
 ﻿---
 description: "Use when evaluating safety of any intervention, supplement, medication change, protocol, or experiment. Use BEFORE any health decision is executed. Use for drug interaction checks, contraindication screening, side effect profiling, dose safety, addiction risk, or mortality risk assessment. MANDATORY checkpoint for all health interventions."
+user-invocable: false
 ---
 
 <!-- inherits: f:\.github\instructions\âˆžlife-base.instructions.md -->

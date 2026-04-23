@@ -1,6 +1,5 @@
 ﻿---
-description: "Use when brainstorming ideas, exploring possibilities, generating creative solutions, thinking through strategy, or having open-ended discussions about âˆžLife longevity optimization, project direction, new interventions, experiment design, or any blue-sky thinking. Use for ideation, what-if scenarios, and connecting dots across domains."
----
+description: "Use when brainstorming ideas, exploring possibilities, generating creative solutions, thinking through strategy, or having open-ended discussions about âˆžLife longevity optimization, project direction, new interventions, experiment design, or any blue-sky thinking. Use for ideation, what-if scenarios, and connecting dots across domains."user-invocable: false---
 
 <!-- inherits: f:\.github\instructions\âˆžlife-base.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->

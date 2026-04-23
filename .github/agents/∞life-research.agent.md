@@ -1,5 +1,6 @@
 ﻿---
 description: "Use when researching longevity, health, supplements, biohacking, Bryan Johnson Blueprint protocols, CRISPR, epigenetics, senolytics, telomeres, fertility, or any scientific/medical topic. Use for literature review, PubMed searches, comparing interventions, evaluating evidence quality, or summarizing papers."
+user-invocable: false
 ---
 
 <!-- inherits: f:\.github\instructions\âˆžlife-base.instructions.md -->

@@ -1,6 +1,5 @@
 ﻿---
-description: "Use when tracking spending, evaluating purchase decisions, checking budget status, logging expenses, performing cost-benefit analysis, or managing the âˆžLife monthly budget ($100-500). Use before ANY purchase recommendation."
----
+description: "Use when tracking spending, evaluating purchase decisions, checking budget status, logging expenses, performing cost-benefit analysis, or managing the âˆžLife monthly budget ($100-500). Use before ANY purchase recommendation."user-invocable: false---
 
 <!-- inherits: f:\.github\instructions\âˆžlife-base.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
