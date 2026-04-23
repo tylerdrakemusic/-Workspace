@@ -48,6 +48,10 @@ Each scope has a Unicode sigil prefix for visual identification and agent discov
 | **👁** | 👁AI-Manifest project | `👁ai-manifest-*.agent.md` |
 | **⊕** | Workspace-wide (cross-project) | `⊕workspace-*.agent.md` |
 
+**Encoding reference:** see `.github/instructions/sigil-encoding.instructions.md`
+for UTF-8/16 byte sequences, mojibake recovery, Windows/macOS/Linux console
+setup, and per-sigil pitfalls. Auto-attached by VS Code when relevant.
+
 ### Workspace-Level Agents (`⊕`)
 - **⊕workspace-overseer** — Top-level coordinator for cross-project tasks. Entry point for "do X to all projects."
 - **⊕workspace-intake** — Feature request intake + triage. First stop for any new feature/fix/chore Tyler files. Owns the FR registry and Tyler's scope gateway.
