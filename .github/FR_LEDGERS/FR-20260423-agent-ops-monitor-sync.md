@@ -45,7 +45,7 @@
 | AC3 | Dashboard: live/recent/historical banner + Architecture Drift + migration button   | ⊕workspace-doer       | done        | 73dadbf47fdb | 2026-04-23 |
 | AC4 | Portal surfaces agent-ops health score with freshness indicator                    | ⊕workspace-dashboards | done        | 0c5add000873 / ce698b9667a7 | 2026-04-23 |
 | AC5 | `tests/test_agent_ops_monitor.py` fixture coverage                                 | ⊕workspace-doer       | done        | cc6c6f3e439f / e4430386f0c0 | 2026-04-23 |
-| AC6 | Post-migration verification — unverified-proof count drops on live DB              | ⊕workspace-reviewer   | not-started | —     | —       |
+| AC6 | Post-migration verification — unverified-proof count drops on live DB              | ⊕workspace-reviewer   | done        | ac6-live-20260423_004732 | 2026-04-23 |
 | AC7 | `tools/fr_status.py` CLI — workspace-wide FR dashboard from ledgers                | ⊕workspace-doer       | done        | d54d2c092e9f | 2026-04-23 |
 
 ### 
@@ -154,6 +154,9 @@
 - **Perf runs:** ca474941-5dfe-48c7-be28-eecb1c1e39f2 — ⊕workspace-dashboards AC4 implementation
 - **Proof artifacts:** 0c5add000873 — AC4 tools/dashboard_portal.py (health card + freshness)
 - **Proof artifacts:** ce698b9667a7 — AC4 reports/portal.html (rendered card verified)
+- **AC6 DB backup:** `f:\⊕Workspace\src\data\backups\workspace.db.20260423_004732.bak` (114 688 bytes)
+- **AC6 snapshot (baseline):** `f:\⊕Workspace\tmp_baseline.json` — unverified=16, runs=66
+- **AC6 snapshot (post-migration):** `f:\⊕Workspace\tmp_post_main2.json` — unverified=4, 12 proofs auto-verified
 
 ---
 
@@ -194,3 +197,52 @@
 - State: BRANCHED → REVIEW_REQUESTED.
 
 **Next:** handoff to ⊕workspace-reviewer for AC6 (post-migration verification on live DB) + structured review of PR #7.
+
+---
+
+### 2026-04-23T08:45:00Z — ⊕workspace-reviewer
+
+**Event:** review + AC6 verification
+
+**Summary:** AC6 verified on live production DB; PR #7 review: 6/6 gates pass → APPROVE.
+
+**Details:**
+
+**Gate 1 — Scope conformance:** ✅ 11 files / +1476/-10; all changes map to AC1–AC7. No scope drift.
+
+**Gate 2 — Security (OWASP Top 10 spot-check on diff):**
+- SQL — all `UPDATE proof_artifacts` / `INSERT` statements in `migrate_architecture`, `backfill_legacy`, `close_session`, `fix_gaps` use parameterized queries (`?` placeholders). No string interpolation into SQL. ✅
+- Path traversal — `/apply-migration` POST accepts only `{dry_run: bool}`; no user-supplied paths. `_backup_db` destination is hardcoded to `src/data/backups/workspace.db.<ts>.bak`. ✅
+- Server binds to `127.0.0.1` only (not `0.0.0.0`). ✅
+- `run_id` validated `len ≤ 24` and hex-chars-only before DB use. ✅
+- No secrets, no tokens, no eval/exec. ✅
+- Prompt-injection surface — CLI args parsed via `argparse`; no LLM passthrough. ✅
+
+**Gate 3 — Alignment:** ✅
+- Type hints present on new public functions.
+- `encoding="utf-8"` used on file writes (`OUT_PATH.write_text`, `fr_status.py`).
+- `sys.stdout.reconfigure(encoding="utf-8")` in `fr_status.py` for sigil safety.
+- No loose JSON data files — all state in SQLite.
+
+**Gate 4 — Tests:** ✅ `pytest tests/test_agent_ops_monitor.py -v` → 12/12 passed in 0.15s.
+
+**Gate 5 — Proof-in-the-pudding:** ✅ All claimed proof_ids resolvable (73dadbf47fdb, cc6c6f3e439f, e4430386f0c0, d54d2c092e9f, 0c5add000873, ce698b9667a7).
+
+**Gate 6 — AC6 live verification on production DB (`f:\⊕Workspace\src\data\workspace.db`):**
+- **Baseline:** 66 runs, 4 zombies, 2 orphans, **16 unverified**, health 90.9%.
+- **Dry-run (prod):** `fixed_paths=16, fixed_agents=3, verified_after=0` — matches worktree dry-run.
+- **Live migration:** backup `f:\⊕Workspace\src\data\backups\workspace.db.20260423_004732.bak` (114 688 bytes), 16 paths rewritten, 3 agents normalized, **12 proofs auto-verified**.
+- **Post-migration:** 66 runs (unchanged), **4 unverified** (dropped from 16 → 4, a 12-row / 75% reduction).
+- **Residual 4 unverified verified as genuinely missing artifacts:**
+  1. `330aec03009d` — `f:\❤Music\docs\protocols\SONGDLC_PIPELINE.md` (file not on disk).
+  2. `cf7f2f7fefa3` — `f:\.github\!!☾⛧security\agent-manifest.json` (file not on disk; folder rename + agent-sigil both applied successfully).
+  3. `84598e5ac9c4` — `f:\⊕Workspace\.github\FR_LEDGERS\FR-20260423-agent-ops-monitor-sync.md` (exists in worktree; will verify on merge).
+  4. `e4430386f0c0` — `path=None` (test_pass metric proof, no artifact_path — auto-verifiable by `--fix`, not by `--migrate`).
+
+**Path-resolution note (non-blocking):** `_backup_db` and `init_db.DB_PATH` both resolve relative to `__file__`, so running the tool from a worktree targets the worktree's copy of `workspace.db` rather than the production DB. For this review I invoked `migrate_architecture()` directly against the production connection (via `f:\⊕Workspace\src\utils\init_db.py` on sys.path). Tyler/CI should run the migration once post-merge from main to keep prod and tool in the same directory — OR we could add a `--db <path>` flag in a follow-up FR. Filing as optional suggestion, not a blocker.
+
+**Decision:** APPROVE — all 6 gates pass.
+
+**GitHub review:** posted via `mcp_github` to PR #7 (event=APPROVE).
+
+**Next:** Tyler's merge-approval gate. Recommend squash-merge and then rerun `C:\G\python.exe f:\⊕Workspace\tools\agent_ops_monitor.py --fix` from main to mop up the 4 residual unverified rows (the one path-fixable ledger ref will verify once merged; the `path=None` row will verify via `--fix`).
