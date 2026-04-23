@@ -271,7 +271,7 @@
       <div class="stat-chip"><span class="stat-num">7</span> Static</div>
       <div class="stat-chip"><span class="stat-num">3</span> Live</div>
       <div class="stat-chip"><span class="stat-num">0</span> Console</div>
-      <div class="stat-chip"><span class="stat-num">6</span> Categories</div>
+      <div class="stat-chip"><span class="stat-num">7</span> Categories</div>
     </div>
     <div class="nav-section">
       
@@ -348,6 +348,15 @@
         </div>
 
         <div class="nav-item" data-idx="8" onclick="switchDash(8, this)">
+          <span class="nav-icon">🎸</span>
+          <div class="nav-text">
+            <span class="nav-title">Guitar Trainer</span>
+            <span class="nav-project">❤Music</span>
+          </div>
+          <span class="nav-badge live">Live</span>
+        </div>
+
+        <div class="nav-item" data-idx="9" onclick="switchDash(9, this)">
           <span class="nav-icon">⚛️</span>
           <div class="nav-text">
             <span class="nav-title">Quantum Benchmarks</span>
@@ -356,7 +365,7 @@
           <span class="nav-badge static">Static</span>
         </div>
 
-        <div class="nav-item" data-idx="9" onclick="switchDash(9, this)">
+        <div class="nav-item" data-idx="10" onclick="switchDash(10, this)">
           <span class="nav-icon">🎙️</span>
           <div class="nav-text">
             <span class="nav-title">Executive Audio Brief Portal</span>
@@ -364,19 +373,10 @@
           </div>
           <span class="nav-badge static">Static</span>
         </div>
-
-        <div class="nav-item" data-idx="10" onclick="switchDash(10, this)">
-          <span class="nav-icon">🎸</span>
-          <div class="nav-text">
-            <span class="nav-title">Guitar Trainer</span>
-            <span class="nav-project">❤Music</span>
-          </div>
-          <span class="nav-badge live">Live</span>
-        </div>
     </div>
     
     <div class="sidebar-footer">
-      Generated 2026-04-21 &middot; 11 dashboards<br>
+      Generated 2026-04-22 18:34:59 &middot; 11 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
@@ -390,10 +390,6 @@
 <div class="inline-tool pwgen">
   <div class="pwgen-title">🔑 Password Generator</div>
   <div class="pwgen-sub">Quantum-assisted · stateless · never stored</div>
-  <div class="pwgen-field">
-    <label>Service / Label</label>
-    <input type="text" id="pg-service" placeholder="GitHub, ProtonMail…" autocomplete="off" spellcheck="false">
-  </div>
   <div class="pwgen-field">
     <label>Length <span id="pg-len-val">16</span></label>
     <input type="range" id="pg-len" min="8" max="64" value="16" oninput="pgLen(this.value)">
@@ -510,9 +506,9 @@
 </div>
 <div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-8" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-9" style="display:none"><iframe src="file:///f:/%F0%9F%91%81AI-Manifest/output/executive_brief_portal.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-10" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5055" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5055" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-8" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5055" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5055" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-9" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-10" style="display:none"><iframe src="file:///f:/%F0%9F%91%81AI-Manifest/output/executive_brief_portal.html" frameborder="0"></iframe></div>
   </main>
   <script>
     function switchDash(idx, el) {
@@ -530,7 +526,7 @@
       window.location = 'portal://launch';
       setTimeout(() => { if (btn) { btn.textContent = 'Start all servers'; btn.disabled = false; } pollServers(); }, 4000);
     }
-    const SERVERS = [{port:5050,label:'Music Dashboard'},{port:8100,label:'TJD Radio'},{port:5055,label:'Guitar Trainer'}];
+    const SERVERS = [];
     async function checkServer(port, dotId) {
       const dot = document.getElementById(dotId);
       if (!dot) return;
