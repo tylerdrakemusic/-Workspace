@@ -28,6 +28,8 @@ import argparse
 import html as html_mod
 import json
 import os
+import re
+import shutil
 import sys
 import time
 import threading
@@ -139,6 +141,12 @@ def collect_health(conn) -> dict:
     gap_count = len(zombies) + len(orphans) + len(unverified)
     health_pct = ((total_runs - len(zombies) - len(orphans)) / max(total_runs, 1)) * 100
 
+    # Live / recent / historical counts (AC3 banner).
+    live_cutoff = now - 600       # 10 minutes
+    recent_cutoff = now - 86400   # 24 hours
+    live_count = sum(1 for s in sessions if (s["started_at"] or 0) >= live_cutoff)
+    recent_count = sum(1 for s in sessions if (s["started_at"] or 0) >= recent_cutoff)
+
     return {
         "generated_at": datetime.now().isoformat(),
         "total_runs": total_runs,
@@ -150,7 +158,172 @@ def collect_health(conn) -> dict:
         "agent_coverage": [dict(a) for a in agent_coverage],
         "gap_count": gap_count,
         "health_pct": round(health_pct, 1),
+        "live_count": live_count,
+        "recent_count": recent_count,
+        "historical_total": total_runs,
     }
+
+
+# ── Architecture Migration (AC1) ─────────────────────────────
+
+# Workspace sigils — these are the valid project-root prefixes after the
+# flat-layout migration. Any artifact_path starting with
+# ``f:/executedcode/<sigil>...`` is stale and should be rewritten to
+# ``f:\<sigil>...``.
+_SIGILS = ("∞", "❤", "⟨ψ⟩", "👁", "⊕")
+
+# Pattern to match stale executedcode paths. Captures the remainder after
+# ``f:/executedcode/`` (case-insensitive drive letter).
+_EXECUTEDCODE_RE = re.compile(r"^[fF]:[\\/]executedcode[\\/](.+)$")
+
+# Legacy security folder rename.
+_OLD_SECURITY = "!!security"
+_NEW_SECURITY = "!!☾⛧security"
+
+
+def rewrite_artifact_path(path: str | None) -> str | None:
+    """Return migrated artifact_path or original if nothing to rewrite.
+
+    Applies, in order:
+      1. ``f:/executedcode/...`` → ``f:\\...`` (strips executedcode prefix).
+      2. Forward slashes → backslashes (Windows canonical).
+      3. ``!!security`` → ``!!☾⛧security`` anywhere in the path.
+    """
+    if not path:
+        return path
+    new = path
+    m = _EXECUTEDCODE_RE.match(new)
+    if m:
+        new = "f:\\" + m.group(1)
+    # Normalize slashes to backslashes for any f:/... prefix or subpath.
+    if new.lower().startswith("f:/") or "/" in new:
+        # Only touch paths that look like local filesystem paths (drive-prefixed).
+        if re.match(r"^[a-zA-Z]:", new):
+            new = new.replace("/", "\\")
+    if _OLD_SECURITY in new and _NEW_SECURITY not in new:
+        new = new.replace(_OLD_SECURITY, _NEW_SECURITY)
+    return new
+
+
+def normalize_agent(agent: str | None) -> str | None:
+    """Prefix bare ``workspace-*`` agent names with the ⊕ sigil."""
+    if not agent:
+        return agent
+    if agent.startswith("workspace-"):
+        return "⊕" + agent
+    return agent
+
+
+def _backup_db(dry_run: bool = False) -> Path | None:
+    """Create a timestamped backup of workspace.db under src/data/backups/.
+
+    Returns the backup path, or ``None`` in dry-run mode.
+    """
+    src = Path(__file__).resolve().parent.parent / "src" / "data" / "workspace.db"
+    backup_dir = src.parent / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dest = backup_dir / f"workspace.db.{stamp}.bak"
+    if dry_run:
+        return None
+    if src.exists():
+        shutil.copy2(src, dest)
+    return dest
+
+
+def migrate_architecture(conn, *, dry_run: bool = False) -> dict:
+    """Migrate stale artifact_path entries and agent name drift.
+
+    Returns a summary dict with counts and sample diffs.
+    """
+    rows = conn.execute(
+        "SELECT proof_id, agent, artifact_path, verified FROM proof_artifacts"
+    ).fetchall()
+
+    path_changes: list[dict] = []
+    agent_changes: list[dict] = []
+
+    for r in rows:
+        new_path = rewrite_artifact_path(r["artifact_path"])
+        new_agent = normalize_agent(r["agent"])
+        if new_path != r["artifact_path"]:
+            path_changes.append({
+                "proof_id": r["proof_id"],
+                "old": r["artifact_path"],
+                "new": new_path,
+            })
+        if new_agent != r["agent"]:
+            agent_changes.append({
+                "proof_id": r["proof_id"],
+                "old": r["agent"],
+                "new": new_agent,
+            })
+
+    backup_path = None
+    verified_after = 0
+
+    if not dry_run:
+        backup_path = _backup_db(dry_run=False)
+        for ch in path_changes:
+            conn.execute(
+                "UPDATE proof_artifacts SET artifact_path = ? WHERE proof_id = ?",
+                (ch["new"], ch["proof_id"]),
+            )
+        for ch in agent_changes:
+            conn.execute(
+                "UPDATE proof_artifacts SET agent = ? WHERE proof_id = ?",
+                (ch["new"], ch["proof_id"]),
+            )
+        conn.commit()
+
+        # Post-migration verification pass — flip verified=1 where path now exists.
+        unverified = conn.execute(
+            "SELECT proof_id, artifact_path FROM proof_artifacts WHERE verified = 0"
+        ).fetchall()
+        for uv in unverified:
+            p = uv["artifact_path"]
+            if p and Path(p).exists():
+                conn.execute(
+                    "UPDATE proof_artifacts SET verified = 1, verified_at = ? WHERE proof_id = ?",
+                    (datetime.now().isoformat(), uv["proof_id"]),
+                )
+                verified_after += 1
+        conn.commit()
+
+    return {
+        "dry_run": dry_run,
+        "backup_path": str(backup_path) if backup_path else None,
+        "fixed_paths": len(path_changes),
+        "fixed_agents": len(agent_changes),
+        "verified_after": verified_after,
+        "path_samples": path_changes[:20],
+        "agent_samples": agent_changes[:20],
+    }
+
+
+def drift_candidates(conn) -> list[dict]:
+    """Return unverified proofs whose artifact_path or agent matches a migration pattern."""
+    rows = conn.execute(
+        """SELECT proof_id, run_id, agent, proof_type, description, artifact_path, created_at
+           FROM proof_artifacts WHERE verified = 0"""
+    ).fetchall()
+    out: list[dict] = []
+    for r in rows:
+        new_path = rewrite_artifact_path(r["artifact_path"])
+        new_agent = normalize_agent(r["agent"])
+        if new_path != r["artifact_path"] or new_agent != r["agent"]:
+            out.append({
+                "proof_id": r["proof_id"],
+                "run_id": r["run_id"],
+                "agent": r["agent"],
+                "suggested_agent": new_agent,
+                "proof_type": r["proof_type"],
+                "description": r["description"],
+                "artifact_path": r["artifact_path"],
+                "suggested_path": new_path,
+                "created_at": r["created_at"],
+            })
+    return out
 
 
 # ── Auto-Fix ─────────────────────────────────────────────────
@@ -208,18 +381,45 @@ def fix_gaps(conn, health: dict) -> dict:
 
     conn.commit()
 
+    # Backfill legacy orphans (predate proof system) so they stop showing as gaps.
+    fixed_legacy = backfill_legacy(conn, health)
+
     return {
         "fixed_zombies": fixed_zombies,
         "fixed_unverified": fixed_unverified,
         "fixed_proof_complete": fixed_proof_complete,
-        "remaining_orphans": len(health["orphans"]),
+        "fixed_legacy": fixed_legacy,
+        "remaining_orphans": max(len(health["orphans"]) - fixed_legacy, 0),
     }
 
 
 def backfill_legacy(conn, health: dict) -> int:
-    """Insert a legacy proof artifact for orphan runs predating the proof system."""
+    """Insert a legacy proof artifact for orphan runs predating the proof system.
+
+    Heuristic: only orphan runs whose ``ended_at`` is older than the earliest
+    ``proof_artifacts.created_at`` are considered pre-proof-system. Those runs
+    have their status flipped to ``legacy`` and receive a backfilled metric
+    proof with description ``"predates proof system"``.
+    """
+    earliest_proof_row = conn.execute(
+        "SELECT MIN(created_at) AS first FROM proof_artifacts"
+    ).fetchone()
+    earliest_str = earliest_proof_row["first"] if earliest_proof_row else None
+    # created_at is an ISO string; convert to epoch for comparison against ended_at (REAL epoch).
+    if earliest_str:
+        try:
+            earliest_epoch = datetime.fromisoformat(earliest_str).timestamp()
+        except (TypeError, ValueError):
+            earliest_epoch = None
+    else:
+        earliest_epoch = None
+
     count = 0
     for o in health["orphans"]:
+        ended = o.get("ended_at")
+        if earliest_epoch is not None and ended is not None and ended >= earliest_epoch:
+            # Not legacy — this orphan postdates the proof system, skip.
+            continue
         conn.execute(
             """INSERT INTO proof_artifacts
                (proof_id, run_id, agent, proof_type, description, verified, verified_at)
@@ -229,9 +429,13 @@ def backfill_legacy(conn, health: dict) -> int:
                 o["run_id"],
                 "⊕ops-monitor",
                 "metric",
-                f"Legacy run backfilled — predates proof system. Original: {o['name']}",
+                "predates proof system",
                 datetime.now().isoformat(),
             ),
+        )
+        conn.execute(
+            "UPDATE perf_runs SET status = ?, detail = COALESCE(detail, '') || ' [backfilled: predates proof system]' WHERE run_id = ?",
+            ("legacy", o["run_id"]),
         )
         count += 1
     conn.commit()
@@ -240,7 +444,7 @@ def backfill_legacy(conn, health: dict) -> int:
 
 # ── HTML Dashboard ───────────────────────────────────────────
 
-def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
+def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[dict] | None = None) -> str:
     generated = health["generated_at"][:19]
     total = health["total_runs"]
     healthy = health["healthy"]
@@ -249,6 +453,10 @@ def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
     unverified_count = len(health["unverified"])
     gap_count = health["gap_count"]
     health_pct = health["health_pct"]
+    live_count = health.get("live_count", 0)
+    recent_count = health.get("recent_count", 0)
+    historical_total = health.get("historical_total", total)
+    drift = drift or []
 
     # Health color
     if health_pct >= 95:
@@ -270,13 +478,14 @@ def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
         fz = fix_summary["fixed_zombies"]
         fu = fix_summary["fixed_unverified"]
         fp = fix_summary["fixed_proof_complete"]
+        fl = fix_summary.get("fixed_legacy", 0)
         ro = fix_summary["remaining_orphans"]
         fix_banner = f"""
     <div class="fix-banner">
       <span class="fix-icon">🔧</span>
       <div>
         <strong>Auto-Fix Applied</strong><br>
-        <span class="fix-detail">{fz} zombie(s) closed · {fp} proof-complete session(s) closed · {fu} proof(s) verified · {ro} orphan run(s) remain (need manual proof)</span>
+        <span class="fix-detail">{fz} zombie(s) closed · {fp} proof-complete session(s) closed · {fu} proof(s) verified · {fl} legacy orphan(s) backfilled · {ro} orphan run(s) remain</span>
       </div>
     </div>"""
 
@@ -356,6 +565,27 @@ def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
             f'</tr>'
         )
     agent_html = "\n".join(agent_rows) if agent_rows else '<tr><td colspan="5" class="empty">No proof data yet</td></tr>'
+
+    # Architecture Drift rows (AC3).
+    drift_rows = []
+    for d in drift:
+        pid = _esc(d["proof_id"])
+        agent = _esc(d["agent"])
+        sugg_agent = _esc(d["suggested_agent"])
+        old_p = _esc(d["artifact_path"])
+        new_p = _esc(d["suggested_path"])
+        agent_cell = agent if agent == sugg_agent else f'<span class="drift-old">{agent}</span> → <span class="drift-new">{sugg_agent}</span>'
+        path_cell = old_p if old_p == new_p else f'<div class="drift-old">{old_p}</div><div class="drift-new">→ {new_p}</div>'
+        drift_rows.append(
+            f'<tr>'
+            f'<td class="mono">{pid}</td>'
+            f'<td>{agent_cell}</td>'
+            f'<td>{path_cell}</td>'
+            f'<td>{_esc(d["description"])}</td>'
+            f'</tr>'
+        )
+    drift_html = "\n".join(drift_rows) if drift_rows else '<tr><td colspan="4" class="empty">No architecture drift detected</td></tr>'
+    drift_count = len(drift)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -587,11 +817,73 @@ def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
     font-size: 0.75rem;
     text-align: center;
   }}
+
+  /* Live banner (AC3) */
+  .live-banner {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+  }}
+  .live-cell {{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    text-align: center;
+  }}
+  .live-val {{ font-size: 2rem; font-weight: 800; line-height: 1.1; }}
+  .live-label {{ font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.3rem; }}
+  .live-sub {{ text-transform: none; letter-spacing: 0; color: var(--muted); font-weight: 400; }}
+  .live-live {{ color: var(--cyan); }}
+  .live-recent {{ color: var(--success); }}
+  .live-total {{ color: var(--accent); }}
+
+  /* Drift section (AC3) */
+  .drift-actions {{
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+  }}
+  .mig-btn {{
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }}
+  .mig-btn.mig-dry {{ border-color: var(--warning); color: var(--warning); }}
+  .mig-btn.mig-live {{ border-color: var(--success); color: var(--success); }}
+  .mig-btn:hover {{ background: rgba(255,255,255,0.03); }}
+  .drift-hint {{ color: var(--muted); font-size: 0.75rem; }}
+  .drift-old {{ color: var(--warning); font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.78rem; }}
+  .drift-new {{ color: var(--success); font-family: 'Cascadia Code','Consolas',monospace; font-size: 0.78rem; }}
 </style>
 </head>
 <body>
   <h1><span class="sigil">⊕</span> Agent Ops Monitor</h1>
   <div class="subtitle">Session health · Gap detection · Proof audit &mdash; {generated}</div>
+
+  <div class="live-banner">
+    <div class="live-cell">
+      <div class="live-val live-live">{live_count}</div>
+      <div class="live-label">Live <span class="live-sub">(last 10min)</span></div>
+    </div>
+    <div class="live-cell">
+      <div class="live-val live-recent">{recent_count}</div>
+      <div class="live-label">Recent <span class="live-sub">(24h)</span></div>
+    </div>
+    <div class="live-cell">
+      <div class="live-val live-total">{historical_total}</div>
+      <div class="live-label">Historical total</div>
+    </div>
+  </div>
 
   {fix_banner}
 
@@ -672,6 +964,26 @@ def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
     </tbody>
   </table>
 
+  <h2 style="color: var(--orange);">Architecture Drift ({drift_count})</h2>
+  <div class="drift-actions">
+    <button class="mig-btn mig-dry" onclick="applyMigration(true)">Apply Migration (dry-run)</button>
+    <button class="mig-btn mig-live" onclick="applyMigration(false)">Apply Migration (live)</button>
+    <span class="drift-hint">Dry-run only reports changes; live writes to DB after timestamped backup.</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Proof ID</th>
+        <th>Agent</th>
+        <th>Artifact path</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {drift_html}
+    </tbody>
+  </table>
+
   <div class="footer">
     ⊕Workspace Agent Ops Monitor &mdash; Self-regenerating dashboard &bull;
     <code>python tools/agent_ops_monitor.py --fix</code> to auto-close gaps &bull;
@@ -705,6 +1017,23 @@ def render_dashboard(health: dict, fix_summary: dict | None = None) -> str:
           'C:\\\\G\\\\python.exe tools/agent_ops_monitor.py --close ' + runId);
         btn.disabled = false;
         btn.textContent = 'Close';
+      }}
+    }}
+
+    async function applyMigration(dryRun) {{
+      const label = dryRun ? 'dry-run' : 'LIVE (writes to DB after backup)';
+      if (!confirm('Apply architecture migration (' + label + ')?')) return;
+      try {{
+        const resp = await fetch('/apply-migration', {{
+          method: 'POST',
+          headers: {{'Content-Type': 'application/json'}},
+          body: JSON.stringify({{dry_run: !!dryRun}})
+        }});
+        const data = await resp.json();
+        alert('Migration result:\\n' + JSON.stringify(data, null, 2));
+        if (!dryRun) location.reload();
+      }} catch (e) {{
+        alert('Migration endpoint requires --serve mode. Run:\\nC:\\\\G\\\\python.exe tools/agent_ops_monitor.py --migrate' + (dryRun ? ' --dry-run' : ''));
       }}
     }}
   </script>
@@ -748,8 +1077,9 @@ class OpsHandler(BaseHTTPRequestHandler):
             init_db()
             conn = get_connection()
             health = collect_health(conn)
+            drift = drift_candidates(conn)
             conn.close()
-            html_content = render_dashboard(health)
+            html_content = render_dashboard(health, drift=drift)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
@@ -811,6 +1141,32 @@ class OpsHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(fix_summary).encode("utf-8"))
+        elif parsed.path == "/apply-migration":
+            content_len = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_len) if content_len else b"{}"
+            try:
+                data = json.loads(body) if body else {}
+            except (json.JSONDecodeError, ValueError):
+                self.send_error(400, "Invalid JSON")
+                return
+            dry_run = bool(data.get("dry_run", True))
+
+            init_db()
+            conn = get_connection()
+            result = migrate_architecture(conn, dry_run=dry_run)
+            conn.close()
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            payload = {
+                "status": "dry-run" if dry_run else "applied",
+                "fixed_paths": result["fixed_paths"],
+                "fixed_agents": result["fixed_agents"],
+                "verified_after": result["verified_after"],
+                "backup_path": result["backup_path"],
+            }
+            self.wfile.write(json.dumps(payload).encode("utf-8"))
         else:
             self.send_error(404)
 
@@ -843,8 +1199,10 @@ def serve_dashboard(port: int = 5060) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="⊕ Agent Ops Monitor")
     parser.add_argument("--no-open", action="store_true", help="Generate without opening browser")
-    parser.add_argument("--fix", action="store_true", help="Auto-close zombie runs, proof-complete runs, and verify proofs")
+    parser.add_argument("--fix", action="store_true", help="Auto-close zombie runs, proof-complete runs, backfill legacy, and verify proofs")
     parser.add_argument("--backfill-legacy", action="store_true", help="Backfill proof for orphan runs predating the proof system")
+    parser.add_argument("--migrate", action="store_true", help="Rewrite stale artifact_path + normalize agent sigils")
+    parser.add_argument("--dry-run", action="store_true", help="With --migrate: report planned changes without mutating DB")
     parser.add_argument("--json", action="store_true", help="Output JSON health report")
     parser.add_argument("--close", metavar="RUN_ID", help="Close a specific session by run_id")
     parser.add_argument("--serve", action="store_true", help="Start interactive dashboard server")
@@ -872,6 +1230,36 @@ def main() -> None:
             sys.exit(1)
         return
 
+    # --migrate: architecture migration
+    if args.migrate:
+        print(f"⊕ Agent Ops Monitor — Architecture Migration ({'dry-run' if args.dry_run else 'LIVE'})")
+        result = migrate_architecture(conn, dry_run=args.dry_run)
+        conn.close()
+        print(f"  Paths to rewrite:  {result['fixed_paths']}")
+        print(f"  Agents to rename:  {result['fixed_agents']}")
+        if not args.dry_run:
+            print(f"  Backup:            {result['backup_path']}")
+            print(f"  Verified after:    {result['verified_after']}")
+        else:
+            print("  (dry-run — no changes written)")
+        if result["path_samples"]:
+            print("\n  Path samples (up to 20):")
+            for s in result["path_samples"]:
+                print(f"    {s['proof_id']}  {s['old']}")
+                print(f"      → {s['new']}")
+        if result["agent_samples"]:
+            print("\n  Agent samples (up to 20):")
+            for s in result["agent_samples"]:
+                print(f"    {s['proof_id']}  {s['old']}  →  {s['new']}")
+        print(json.dumps({
+            "dry_run": result["dry_run"],
+            "fixed_paths": result["fixed_paths"],
+            "fixed_agents": result["fixed_agents"],
+            "verified_after": result["verified_after"],
+            "backup_path": result["backup_path"],
+        }, indent=2))
+        return
+
     health = collect_health(conn)
 
     if args.json:
@@ -887,6 +1275,7 @@ def main() -> None:
         print(f"  Closed {fix_summary['fixed_zombies']} zombie(s)")
         print(f"  Closed {fix_summary['fixed_proof_complete']} proof-complete session(s)")
         print(f"  Verified {fix_summary['fixed_unverified']} proof(s)")
+        print(f"  Backfilled {fix_summary.get('fixed_legacy', 0)} legacy orphan(s)")
         print(f"  Remaining orphans: {fix_summary['remaining_orphans']} (need manual proof)")
         # Re-collect after fixes
         health = collect_health(conn)
@@ -896,10 +1285,11 @@ def main() -> None:
         print(f"  Backfilled {backfilled} legacy orphan run(s) with proof markers")
         health = collect_health(conn)
 
+    drift = drift_candidates(conn)
     conn.close()
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    html = render_dashboard(health, fix_summary)
+    html = render_dashboard(health, fix_summary, drift=drift)
     OUT_PATH.write_text(html, encoding="utf-8")
 
     print(f"⊕ Agent Ops Monitor")
