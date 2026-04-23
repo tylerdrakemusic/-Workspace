@@ -1,5 +1,6 @@
 ﻿---
 description: "Use when auditing agent proof chains, verifying that agents produced real outputs, checking proof coverage across runs, or generating proof-in-the-pudding reports. Run after any agent lifecycle to verify work was done. Use for: 'prove agents work', 'verify last run', 'proof coverage', 'audit agent outputs'."
+user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 

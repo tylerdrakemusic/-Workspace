@@ -1,5 +1,6 @@
 ﻿---
 description: "Use after cross-project changes to verify consistency across all workspace projects. Use for auditing test suites, directory structures, config files, naming conventions, dependency lists, or any shared pattern. Outputs alignment report with drift detection and fix recommendations."
+user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 

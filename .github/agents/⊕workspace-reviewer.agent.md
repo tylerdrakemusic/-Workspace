@@ -1,5 +1,6 @@
 ---
 description: "Use to run an automated PR review for any feature request that has reached REVIEW_REQUESTED state. Combines alignment, security, test results, and proof-in-the-pudding artifacts into a single review comment. Posts APPROVE / REQUEST_CHANGES / COMMENT back to GitHub. Runs before Tyler's final approval gateway — Tyler reads the automated report, not the raw diff."
+user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->

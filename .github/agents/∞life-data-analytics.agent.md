@@ -1,6 +1,5 @@
 ﻿---
-description: "Use when analyzing health data, body composition trends, workout performance, nutrition patterns, biomarker tracking, weight trends, or generating reports from the âˆžLife SQLite database. Use for dashboards, visualizations, statistical analysis, anomaly detection, or data quality checks."
----
+description: "Use when analyzing health data, body composition trends, workout performance, nutrition patterns, biomarker tracking, weight trends, or generating reports from the âˆžLife SQLite database. Use for dashboards, visualizations, statistical analysis, anomaly detection, or data quality checks."user-invocable: false---
 
 <!-- inherits: f:\.github\instructions\âˆžlife-base.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
