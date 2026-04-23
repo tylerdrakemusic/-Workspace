@@ -32,7 +32,6 @@ state machine, gateway definitions, and naming rules.
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
 | FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | REVIEW_REQUESTED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-23 |
 | FR-20260422-disable-plumbing-agents-dropdown | Disable Plumbing Agents from VS Code Agent Dropdown | chore | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-22 |
-| FR-20260423-agent-ops-monitor-sync | Reconcile agent ops monitor with current workspace architecture and improve portal visibility | fix | ⊕Workspace | REVIEW_REQUESTED | fix/FR-20260423-agent-ops-monitor-sync | [#7](https://github.com/tylerdrakemusic/-Workspace/pull/7) | ⊕workspace-reviewer | 2026-04-23 | 2026-04-23 |
 
 
 
@@ -41,6 +40,7 @@ state machine, gateway definitions, and naming rules.
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
 | FR-20260422-music-repo-purge | Purge oversized binaries from ❤Music history | chore | ❤Music | MERGED | force-push @ 0abdef4 | 2026-04-22 | 2026-04-22 |
+| FR-20260423-agent-ops-monitor-sync | Reconcile agent ops monitor with current workspace architecture and improve portal visibility | fix | ⊕Workspace | MERGED | [#7](https://github.com/tylerdrakemusic/-Workspace/pull/7) @ 46c8eed | 2026-04-23 | 2026-04-23 |
 | FR-20260422-db-backup-strategy | DB backup strategy for all project databases | chore | All 5 projects | CLOSED (rejected — deferred) | N/A | 2026-04-22 | 2026-04-22 |
 | FR-20260422-gitignore-sweep | Add .gitignore to all remaining projects | chore | ∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace | CLOSED | e3586e6 / af188c9 / f90f64c / bab2dad | 2026-04-22 | 2026-04-22 |
 | FR-20260422-sigil-encoding-map | Sigil Encoding Reference Map | chore | ⊕Workspace | MERGED | [#4](https://github.com/tylerdrakemusic/-Workspace/pull/4) @ 03d8a9f | 2026-04-22 | 2026-04-22 |

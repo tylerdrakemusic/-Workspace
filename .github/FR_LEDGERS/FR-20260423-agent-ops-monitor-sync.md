@@ -10,14 +10,14 @@
 - **Type:** fix
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** REVIEW_REQUESTED
-- **Branch:** fix/FR-20260423-agent-ops-monitor-sync (worktree: F:\worktrees\FR-20260423-agent-ops-monitor-sync)
-- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/7
+- **State:** MERGED
+- **Branch:** fix/FR-20260423-agent-ops-monitor-sync (merged & deleted; worktree removed)
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/7 (merged @ 46c8eed)
 - **Cycle timer:** 2624f477-2cb7-41de-86b3-670330623ef8
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-23
-- **Closed:** —
-- **Final state:** —
+- **Closed:** 2026-04-23
+- **Final state:** MERGED
 
 ### Acceptance Criteria
 1. A path-remediation migration (in `tools/agent_ops_monitor.py` or new `tools/agent_ops_migrate.py`) rewrites stale `proof_artifacts.artifact_path` entries: `f:/executedcode/<sigil>X/...` → `f:\<sigil>X\...`, `!!security` → `!!☾⛧security`, and normalizes agent names missing sigil prefix (`workspace-*` → `⊕workspace-*`). Re-verification pass runs after rewrites.
@@ -246,3 +246,48 @@
 **GitHub review:** posted via `mcp_github` to PR #7 (event=APPROVE).
 
 **Next:** Tyler's merge-approval gate. Recommend squash-merge and then rerun `C:\G\python.exe f:\⊕Workspace\tools\agent_ops_monitor.py --fix` from main to mop up the 4 residual unverified rows (the one path-fixable ledger ref will verify once merged; the `path=None` row will verify via `--fix`).
+
+---
+
+### 2026-04-23T12:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** PR #7 squash-merged to main → MERGED
+
+**Details:**
+- Tyler approved merge per overseer handoff.
+- Squash-merged PR #7 into main as commit `46c8eed` with title `FR-20260423: agent-ops-monitor sync — migration + living dashboard + fr_status CLI`.
+- Remote branch `fix/FR-20260423-agent-ops-monitor-sync` deleted by GitHub auto-delete.
+- Local branch `fix/FR-20260423-agent-ops-monitor-sync` deleted; worktree `F:\worktrees\FR-20260423-agent-ops-monitor-sync` removed (force) and `.git/worktrees/FR-20260423-agent-ops-monitor-sync` metadata pruned.
+- Local `main` rebased onto `origin/main` (resolved conflict in `.github/FEATURE_REQUESTS.md` — kept FR-20260423 row from merged side; inherited playwright row from in-progress FR).
+- Post-merge `C:\G\python.exe tools\agent_ops_monitor.py --fix` summary: **3 zombies closed, 0 proof-complete sessions closed, 2 proofs verified, 0 legacy orphans backfilled, 2 remaining orphans** (need manual proof). Health 91% (56 runs, 7 gaps).
+  - Two residual unverified rows from AC6 verified post-merge: the FR-20260423 ledger-path row and the `path=None` test_pass proof (2 verified).
+  - 2 remaining orphans are from live agent sessions still running and will self-close when those sessions finish.
+- State: REVIEW_REQUESTED → MERGED.
+- Cycle timer `2624f477-2cb7-41de-86b3-670330623ef8` closure handled by FR reconciliation sweep.
+
+**Next:** close FR — registry row flipped to MERGED; ledger moved to Archive section.
+
+
+---
+
+### 2026-04-23T12:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** PR #7 squash-merged to main → MERGED
+
+**Details:**
+- Tyler approved merge per overseer handoff.
+- Squash-merged PR #7 into main as commit `46c8eed` with title `FR-20260423: agent-ops-monitor sync — migration + living dashboard + fr_status CLI`.
+- Remote branch `fix/FR-20260423-agent-ops-monitor-sync` deleted by GitHub auto-delete.
+- Local branch `fix/FR-20260423-agent-ops-monitor-sync` deleted; worktree `F:\worktrees\FR-20260423-agent-ops-monitor-sync` removed (force) and `.git/worktrees/FR-20260423-agent-ops-monitor-sync` metadata pruned.
+- Local `main` rebased onto `origin/main` (resolved conflict in `.github/FEATURE_REQUESTS.md` — kept FR-20260423 row from merged side; inherited playwright row from in-progress FR).
+- Post-merge `C:\G\python.exe tools\agent_ops_monitor.py --fix` summary: **3 zombies closed, 0 proof-complete sessions closed, 2 proofs verified, 0 legacy orphans backfilled, 2 remaining orphans** (need manual proof). Health 91% (56 runs, 7 gaps).
+  - Two residual unverified rows from AC6 verified post-merge: the FR-20260423 ledger-path row and the `path=None` test_pass proof (2 verified).
+  - 2 remaining orphans are from live agent sessions still running and will self-close when those sessions finish.
+- State: REVIEW_REQUESTED → MERGED.
+- Next step on cycle timer (close with ok) tracked separately by FR reconciliation.
+
+**Next:** close FR — registry row flipped to MERGED; ledger archived in Archive section.
