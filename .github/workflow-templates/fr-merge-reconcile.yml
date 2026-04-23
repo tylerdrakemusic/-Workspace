@@ -1,0 +1,86 @@
+# FR Merge Reconciliation Workflow — TEMPLATE
+#
+# Optional per-repo drop-in. Copy to `.github/workflows/fr-merge-reconcile.yml`
+# inside any project repo (∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace).
+#
+# Purpose: on PR merge, emit a discoverable signal so Tyler's local
+# `⊕workspace-ci reconcile-fr-timers` run has a reliable hook to query.
+#
+# The workflow itself CANNOT write back to Tyler's local ⊕Workspace repo
+# (that would need a cross-repo PAT with write scope — not worth the risk).
+# Instead it does two safe, zero-secret things:
+#   1. Posts a structured comment on the merged PR with the exact merged_at
+#      timestamp, merge SHA, and FR ID (parsed from PR title).
+#   2. Adds a `fr-merged` label, making merged FR-PRs easy to search.
+#
+# Tyler's local reconcile agent (`⊕workspace-ci reconcile-fr-timers`) queries
+# GitHub for PRs with this label and the FR ID prefix, then closes the cycle
+# timer with `--at <merged_at>`.
+#
+# Requirements:
+#   - PR titles must start with `FR-YYYYMMDD-<slug>` (enforced by intake)
+#   - No secrets, no custom PATs — uses the default GITHUB_TOKEN
+#
+# To install: copy this file to `.github/workflows/fr-merge-reconcile.yml`
+# in the target repo and commit. That's it.
+
+name: FR Merge Reconcile
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  annotate-merged-fr:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract FR ID from PR title
+        id: fr
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          fr_id=$(echo "$title" | grep -oE '^FR-[0-9]{8}-[a-z0-9-]+' || true)
+          echo "fr_id=$fr_id" >> "$GITHUB_OUTPUT"
+          if [ -z "$fr_id" ]; then
+            echo "::notice::PR title does not start with an FR ID; skipping."
+          fi
+
+      - name: Post reconcile signal comment
+        if: steps.fr.outputs.fr_id != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fr_id = '${{ steps.fr.outputs.fr_id }}';
+            const pr = context.payload.pull_request;
+            const body = [
+              '## ⊕ FR Merge Signal',
+              '',
+              `**FR ID:** ${fr_id}`,
+              `**Merged at:** ${pr.merged_at}`,
+              `**Merge commit:** ${pr.merge_commit_sha}`,
+              `**Base ref:** ${pr.base.ref}`,
+              '',
+              '_Picked up by `⊕workspace-ci reconcile-fr-timers` on next invocation._',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body,
+            });
+
+      - name: Label PR as fr-merged
+        if: steps.fr.outputs.fr_id != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['fr-merged'],
+            });
