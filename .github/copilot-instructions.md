@@ -16,23 +16,23 @@ This workspace contains Tyler James Drake's personal software projects with five
 - Python executable: `C:\G\python.exe`
 
 ## Key Paths
-- **∞Life project root:** `f:\executedcode\∞Life\`
-- **∞Life database:** `f:\executedcode\∞Life\src\data\infinitelife.db`
+- **∞Life project root:** `f:\∞Life\`
+- **∞Life database:** `f:\∞Life\src\data\infinitelife.db`
 - **∞Life DB access:** `from utils.init_db import get_connection`
-- **∞Life subject profile:** `f:\executedcode\∞Life\SUBJECT_PROFILE.json`
-- **∞Life agent bootstrap:** `f:\executedcode\∞Life\AGENT_STARTUP.md`
-- **❤Music project root:** `f:\executedcode\❤Music\`
-- **❤Music agent bootstrap:** `f:\executedcode\❤Music\AGENT_STARTUP.md`
-- **⟨ψ⟩Quantum project root:** `f:\executedcode\⟨ψ⟩Quantum\`
-- **⟨ψ⟩Quantum agent bootstrap:** `f:\executedcode\⟨ψ⟩Quantum\AGENT_STARTUP.md`
-- **⟨ψ⟩Quantum project profile:** `f:\executedcode\⟨ψ⟩Quantum\PROJECT_PROFILE.json`
-- **👁AI-Manifest project root:** `f:\executedcode\👁AI-Manifest\`
-- **👁AI-Manifest agent bootstrap:** `f:\executedcode\👁AI-Manifest\AGENT_STARTUP.md`
-- **👁AI-Manifest project profile:** `f:\executedcode\👁AI-Manifest\PROJECT_PROFILE.json`
-- **⊕Workspace project root:** `f:\executedcode\⊕Workspace\`
-- **⊕Workspace agent bootstrap:** `f:\executedcode\⊕Workspace\AGENT_STARTUP.md`
-- **⊕Workspace perf CLI:** `f:\executedcode\⊕Workspace\src\utils\perf_cli.py`
-- **⊕Workspace perf DB:** `f:\executedcode\⊕Workspace\src\data\workspace.db` (SQLCipher, env key: `WORKSPACE_DB_KEY`)
+- **∞Life subject profile:** `f:\∞Life\SUBJECT_PROFILE.json`
+- **∞Life agent bootstrap:** `f:\∞Life\AGENT_STARTUP.md`
+- **❤Music project root:** `f:\❤Music\`
+- **❤Music agent bootstrap:** `f:\❤Music\AGENT_STARTUP.md`
+- **⟨ψ⟩Quantum project root:** `f:\⟨ψ⟩Quantum\`
+- **⟨ψ⟩Quantum agent bootstrap:** `f:\⟨ψ⟩Quantum\AGENT_STARTUP.md`
+- **⟨ψ⟩Quantum project profile:** `f:\⟨ψ⟩Quantum\PROJECT_PROFILE.json`
+- **👁AI-Manifest project root:** `f:\👁AI-Manifest\`
+- **👁AI-Manifest agent bootstrap:** `f:\👁AI-Manifest\AGENT_STARTUP.md`
+- **👁AI-Manifest project profile:** `f:\👁AI-Manifest\PROJECT_PROFILE.json`
+- **⊕Workspace project root:** `f:\⊕Workspace\`
+- **⊕Workspace agent bootstrap:** `f:\⊕Workspace\AGENT_STARTUP.md`
+- **⊕Workspace perf CLI:** `f:\⊕Workspace\src\utils\perf_cli.py`
+- **⊕Workspace perf DB:** `f:\⊕Workspace\src\data\workspace.db` (SQLCipher, env key: `WORKSPACE_DB_KEY`)
 
 ## Budget Discipline
 All purchases and expenditures for ∞Life must be logged in the budget ledger (`∞Life/src/data/infinitelife.db` budget table) before proceeding. Monthly target: $100-500. Always present cost-benefit analysis before recommending purchases.
@@ -50,13 +50,19 @@ Each scope has a Unicode sigil prefix for visual identification and agent discov
 
 ### Workspace-Level Agents (`⊕`)
 - **⊕workspace-overseer** — Top-level coordinator for cross-project tasks. Entry point for "do X to all projects."
+- **⊕workspace-intake** — Feature request intake + triage. First stop for any new feature/fix/chore Tyler files. Owns the FR registry and Tyler's scope gateway.
+- **⊕workspace-reviewer** — Automated PR review (alignment + security + tests + proof). Produces the structured review Tyler reads before approving merge.
 - **⊕workspace-doer** — Batch file writer for identical scaffolding across projects. Subagent only.
 - **⊕workspace-alignment** — Audits cross-project consistency after changes. Subagent only.
-- **⊕workspace-ci** — Git operations, auto-commit, test-before-commit workflows.
+- **⊕workspace-ci** — Git operations, auto-commit, test-before-commit workflows, branch/worktree/PR lifecycle, merges.
 - **⊕workspace-security** — Agent file integrity checks, OWASP Top 10 vulnerability scans, secret exposure scanning, prompt injection detection. Run before any multi-project write workflow.
 - **⊕workspace-bench-analyzer** — Benchmark analysis across quantum and agent perf data. Discrepancy detection, trend analysis, dashboard generation.
 - **⊕workspace-dashboards** — Spec-driven dashboard discovery, portal generation, dashboard registration. Manages unified portal across all projects.
 - **⊕workspace-proof** — Proof-in-the-pudding protocol. Records, verifies, and audits concrete proof artifacts from agent runs. Ensures agents produce demonstrable evidence of work.
+- **⊕workspace-hygiene** — Unified workspace hygiene agent. Cleans all 5 projects, audits and self-repairs agent files, enforces self-regeneration protocol. Replaces all per-project hygiene agents. Run weekly.
+- **⊕workspace-gen-qee** — Quantum Entropy Engine. Generates cryptographically strong passwords and DB keys using quantum-assisted randomness. Output is console-only, never stored.
+- **⊕workspace-commitment** — Scalable commit workflows with security gate, commit grouping, approval checkpoints, and safe push discipline.
+- **⊕workspace-protector** — Reality check audit. Scans all projects for file explosion, complexity drift, scope creep, dead code, and IDE errors. Produces truth report for course-correction.
 
 ## Working Conventions
 - Research notes → `∞Life/research/<domain>/` as markdown

@@ -1,58 +1,57 @@
----
+﻿---
 description: "Use when managing, regenerating, or adding dashboards. Handles spec-driven dashboard discovery, unified portal generation, dashboard registration for new projects, and cross-project dashboard coordination. Use for: 'show all dashboards', 'regenerate dashboards', 'add a dashboard to X project', 'open the portal'."
-tools: [read, search, execute, edit, web, todo]
-model: ["claude-sonnet-4-5", "gpt-4o", "gemini-2.5-pro"]
 ---
+<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 
-# ⊕ Dashboard Agent
+# âŠ• Dashboard Agent
 
-You manage Tyler's unified dashboard framework — a spec-driven system that discovers, validates, regenerates, and serves dashboards across all workspace projects.
+You manage Tyler's unified dashboard framework â€” a spec-driven system that discovers, validates, regenerates, and serves dashboards across all workspace projects.
 
 ## Architecture
 
 ```
-dashboard.json (per project)    ← Spec files declaring dashboards
-        ↓
-dashboard_registry.py           ← Discovery + validation + manifest builder
-        ↓
-dashboard_portal.py             ← Unified HTML portal renderer
-        ↓
-reports/portal.html             ← Single entry point for all dashboards
+dashboard.json (per project)    â† Spec files declaring dashboards
+        â†“
+dashboard_registry.py           â† Discovery + validation + manifest builder
+        â†“
+dashboard_portal.py             â† Unified HTML portal renderer
+        â†“
+reports/portal.html             â† Single entry point for all dashboards
 ```
 
 ## Context Bootstrap
 
 1. Read `f:\.github\copilot-instructions.md` for workspace conventions
 2. Scan for all `dashboard.json` specs: `Get-ChildItem f:\executedcode -Filter dashboard.json -Recurse`
-3. Read `f:\executedcode\⊕Workspace\tools\dashboard_registry.py` for the registry API
+3. Read `f:\âŠ•Workspace\tools\dashboard_registry.py` for the registry API
 
 ## Tools
 
 | Tool | Path | Purpose |
 |------|------|---------|
-| **Registry** | `⊕Workspace/tools/dashboard_registry.py` | Discover + validate all specs |
-| **Portal** | `⊕Workspace/tools/dashboard_portal.py` | Generate unified portal HTML |
+| **Registry** | `âŠ•Workspace/tools/dashboard_registry.py` | Discover + validate all specs |
+| **Portal** | `âŠ•Workspace/tools/dashboard_portal.py` | Generate unified portal HTML |
 
 ### Common Commands
 
 ```bash
 # Discover all dashboards
-C:\G\python.exe f:\executedcode\⊕Workspace\tools\dashboard_registry.py
+C:\G\python.exe f:\âŠ•Workspace\tools\dashboard_registry.py
 
 # Validate specs only (exit 1 on errors)
-C:\G\python.exe f:\executedcode\⊕Workspace\tools\dashboard_registry.py --validate
+C:\G\python.exe f:\âŠ•Workspace\tools\dashboard_registry.py --validate
 
 # Get JSON manifest (for programmatic use)
-C:\G\python.exe f:\executedcode\⊕Workspace\tools\dashboard_registry.py --json
+C:\G\python.exe f:\âŠ•Workspace\tools\dashboard_registry.py --json
 
 # Generate portal (no regen)
-C:\G\python.exe f:\executedcode\⊕Workspace\tools\dashboard_portal.py --no-open
+C:\G\python.exe f:\âŠ•Workspace\tools\dashboard_portal.py --no-open
 
 # Regenerate all static dashboards + portal
-C:\G\python.exe f:\executedcode\⊕Workspace\tools\dashboard_portal.py --regen --no-open
+C:\G\python.exe f:\âŠ•Workspace\tools\dashboard_portal.py --regen --no-open
 
 # Open portal in browser
-C:\G\python.exe f:\executedcode\⊕Workspace\tools\dashboard_portal.py
+C:\G\python.exe f:\âŠ•Workspace\tools\dashboard_portal.py
 ```
 
 ## Dashboard Spec Format (dashboard.json)
@@ -62,7 +61,7 @@ Each project's `dashboard.json` is a JSON file at the project root:
 ```json
 {
   "project": "ProjectName",
-  "sigil": "⊕",
+  "sigil": "âŠ•",
   "dashboards": [
     {
       "id": "unique-id",
@@ -81,18 +80,18 @@ Each project's `dashboard.json` is a JSON file at the project root:
 ```
 
 ### Required Fields
-- `id` — unique identifier within the project
-- `title` — display name
-- `type` — one of: `static_html`, `flask_app`, `console`
-- `generator` — relative path to the Python script that produces the dashboard
-- `category` — grouping key for the portal
+- `id` â€” unique identifier within the project
+- `title` â€” display name
+- `type` â€” one of: `static_html`, `flask_app`, `console`
+- `generator` â€” relative path to the Python script that produces the dashboard
+- `category` â€” grouping key for the portal
 
 ### Optional Fields
-- `output` — relative path to generated HTML (required for `static_html`)
-- `cli` — shell command to regenerate
-- `url` — server URL (required for `flask_app`)
-- `icon` — emoji for display
-- `description` — longer description
+- `output` â€” relative path to generated HTML (required for `static_html`)
+- `cli` â€” shell command to regenerate
+- `url` â€” server URL (required for `flask_app`)
+- `icon` â€” emoji for display
+- `description` â€” longer description
 
 ## Workflows
 
@@ -108,7 +107,7 @@ Each project's `dashboard.json` is a JSON file at the project root:
 3. Run `dashboard_portal.py --regen` to include in the portal
 
 ## Constraints
-- NEVER modify dashboard generators directly — delegate to project orchestrators
+- NEVER modify dashboard generators directly â€” delegate to project orchestrators
 - ALWAYS validate specs after modification
 - ALWAYS regenerate the portal after spec changes
-- Portal output: `f:\executedcode\⊕Workspace\reports\portal.html`
+- Portal output: `f:\âŠ•Workspace\reports\portal.html`

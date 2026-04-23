@@ -1,6 +1,6 @@
----
+﻿---
 description: "Use when writing Python scripts that interact with the ∞Life SQLite database, creating sync tools, data migrations, or any database operations. Covers connection patterns, schema conventions, and data safety."
-applyTo: "executedcode/∞Life/**/*.py"
+applyTo: "∞Life/**/*.py"
 ---
 
 # ∞Life Python & Database Conventions
@@ -9,12 +9,12 @@ applyTo: "executedcode/∞Life/**/*.py"
 ```python
 # Preferred: use project utility
 import sys
-sys.path.insert(0, "f:/executedcode/∞Life/src")
+sys.path.insert(0, "f:/∞Life/src")
 from utils.init_db import get_connection
 
 # Direct (for standalone tools):
 import sqlite3
-conn = sqlite3.connect("f:/executedcode/∞Life/src/data/infinitelife.db")
+conn = sqlite3.connect("f:/∞Life/src/data/infinitelife.db")
 ```
 
 ## Safety Rules

@@ -1,4 +1,4 @@
----
+﻿---
 applyTo: ".github/agents/⟨ψ⟩quantum-*.agent.md"
 ---
 
@@ -11,8 +11,8 @@ Shared context, conventions, and rules for all `⟨ψ⟩quantum-*` agents.
 ## Context Bootstrap (All Agents)
 
 Before doing any work, load context in this order:
-1. `f:\executedcode\⟨ψ⟩Quantum\AGENT_STARTUP.md` — current project state
-2. `f:\executedcode\⟨ψ⟩Quantum\PROJECT_PROFILE.json` — project config and quantum provider details
+1. `f:\⟨ψ⟩Quantum\AGENT_STARTUP.md` — current project state
+2. `f:\⟨ψ⟩Quantum\PROJECT_PROFILE.json` — project config and quantum provider details
 
 ---
 
@@ -29,7 +29,7 @@ Before doing any work, load context in this order:
 
 | Resource | Path |
 |----------|------|
-| Project root | `f:\executedcode\⟨ψ⟩Quantum\` |
+| Project root | `f:\⟨ψ⟩Quantum\` |
 | Core modules | `src/core/quantum_rt.py`, `src/core/quantum_backend.py` |
 | Cache file | `src/data/ty_string_cache.txt` |
 | Research | `research/` |
@@ -42,7 +42,7 @@ Before doing any work, load context in this order:
 ## Code Conventions
 
 - Python 3.11+ with type hints on all function signatures
-- Run scripts from project root: `cd f:\executedcode\⟨ψ⟩Quantum && C:\G\python.exe <script>`
+- Run scripts from project root: `cd f:\⟨ψ⟩Quantum && C:\G\python.exe <script>`
 - IBM Quantum API tokens are in `quantum_backend.py` — treat as secrets, do not log or expose
 - Cache file is shared across projects via symlink — do NOT delete or overwrite without backup
 - Always back up cache before destructive operations: `tools/fill_cache.py` does this automatically

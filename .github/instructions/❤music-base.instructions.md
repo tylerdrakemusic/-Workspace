@@ -1,4 +1,4 @@
----
+﻿---
 applyTo: ".github/agents/❤music-*.agent.md"
 ---
 
@@ -11,8 +11,8 @@ Shared context, conventions, and rules for all `❤music-*` agents. Every ❤Mus
 ## Context Bootstrap (All Agents)
 
 Before doing any work, load context in this order:
-1. `f:\executedcode\❤Music\AGENT_STARTUP.md` — current project state, recent migrations, active tasks
-2. `f:\executedcode\❤Music\ARTIST_PROFILE.json` — Tyler's artist profile, all source locations, album definitions, track lists
+1. `f:\❤Music\AGENT_STARTUP.md` — current project state, recent migrations, active tasks
+2. `f:\❤Music\ARTIST_PROFILE.json` — Tyler's artist profile, all source locations, album definitions, track lists
 
 ---
 
@@ -32,11 +32,11 @@ from utils.init_db import get_connection
 conn = get_connection()
 # OR direct:
 import sqlite3
-conn = sqlite3.connect("f:/executedcode/❤Music/src/data/heartmusic.db")
+conn = sqlite3.connect("f:/❤Music/src/data/heartmusic.db")
 ```
 
 **Python executable:** `C:\G\python.exe`  
-**Run from project root:** `f:\executedcode\❤Music\`
+**Run from project root:** `f:\❤Music\`
 
 ### Database Rules
 - **ALWAYS use parameterized queries** — no f-string SQL
@@ -53,10 +53,10 @@ conn = sqlite3.connect("f:/executedcode/❤Music/src/data/heartmusic.db")
 | Masters (F:) | `f:\Masters\` |
 | Rockstar backup (G:) | `G:\TylerJamesDrake\rockstar\` |
 | Roughs (E:) | `E:\Roughs\` |
-| Recordings | `f:\executedcode\recordings\` |
-| Lyrics source | `f:\executedcode\lyrics\` |
-| Guitar source | `f:\executedcode\Guitar\` |
-| Bands | `f:\executedcode\bands\` |
+| Recordings | `f:\recordings\` |
+| Lyrics source | `f:\lyrics\` |
+| Guitar source | `f:\Guitar\` |
+| Bands | `f:\bands\` |
 
 **Do NOT move, delete, or rename source files from external locations. Reference or copy into catalog only.**
 
@@ -112,7 +112,7 @@ Discover available agents by scanning `f:\.github\agents\❤music-*.agent.md`. R
 | `❤music-catalog` | File indexing, dedup, track linking, DB imports |
 | `❤music-production` | Bloom album tracking, track status, studio sessions |
 | `❤music-performance` | Gigs, practice log, CopperCreek, setlists |
-| `❤music-hygiene` | File cleanup, TODO archiving, DB housekeeping |
+| `⊕workspace-hygiene` | File cleanup, TODO archiving, DB housekeeping, agent audit |
 | `❤music-orchestrator` | Top-level coordinator for multi-domain tasks |
 
 ---
@@ -126,11 +126,11 @@ Discover available agents by scanning `f:\.github\agents\❤music-*.agent.md`. R
 5. **PREFER DB storage** over loose JSON/CSV for structured music data
 6. **ALWAYS use UTF-8 encoding** — `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")` in all tools
 7. **ALWAYS add Tyler action items to `TODO_TYLER.md`** — don't assume he'll see chat
-8. **ALWAYS run from project root** `f:\executedcode\❤Music\` so relative paths resolve correctly
+8. **ALWAYS run from project root** `f:\❤Music\` so relative paths resolve correctly
 
 ---
 
 ## Reference
-- ❤Music project root: `f:\executedcode\❤Music\`
-- DB path: `f:\executedcode\❤Music\src\data\heartmusic.db`
-- ARTIST_PROFILE: `f:\executedcode\❤Music\ARTIST_PROFILE.json`
+- ❤Music project root: `f:\❤Music\`
+- DB path: `f:\❤Music\src\data\heartmusic.db`
+- ARTIST_PROFILE: `f:\❤Music\ARTIST_PROFILE.json`
