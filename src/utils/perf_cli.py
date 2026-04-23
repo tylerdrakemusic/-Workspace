@@ -37,20 +37,22 @@ def cmd_start(name: str) -> None:
     print(run_id)
 
 
-def cmd_end(run_id: str, status: str, detail: str) -> None:
+def cmd_end(run_id: str, status: str, detail: str, at: float | None = None) -> None:
     conn = _conn()
     row = conn.execute("SELECT started_at FROM perf_runs WHERE run_id = ?", (run_id,)).fetchone()
     if not row:
         print(f"[perf_cli] run_id not found: {run_id}", file=sys.stderr)
         sys.exit(1)
-    elapsed_ms = (time.time() - row[0]) * 1000
+    end_ts = at if at is not None else time.time()
+    elapsed_ms = (end_ts - row[0]) * 1000
     conn.execute(
         "UPDATE perf_runs SET ended_at=?, status=?, detail=? WHERE run_id=?",
-        (time.time(), status, detail, run_id),
+        (end_ts, status, detail, run_id),
     )
     conn.commit()
     conn.close()
-    print(f"[perf_cli] run closed — {elapsed_ms:,.0f}ms — {status}")
+    backfill = " (backfilled)" if at is not None else ""
+    print(f"[perf_cli] run closed — {elapsed_ms:,.0f}ms — {status}{backfill}")
 
 
 def cmd_report(run_id: str) -> None:
@@ -120,6 +122,8 @@ def main() -> None:
     p_end.add_argument("run_id")
     p_end.add_argument("--status", default="ok", choices=["ok", "error", "timeout"])
     p_end.add_argument("--detail", default="")
+    p_end.add_argument("--at", type=float, default=None,
+                       help="Unix timestamp to backfill as end time (e.g. GitHub PR merged_at). Defaults to now.")
 
     p_rep = sub.add_parser("report")
     p_rep.add_argument("run_id")
@@ -131,7 +135,7 @@ def main() -> None:
     if args.cmd == "start":
         cmd_start(args.name)
     elif args.cmd == "end":
-        cmd_end(args.run_id, args.status, args.detail)
+        cmd_end(args.run_id, args.status, args.detail, args.at)
     elif args.cmd == "report":
         cmd_report(args.run_id)
     elif args.cmd == "list":
