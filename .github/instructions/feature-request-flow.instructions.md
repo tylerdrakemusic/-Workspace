@@ -35,6 +35,8 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
        ↑                                                          │
        └──── CHANGES_REQUESTED ←──────────────────────────────────┘
                                                                   │
+                                                     BRANCH_CHECKED_OUT
+                                                                  │
                                                TYLER_APPROVED ←───┘
                                                     │
                                                  MERGED → CLOSED
@@ -50,6 +52,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
 | `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
 | `REVIEW_REQUESTED` | Implementation claims done, PR marked ready | project orchestrator |
 | `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof) | ⊕workspace-reviewer |
+| `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
 | `CHANGES_REQUESTED` | Auto-review or Tyler requested fixes | ⊕workspace-reviewer / Tyler |
 | `TYLER_APPROVED` | Tyler approved the PR | Tyler |
 | `MERGED` | PR merged to default branch | ⊕workspace-ci |
@@ -60,8 +63,9 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
 1. **Open** — Tyler files the FR in plain language (chat, or a GitHub issue).
 2. **Approve scope** — After `TRIAGED`, Tyler confirms scope + acceptance
    criteria before any branch is cut. *Agents MUST wait here.*
-3. **Approve PR** — After `AUTO_REVIEWED` passes, Tyler reviews the
-   automated report and either approves or requests changes.
+3. **Approve PR** — After `AUTO_REVIEWED` passes AND the branch has been
+   checked out locally (`BRANCH_CHECKED_OUT`), Tyler reviews the automated
+   report **plus the live running feature** and either approves or requests changes.
 4. **Approve merge** — Tyler initiates the merge (or authorizes the CI agent
    to merge on his behalf for a specific FR).
 5. **Priority override** — Tyler can reorder or pause any FR at any time.
@@ -221,9 +225,12 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 8. Orchestrators: push commits to their branches; when done, mark PR ready
 9. ⊕workspace-overseer → ⊕workspace-reviewer: auto-review both PRs
 10. ⊕workspace-reviewer: posts review comments, sets AUTO_REVIEWED or CHANGES_REQUESTED
-11. Tyler: reviews the automated report, approves or requests changes  ← GATEWAY
-12. Tyler: "merge"  ← GATEWAY
-13. ⊕workspace-ci: merge PRs, delete branches + worktrees, mark MERGED → CLOSED
+11. ⊕workspace-ci: checks out the feature branch(es) locally in their worktree paths
+    so Tyler can run demos and inspect proof artifacts. Sets BRANCH_CHECKED_OUT.
+    Notifies Tyler: "Branch checked out at F:\worktrees\<fr-id>\<project> — ready to demo."
+12. Tyler: reviews the automated report AND the live feature  ← GATEWAY
+13. Tyler: "merge"  ← GATEWAY
+14. ⊕workspace-ci: merge PRs, delete branches + worktrees, mark MERGED → CLOSED
 ```
 
 ## Agent Responsibility Matrix
@@ -231,7 +238,7 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 | Agent | Role |
 |-------|------|
 | `⊕workspace-intake` | Own the registry. Triage FRs. Route to CI for branching. |
-| `⊕workspace-ci` | Own branches, worktrees, merges, conflict resolution. |
+| `⊕workspace-ci` | Own branches, worktrees, merges, conflict resolution. After AUTO_REVIEWED, check out the feature branch locally and set BRANCH_CHECKED_OUT before notifying Tyler. |
 | `⊕workspace-overseer` | Route implementation to orchestrators; coordinate multi-project FRs. |
 | project orchestrators | Implement on the assigned branch only. |
 | `⊕workspace-reviewer` | Run alignment + security + tests + proof; post automated PR review. |
