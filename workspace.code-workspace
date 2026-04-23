@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"name": "⊕Workspace",
+			"path": "."
+		},
+		{
+			"name": "∞Life",
+			"path": "../∞Life"
+		},
+		{
+			"name": "❤Music",
+			"path": "../❤Music"
+		},
+		{
+			"name": "⟨ψ⟩Quantum",
+			"path": "../⟨ψ⟩Quantum"
+		},
+		{
+			"name": "👁AI-Manifest",
+			"path": "../👁AI-Manifest"
+		}
+	],
+	"settings": {
+		"files.encoding": "utf8",
+		"files.autoGuessEncoding": false
+	}
+}
