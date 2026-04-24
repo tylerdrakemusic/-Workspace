@@ -10,8 +10,7 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** REVIEW_REQUESTED
-- **Branch:** chore/workspace/gitignore-sweep
+- **State:** SOAKING- **Branch:** chore/workspace/gitignore-sweep
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/14 (ready for review)
 - **Cycle timer:** 76e2c255-2ea5-407e-89f3-380b234aea6e
 - **Opened:** 2026-04-23

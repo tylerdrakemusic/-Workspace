@@ -10,8 +10,7 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** REVIEW_REQUESTED
-- **Branch:** chore/workspace/fr-state-drift-fix
+- **State:** SOAKING- **Branch:** chore/workspace/fr-state-drift-fix
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/13 (draft)
 - **Cycle timer:** 4e7f5eba-9954-4a3d-b337-c6ef597d508c
 - **Opened:** 2026-04-23
