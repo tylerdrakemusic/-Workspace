@@ -10,13 +10,13 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** MERGED
+- **State:** REVIEW_REQUESTED
 - **Branch:** feature/workspace/disable-plumbing-agents
-- **PRs:** pending
+- **PRs:** #16 https://github.com/tylerdrakemusic/-Workspace/pull/16
 - **Cycle timer:** df4eccd4-1324-4286-8e55-18b26bb8f181
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
-- **Merged at:** 2026-04-24T00:00:00Z
+- **Merged at:** —
 - **Signed off at:** —
 - **Closed:** —
 - **Final state:** —
