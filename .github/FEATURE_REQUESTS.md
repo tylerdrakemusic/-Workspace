@@ -32,12 +32,19 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260423-portal-autoregeneration | Portal Auto-Regeneration + Gap Count Accuracy | chore/feature | ⊕Workspace | BRANCHED | chore/workspace/portal-autoregeneration | pending | ⊕workspace-intake | 2026-04-23 | 2026-04-23 |
+| FR-20260423-vscode-autodetect-soak-verify | Soak Verification: vscode-session-autodetect (PR#11) | chore | ⊕Workspace | BRANCHED | chore/workspace/vscode-autodetect-soak-verify | pending | ⊕workspace-intake | 2026-04-23 | 2026-04-23 |
+| FR-20260423-disable-plumbing-agents-branch | Branch + Implement: Disable Plumbing Agents from VS Code Agent Dropdown | feature | ⊕Workspace | BRANCHED | feature/workspace/disable-plumbing-agents | pending | ⊕workspace-intake | 2026-04-23 | 2026-04-23 |
 | FR-20260423-audio-brief-base64-embed | Embed TTS Audio as Base64 in Executive Brief Portal HTML | feature | 👁AI-Manifest | CLOSED (redundant) | feature/ai-manifest/audio-brief-base64-embed | [#4](https://github.com/tylerdrakemusic/AI-Manifest/pull/4) | ⊕workspace-overseer | 2026-04-23 | 2026-04-23 |
 | FR-20260423-vscode-session-autodetect | Auto-detect live VS Code Copilot chat sessions in agent ops monitor | feature | ⊕Workspace | SOAKING | feature/workspace/vscode-session-autodetect | [#11](https://github.com/tylerdrakemusic/-Workspace/pull/11) @ 5cf3f05 | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
 | FR-20260423-ai-manifest-portal-static-fix | Executive Audio Brief Portal: Static-File Mode Fixes | fix | 👁AI-Manifest | CHANGES_REQUESTED | fix/ai-manifest/portal-static-mode | [#3](https://github.com/tylerdrakemusic/AI-Manifest/pull/3) | ⊕workspace-reviewer | 2026-04-23 | 2026-04-23 |
 | FR-20260423-feature-request-flow-checkout | Add BRANCH_CHECKED_OUT state to FR flow instructions | chore | ⊕Workspace | OPEN — needs proper branch (instructions edited directly on main; see ledger note) | none | none | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
 | FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | REVIEW_REQUESTED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-23 |
 | FR-20260422-disable-plumbing-agents-dropdown | Disable Plumbing Agents from VS Code Agent Dropdown | chore | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-22 | 2026-04-22 |
+| FR-20260423-workspace-gitignore-sweep | ⊕Workspace .gitignore sweep + commit stranded ledgers + purge review screenshots | chore | ⊕Workspace | BRANCHED | chore/workspace/gitignore-sweep | [#14](https://github.com/tylerdrakemusic/-Workspace/pull/14) draft | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+| FR-20260423-stash-audit | Stash audit + drop orphaned stashes | chore | ⊕Workspace | BRANCHED | chore/workspace/stash-audit | [#15](https://github.com/tylerdrakemusic/-Workspace/pull/15) draft | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+| FR-20260423-fr-state-drift-fix | FR state drift reconciliation (signoff queue accuracy) | chore | ⊕Workspace | BRANCHED | chore/workspace/fr-state-drift-fix | [#13](https://github.com/tylerdrakemusic/-Workspace/pull/13) draft | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+| FR-20260423-sibling-gitignore-parity | Sibling-project .gitignore parity sweep | chore | ∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest | BRANCHED | chore/{life,music,quantum,ai-manifest}/gitignore-parity | [Life#1](https://github.com/tylerdrakemusic/Life/pull/1) · [Music#1](https://github.com/tylerdrakemusic/Music/pull/1) · [Quantum#1](https://github.com/tylerdrakemusic/Quantum/pull/1) · [AI-Manifest#5](https://github.com/tylerdrakemusic/AI-Manifest/pull/5) (all draft) | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
 
 
 
