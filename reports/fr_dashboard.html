@@ -161,21 +161,81 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
 <body>
   <h1><span class="sigil">⊕</span> Feature Request Board</h1>
   <div class="subtitle">
-    Generated 2026-04-23 20:18:16 · <strong style="color:#a78bfa">1 FR awaiting signoff</strong> ·
+    Generated 2026-04-23 20:21:03 · <strong style="color:#a78bfa">5 FRs awaiting signoff</strong> ·
     Ledger: <code>.github/FR_LEDGERS/</code> · Registry: <code>.github/FEATURE_REQUESTS.md</code>
   </div>
   <script>document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(location.search);const id=p.get('signed_off');if(!id)return;const slot=document.getElementById('flash-slot');if(!slot)return;slot.className='flash';slot.textContent='✓ Signed off on '+id+' — FR moved to Archived.';history.replaceState({},'',location.pathname);});</script>
   <div id="flash-slot"></div>
 
-  <div class="section-title">Active <span class="count">4</span></div>
+  <div class="section-title">Active <span class="count">8</span></div>
   <div class="grid">
     
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-fr-state-drift-fix</div>
+        <div class="fr-badges">
+          <span class="state-badge state-soak">SOAKING</span>
+          <span class="soak-badge" title="Time since merge">Soaking for 46m</span>
+        </div>
+      </div>
+      <div class="fr-title">FR state drift reconciliation (signoff queue accuracy)</div>
+      <div class="fr-summary">Fix FR state inconsistencies so the signoff queue is accurate. FR-20260423-vscode-session-autodetect silently merged without state bump — needs to appear in Tyler&#x27;s signoff queue. Two BRANCHED FRs with no recent activity may be stale.</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/fr-state-drift-fix</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/13" target="_blank" rel="noopener">#13</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:35:00Z</span></div>
+      </div>
+      <div class="cta signoff-cta"><div class="cta-text">Exercise the feature on <code>main</code>. When satisfied:</div><div class="cta-actions"><a class="signoff-btn" href="frsignoff:FR-20260423-fr-state-drift-fix">✓ Sign off</a></div><div class="cta-hint">Launches the Windows protocol handler — signs off, commits, and pushes.<br>CLI fallback: <code>python tools/fr_signoff.py FR-20260423-fr-state-drift-fix</code></div></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-fr-state-drift-fix.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-sibling-gitignore-parity</div>
+        <div class="fr-badges">
+          <span class="state-badge state-soak">SOAKING</span>
+          <span class="soak-badge" title="Time since merge">Soaking for 46m</span>
+        </div>
+      </div>
+      <div class="fr-title">Sibling-project .gitignore parity sweep</div>
+      <div class="fr-summary">Apply the same .gitignore hygiene sweep to the four sibling project repos so every project is consistently clone-ready on Mac/Linux. Tyler wants the repo close to working out-of-the-box on Mac/Linux even though dev happens on Windows. Parit</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/life/gitignore-parity · chore/music/gitignore-parity · chore/quantum/gitignore-parity · chore/ai-manifest/gitignore-parity</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/Life/pull/1" target="_blank" rel="noopener">#1</a> · <a href="https://github.com/tylerdrakemusic/Music/pull/1" target="_blank" rel="noopener">#1</a> · <a href="https://github.com/tylerdrakemusic/Quantum/pull/1" target="_blank" rel="noopener">#1</a> · <a href="https://github.com/tylerdrakemusic/AI-Manifest/pull/5" target="_blank" rel="noopener">#5</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:35:00Z</span></div>
+      </div>
+      <div class="cta signoff-cta"><div class="cta-text">Exercise the feature on <code>main</code>. When satisfied:</div><div class="cta-actions"><a class="signoff-btn" href="frsignoff:FR-20260423-sibling-gitignore-parity">✓ Sign off</a></div><div class="cta-hint">Launches the Windows protocol handler — signs off, commits, and pushes.<br>CLI fallback: <code>python tools/fr_signoff.py FR-20260423-sibling-gitignore-parity</code></div></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-sibling-gitignore-parity.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-stash-audit</div>
+        <div class="fr-badges">
+          <span class="state-badge state-soak">SOAKING</span>
+          <span class="soak-badge" title="Time since merge">Soaking for 49m</span>
+        </div>
+      </div>
+      <div class="fr-title">Stash audit + drop orphaned stashes</div>
+      <div class="fr-summary">Review 4 accumulated git stashes, drop any whose content is already merged to main, apply anything genuinely orphaned. 3 of 4 stashes are on branches that have been merged + deleted. Likely all droppable but needs verification.</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/stash-audit</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/15" target="_blank" rel="noopener">#15</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:32:00Z</span></div>
+      </div>
+      <div class="cta signoff-cta"><div class="cta-text">Exercise the feature on <code>main</code>. When satisfied:</div><div class="cta-actions"><a class="signoff-btn" href="frsignoff:FR-20260423-stash-audit">✓ Sign off</a></div><div class="cta-hint">Launches the Windows protocol handler — signs off, commits, and pushes.<br>CLI fallback: <code>python tools/fr_signoff.py FR-20260423-stash-audit</code></div></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-stash-audit.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260423-vscode-session-autodetect</div>
         <div class="fr-badges">
           <span class="state-badge state-soak">SOAKING</span>
-          <span class="soak-badge" title="Time since merge">Soaking for 17h 44m</span>
+          <span class="soak-badge" title="Time since merge">Soaking for 17h 47m</span>
         </div>
       </div>
       <div class="fr-title">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required</div>
@@ -189,6 +249,26 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
       </div>
       <div class="cta signoff-cta"><div class="cta-text">Exercise the feature on <code>main</code>. When satisfied:</div><div class="cta-actions"><a class="signoff-btn" href="frsignoff:FR-20260423-vscode-session-autodetect">✓ Sign off</a></div><div class="cta-hint">Launches the Windows protocol handler — signs off, commits, and pushes.<br>CLI fallback: <code>python tools/fr_signoff.py FR-20260423-vscode-session-autodetect</code></div></div>
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-vscode-session-autodetect.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-workspace-gitignore-sweep</div>
+        <div class="fr-badges">
+          <span class="state-badge state-soak">SOAKING</span>
+          <span class="soak-badge" title="Time since merge">Soaking for 49m</span>
+        </div>
+      </div>
+      <div class="fr-title">⊕Workspace .gitignore sweep + commit stranded ledgers + purge review screenshots</div>
+      <div class="fr-summary">Post-signoff reconciliation of `⊕Workspace` repo main branch. Clean up `main` working tree drift. Add ignore patterns for ephemeral state, untrack files that shouldn&#x27;t be in git, commit two stranded FR ledgers, delete post-signoff review sc</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/gitignore-sweep</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/14" target="_blank" rel="noopener">#14</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:32:00Z</span></div>
+      </div>
+      <div class="cta signoff-cta"><div class="cta-text">Exercise the feature on <code>main</code>. When satisfied:</div><div class="cta-actions"><a class="signoff-btn" href="frsignoff:FR-20260423-workspace-gitignore-sweep">✓ Sign off</a></div><div class="cta-hint">Launches the Windows protocol handler — signs off, commits, and pushes.<br>CLI fallback: <code>python tools/fr_signoff.py FR-20260423-workspace-gitignore-sweep</code></div></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-workspace-gitignore-sweep.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
     <div class="fr-card">
       <div class="fr-top">
