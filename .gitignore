@@ -70,3 +70,9 @@ secrets.*
 # OS
 .DS_Store
 Thumbs.db
+
+# FR-20260423-workspace-gitignore-sweep
+.playwright-mcp/
+src/data/backups/
+fr_dashboard_*.png
+
