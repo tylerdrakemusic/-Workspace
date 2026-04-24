@@ -68,6 +68,56 @@ ZOMBIE_THRESHOLD_MIN: int = 10   # minutes
 # session has not yet been closed (ended_at IS NULL).
 LIVE_WINDOW_MIN: int = 10        # minutes
 
+# VS Code Copilot debug-log directory pattern. Each workspaceStorage subfolder
+# contains GitHub.copilot-chat/debug-logs/ whose session subdirs are last
+# modified when a chat message is exchanged (not on every keypress).
+# Detection does NOT write to the DB — purely ephemeral for the live banner.
+# Limitation: mtime updates only on message exchange, not on open VS Code windows
+# with no recent chat activity. A VS Code window idle for >4h will look stale.
+_VSCODE_COPILOT_LOG_GLOB = (
+    "Code/User/workspaceStorage/*/GitHub.copilot-chat/debug-logs"
+)
+_VSCODE_DETECT_WINDOW_SECS: int = 14400  # 4 hours — matches a typical work block
+
+
+def detect_vscode_sessions(window_secs: int = _VSCODE_DETECT_WINDOW_SECS) -> list[dict]:
+    """Detect active VS Code Copilot chat sessions via debug-log directory mtimes.
+
+    Scans %APPDATA%/Code/User/workspaceStorage/*/GitHub.copilot-chat/debug-logs/
+    and its session subdirectories. Returns one entry per workspace that has had
+    chat activity within *window_secs*.
+
+    Limitation: mtime updates only on message exchange. A VS Code window open but
+    idle for longer than window_secs will not be detected here.
+
+    Returns list of dicts: {path, mtime, age_secs}
+    Does NOT write to the database.
+    """
+    import glob as _glob
+
+    appdata = os.environ.get("APPDATA", "")
+    if not appdata:
+        return []  # not on Windows or env var missing
+
+    pattern = str(Path(appdata) / _VSCODE_COPILOT_LOG_GLOB)
+    cutoff = time.time() - window_secs
+    found = []
+    for log_dir_str in _glob.glob(pattern):
+        log_dir = Path(log_dir_str)
+        # Check the parent debug-logs dir AND all immediate session subdirs.
+        candidates = [log_dir] + list(log_dir.iterdir()) if log_dir.is_dir() else [log_dir]
+        try:
+            newest_mtime = max(p.stat().st_mtime for p in candidates if p.exists())
+        except (OSError, ValueError):
+            continue
+        if newest_mtime >= cutoff:
+            found.append({
+                "path": log_dir_str,
+                "mtime": newest_mtime,
+                "age_secs": time.time() - newest_mtime,
+            })
+    return found
+
 
 def _ensure_last_heartbeat_column(conn) -> None:
     """Add last_heartbeat REAL column to perf_runs if it does not exist yet."""
@@ -185,6 +235,11 @@ def collect_health(conn) -> dict:
     )
     recent_count = sum(1 for s in sessions if (s["started_at"] or 0) >= recent_cutoff)
 
+    # Detect uninstrumented VS Code Copilot sessions via debug-log mtimes (AC1).
+    # These do NOT get DB entries — they show in the live banner as "detected".
+    vscode_sessions = detect_vscode_sessions()
+    vscode_live_count = len(vscode_sessions)
+
     return {
         "generated_at": datetime.now().isoformat(),
         "total_runs": total_runs,
@@ -197,6 +252,8 @@ def collect_health(conn) -> dict:
         "gap_count": gap_count,
         "health_pct": round(health_pct, 1),
         "live_count": live_count,
+        "vscode_live_count": vscode_live_count,
+        "vscode_sessions": vscode_sessions,
         "recent_count": recent_count,
         "historical_total": total_runs,
     }
@@ -556,6 +613,7 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
     live_count = health.get("live_count", 0)
     recent_count = health.get("recent_count", 0)
     historical_total = health.get("historical_total", total)
+    vscode_live_count = health.get("vscode_live_count", 0)
     drift = drift or []
 
     # Health color
@@ -1089,6 +1147,10 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
     <div class="live-cell">
       <div class="live-val live-live">{live_count}</div>
       <div class="live-label">Live <span class="live-sub">(last 10min)</span></div>
+    </div>
+    <div class="live-cell" title="VS Code Copilot chat sessions detected via debug-log mtime (not instrumented; ephemeral)">
+      <div class="live-val live-recent">{vscode_live_count}</div>
+      <div class="live-label">VS Code <span class="live-sub">(detected)</span></div>
     </div>
     <div class="live-cell">
       <div class="live-val live-recent">{recent_count}</div>

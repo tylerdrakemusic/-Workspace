@@ -10,12 +10,12 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** BRANCHED
+- **State:** REVIEW_REQUESTED
 - **Branch:** chore/workspace/vscode-autodetect-soak-verify
-- **PRs:** pending
+- **PRs:** #17 https://github.com/tylerdrakemusic/-Workspace/pull/17
 - **Cycle timer:** cf0838a4-1e7f-4ff9-8757-86febaa39eaf
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23
+- **Last updated:** 2026-04-24
 - **Merged at:** —
 - **Signed off at:** —
 - **Closed:** —
