@@ -874,6 +874,7 @@ def render_portal(manifest: dict) -> str:
       el.classList.add('active');
       const pane = document.getElementById('pane-' + idx);
       if (pane) pane.style.display = 'block';
+      try {{ localStorage.setItem('portal_active_pane', idx); }} catch {{}}
     }}
 
     function switchDashById(idx) {{
@@ -881,6 +882,14 @@ def render_portal(manifest: dict) -> str:
       const target = Array.from(navs).find(n => parseInt(n.dataset.idx) === idx);
       if (target) switchDash(idx, target);
     }}
+
+    // Restore last active pane on load.
+    (function restorePane() {{
+      try {{
+        const saved = localStorage.getItem('portal_active_pane');
+        if (saved !== null) switchDashById(parseInt(saved));
+      }} catch {{}}
+    }})();
 
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
     function launchServers() {{
