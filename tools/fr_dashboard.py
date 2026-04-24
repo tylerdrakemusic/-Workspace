@@ -27,6 +27,7 @@ import argparse
 import html as html_mod
 import re
 import sys
+import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -256,19 +257,20 @@ def _card_html(fr: dict) -> str:
             if state == "SOAKING"
             else "Verify the feature is live on <code>main</code>. When satisfied:"
         )
+        fr_id_q = urllib.parse.quote(fr["fr_id"], safe="")
+        # Uses the `frsignoff:` protocol handler (no server required).
+        # Register once via tools/register_frsignoff_protocol.ps1.
         signoff_cta = (
-            '<form class="cta signoff-form" method="POST" '
-            f'action="/fr/signoff/{_esc(fr["fr_id"])}">'
+            '<div class="cta signoff-cta">'
             f'<div class="cta-text">{intro}</div>'
             '<div class="cta-actions">'
-            '<input type="text" name="note" placeholder="optional note" maxlength="240">'
-            '<button type="submit" class="signoff-btn">✓ Sign off</button>'
+            f'<a class="signoff-btn" href="frsignoff:{fr_id_q}">✓ Sign off</a>'
             '</div>'
             '<div class="cta-hint">'
-            'Requires <code>fr_portal_server.py</code> running. '
+            'Launches the Windows protocol handler — signs off, commits, and pushes.<br>'
             f'CLI fallback: <code>python tools/fr_signoff.py {_esc(fr["fr_id"])}</code>'
             '</div>'
-            '</form>'
+            '</div>'
         )
 
     ledger_link = f'<a href="../{_esc(fr["relpath"])}" target="_blank" rel="noopener">ledger →</a>'
@@ -411,6 +413,7 @@ h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
   padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 700;
   cursor: pointer; white-space: nowrap;
   transition: filter .1s;
+  display: inline-block; text-decoration: none;
 }
 .signoff-btn:hover { filter: brightness(1.15); }
 .signoff-btn:active { filter: brightness(0.9); }

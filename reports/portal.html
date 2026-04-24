@@ -327,27 +327,27 @@
     <div class="health-card clickable" onclick="switchDashById(3)">
       <div class="health-card-top">
         <span class="health-card-title">🔬 Agent Ops Health</span>
-        <span class="health-fresh fresh" title="Dashboard mtime">Generated 3m ago</span>
+        <span class="health-fresh stale" title="Dashboard mtime">Generated 16h13m ago</span>
       </div>
       <div class="health-score-row">
-        <div class="health-pct excellent">100<span class="pct-sym">%</span></div>
+        <div class="health-pct good">90<span class="pct-sym">%</span></div>
         <div class="health-meta">
-          <div class="health-label excellent">Excellent</div>
-          <div class="health-gaps">4 gaps
-            <span class="gap-breakdown">(0z · 0o · 4u)</span>
+          <div class="health-label good">Good</div>
+          <div class="health-gaps">23 gaps
+            <span class="gap-breakdown">(5z · 2o · 16u)</span>
           </div>
         </div>
       </div>
-      
+      <div class="health-regen">⚠ Stale — regenerate: <code>C:\G\python.exe tools/agent_ops_monitor.py --fix --no-open</code></div>
     </div>
     
     <div class="stats-bar">
-      <div class="stat-chip"><span class="stat-num">11</span> Dashboards</div>
+      <div class="stat-chip"><span class="stat-num">12</span> Dashboards</div>
       <div class="stat-chip"><span class="stat-num">5</span> Projects</div>
       <div class="stat-chip"><span class="stat-num">6</span> Static</div>
       <div class="stat-chip"><span class="stat-num">3</span> Live</div>
       <div class="stat-chip"><span class="stat-num">0</span> Console</div>
-      <div class="stat-chip"><span class="stat-num">7</span> Categories</div>
+      <div class="stat-chip"><span class="stat-num">8</span> Categories</div>
     </div>
     <div class="nav-section">
       
@@ -406,6 +406,15 @@
         </div>
 
         <div class="nav-item" data-idx="6" onclick="switchDash(6, this)">
+          <span class="nav-icon">📋</span>
+          <div class="nav-text">
+            <span class="nav-title">Feature Requests</span>
+            <span class="nav-project">⊕Workspace</span>
+          </div>
+          <span class="nav-badge static">Static</span>
+        </div>
+
+        <div class="nav-item" data-idx="7" onclick="switchDash(7, this)">
           <span class="nav-icon">🎵</span>
           <div class="nav-text">
             <span class="nav-title">Music Dashboard</span>
@@ -414,7 +423,7 @@
           <span class="nav-badge live">Live</span>
         </div>
 
-        <div class="nav-item" data-idx="7" onclick="switchDash(7, this)">
+        <div class="nav-item" data-idx="8" onclick="switchDash(8, this)">
           <span class="nav-icon">📻</span>
           <div class="nav-text">
             <span class="nav-title">TJD Radio</span>
@@ -423,7 +432,7 @@
           <span class="nav-badge live">Live</span>
         </div>
 
-        <div class="nav-item" data-idx="8" onclick="switchDash(8, this)">
+        <div class="nav-item" data-idx="9" onclick="switchDash(9, this)">
           <span class="nav-icon">🎸</span>
           <div class="nav-text">
             <span class="nav-title">Guitar Trainer</span>
@@ -432,7 +441,7 @@
           <span class="nav-badge live">Live</span>
         </div>
 
-        <div class="nav-item" data-idx="9" onclick="switchDash(9, this)">
+        <div class="nav-item" data-idx="10" onclick="switchDash(10, this)">
           <span class="nav-icon">⚛️</span>
           <div class="nav-text">
             <span class="nav-title">Quantum Benchmarks</span>
@@ -441,18 +450,18 @@
           <span class="nav-badge static">Static</span>
         </div>
 
-        <div class="nav-item" data-idx="10" onclick="switchDash(10, this)">
+        <div class="nav-item" data-idx="11" onclick="switchDash(11, this)">
           <span class="nav-icon">🎙️</span>
           <div class="nav-text">
             <span class="nav-title">Executive Audio Brief Portal</span>
             <span class="nav-project">👁AI-Manifest</span>
           </div>
-          <span class="nav-badge static">Static</span>
+          <span class="nav-badge static">interactive_html</span>
         </div>
     </div>
     
     <div class="sidebar-footer">
-      Generated 2026-04-23 01:28:04 &middot; 11 dashboards<br>
+      Generated 2026-04-23 19:05:02 &middot; 12 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
@@ -580,11 +589,11 @@
 })();
 </script>
 </div>
-<div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-8" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5055" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5055" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-9" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-10" style="display:none"><iframe src="file:///f:/%F0%9F%91%81AI-Manifest/output/executive_brief_portal.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-6" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/fr_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-8" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-9" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5055" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5055" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-10" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
   </main>
   <script>
     function switchDash(idx, el) {
