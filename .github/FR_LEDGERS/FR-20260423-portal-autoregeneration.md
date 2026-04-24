@@ -10,16 +10,16 @@
 - **Type:** chore/feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** REVIEW_REQUESTED
+- **State:** SIGNED_OFF
 - **Branch:** chore/workspace/portal-autoregeneration
 - **PRs:** #18 https://github.com/tylerdrakemusic/-Workspace/pull/18
 - **Cycle timer:** 1f51e007-9e12-4472-8fb8-aa7e73d489ff
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-04-24T03:10:00Z
+- **Signed off at:** 2026-04-24T03:10:00Z
+- **Closed:** 2026-04-24
+- **Final state:** SIGNED_OFF
 
 ### Acceptance Criteria
 1. Portal regenerates all stale dashboards automatically on every run without requiring `--regen` flag.

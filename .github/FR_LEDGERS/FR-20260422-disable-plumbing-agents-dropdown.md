@@ -10,14 +10,16 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** TRIAGED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** SIGNED_OFF
+- **Branch:** superseded by FR-20260423-disable-plumbing-agents-branch
+- **PRs:** superseded
 - **Cycle timer:** be698f2b-094a-4618-9689-fb2610c81ba4
 - **Opened:** 2026-04-22
-- **Last updated:** 2026-04-22
-- **Closed:** —
-- **Final state:** —
+- **Last updated:** 2026-04-24
+- **Merged at:** 2026-04-24T03:10:00Z
+- **Signed off at:** 2026-04-24T03:10:00Z
+- **Closed:** 2026-04-24
+- **Final state:** SIGNED_OFF
 
 ### Acceptance Criteria
 1. `⊕workspace-doer.agent.md` has `user-invocable: false` in its YAML frontmatter

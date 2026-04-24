@@ -10,16 +10,16 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** REVIEW_REQUESTED
+- **State:** SIGNED_OFF
 - **Branch:** feature/workspace/disable-plumbing-agents
 - **PRs:** #16 https://github.com/tylerdrakemusic/-Workspace/pull/16
 - **Cycle timer:** df4eccd4-1324-4286-8e55-18b26bb8f181
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-04-24T03:10:00Z
+- **Signed off at:** 2026-04-24T03:10:00Z
+- **Closed:** 2026-04-24
+- **Final state:** SIGNED_OFF
 
 ### Acceptance Criteria
 1. Internal plumbing/subagent-only agents (e.g. `⊕workspace-doer`, `⊕workspace-alignment`, `⊕workspace-proof`, etc.) are hidden from the VS Code agent picker dropdown.
