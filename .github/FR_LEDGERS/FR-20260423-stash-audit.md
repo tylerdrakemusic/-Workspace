@@ -10,14 +10,14 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** SOAKING
+- **State:** SIGNED_OFF
 - **Branch:** chore/workspace/stash-audit
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/15
 - **Cycle timer:** 4382a955-9312-4afb-8cdb-5a447c4ed2e9
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
 - **Merged at:** 2026-04-24T01:32:00Z
-- **Signed off at:** —
+- **Signed off at:** 2026-04-24T02:26:57Z
 - **Closed:** —
 - **Final state:** —
 
@@ -136,6 +136,19 @@ The FR's safety rules state: "DO NOT drop any stash containing changes not reach
 **Next:** PR #15 un-drafted; awaiting Tyler's review.
 
 ---
+
+### 2026-04-24T02:26:57Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: SOAKING
+- Signed off at: 2026-04-24T02:26:57Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
