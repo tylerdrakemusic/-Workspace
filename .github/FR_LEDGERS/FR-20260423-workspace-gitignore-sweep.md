@@ -10,14 +10,14 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** SOAKING
+- **State:** SIGNED_OFF
 - **Branch:** chore/workspace/gitignore-sweep
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/14
 - **Cycle timer:** 76e2c255-2ea5-407e-89f3-380b234aea6e
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
 - **Merged at:** 2026-04-24T01:32:00Z
-- **Signed off at:** —
+- **Signed off at:** 2026-04-24T02:28:22Z
 - **Closed:** —
 - **Final state:** —
 
@@ -103,6 +103,19 @@
 **Next:** ⊕workspace-reviewer (auto-review) → Tyler signoff → merge
 
 ---
+
+### 2026-04-24T02:28:22Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: SOAKING
+- Signed off at: 2026-04-24T02:28:22Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
