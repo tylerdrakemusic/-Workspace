@@ -1,0 +1,72 @@
+# FR-20260423-disable-plumbing-agents-branch — Branch + Implement: Disable Plumbing Agents from VS Code Dropdown
+
+<!-- Created by ⊕workspace-intake. Header is updated in place by intake / CI only.
+     Event Log and Artifacts are APPEND-ONLY for all agents. -->
+
+## Header
+
+- **FR ID:** FR-20260423-disable-plumbing-agents-branch
+- **Title:** Branch + Implement: Disable Plumbing Agents from VS Code Agent Dropdown
+- **Type:** feature
+- **Risk:** low
+- **Projects:** ⊕Workspace
+- **State:** BRANCHED
+- **Branch:** feature/workspace/disable-plumbing-agents
+- **PRs:** pending
+- **Cycle timer:** df4eccd4-1324-4286-8e55-18b26bb8f181
+- **Opened:** 2026-04-23
+- **Last updated:** 2026-04-23
+- **Merged at:** —
+- **Signed off at:** —
+- **Closed:** —
+- **Final state:** —
+
+### Acceptance Criteria
+1. Internal plumbing/subagent-only agents (e.g. `⊕workspace-doer`, `⊕workspace-alignment`, `⊕workspace-proof`, etc.) are hidden from the VS Code agent picker dropdown.
+2. User-facing agents (e.g. `⊕workspace-overseer`, `⊕workspace-intake`, `⊕workspace-ci`, etc.) remain visible and selectable in the dropdown.
+3. The distinction between plumbing and user-facing agents is documented (e.g. via a `hidden: true` front-matter field or VS Code `isHidden` property) and applied consistently across all agent files.
+4. Tyler confirms the dropdown no longer shows plumbing agents after the change is applied.
+5. No user-facing agent is accidentally hidden.
+
+### Concurrency Notes
+- Conflicts with: none
+- Depends on: FR-20260422-disable-plumbing-agents-dropdown (TRIAGED — this FR supersedes the unbranched TRIAGED state; the original FR should be updated to BRANCHED once this work begins)
+
+### Deliverable Tracker
+
+| #   | Deliverable                                                   | Owner   | Status      | Proof | Updated |
+| --- | ------------------------------------------------------------- | ------- | ----------- | ----- | ------- |
+| AC1 | Plumbing agents hidden from VS Code agent dropdown            | pending | not-started | —     | —       |
+| AC2 | User-facing agents remain visible                             | pending | not-started | —     | —       |
+| AC3 | Hidden marker documented + applied to all plumbing agents     | pending | not-started | —     | —       |
+| AC4 | Tyler confirms dropdown is clean                              | pending | not-started | —     | —       |
+
+### Tyler's Original Request
+> "FR-20260422-disable-plumbing-agents-dropdown is TRIAGED but has never been branched. It asks to hide internal plumbing/subagent-only agents from the VS Code agent dropdown so Tyler doesn't see them when picking an agent. Confirm Tyler still wants this, create a branch, and implement."
+
+---
+
+## Event Log
+
+<!-- APPEND-ONLY. Newest entries at the bottom. Never edit past entries. -->
+
+### 2026-04-23T00:00:00Z — ⊕workspace-intake
+
+**Event:** state-transition
+
+**Summary:** FR opened as execution wrapper for FR-20260422-disable-plumbing-agents-dropdown → TRIAGED (pending Tyler scope confirmation)
+
+**Details:**
+- Scope: ⊕Workspace
+- This FR drives branching and implementation for the previously-TRIAGED-and-unbranched FR-20260422-disable-plumbing-agents-dropdown
+- Concurrency check: clean
+- Depends on: FR-20260422-disable-plumbing-agents-dropdown (will be updated to BRANCHED once this FR proceeds)
+
+**Next:** awaiting Tyler: approve scope; upon approval → delegate to ⊕workspace-ci for branch creation, then to orchestrator for implementation
+
+---
+
+## Artifacts
+
+- **Perf runs:** df4eccd4-1324-4286-8e55-18b26bb8f181 — FR cycle timer started at intake
+- **Original TRIAGED FR:** FR-20260422-disable-plumbing-agents-dropdown
