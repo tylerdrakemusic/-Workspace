@@ -310,7 +310,7 @@
 </head>
 <body>
   <h1><span class="sigil">⊕</span> Agent Ops Monitor</h1>
-  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-23T21:12:45</div>
+  <div class="subtitle">Session health · Gap detection · Proof audit &mdash; 2026-04-23T21:15:38</div>
 
   <div class="live-banner">
     <div class="live-cell">
@@ -322,30 +322,23 @@
       <div class="live-label">VS Code <span class="live-sub">(detected)</span></div>
     </div>
     <div class="live-cell">
-      <div class="live-val live-recent">1</div>
+      <div class="live-val live-recent">2</div>
       <div class="live-label">Recent <span class="live-sub">(24h)</span></div>
     </div>
     <div class="live-cell">
-      <div class="live-val live-total">57</div>
+      <div class="live-val live-total">58</div>
       <div class="live-label">Historical total</div>
     </div>
   </div>
 
   
-    <div class="fix-banner">
-      <span class="fix-icon">🔧</span>
-      <div>
-        <strong>Auto-Fix Applied</strong><br>
-        <span class="fix-detail">1 zombie(s) closed · 0 proof-complete session(s) closed · 0 proof(s) verified · 5 legacy orphan(s) backfilled · 0 orphan run(s) remain</span>
-      </div>
-    </div>
 
   <div class="health-ring">
     <div class="ring-container">
       <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
         <circle class="ring-bg" cx="70" cy="70" r="60"/>
         <circle class="ring-fg" cx="70" cy="70" r="60"
-                style="stroke:#10b981; stroke-dashoffset:7;"/>
+                style="stroke:#10b981; stroke-dashoffset:6;"/>
       </svg>
       <div class="ring-text">
         <div class="ring-pct" style="color:#10b981">98%</div>
@@ -355,11 +348,11 @@
 
     <div class="stat-grid" style="flex:1;">
       <div class="stat-card">
-        <div class="stat-val val-info">57</div>
+        <div class="stat-val val-info">58</div>
         <div class="stat-label">Total Runs</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-ok">56</div>
+        <div class="stat-val val-ok">57</div>
         <div class="stat-label">Healthy</div>
       </div>
       <div class="stat-card">
@@ -371,19 +364,20 @@
         <div class="stat-label">No Proof</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-warn">2</div>
+        <div class="stat-val val-warn">3</div>
         <div class="stat-label">Unverified</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val val-info">3</div>
+        <div class="stat-val val-info">4</div>
         <div class="stat-label">Total Gaps</div>
       </div>
     </div>
   </div>
 
-  <details class="gap-breakdown"><summary><span class="chev">▸</span> <span class="finished-title">Gap Breakdown — what makes up the 3 gaps</span></summary><div class="gap-body"><div class="gap-group"><div class="gap-group-title"><span class="gap-badge orphan">orphan</span> 1 · ended with zero proofs (legacy or agent skipped proof protocol)</div><table class="gap-table"><thead><tr><th>Run</th><th>Name</th><th>Reason</th></tr></thead><tbody><tr><td class="mono">59f54134-b7d</td><td>agent-ops-gap-breakdown-cleanup</td><td class="ts">ended 2026-04-23 21:12 · 0 proofs recorded</td></tr></tbody></table></div>
-<div class="gap-group"><div class="gap-group-title"><span class="gap-badge" style="background:rgba(59,130,246,0.15);color:#3b82f6">unverified</span> 2 · proof recorded but artifact_path does not exist on disk</div><table class="gap-table"><thead><tr><th>Proof</th><th>Agent</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td class="mono">330aec03009d</td><td>⊕workspace-overseer</td><td class="drift-old mono">f:\❤Music\docs\protocols\SONGDLC_PIPELINE.md</td><td class="ts">Injected &#x27;Chills Vibe Pass&#x27; QA step into SONGDLC_PIPELINE.md</td></tr>
-<tr><td class="mono">cf7f2f7fefa3</td><td>⊕workspace-overseer</td><td class="drift-old mono">f:\.github\!!☾⛧security\agent-manifest.json</td><td class="ts">Security folder renamed to double-bang sigil</td></tr></tbody></table></div></div></details>
+  <details class="gap-breakdown"><summary><span class="chev">▸</span> <span class="finished-title">Gap Breakdown — what makes up the 4 gaps</span></summary><div class="gap-body"><div class="gap-group"><div class="gap-group-title"><span class="gap-badge orphan">orphan</span> 1 · ended with zero proofs (legacy or agent skipped proof protocol)</div><table class="gap-table"><thead><tr><th>Run</th><th>Name</th><th>Reason</th></tr></thead><tbody><tr><td class="mono">59f54134-b7d</td><td>agent-ops-gap-breakdown-cleanup</td><td class="ts">ended 2026-04-23 21:12 · 0 proofs recorded</td></tr></tbody></table></div>
+<div class="gap-group"><div class="gap-group-title"><span class="gap-badge" style="background:rgba(59,130,246,0.15);color:#3b82f6">unverified</span> 3 · proof recorded but artifact_path does not exist on disk</div><table class="gap-table"><thead><tr><th>Proof</th><th>Agent</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td class="mono">330aec03009d</td><td>⊕workspace-overseer</td><td class="drift-old mono">f:\❤Music\docs\protocols\SONGDLC_PIPELINE.md</td><td class="ts">Injected &#x27;Chills Vibe Pass&#x27; QA step into SONGDLC_PIPELINE.md</td></tr>
+<tr><td class="mono">cf7f2f7fefa3</td><td>⊕workspace-overseer</td><td class="drift-old mono">f:\.github\!!☾⛧security\agent-manifest.json</td><td class="ts">Security folder renamed to double-bang sigil</td></tr>
+<tr><td class="mono">ab74c3578761</td><td>⊕workspace-overseer</td><td class="drift-old mono"></td><td class="ts">Restored workspace.db from backup (57-&gt;57 runs, 98% health)</td></tr></tbody></table></div></div></details>
 
   <h2 style="color: var(--cyan);">
     <span class="running-dot"></span> Live Agents
@@ -413,7 +407,7 @@
     <summary>
       <span class="chev">▸</span>
       <span class="finished-title">Finished Sessions</span>
-      <span class="section-count">(57)</span>
+      <span class="section-count">(58)</span>
     </summary>
     <table id="finished-table">
       <thead>
@@ -430,7 +424,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr class="row-orphan"><td class="mono">59f54134-b7d7-49af-9e5c-78ef66d0d43d</td><td>agent-ops-gap-breakdown-cleanup</td><td class="st-timeout">timeout</td><td class="ts">2026-04-23 01:16</td><td class="ts">2026-04-23 21:12</td><td class="mono">19:56:41</td><td class="proof-cell"><span class="no-proof">—</span></td><td><span class="gap-badge orphan">NO PROOF</span></td><td></td></tr>
+        <tr class=""><td class="mono">3429eb5f-72a4-4e34-a204-7a14c768daf8</td><td>agent-ops-vscode-signoff-session</td><td class="st-ok">ok</td><td class="ts">2026-04-23 21:12</td><td class="ts">2026-04-23 21:13</td><td class="mono">00:00:34</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:0%"></div></div><span class="proof-label">0/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
+<tr class="row-orphan"><td class="mono">59f54134-b7d7-49af-9e5c-78ef66d0d43d</td><td>agent-ops-gap-breakdown-cleanup</td><td class="st-timeout">timeout</td><td class="ts">2026-04-23 01:16</td><td class="ts">2026-04-23 21:12</td><td class="mono">19:56:41</td><td class="proof-cell"><span class="no-proof">—</span></td><td><span class="gap-badge orphan">NO PROOF</span></td><td></td></tr>
 <tr class=""><td class="mono">c96b323f-5c29-4d03-9f8c-5d9f17956d97</td><td>perf_cli smoke test</td><td class="st-timeout">legacy</td><td class="ts">2026-04-20 22:24</td><td class="ts">2026-04-20 22:24</td><td class="mono">00:00:00</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">02cd96d4e94e</td><td>commit-unlock-readiness</td><td class="st-ok">ok</td><td class="ts">2026-04-19 17:46</td><td class="ts">2026-04-19 17:46</td><td class="mono">00:00:10</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
 <tr class=""><td class="mono">7858180b2841</td><td>repair-pass-workspace-db-keying</td><td class="st-ok">ok</td><td class="ts">2026-04-19 17:43</td><td class="ts">2026-04-19 17:44</td><td class="mono">00:00:15</td><td class="proof-cell"><div class="proof-bar"><div class="proof-fill" style="width:100%"></div></div><span class="proof-label">1/1</span></td><td><span class="gap-badge ok">OK</span></td><td></td></tr>
@@ -503,7 +498,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr><td>⊕workspace-overseer</td><td class="num">54</td><td class="num">71</td><td class="num">69</td><td class="num rate-good">97%</td></tr>
+      <tr><td>⊕workspace-overseer</td><td class="num">55</td><td class="num">72</td><td class="num">69</td><td class="num rate-good">96%</td></tr>
 <tr><td>⊕workspace-commitment</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num rate-good">100%</td></tr>
     </tbody>
   </table>
