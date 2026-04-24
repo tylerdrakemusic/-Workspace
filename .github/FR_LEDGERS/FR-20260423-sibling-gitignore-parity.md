@@ -10,14 +10,14 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest
-- **State:** SOAKING
+- **State:** SIGNED_OFF
 - **Branch:** chore/life/gitignore-parity · chore/music/gitignore-parity · chore/quantum/gitignore-parity · chore/ai-manifest/gitignore-parity
 - **PRs:** https://github.com/tylerdrakemusic/Life/pull/1 · https://github.com/tylerdrakemusic/Music/pull/1 · https://github.com/tylerdrakemusic/Quantum/pull/1 · https://github.com/tylerdrakemusic/AI-Manifest/pull/5 (all ready-for-review)
 - **Cycle timer:** 6b55a663-313c-45a2-a44f-d0df0da33e48
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
 - **Merged at:** 2026-04-24T01:35:00Z
-- **Signed off at:** —
+- **Signed off at:** 2026-04-24T02:24:40Z
 - **Closed:** —
 - **Final state:** —
 
@@ -127,6 +127,19 @@
 **Next:** Tyler review → merge → close cycle timer `6b55a663-313c-45a2-a44f-d0df0da33e48` (or ⊕workspace-ci reconcile-fr-timers after GitHub merge).
 
 ---
+
+### 2026-04-24T02:24:40Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: SOAKING
+- Signed off at: 2026-04-24T02:24:40Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
