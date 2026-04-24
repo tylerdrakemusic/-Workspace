@@ -16,6 +16,7 @@
 - **Cycle timer:** 4a30bc0e-fe8e-48bd-b8ca-448115fede0d
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
+- **Merged at:** 2026-04-22
 - **Closed:** 2026-04-22
 - **Final state:** MERGED_PARTIAL — Phase 1 (content sync) complete; Phases 2 (junction swap) + 3 (README docs) infeasible. Succeeded by FR-20260422-multi-root-workspace.
 

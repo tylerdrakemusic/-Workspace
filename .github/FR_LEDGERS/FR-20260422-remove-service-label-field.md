@@ -16,6 +16,7 @@
 - **Cycle timer:** c6d6b6e9-2eae-4b4e-be8c-c394816442ea
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
+- **Merged at:** 2026-04-22
 - **Closed:** 2026-04-22
 - **Final state:** MERGED — closure recorded retroactively by ⊕workspace-overseer per Tyler confirmation that implementing agent forgot to flip state.
 

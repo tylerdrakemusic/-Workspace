@@ -10,14 +10,16 @@
 - **Type:** fix
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** MERGED
+- **State:** SIGNED_OFF
 - **Branch:** fix/FR-20260423-agent-ops-monitor-sync (merged & deleted; worktree removed)
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/7 (merged @ 46c8eed)
 - **Cycle timer:** 2624f477-2cb7-41de-86b3-670330623ef8
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23
+- **Last updated:** 2026-04-24
+- **Merged at:** 2026-04-23
 - **Closed:** 2026-04-23
 - **Final state:** MERGED
+- **Signed off at:** 2026-04-24T00:42:02Z
 
 ### Acceptance Criteria
 1. A path-remediation migration (in `tools/agent_ops_monitor.py` or new `tools/agent_ops_migrate.py`) rewrites stale `proof_artifacts.artifact_path` entries: `f:/executedcode/<sigil>X/...` → `f:\<sigil>X\...`, `!!security` → `!!☾⛧security`, and normalizes agent names missing sigil prefix (`workspace-*` → `⊕workspace-*`). Re-verification pass runs after rewrites.
@@ -139,6 +141,20 @@
 **Next:** handoff to ⊕workspace-reviewer for AC6 (post-migration verification on live DB) and AC4 (portal freshness indicator — ⊕workspace-dashboards owner).
 
 ---
+
+### 2026-04-24T00:42:02Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: MERGED
+- Signed off at: 2026-04-24T00:42:02Z
+- Note: Verified: monitor shows live sessions from all 5 projects.
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 

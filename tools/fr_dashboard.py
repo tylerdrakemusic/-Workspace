@@ -106,14 +106,19 @@ def _one_line_summary(text: str, title: str) -> str:
 def parse_ledger(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     header = _parse_header(text)
-    state = (header.get("State") or "OPEN").upper().split()[0]
+    raw_state = (header.get("State") or "OPEN").upper()
+    # Respect compound states like "MERGED → CLOSED": take the LAST segment as
+    # the current state, earlier segments are history.
+    segments = [s.strip() for s in re.split(r"[→>]+", raw_state) if s.strip()]
+    state = (segments[-1] if segments else "OPEN").split()[0]
     # Normalize some legacy freeform states.
     if state not in ACTIVE_STATES and state not in ARCHIVED_STATES:
-        # Best-effort: if contains "CLOSED" or "MERGED" fall back sensibly.
-        if "SIGNED_OFF" in header.get("State", "").upper():
+        if "SIGNED_OFF" in raw_state:
             state = "SIGNED_OFF"
-        elif "CLOSED" in header.get("State", "").upper():
+        elif "CLOSED" in raw_state:
             state = "CLOSED"
+        elif "MERGED" in raw_state:
+            state = "MERGED"
     return {
         "file": path,
         "relpath": path.relative_to(PROJECT_ROOT).as_posix(),
@@ -245,13 +250,25 @@ def _card_html(fr: dict) -> str:
         soak_badge = f'<span class="soak-badge" title="Time since merge">Soaking for {soak}</span>'
 
     signoff_cta = ""
-    if state == "SOAKING":
+    if state in {"SOAKING", "MERGED"}:
+        intro = (
+            "Exercise the feature on <code>main</code>. When satisfied:"
+            if state == "SOAKING"
+            else "Verify the feature is live on <code>main</code>. When satisfied:"
+        )
         signoff_cta = (
-            '<div class="cta">'
-            'Exercise the feature on <code>main</code>. When satisfied, tell '
-            '<code>⊕workspace-ci</code>: '
-            f'<code>signed off on {_esc(fr["fr_id"])}</code>'
+            '<form class="cta signoff-form" method="POST" '
+            f'action="/fr/signoff/{_esc(fr["fr_id"])}">'
+            f'<div class="cta-text">{intro}</div>'
+            '<div class="cta-actions">'
+            '<input type="text" name="note" placeholder="optional note" maxlength="240">'
+            '<button type="submit" class="signoff-btn">✓ Sign off</button>'
             '</div>'
+            '<div class="cta-hint">'
+            'Requires <code>fr_portal_server.py</code> running. '
+            f'CLI fallback: <code>python tools/fr_signoff.py {_esc(fr["fr_id"])}</code>'
+            '</div>'
+            '</form>'
         )
 
     ledger_link = f'<a href="../{_esc(fr["relpath"])}" target="_blank" rel="noopener">ledger →</a>'
@@ -374,11 +391,34 @@ h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
   font-size: 0.72rem; color: var(--soak);
   background: rgba(167,139,250,0.06);
   border: 1px dashed rgba(167,139,250,0.35);
-  border-radius: 6px; padding: 0.45rem 0.55rem;
+  border-radius: 6px; padding: 0.55rem 0.6rem;
+  display: flex; flex-direction: column; gap: 0.4rem;
 }
 .cta code {
   background: var(--surface-2); padding: 0.05rem 0.35rem;
   border-radius: 3px; color: #a5f3fc;
+}
+.cta-actions { display: flex; gap: 0.4rem; align-items: center; }
+.cta-actions input[type="text"] {
+  flex: 1; background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.3rem 0.5rem; font-size: 0.72rem; font-family: inherit;
+}
+.cta-actions input[type="text"]:focus { outline: none; border-color: var(--soak); }
+.signoff-btn {
+  background: var(--soak); color: #0a0d12;
+  border: none; border-radius: 4px;
+  padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: filter .1s;
+}
+.signoff-btn:hover { filter: brightness(1.15); }
+.signoff-btn:active { filter: brightness(0.9); }
+.cta-hint { font-size: 0.66rem; color: var(--muted); }
+.flash {
+  margin: 0 0 1rem; padding: 0.6rem 0.9rem;
+  background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.4);
+  color: var(--done); border-radius: 6px; font-size: 0.8rem;
 }
 .fr-foot {
   font-size: 0.72rem; border-top: 1px solid var(--border); padding-top: 0.4rem;
@@ -440,6 +480,19 @@ def render_html(frs: list[dict]) -> str:
         word = "FR" if soaking_count == 1 else "FRs"
         tyler_nudge = f' · <strong style="color:#a78bfa">{soaking_count} {word} awaiting signoff</strong>'
 
+    flash_script = (
+        "<script>document.addEventListener('DOMContentLoaded',()=>{"
+        "const p=new URLSearchParams(location.search);"
+        "const id=p.get('signed_off');"
+        "if(!id)return;"
+        "const slot=document.getElementById('flash-slot');"
+        "if(!slot)return;"
+        "slot.className='flash';"
+        "slot.textContent='✓ Signed off on '+id+' — FR moved to Archived.';"
+        "history.replaceState({},'',location.pathname);"
+        "});</script>"
+    )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -453,6 +506,8 @@ def render_html(frs: list[dict]) -> str:
     Generated {generated}{tyler_nudge} ·
     Ledger: <code>.github/FR_LEDGERS/</code> · Registry: <code>.github/FEATURE_REQUESTS.md</code>
   </div>
+  {flash_script}
+  <div id="flash-slot"></div>
 
   <div class="section-title">Active <span class="count">{len(active)}</span></div>
   <div class="grid">
@@ -470,7 +525,9 @@ def render_html(frs: list[dict]) -> str:
     Soak protocol: after merge, FRs enter <code>SOAKING</code> so Tyler can verify
     the feature is actually present on <code>main</code> before signing off.
     Signoff moves the FR to <code>SIGNED_OFF → ARCHIVED</code> and it drops off the
-    active board. Regenerate: <code>C:\\G\\python.exe tools/fr_dashboard.py</code>
+    active board. <br>
+    Regenerate HTML: <code>C:\\G\\python.exe tools/fr_dashboard.py</code> ·
+    Serve + enable signoff buttons: <code>C:\\G\\python.exe tools/fr_portal_server.py</code>
   </div>
 </body>
 </html>"""
