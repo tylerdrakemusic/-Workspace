@@ -10,14 +10,14 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** SOAKING
+- **State:** SIGNED_OFF
 - **Branch:** feature/FR-20260423-fr-portal-soak-gate (merged & deleted)
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/12 (merged @ fd83eef)
 - **Cycle timer:** 27eebf70-f4a2-4d8b-b9be-ab3c6b26ce5a
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
 - **Merged at:** 2026-04-24T00:48:48Z
-- **Signed off at:** —
+- **Signed off at:** 2026-04-24T01:07:03Z
 - **Closed:** —
 - **Final state:** —
 
@@ -169,6 +169,19 @@
 - PR #12 updated via branch push. Marked ready for review.
 
 **Next:** → ⊕workspace-reviewer: run auto-review (alignment + security + tests + proof)
+
+### 2026-04-24T01:07:03Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: SOAKING
+- Signed off at: 2026-04-24T01:07:03Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
