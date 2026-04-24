@@ -161,35 +161,15 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
 <body>
   <h1><span class="sigil">⊕</span> Feature Request Board</h1>
   <div class="subtitle">
-    Generated 2026-04-23 20:28:22 · <strong style="color:#a78bfa">1 FR awaiting signoff</strong> ·
+    Generated 2026-04-23 21:05:00 ·
     Ledger: <code>.github/FR_LEDGERS/</code> · Registry: <code>.github/FEATURE_REQUESTS.md</code>
   </div>
   <script>document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(location.search);const id=p.get('signed_off');if(!id)return;const slot=document.getElementById('flash-slot');if(!slot)return;slot.className='flash';slot.textContent='✓ Signed off on '+id+' — FR moved to Archived.';history.replaceState({},'',location.pathname);});</script>
   <div id="flash-slot"></div>
 
-  <div class="section-title">Active <span class="count">4</span></div>
+  <div class="section-title">Active <span class="count">6</span></div>
   <div class="grid">
     
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-vscode-session-autodetect</div>
-        <div class="fr-badges">
-          <span class="state-badge state-soak">SOAKING</span>
-          <span class="soak-badge" title="Time since merge">Soaking for 17h 55m</span>
-        </div>
-      </div>
-      <div class="fr-title">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required</div>
-      <div class="fr-summary">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required.  The agent ops monitor &quot;Live sessions (last 10 min)&quot; count only reflects sessions that explicitly called `perf_cli.py start` at the beg</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/vscode-session-autodetect</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/11" target="_blank" rel="noopener">#11</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-23T08:33:21Z</span></div>
-      </div>
-      <div class="cta signoff-cta"><div class="cta-text">Exercise the feature on <code>main</code>. When satisfied:</div><div class="cta-actions"><a class="signoff-btn" href="frsignoff:FR-20260423-vscode-session-autodetect">✓ Sign off</a></div><div class="cta-hint">Launches the Windows protocol handler — signs off, commits, and pushes.<br>CLI fallback: <code>python tools/fr_signoff.py FR-20260423-vscode-session-autodetect</code></div></div>
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-vscode-session-autodetect.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260423-audio-brief-elevenlabs-fix</div>
@@ -209,6 +189,66 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
       </div>
       
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-audio-brief-elevenlabs-fix.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-disable-plumbing-agents-branch</div>
+        <div class="fr-badges">
+          <span class="state-badge state-info">REVIEW_REQUESTED</span>
+          
+        </div>
+      </div>
+      <div class="fr-title">Branch + Implement: Disable Plumbing Agents from VS Code Agent Dropdown</div>
+      <div class="fr-summary">&quot;FR-20260422-disable-plumbing-agents-dropdown is TRIAGED but has never been branched. It asks to hide internal plumbing/subagent-only agents from the VS Code agent dropdown so Tyler doesn&#x27;t see them when picking an agent. Confirm Tyler stil</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/disable-plumbing-agents</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/16" target="_blank" rel="noopener">#16</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
+      </div>
+      
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-disable-plumbing-agents-branch.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-portal-autoregeneration</div>
+        <div class="fr-badges">
+          <span class="state-badge state-info">REVIEW_REQUESTED</span>
+          
+        </div>
+      </div>
+      <div class="fr-title">Portal Auto-Regeneration + Gap Count Accuracy</div>
+      <div class="fr-summary">&quot;The Agent Ops health card in the portal shows a stale warning with a manual CLI regen command — that should be automatic, not a user task. The portal currently auto-regens only when `--regen` is passed. Additionally there is a gap count di</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/portal-autoregeneration</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/18" target="_blank" rel="noopener">#18</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
+      </div>
+      
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-portal-autoregeneration.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-vscode-autodetect-soak-verify</div>
+        <div class="fr-badges">
+          <span class="state-badge state-info">REVIEW_REQUESTED</span>
+          
+        </div>
+      </div>
+      <div class="fr-title">Soak Verification: vscode-session-autodetect (PR#11)</div>
+      <div class="fr-summary">&quot;FR-20260423-vscode-session-autodetect is in SOAKING state — it was merged (PR#11, 2026-04-23T08:33:21Z). We need to confirm the feature is actually working (auto-detect live VS Code sessions shows in the live agent banner), verify acceptan</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/vscode-autodetect-soak-verify</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/17" target="_blank" rel="noopener">#17</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
+      </div>
+      
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-vscode-autodetect-soak-verify.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
     <div class="fr-card">
       <div class="fr-top">
@@ -253,9 +293,30 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
   </div>
 
   <details class="archive">
-    <summary>Archived / Signed off <span class="count">17</span></summary>
+    <summary>Archived / Signed off <span class="count">18</span></summary>
     <div class="grid" style="margin-top:0.6rem">
       
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260423-vscode-session-autodetect</div>
+        <div class="fr-badges">
+          <span class="state-badge state-done">SIGNED_OFF</span>
+          
+        </div>
+      </div>
+      <div class="fr-title">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required</div>
+      <div class="fr-summary">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required.  The agent ops monitor &quot;Live sessions (last 10 min)&quot; count only reflects sessions that explicitly called `perf_cli.py start` at the beg</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/vscode-session-autodetect</code></span></div>
+<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/11" target="_blank" rel="noopener">#11</a></span></div>
+<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-23T08:33:21Z</span></div>
+<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:05:00Z</span></div>
+      </div>
+      
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-vscode-session-autodetect.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260423-workspace-gitignore-sweep</div>

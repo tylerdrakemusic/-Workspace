@@ -10,15 +10,16 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** SOAKING
+- **State:** SIGNED_OFF
 - **Branch:** feature/workspace/vscode-session-autodetect
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/11
 - **Cycle timer:** 354cfa0b-7fe3-4223-96d8-d31da40175c1
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23 (SOAKING — retroactive)
+- **Last updated:** 2026-04-24
 - **Merged at:** 2026-04-23T08:33:21Z
 - **Closed:** —
 - **Final state:** —
+- **Signed off at:** 2026-04-24T03:05:00Z
 
 ### Acceptance Criteria
 1. `agent_ops_monitor.py` detects VS Code Copilot chat sessions active in the last N minutes (default 10) by scanning debug-log file mtimes under `%APPDATA%\Code\User\workspaceStorage\*\GitHub.copilot-chat\debug-logs\` without requiring any manual instrumentation.
@@ -133,6 +134,19 @@
 **Next:** implementation by doer/feature agent
 
 ---
+
+### 2026-04-24T03:05:00Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: SOAKING
+- Signed off at: 2026-04-24T03:05:00Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
