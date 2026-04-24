@@ -10,13 +10,13 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** BRANCHED
-- **Branch:** feature/FR-20260423-fr-portal-soak-gate
-- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/12 (draft)
+- **State:** SOAKING
+- **Branch:** feature/FR-20260423-fr-portal-soak-gate (merged & deleted)
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/12 (merged @ fd83eef)
 - **Cycle timer:** 27eebf70-f4a2-4d8b-b9be-ab3c6b26ce5a
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23
-- **Merged at:** —
+- **Last updated:** 2026-04-24
+- **Merged at:** 2026-04-24T00:48:48Z
 - **Signed off at:** —
 - **Closed:** —
 - **Final state:** —
@@ -179,3 +179,17 @@
 - **PRs:** pending (CI handoff)
 - **Commits:** —
 - **Reports / dashboards:** target = `f:\⊕Workspace\reports\portal.html` (new FR panel)
+
+### 2026-04-24T00:50:00Z — ⊕workspace-overseer
+
+**Event:** state-transition
+
+**Summary:** Tyler approved merge; PR #12 merged into main → SOAKING
+
+**Details:**
+- Merge commit: fd83eef
+- PR #12 auto-closed by GitHub
+- Feature branch deleted (local + remote)
+- Scope delivered: FR board dashboard, signoff CLI, portal server with live POST signoff button, compound-state parser fix, 7-ledger legacy backfill
+
+**Next:** awaiting Tyler: exercise feature on main, then click ✓ Sign off in the FR Board (or run tools/fr_signoff.py).
