@@ -68,6 +68,24 @@ setup, and per-sigil pitfalls. Auto-attached by VS Code when relevant.
 - **⊕workspace-commitment** — Scalable commit workflows with security gate, commit grouping, approval checkpoints, and safe push discipline.
 - **⊕workspace-protector** — Reality check audit. Scans all projects for file explosion, complexity drift, scope creep, dead code, and IDE errors. Produces truth report for course-correction.
 
+## Repository Visibility (AGENT-CRITICAL)
+
+Machine-readable config: `f:\⊕Workspace\src\config\repo_visibility.json`
+Human-readable policy: `f:\⊕Workspace\REPO_VISIBILITY.md`
+
+| Repo | Visibility | Sensitivity |
+|------|------------|-------------|
+| ∞Life (`tylerdrakemusic/Life`) | **🔒 PRIVATE** | 🔴 Critical — real medical/genomic data |
+| ❤Music (`tylerdrakemusic/Music`) | 🌐 Public | 🟡 Low-Medium |
+| ⟨ψ⟩Quantum (`tylerdrakemusic/Quantum`) | 🌐 Public | 🟢 Low |
+| 👁AI-Manifest (`tylerdrakemusic/AI-Manifest`) | 🌐 Public | 🟡 Low-Medium |
+| ⊕Workspace (`tylerdrakemusic/-Workspace`) | 🌐 Public | 🟡 Medium |
+
+**Agent rules for git/push operations:**
+- ∞Life (PRIVATE): always run health-data gitignore audit before any commit. Block: `*.db`, `data/bloodwork/`, `data/medical_records/`, `data/genomics/`, `logs/`, `tmp/`, `SUBJECT_PROFILE.json`
+- PUBLIC repos: block secrets/credentials in ALL files. For 👁AI-Manifest: audit `output/` before push. Never reference ∞Life health paths in public repos.
+- Before any cross-project push: check `repo_visibility.json` for the target repo's push guards.
+
 ## Working Conventions
 - Research notes → `∞Life/research/<domain>/` as markdown
 - Data → SQLite DB, NOT loose JSON files

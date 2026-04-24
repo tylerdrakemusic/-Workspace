@@ -1,0 +1,93 @@
+{
+  "last_updated": "2026-04-23",
+  "fr": "FR-20260423-repo-privacy-audit",
+  "repos": {
+    "Life": {
+      "sigil": "∞",
+      "project": "∞Life",
+      "github_slug": "tylerdrakemusic/Life",
+      "visibility": "private",
+      "sensitivity": "critical",
+      "contains_health_data": true,
+      "contains_pii": true,
+      "public_safe": false,
+      "push_guards": [
+        "block: *.db",
+        "block: data/bloodwork/",
+        "block: data/medical_records/",
+        "block: data/genomics/",
+        "block: data/baseline/",
+        "block: logs/",
+        "block: tmp/",
+        "block: reports/",
+        "block: SUBJECT_PROFILE.json",
+        "require: health-data gitignore audit before every commit"
+      ],
+      "history_remediation_pending": true,
+      "history_issues": [
+        "infinitelife.db committed in cea7510",
+        "bloodwork PDFs tracked while repo was public",
+        "medical record PDFs tracked while repo was public"
+      ]
+    },
+    "Music": {
+      "sigil": "❤",
+      "project": "❤Music",
+      "github_slug": "tylerdrakemusic/Music",
+      "visibility": "public",
+      "sensitivity": "low-medium",
+      "contains_health_data": false,
+      "contains_pii": false,
+      "public_safe": true,
+      "push_guards": [
+        "block: *.env, .env, secrets.*, *.key, *.pem",
+        "warn: output files with personal audio content"
+      ]
+    },
+    "Quantum": {
+      "sigil": "⟨ψ⟩",
+      "project": "⟨ψ⟩Quantum",
+      "github_slug": "tylerdrakemusic/Quantum",
+      "visibility": "public",
+      "sensitivity": "low",
+      "contains_health_data": false,
+      "contains_pii": false,
+      "public_safe": true,
+      "push_guards": [
+        "block: *.env, .env, secrets.*, *.key, *.pem",
+        "block: QISKIT_TOKEN or IBM credentials in source"
+      ]
+    },
+    "AI-Manifest": {
+      "sigil": "👁",
+      "project": "👁AI-Manifest",
+      "github_slug": "tylerdrakemusic/AI-Manifest",
+      "visibility": "public",
+      "sensitivity": "low-medium",
+      "contains_health_data": false,
+      "contains_pii": false,
+      "public_safe": true,
+      "push_guards": [
+        "block: *.env, .env, secrets.*, *.key, *.pem",
+        "warn: output/tts/ — review audio/brief content before push",
+        "block: ELEVENLABS_API_KEY or OPENAI_TOKEN in source",
+        "warn: any file referencing infinitelife.db or ∞Life health paths"
+      ]
+    },
+    "-Workspace": {
+      "sigil": "⊕",
+      "project": "⊕Workspace",
+      "github_slug": "tylerdrakemusic/-Workspace",
+      "visibility": "public",
+      "sensitivity": "medium",
+      "contains_health_data": false,
+      "contains_pii": false,
+      "public_safe": true,
+      "push_guards": [
+        "block: *.env, .env, secrets.*, *.key, *.pem",
+        "block: src/data/workspace.db (SQLCipher key DB)",
+        "warn: any cross-project data artifacts from ∞Life scope"
+      ]
+    }
+  }
+}
