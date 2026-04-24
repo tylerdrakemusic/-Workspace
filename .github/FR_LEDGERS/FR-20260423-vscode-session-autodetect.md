@@ -10,15 +10,15 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** MERGED
+- **State:** SOAKING
 - **Branch:** feature/workspace/vscode-session-autodetect
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/11
 - **Cycle timer:** 354cfa0b-7fe3-4223-96d8-d31da40175c1
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23 (MERGED)
-- **Merged at:** 2026-04-23
-- **Closed:** 2026-04-23
-- **Final state:** MERGED
+- **Last updated:** 2026-04-23 (SOAKING — retroactive)
+- **Merged at:** 2026-04-23T08:33:21Z
+- **Closed:** —
+- **Final state:** —
 
 ### Acceptance Criteria
 1. `agent_ops_monitor.py` detects VS Code Copilot chat sessions active in the last N minutes (default 10) by scanning debug-log file mtimes under `%APPDATA%\Code\User\workspaceStorage\*\GitHub.copilot-chat\debug-logs\` without requiring any manual instrumentation.
@@ -157,3 +157,22 @@
 - **Required changes:** none
 - **Posted to GitHub:** yes — PR #11 COMMENT (self-review restriction prevented APPROVE event)
 - **Transition:** BRANCHED → AUTO_REVIEWED
+
+
+---
+
+### 2026-04-23T18:00:00Z — ⊕workspace-ci (drift-fix)
+
+**Event:** state-transition
+
+**Summary:** Retroactive soak gate — MERGED → SOAKING; Merged at backfilled from ledger event log
+
+**Details:**
+- Previous header state: MERGED with Merged at: 2026-04-23 (date only, missing time) and premature Closed: 2026-04-23 / Final state: MERGED
+- FR bypassed the soak gate because the original CI entry transitioned MERGED → CLOSED directly on the same push-to-main event
+- Backfilled Merged at to 2026-04-23T08:33:21Z (exact merge timestamp recorded in earlier CI event log entry: "PR #11 auto-merged at 2026-04-23T08:33:21Z (merged_by: tylerdrakemusic)"; merge SHA on main: 5cf3f05cc9d3a0d5fda40b2bc9b2840b75afe095)
+- Cleared Closed and Final state — FR is no longer terminal; it's soaking
+- Reconciliation FR: FR-20260423-fr-state-drift-fix
+- Reason: Retroactive soak gate — Merged at backfilled from git history so the portal signoff queue surfaces this FR for Tyler's sign-off
+
+**Next:** Tyler exercises --detect-vscode on main; sign off → SIGNED_OFF → ARCHIVED
