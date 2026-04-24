@@ -34,7 +34,7 @@ state machine, gateway definitions, and naming rules.
 | FR-20260423-fr-state-drift-fix | FR state drift reconciliation (signoff queue accuracy) | chore | ⊕Workspace | MERGED → CLOSED | chore/workspace/fr-state-drift-fix | [#13](https://github.com/tylerdrakemusic/-Workspace/pull/13) | ⊕workspace-ci | 2026-04-23 | 2026-04-24 |
 | FR-20260423-stash-audit | Audit + drop orphaned git stashes across all projects | chore | All 5 projects | MERGED → CLOSED | chore/workspace/stash-audit | [#15](https://github.com/tylerdrakemusic/-Workspace/pull/15) | ⊕workspace-ci | 2026-04-23 | 2026-04-24 |
 | FR-20260423-living-security-dashboard | Living Security Dashboard + close remediated SQL injection findings (IDs 7–11) | feature | ⊕Workspace | TYLER_APPROVED | feature/workspace/living-security-dashboard | [#19](https://github.com/tylerdrakemusic/-Workspace/pull/19) | ⊕workspace-ci | 2026-04-23 | 2026-04-24 |
-| FR-20260423-repo-privacy-audit | Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness for Public/Private Status | feature | All 5 projects | BRANCHED | feature/repo-privacy-audit | pending | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+| FR-20260423-repo-privacy-audit | Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness for Public/Private Status | feature | All 5 projects | BRANCHED | feature/repo-privacy-audit | [#20](https://github.com/tylerdrakemusic/-Workspace/pull/20) | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
 
 
 
