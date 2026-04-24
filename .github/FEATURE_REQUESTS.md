@@ -20,9 +20,11 @@ state machine, gateway definitions, and naming rules.
 
 ## States
 
-`OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVIEWED → TYLER_APPROVED → MERGED → CLOSED`
+`OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVIEWED → BRANCH_CHECKED_OUT → TYLER_APPROVED → MERGED → SOAKING → SIGNED_OFF → ARCHIVED`
 
-(`CHANGES_REQUESTED` loops back to `IN_PROGRESS`.)
+(`CHANGES_REQUESTED` loops back to `IN_PROGRESS`. `CLOSED` is the legacy terminal state, equivalent to `ARCHIVED` for portal filtering.)
+
+**Soak gate:** after merge the FR enters `SOAKING` and stays visible on the portal FR panel. Tyler exercises the feature on `main` and, when satisfied, signs off → `SIGNED_OFF` → `ARCHIVED`. This prevents the "proof signed, feature vanished post-merge" gap.
 
 ---
 
