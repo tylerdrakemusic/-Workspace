@@ -12,7 +12,7 @@
 - **Projects:** ⊕Workspace
 - **State:** BRANCHED
 - **Branch:** feature/FR-20260423-fr-portal-soak-gate
-- **PRs:** pending (draft PR opening)
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/12 (draft)
 - **Cycle timer:** 27eebf70-f4a2-4d8b-b9be-ab3c6b26ce5a
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-23
@@ -129,7 +129,7 @@
 - Branch: `feature/FR-20260423-fr-portal-soak-gate` created from `main` @ `176aacd`
 - Worktree: `F:\worktrees\FR-20260423-fr-portal-soak-gate\workspace`
 - Initial commit brings the ledger file onto the branch (was untracked on main)
-- Draft PR will be opened against `main` after push
+- Draft PR: https://github.com/tylerdrakemusic/-Workspace/pull/12
 
 **Next:** → ⊕workspace-orchestrator: begin implementation per Acceptance Criteria
 
