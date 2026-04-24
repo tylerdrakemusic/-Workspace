@@ -253,6 +253,15 @@ def main(argv: list[str]) -> int:
         body_lines.extend("⚠ " + w for w in warnings)
     _toast("✓ FR signed off" if git_ok else "⚠ FR signed off (push issue)",
            "\n".join(body_lines), ok=git_ok)
+
+    # Re-open portal so Tyler sees the refreshed dashboard without a manual F5.
+    portal = PROJECT_ROOT / "reports" / "portal.html"
+    if portal.is_file():
+        try:
+            os.startfile(str(portal))  # noqa: S606 — fixed path, not user input
+        except Exception as exc:  # noqa: BLE001
+            _log(f"portal open failed: {exc}")
+
     return 0 if git_ok else 1
 
 
