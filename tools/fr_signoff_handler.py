@@ -24,7 +24,6 @@ import os
 import re
 import subprocess
 import sys
-import threading
 import traceback
 import urllib.parse
 from pathlib import Path
@@ -64,9 +63,15 @@ def _parse(arg: str) -> tuple[str, str]:
 
 
 def _run(cmd: list[str], *, cwd: Path = PROJECT_ROOT) -> tuple[int, str]:
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
+    # Suppress the console-window flash when invoked from pythonw.exe.
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     r = subprocess.run(
         cmd, cwd=str(cwd), capture_output=True, text=True,
         encoding="utf-8", errors="replace", timeout=120,
+        env=env, creationflags=flags,
     )
     out = (r.stdout + r.stderr).strip()
     return r.returncode, out
@@ -122,43 +127,70 @@ def _git_commit_and_push(fr_id: str, ledger_path: Path) -> list[str]:
     return steps
 
 
-def _toast(title: str, body: str, *, ok: bool = True, auto_close_ms: int = 4500) -> None:
-    """Small tkinter dialog that auto-closes. Runs on main thread only."""
+def _toast_messagebox(title: str, body: str, *, ok: bool, auto_close_ms: int) -> bool:
+    """Reliable native toast via user32.MessageBoxTimeoutW (undocumented since XP).
+
+    Returns True if the call succeeded, False otherwise.
+    """
     try:
-        import tkinter as tk  # noqa: WPS433 — lazy import
-    except Exception:  # noqa: BLE001
-        # Last-ditch fallback: write stderr so pythonw's error pipe captures it.
-        sys.stderr.write(f"{title}\n{body}\n")
+        import ctypes
+        from ctypes import wintypes
+    except Exception as exc:  # noqa: BLE001
+        _log(f"messagebox ctypes import failed: {exc}")
+        return False
+    try:
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        MessageBoxTimeoutW = user32.MessageBoxTimeoutW
+        MessageBoxTimeoutW.argtypes = [
+            wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR,
+            wintypes.UINT, wintypes.WORD, wintypes.DWORD,
+        ]
+        MessageBoxTimeoutW.restype = wintypes.INT
+        # MB_ICONINFORMATION=0x40, MB_ICONERROR=0x10, MB_TOPMOST=0x40000, MB_SETFOREGROUND=0x10000
+        flags = (0x40 if ok else 0x10) | 0x40000 | 0x10000
+        MessageBoxTimeoutW(None, body, title, flags, 0, int(auto_close_ms))
+        return True
+    except Exception as exc:  # noqa: BLE001
+        _log(f"MessageBoxTimeoutW failed: {exc}")
+        return False
+
+
+def _toast(title: str, body: str, *, ok: bool = True, auto_close_ms: int = 5000) -> None:
+    """Show a small auto-closing popup. Prefers native MessageBoxTimeoutW."""
+    if _toast_messagebox(title, body, ok=ok, auto_close_ms=auto_close_ms):
         return
 
-    root = tk.Tk()
-    root.title(title)
-    root.configure(bg="#0a0d12")
-    # Borderless-ish toast positioned bottom-right of the primary screen.
+    # Fallback: tkinter. Captures traceback into the log if it fails.
     try:
-        root.attributes("-topmost", True)
-    except tk.TclError:
-        pass
-    w, h = 460, 180
-    sw = root.winfo_screenwidth()
-    sh = root.winfo_screenheight()
-    x = sw - w - 30
-    y = sh - h - 80
-    root.geometry(f"{w}x{h}+{x}+{y}")
-
-    bar_color = "#10b981" if ok else "#ef4444"
-    tk.Frame(root, bg=bar_color, height=4).pack(fill="x", side="top")
-    tk.Label(root, text=title, bg="#0a0d12", fg=bar_color,
-             font=("Segoe UI", 12, "bold"), anchor="w", padx=16, pady=(10, 2)).pack(fill="x")
-    tk.Label(root, text=body, bg="#0a0d12", fg="#e2e8f0",
-             font=("Segoe UI", 9), anchor="nw", justify="left", padx=16,
-             wraplength=w - 32).pack(fill="both", expand=True)
-    tk.Label(root, text="(auto-closes — refresh portal to see update)",
-             bg="#0a0d12", fg="#64748b", font=("Segoe UI", 8),
-             anchor="e", padx=16, pady=(0, 8)).pack(fill="x", side="bottom")
-
-    root.after(auto_close_ms, root.destroy)
-    root.mainloop()
+        import tkinter as tk  # noqa: WPS433
+    except Exception as exc:  # noqa: BLE001
+        _log(f"tkinter import failed: {exc}")
+        return
+    try:
+        root = tk.Tk()
+        root.title(title)
+        root.configure(bg="#0a0d12")
+        try:
+            root.attributes("-topmost", True)
+        except tk.TclError:
+            pass
+        w, h = 460, 180
+        sw = root.winfo_screenwidth()
+        sh = root.winfo_screenheight()
+        root.geometry(f"{w}x{h}+{sw - w - 30}+{sh - h - 80}")
+        bar_color = "#10b981" if ok else "#ef4444"
+        tk.Frame(root, bg=bar_color, height=4).pack(fill="x", side="top")
+        tk.Label(root, text=title, bg="#0a0d12", fg=bar_color,
+                 font=("Segoe UI", 12, "bold"), anchor="w", padx=16,
+                 pady=(10, 2)).pack(fill="x")
+        tk.Label(root, text=body, bg="#0a0d12", fg="#e2e8f0",
+                 font=("Segoe UI", 9), anchor="nw", justify="left", padx=16,
+                 wraplength=w - 32).pack(fill="both", expand=True)
+        root.after(auto_close_ms, root.destroy)
+        root.mainloop()
+    except Exception as exc:  # noqa: BLE001
+        _log("tk toast crashed:\n" + traceback.format_exc())
+        _log(f"tk toast body was: {title} | {body[:200]}")
 
 
 def main(argv: list[str]) -> int:
