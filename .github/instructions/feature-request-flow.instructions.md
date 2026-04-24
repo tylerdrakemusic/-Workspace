@@ -39,7 +39,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
                                                                   │
                                                TYLER_APPROVED ←───┘
                                                     │
-                                                 MERGED → CLOSED
+                                                 MERGED → SOAKING → SIGNED_OFF → ARCHIVED
 ```
 
 ### State Definitions
@@ -55,8 +55,11 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
 | `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
 | `CHANGES_REQUESTED` | Auto-review or Tyler requested fixes | ⊕workspace-reviewer / Tyler |
 | `TYLER_APPROVED` | Tyler approved the PR | Tyler |
-| `MERGED` | PR merged to default branch | ⊕workspace-ci |
-| `CLOSED` | Branch + worktree deleted, registry row archived | ⊕workspace-ci |
+| `MERGED` | PR merged to default branch; cycle timer closed | ⊕workspace-ci |
+| `SOAKING` | Feature is live on main, awaiting Tyler's post-merge "confirmed in solution" signoff. FR is still visible in the portal FR panel so Tyler can exercise the feature before accepting it. | Tyler (gate) / ⊕workspace-ci (transition recorder) |
+| `SIGNED_OFF` | Tyler confirmed the feature is present and working on main. Final human gateway. | Tyler |
+| `ARCHIVED` | FR drops off the active portal FR panel. Ledger file remains in the repo as permanent history. | ⊕workspace-ci |
+| `CLOSED` | Legacy terminal state (pre-SOAK protocol). Still accepted for backward compat; treat as equivalent to `ARCHIVED` for portal filtering. | ⊕workspace-ci |
 
 ## Tyler's Gateways (ONLY places humans act)
 
@@ -68,7 +71,14 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
    report **plus the live running feature** and either approves or requests changes.
 4. **Approve merge** — Tyler initiates the merge (or authorizes the CI agent
    to merge on his behalf for a specific FR).
-5. **Priority override** — Tyler can reorder or pause any FR at any time.
+5. **Post-soak signoff** — After `MERGED` the FR enters `SOAKING`. The feature
+   is live on `main`; Tyler exercises it in the real solution for as long as
+   he wants. When he is satisfied the feature is actually present and working
+   post-merge (not "vanished" by a subsequent commit), he signs off → state
+   becomes `SIGNED_OFF`, then `⊕workspace-ci` moves it to `ARCHIVED` and the
+   FR drops off the active portal panel. **This is the net-new gate introduced
+   to prevent proof-on-branch / feature-missing-on-main gaps.**
+6. **Priority override** — Tyler can reorder or pause any FR at any time.
 
 Tyler NEVER manually: writes code, creates branches, runs reviews, amends
 commits, resolves conflicts, or edits the registry.
@@ -230,7 +240,13 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
     Notifies Tyler: "Branch checked out at F:\worktrees\<fr-id>\<project> — ready to demo."
 12. Tyler: reviews the automated report AND the live feature  ← GATEWAY
 13. Tyler: "merge"  ← GATEWAY
-14. ⊕workspace-ci: merge PRs, delete branches + worktrees, mark MERGED → CLOSED
+14. ⊕workspace-ci: merge PRs, delete branches + worktrees, state → MERGED → SOAKING.
+    Records `Merged at` timestamp in the FR ledger header. FR remains visible on
+    the portal FR panel with "Soaking for Xd Yh" badge.
+15. Tyler: exercises the feature on main for as long as he wants.
+16. Tyler: "signed off on FR-<ID>"  ← GATEWAY (post-soak)
+17. ⊕workspace-ci: records `Signed off at` timestamp, state → SIGNED_OFF → ARCHIVED.
+    FR drops off active portal panel; ledger file persists in repo as permanent history.
 ```
 
 ## Agent Responsibility Matrix
@@ -250,11 +266,14 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 
 - NEVER start implementation before the FR is in `BRANCHED` state.
 - NEVER merge a PR that is not in `TYLER_APPROVED` state.
+- NEVER archive an FR before it reaches `SIGNED_OFF`. Merged ≠ done.
 - NEVER let two agent sessions write to the same worktree.
 - NEVER edit the registry except via `⊕workspace-intake` or `⊕workspace-ci`.
 - NEVER edit past Event Log entries in an FR ledger — append only.
 - ALWAYS read the FR's ledger before acting on the FR.
 - ALWAYS append an Event Log entry to the FR's ledger after acting.
 - ALWAYS include the FR ID in commit messages and PR titles.
+- ALWAYS record `Merged at` (ISO-8601) in the ledger header when transitioning
+  to `SOAKING`, and `Signed off at` when transitioning to `SIGNED_OFF`.
 - ALWAYS read `f:\.github\FEATURE_REQUESTS.md` before starting work to check
   for conflicts.

@@ -16,6 +16,8 @@
 - **Cycle timer:** <perf_cli run_id started at intake | pending>
 - **Opened:** <ISO date>
 - **Last updated:** <ISO date>
+- **Merged at:** —
+- **Signed off at:** —
 - **Closed:** —
 - **Final state:** —
 

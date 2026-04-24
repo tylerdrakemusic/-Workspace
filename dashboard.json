@@ -54,6 +54,17 @@
       "inline_id": "password-generator",
       "category": "security",
       "icon": "🔑"
+    },
+    {
+      "id": "fr-board",
+      "title": "Feature Requests",
+      "description": "Active FRs with state, branch, merge date, soak duration, and signoff status",
+      "type": "static_html",
+      "generator": "tools/fr_dashboard.py",
+      "output": "reports/fr_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/fr_dashboard.py",
+      "category": "workflow",
+      "icon": "📋"
     }
   ]
 }

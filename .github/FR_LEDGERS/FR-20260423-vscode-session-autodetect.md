@@ -16,6 +16,7 @@
 - **Cycle timer:** 354cfa0b-7fe3-4223-96d8-d31da40175c1
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-23 (MERGED)
+- **Merged at:** 2026-04-23
 - **Closed:** 2026-04-23
 - **Final state:** MERGED
 

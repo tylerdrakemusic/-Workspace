@@ -16,6 +16,7 @@
 - **Cycle timer:** ff080fb5-4277-4e51-8e09-9eebb133e5af
 - **Opened:** 2026-04-22
 - **Last updated:** 2026-04-22
+- **Merged at:** 2026-04-22
 - **Closed:** 2026-04-22
 - **Final state:** MERGED — sigil-encoding.instructions.md delivered; copilot-instructions.md updated with discoverability pointer.
 
