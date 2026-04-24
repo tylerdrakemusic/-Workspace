@@ -943,9 +943,39 @@ def main() -> None:
     print(f"  Discovered {len(manifest['dashboards'])} dashboards across "
           f"{sum(1 for p in manifest['projects'] if p['has_spec'])} projects")
 
+    # Auto-regen any static dashboard whose HTML is stale (>= yellow threshold).
+    # This runs silently unless --regen is explicit (which forces ALL dashboards).
     if args.regen:
-        print("\n  Regenerating static dashboards...")
+        print("\n  Regenerating all static dashboards...")
         results = regenerate_dashboards(manifest)
+    else:
+        import time as _time
+        stale_dashboards = []
+        for dash in manifest["dashboards"]:
+            if dash["type"] not in ("static_html", "living_html") or not dash.get("cli"):
+                continue
+            out = dash.get("output_abs") or dash.get("output")
+            if not out:
+                continue
+            p = Path(out)
+            if not p.exists():
+                stale_dashboards.append(dash)
+                continue
+            age = _time.time() - p.stat().st_mtime
+            if age >= _FRESH_YELLOW_SECS:
+                stale_dashboards.append(dash)
+        if stale_dashboards:
+            print(f"\n  Auto-regenerating {len(stale_dashboards)} stale dashboard(s)...")
+            results = regenerate_dashboards({"dashboards": stale_dashboards})
+            ok = sum(1 for r in results if r.get("regen_status") == "ok")
+            err = sum(1 for r in results if r.get("regen_status") in ("error", "timeout"))
+            print(f"  Auto-regen: {ok} ok, {err} errors")
+            if ok:
+                # Rebuild manifest so freshness reflects updated mtimes.
+                manifest = build_manifest()
+        results = []
+
+    if args.regen:
         ok = sum(1 for r in results if r.get("regen_status") == "ok")
         skip = sum(1 for r in results if r.get("regen_status") == "skipped")
         err = sum(1 for r in results if r.get("regen_status") in ("error", "timeout"))
