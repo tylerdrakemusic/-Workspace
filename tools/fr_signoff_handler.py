@@ -241,18 +241,14 @@ def main(argv: list[str]) -> int:
     prev = result.get("previous_state", "?")
     ts = result.get("signed_off_at", "?")
     git_ok = all(not s.startswith("git ") or "failed" not in s for s in git_steps)
-    body_lines = [
-        f"{fr_id}",
-        f"{prev} → SIGNED_OFF",
-        f"At: {ts}",
-        "",
-    ]
-    body_lines.extend(git_steps)
-    if warnings:
-        body_lines.append("")
-        body_lines.extend("⚠ " + w for w in warnings)
-    _toast("✓ FR signed off" if git_ok else "⚠ FR signed off (push issue)",
-           "\n".join(body_lines), ok=git_ok)
+    if not git_ok:
+        # Only toast on failure — success is communicated by the portal reopening.
+        body_lines = [f"{fr_id}", f"{prev} → SIGNED_OFF", f"At: {ts}", ""]
+        body_lines.extend(git_steps)
+        if warnings:
+            body_lines.append("")
+            body_lines.extend("⚠ " + w for w in warnings)
+        _toast("⚠ FR signed off (push issue)", "\n".join(body_lines), ok=False)
 
     # Re-open portal so Tyler sees the refreshed dashboard without a manual F5.
     portal = PROJECT_ROOT / "reports" / "portal.html"
