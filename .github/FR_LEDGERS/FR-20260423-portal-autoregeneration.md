@@ -10,12 +10,12 @@
 - **Type:** chore/feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** BRANCHED
+- **State:** REVIEW_REQUESTED
 - **Branch:** chore/workspace/portal-autoregeneration
-- **PRs:** pending
+- **PRs:** #18 https://github.com/tylerdrakemusic/-Workspace/pull/18
 - **Cycle timer:** 1f51e007-9e12-4472-8fb8-aa7e73d489ff
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23
+- **Last updated:** 2026-04-24
 - **Merged at:** —
 - **Signed off at:** —
 - **Closed:** —
