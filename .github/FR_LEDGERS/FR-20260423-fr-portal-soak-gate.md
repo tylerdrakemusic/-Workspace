@@ -137,6 +137,39 @@
 
 ---
 
+### 2026-04-23T18:30:00Z — ⊕workspace-overseer
+
+**Event:** state-transition
+
+**Summary:** BRANCHED → REVIEW_REQUESTED (implementation complete in isolation)
+
+**Details:**
+- AC4 (state machine): added SOAKING / SIGNED_OFF / ARCHIVED states to
+  `feature-request-flow.instructions.md` (diagram + state table)
+- AC5 (flow instructions): added post-soak signoff as Tyler's gate #5;
+  updated happy-path flow steps 14-17; tightened hard rules
+- AC6 (template + registry): `_TEMPLATE.md` and this FR's ledger header
+  gained `Merged at` / `Signed off at` fields; `FEATURE_REQUESTS.md` states
+  section documents new terminal flow + soak rationale
+- AC1-AC3, AC8 (portal panel + data source + soak humanizer): new
+  `tools/fr_dashboard.py` parses all `FR_LEDGERS/*.md` headers, renders
+  `reports/fr_dashboard.html` with active-FR cards (title/summary/state/
+  branch/PR/opened/merged/signoff/ledger-link) and collapsed archive section.
+  SOAKING cards show "Soaking for Xd Yh" humanized duration.
+- AC2: CTA block on SOAKING cards tells Tyler exactly how to sign off.
+- Registered in `dashboard.json` as `fr-board` (static_html, category=workflow,
+  icon=📋). Portal integration landed on branch; auto-activates at merge time
+  because `dashboard_registry.py` scans the main checkout's dashboard.json.
+- AC7 (backward compat): archived entries with legacy `CLOSED` state render
+  in the Archived section; missing `Signed off at` / `Merged at` fields
+  degrade gracefully to "—".
+- AC9 (self-hosting): this FR's own ledger appears on the generated board
+  (15 FRs total detected; this one in Active bucket in `BRANCHED` state).
+- Commit: 5f3ad82 on `feature/FR-20260423-fr-portal-soak-gate`, pushed.
+- PR #12 updated via branch push. Marked ready for review.
+
+**Next:** → ⊕workspace-reviewer: run auto-review (alignment + security + tests + proof)
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
