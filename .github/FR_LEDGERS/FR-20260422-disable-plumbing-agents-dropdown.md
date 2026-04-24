@@ -59,3 +59,18 @@
 ## Artifacts
 
 - **Perf runs:** be698f2b-094a-4618-9689-fb2610c81ba4 — FR-intake-disable-plumbing-agents-dropdown cycle timer
+
+
+### 2026-04-23T18:00:00Z — ⊕workspace-ci (drift-fix)
+
+**Event:** verification
+
+**Summary:** Verified still wanted as of 2026-04-23 per Tyler — state remains TRIAGED
+
+**Details:**
+- Tyler confirmed in drift-fix session that this FR is still desired
+- No branch cut yet; no code changes; scope unchanged
+- State remains TRIAGED; awaiting implementer pickup
+- Reconciliation FR: FR-20260423-fr-state-drift-fix
+
+**Next:** awaiting implementer — cut branch chore/workspace/disable-plumbing-agents-dropdown and apply frontmatter changes per ACs
