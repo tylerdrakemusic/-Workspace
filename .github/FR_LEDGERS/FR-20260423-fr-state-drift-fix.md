@@ -10,14 +10,14 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** SOAKING
+- **State:** SIGNED_OFF
 - **Branch:** chore/workspace/fr-state-drift-fix
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/13 (draft)
 - **Cycle timer:** 4e7f5eba-9954-4a3d-b337-c6ef597d508c
 - **Opened:** 2026-04-23
 - **Last updated:** 2026-04-24
 - **Merged at:** 2026-04-24T01:35:00Z
-- **Signed off at:** —
+- **Signed off at:** 2026-04-24T02:21:19Z
 - **Closed:** —
 - **Final state:** —
 
@@ -84,6 +84,19 @@
 **Next:** implementation dispatch to ⊕workspace-overseer
 
 ---
+
+### 2026-04-24T02:21:19Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: SOAKING
+- Signed off at: 2026-04-24T02:21:19Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
