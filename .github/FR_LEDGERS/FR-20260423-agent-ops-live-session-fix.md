@@ -10,14 +10,15 @@
 - **Type:** fix
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** BRANCHED
+- **State:** CLOSED
 - **Branch:** fix/workspace/agent-ops-live-session-fix
 - **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/10
 - **Cycle timer:** e1488e85-5257-47b3-aa81-13facb35b8e3
 - **Opened:** 2026-04-23
-- **Last updated:** 2026-04-23
-- **Closed:** —
-- **Final state:** —
+- **Last updated:** 2026-04-23 (CLOSED — retroactive reconciliation)
+- **Merged at:** 2026-04-23 (merge SHA 921b891f43d3)
+- **Closed:** 2026-04-23
+- **Final state:** CLOSED
 
 ### Acceptance Criteria
 
@@ -121,3 +122,20 @@
 - `ee5f9c6dfad4` — command_output: --fix ran successfully (AC3)
 
 **Next:** PR review + merge
+
+
+### 2026-04-23T18:00:00Z — ⊕workspace-ci (drift-fix)
+
+**Event:** state-transition
+
+**Summary:** Stale ledger header reconciled — no remote branch → CLOSED
+
+**Details:**
+- Remote branch ix/workspace/agent-ops-live-session-fix no longer exists on origin (deleted post-merge)
+- Commit 921b891 (`FR-20260423: Fix agent ops live session detection + phantom agent purge`) is already on main
+- Registry archive already lists this FR as MERGED @ 921b891f43d3; ledger header was stale at BRANCHED
+- Transition: BRANCHED → CLOSED (reason: stale — no active work, no remote branch; merged to main @ 921b891f43d3 per archive entry and verified via git log)
+- All 7 ACs already marked done in Deliverable Tracker
+- Reconciliation FR: FR-20260423-fr-state-drift-fix
+
+**Next:** none — terminal state
