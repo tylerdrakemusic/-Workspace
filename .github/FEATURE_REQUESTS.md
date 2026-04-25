@@ -48,3 +48,35 @@ state machine, gateway definitions, and naming rules.
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
 | FR-20260422-music-repo-purge | Purge oversized binaries from ❤Music history | chore | ❤Music | MERGED | force-push @ 0abdef4 | 2026-04-22 | 2026-04-22 |
+| FR-20260422-db-backup-strategy | DB backup strategy for all project databases | chore | All 5 projects | CLOSED (rejected — deferred) | N/A | 2026-04-22 | 2026-04-22 |
+| FR-20260422-gitignore-sweep | Add .gitignore to all remaining projects | chore | ∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace | CLOSED | e3586e6 / af188c9 / f90f64c / bab2dad | 2026-04-22 | 2026-04-22 |
+| FR-20260422-sigil-encoding-map | Sigil Encoding Reference Map | chore | ⊕Workspace | MERGED | [#4](https://github.com/tylerdrakemusic/-Workspace/pull/4) @ 03d8a9f | 2026-04-22 | 2026-04-22 |
+| FR-20260422-github-dir-reconcile | Reconcile Divergent `.github/` Directory Trees | chore | ⊕Workspace | MERGED_PARTIAL (Phase 1 only; Phase 2 infeasible — F: is exFAT, junctions unsupported) | [#2](https://github.com/tylerdrakemusic/-Workspace/pull/2) @ 2b9e612 | 2026-04-22 | 2026-04-22 |
+| FR-20260422-multi-root-workspace | Adopt Multi-Root VS Code Workspace (`.code-workspace`) | chore | ⊕Workspace | MERGED | [#3](https://github.com/tylerdrakemusic/-Workspace/pull/3) @ 91c0772 + bookkeeping c20ead2; smoke test passed; f:\.github\ deleted | 2026-04-22 | 2026-04-22 |
+| FR-20260422-remove-service-label-field | Remove "Service/Label" Field from Password Generator Panel | chore | ⊕Workspace | MERGED | delivered by other agent; confirmed by Tyler | 2026-04-22 | 2026-04-22 |
+| FR-20260422-band-mgmt-panel | Band Management Panel (Workspace Portal) | feature | ❤Music, ⊕Workspace | MERGED | delivered inline on main by other agent; confirmed by Tyler | 2026-04-22 | 2026-04-22 |
+| FR-20260423-fr-state-drift-fix | FR state drift reconciliation (signoff queue accuracy) | chore | ⊕Workspace | MERGED | [#13](https://github.com/tylerdrakemusic/-Workspace/pull/13) | 2026-04-23 | 2026-04-23 |
+| FR-20260423-stash-audit | Audit + drop orphaned git stashes across all projects | chore | All 5 projects | MERGED | [#15](https://github.com/tylerdrakemusic/-Workspace/pull/15) | 2026-04-23 | 2026-04-23 |
+| FR-20260423-repo-privacy-audit | Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness | feature | All 5 + .github/ | MERGED | [#20](https://github.com/tylerdrakemusic/-Workspace/pull/20) @ d092dcd | 2026-04-23 | 2026-04-23 |
+
+---
+
+## Concurrency Cap
+
+Maximum **3** FRs may be in `IN_PROGRESS` state simultaneously. Additional
+FRs queue in `TRIAGED` state until a slot opens.
+| FR-20260424-sql-mcp-server | Investigate + Install SQL MCP Server for Workspace | feature | ⊕Workspace | DONE | 2026-04-24 | 2026-04-24 | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
+| FR-20260424-todo-ledger-reconcile | Reconcile TODO Lists with FR Ledger + Add ❤Music Human Todos | chore | ⊕Workspace, ❤Music | CLOSED | N/A — markdown-only | N/A | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
+| FR-20260424-cc-prost-setlist-05022026 | CC Prost 05022026 — Setlist DB Update (Revised) | chore | ❤Music | SIGNED_OFF | feature/music/cc-prost-setlist-05022026 | merged main 6af031a | ❤music-catalog | 2026-04-24 | 2026-04-24 |
+| FR-20260423-band-mgmt-panel-music | Band Management Panel — ❤Music portal pane with multi-band selector, setlist, sheet music links | feature | ❤Music, ⊕Workspace | MERGED / CLOSED | feature/heartmusic/band-mgmt-panel | [#22](https://github.com/tylerdrakemusic/-Workspace/pull/22) | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+| FR-20260423-repo-privacy-audit | Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness | feature | All 5 + .github/ | SIGNED_OFF | feature/repo-privacy-audit | [#20](https://github.com/tylerdrakemusic/-Workspace/pull/20) | ⊕workspace-overseer | 2026-04-23 | 2026-04-24 |
+| FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | REVIEW_REQUESTED | chore/workspace/playwright-mcp-setup | pending | ⊕workspace-commitment | 2026-04-22 | 2026-04-23 |
+| FR-20260423-living-security-dashboard | Living Security Dashboard + close remediated SQL injection findings (IDs 7–11) | feature | ⊕Workspace | CLOSED (NOT MERGED) | feature/workspace/living-security-dashboard | [#19](https://github.com/tylerdrakemusic/-Workspace/pull/19) — PR closed, work missed scope (landed on ops pane not security pane). Re-open via fresh intake. | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
+
+
+
+## Archive
+
+| FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
+|-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260422-music-repo-purge | Purge oversized binaries from ❤Music history | chore | ❤Music | MERGED | force-push @ 0abdef4 | 2026-04-22 | 2026-04-22 |
