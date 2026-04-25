@@ -44,7 +44,7 @@
 | AC3 | ∞Life workflow secret-safe + gitignore audit step                            | ⊕workspace-security | ✅ done | Life PR #3 reviewed clean; deny-list audit step verified | 2026-04-25 |
 | AC4 | Baseline pytest run green per project (placeholder smoke tests where needed) | per-project orchestrators | ✅ done | 5 green CI runs post-remediation | 2026-04-25 |
 | AC5 | Enforcement scope documented in REPO_VISIBILITY.md                           | ⊕workspace-intake | ✅ done | REPO_VISIBILITY.md "Branch Protection Status" section | 2026-04-25 |
-| AC6 | Agent docs updated (FR flow, repo visibility, ⊕workspace-ci)                 | ⊕workspace-overseer | ⏸ deferred (separate routing) | — | 2026-04-25 |
+| AC6 | Agent docs updated (FR flow, repo visibility, ⊕workspace-ci)                 | ⊕workspace-overseer | ✅ done | PR #27 merged @ c076cd12 — green CI proves gateway live | 2026-04-25 |
 | AC7 | End-to-end smoke test (failing PR blocked, passing PR allowed)               | ⊕workspace-ci    | ✅ done | PR #25 — CI red, merge API 405 "Required status check 'test' is failing" | 2026-04-25 |
 
 ### Tyler's Original Request
@@ -364,10 +364,34 @@
 - AC6 ⏸ deferred (separate routing)
 - AC7 ✅ — smoke test confirmed merge block
 
-**Open follow-ups:**
-- AC6 (agent doc updates: `feature-request-flow.instructions.md`, `repo-visibility.instructions.md`, `⊕workspace-ci.agent.md`) — needs separate routing
+---
+
+### 2026-04-25T20:00:00Z — ⊕workspace-doer
+
+**Event:** ac6-completed
+
+**Summary:** AC6 closed via separate doc-only chore PR (FR remains CLOSED — header untouched). Updated three agent doc files to reflect the now-live CI gateway and codify the no-direct-to-main rule.
+
+**Files updated (all in ⊕Workspace repo):**
+- `.github/instructions/feature-request-flow.instructions.md` — state machine notes `test` check gates merge at REVIEW_REQUESTED/AUTO_REVIEWED; new "CI Gateway (LIVE as of FR-20260425)" section; hard rules forbid direct push/merge to main and merging on red/pending CI.
+- `.github/instructions/repo-visibility.instructions.md` — new "Branch Protection (FR-20260425, live)" section with per-repo table; cross-references REPO_VISIBILITY.md as canonical; notes ∞Life pre-push hook is per-clone and `--no-verify` requires explicit Tyler approval.
+- `.github/agents/⊕workspace-ci.agent.md` — explicit safety rules added: no direct-to-main in any repo; never merge while `test` is red/pending; respect ∞Life hook (no `--no-verify` without per-task approval).
+
+**Workflow proof (gateway working in production):**
+- Branch: `chore/workspace/fr-20260425-ac6-agent-docs`
+- PR: https://github.com/tylerdrakemusic/-Workspace/pull/27
+- CI run (green): https://github.com/tylerdrakemusic/-Workspace/actions/runs/24939338980 — `test` job ✅ (15s)
+- Merge SHA: `c076cd12f39275c701a9f15fa0821977a69a8ff4` (squash, via `mcp_github_merge_pull_request`)
+- Branch deleted local + remote post-merge
+
+**Updated AC matrix:**
+- AC1 ✅ AC2 ✅ AC3 ✅ AC4 ✅ AC5 ✅ AC6 ✅ AC7 ✅ — **all 7 ACs satisfied.**
+
+**Open follow-ups (unchanged from prior close):**
 - 16 skipped Playwright tests in 👁AI-Manifest — own FR for CI browser binaries or `pytest.mark.local`
 - GitHub Pro upgrade for ∞Life server-side branch protection — separate FR if hook+discipline proves insufficient
+
+**Next:** none — FR fully delivered.
 
 ---
 
