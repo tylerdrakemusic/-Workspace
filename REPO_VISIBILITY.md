@@ -78,3 +78,23 @@ The canonical visibility config is also in `f:\⊕Workspace\src\config\repo_visi
 **Key rule for agents:**
 - If operating on a PUBLIC repo: apply public-safety guards (no secrets, no cross-repo health data refs)
 - If operating on ∞Life (PRIVATE): apply full health-data gitignore audit before any commit
+
+---
+
+## Branch Protection Status
+
+**Last verified:** 2026-04-25 | **FR:** FR-20260425-ci-test-harness-gateway
+
+| Repo | Visibility | Server-side protection | Local hook | Notes |
+|------|------------|------------------------|------------|-------|
+| ⊕Workspace | PUBLIC | ✅ Classic, strict, no admin bypass | — | `test` status check required + up-to-date |
+| ❤Music | PUBLIC | ✅ Classic, strict, no admin bypass | — | `test` status check required + up-to-date |
+| ⟨ψ⟩Quantum | PUBLIC | ✅ Classic, strict, no admin bypass | — | `test` status check required + up-to-date |
+| 👁AI-Manifest | PUBLIC | ✅ Classic, strict, no admin bypass | — | `test` status check required + up-to-date |
+| ∞Life | PRIVATE | ❌ Not available — GitHub free tier does not support branch protection on private repos | ✅ `pre-push` hook blocks direct pushes to `main` | Mitigated via local hook + ⊕workspace-ci agent discipline. See `f:\∞Life\docs\PROTECTION_HOOK.md`. |
+
+**Gap (∞Life):** server-side enforcement is not available on free-tier
+private repos. The local `pre-push` hook is bypassable with `--no-verify`,
+so it is not equivalent to server-side protection. If this gap proves
+problematic in practice, file a separate FR to evaluate GitHub Pro upgrade
+(which adds branch protection for private repos).
