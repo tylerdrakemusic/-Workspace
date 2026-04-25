@@ -52,6 +52,26 @@ if ($existingFr) {
     }
 }
 
-# ── 4. Open Portal ────────────────────────────────────────────────────────────
+# ── 4. Start Guitar Trainer server (port 5055) ───────────────────────────────
+$GuitarTrainerScript = "f:\⊕Workspace\tools\start_guitar_trainer.ps1"
+$GuitarTrainerPort   = 5055
+$existingGt = Get-NetTCPConnection -LocalPort $GuitarTrainerPort -State Listen -ErrorAction SilentlyContinue
+if ($existingGt) {
+    Write-Host "✔ Guitar Trainer server already running on :$GuitarTrainerPort" -ForegroundColor Green
+} else {
+    Write-Host "▶ Starting Guitar Trainer server on :$GuitarTrainerPort ..." -ForegroundColor Cyan
+    Start-Process -FilePath "powershell.exe" `
+        -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", "`"$GuitarTrainerScript`"" `
+        -WindowStyle Hidden
+    Start-Sleep -Milliseconds 800
+    $checkGt = Get-NetTCPConnection -LocalPort $GuitarTrainerPort -State Listen -ErrorAction SilentlyContinue
+    if ($checkGt) {
+        Write-Host "✔ Guitar Trainer server started" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ Guitar Trainer server may still be starting (check port $GuitarTrainerPort)" -ForegroundColor Yellow
+    }
+}
+
+# ── 5. Open Portal ────────────────────────────────────────────────────────────
 Write-Host "▶ Opening portal ..." -ForegroundColor Cyan
 Start-Process $PortalFile
