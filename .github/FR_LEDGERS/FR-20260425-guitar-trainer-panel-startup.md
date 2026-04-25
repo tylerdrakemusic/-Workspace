@@ -10,16 +10,16 @@
 - **Type:** fix
 - **Risk:** low
 - **Projects:** ❤Music, ⊕Workspace
-- **State:** REVIEW_REQUESTED
-- **Branch:** fix/workspace/guitar-trainer-panel-startup
-- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/29
+- **State:** MERGED → CLOSED
+- **Branch:** fix/workspace/guitar-trainer-panel-startup (deleted)
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/29 (squash merged 229807ac9d9a1b942dde0b26a22ffb507aef2e48)
 - **Cycle timer:** 175eefb5-aab3-4917-a297-c76c5172acac
 - **Opened:** 2026-04-25
 - **Last updated:** 2026-04-25
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-04-25
+- **Signed off at:** 2026-04-25 (Tyler approved)
+- **Closed:** 2026-04-25
+- **Final state:** MERGED → CLOSED
 
 ### Acceptance Criteria
 1. Guitar Trainer server (port 5055) is auto-started when opening the portal via `open_portal.ps1` (the desktop launcher) — currently it only starts the ∞Life HTTP server and FR Ledger server.
@@ -85,6 +85,26 @@
 
 ---
 
+### 2026-04-25T22:35:00Z — ⊕workspace-ci
+
+**Event:** state-transition → MERGED → CLOSED
+
+**Summary:** Tyler approved. PR #29 squash-merged into main. Branch deleted. Cycle timer closed.
+
+**Details:**
+- Merge SHA: `229807ac9d9a1b942dde0b26a22ffb507aef2e48`
+- Merge method: squash
+- PR converted from draft → ready for review before merge
+- Branch `fix/workspace/guitar-trainer-panel-startup` deleted (absent on remote post-squash)
+- Cycle timer `175eefb5-aab3-4917-a297-c76c5172acac` closed — 1,128,698ms (~18.8 min) — ok
+- Local main pulled and fast-forwarded to `229807ac`
+
+**Next:** none — FR closed
+
+---
+
 ## Artifacts
 
-- **Perf runs:** 175eefb5-aab3-4917-a297-c76c5172acac — fr-cycle-FR-20260425-guitar-trainer-panel-startup
+- **Perf runs:** 175eefb5-aab3-4917-a297-c76c5172acac — fr-cycle-FR-20260425-guitar-trainer-panel-startup (1,128,698ms — ok)
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/29
+- **Commits:** 229807ac9d9a1b942dde0b26a22ffb507aef2e48 — ⊕ workspace: Guitar Trainer panel — server startup + bare iframe (FR-20260425)
