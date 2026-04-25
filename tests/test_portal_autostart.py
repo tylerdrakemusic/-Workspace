@@ -222,3 +222,42 @@ def test_autolaunched_checks_guitar_trainer_port(portal_text: str) -> None:
     assert servers_match, "SERVERS array not found in portal.html"
     servers_literal = servers_match.group(1)
     assert "5055" in servers_literal, "SERVERS array missing Guitar Trainer port 5055"
+
+
+def test_launch_btn_element_exists_in_html(portal_text: str) -> None:
+    """portal.html must have an element with id='launch-btn' for user-gesture invocation."""
+    assert 'id="launch-btn"' in portal_text, (
+        "launch-btn element is missing — browser blocks programmatic protocol invocation; "
+        "user must click the button (real gesture)"
+    )
+
+
+def test_autolaunched_shows_server_status_block(portal_text: str) -> None:
+    """autoLaunch() must reveal the server-status block (id='server-status-block')."""
+    fn_match = re.search(
+        r"async function autoLaunch\(\)\s*\{(.*?)\n    \}",
+        portal_text,
+        re.DOTALL,
+    )
+    assert fn_match, "autoLaunch() not found in portal.html"
+    body = fn_match.group(1)
+    assert "server-status-block" in body, (
+        "autoLaunch() must set server-status-block visible"
+    )
+
+
+def test_autolaunched_does_not_call_launch_servers_without_gesture(portal_text: str) -> None:
+    """autoLaunch() must NOT call launchServers() directly (requires user gesture)."""
+    fn_match = re.search(
+        r"async function autoLaunch\(\)\s*\{(.*?)\n    \}",
+        portal_text,
+        re.DOTALL,
+    )
+    assert fn_match, "autoLaunch() not found in portal.html"
+    body = fn_match.group(1)
+    non_comment_lines = [l for l in body.splitlines() if not l.strip().startswith("//")]
+    non_comment = "\n".join(non_comment_lines)
+    assert "launchServers()" not in non_comment, (
+        "autoLaunch() must not call launchServers() automatically — browser blocks protocol "
+        "invocations from setTimeout; user must click launch-btn instead"
+    )
