@@ -30,7 +30,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260425-guitar-trainer-new-card-timestamp | Guitar Trainer — "Add New Card" uses wrong song segment timestamps | fix | ❤Music | TRIAGED | fix/heartmusic/guitar-trainer-new-card-timestamp (pending) | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
+| FR-20260425-guitar-trainer-album-art | Guitar Trainer — Album Art Display from Embedded Audio Metadata | feature | ❤Music | MERGED → CLOSED | feature/heartmusic/guitar-trainer-album-art (deleted) | https://github.com/tylerdrakemusic/Music/pull/3 (merged 08cfd48) | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
+| FR-20260425-guitar-trainer-new-card-timestamp | Guitar Trainer — "Add New Card" uses wrong song segment timestamps | fix | ❤Music | MERGED → CLOSED | fix/heartmusic/guitar-trainer-new-card-timestamp (deleted) | https://github.com/tylerdrakemusic/Music/pull/2 (merged c03de6f) | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260425-live-fr-ledger-panel | Live FR Ledger Panel — Synchronous CI Observability + In-Panel Signoff | feature | ⊕Workspace | MERGED → CLOSED | feature/workspace/live-fr-ledger-panel | https://github.com/tylerdrakemusic/-Workspace/pull/23 | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260424-infinitelife-db-restore | ∞Life — Restore DB, data sync pipeline, and live Biomarker Dashboard | feature | ∞Life, ⊕Workspace | CLOSED | feature/infinitelife/db-restore | https://github.com/tylerdrakemusic/Life/pull/2 | ⊕workspace-intake | 2026-04-24 | 2026-04-25 |
 | FR-20260424-sqlcipher-mcp-server | Custom SQLCipher MCP Server — encrypted multi-DB access for all workspace DBs | feature | ⊕Workspace | SIGNED_OFF | user-config-only | none | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
@@ -48,6 +49,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260425-ci-test-harness-gateway | CI Test Harness Gateway + Branch Protection (All 5 Repos) | feature | All 5 | MERGED → CLOSED | -Workspace#24 (d780d9a8), Life#3 (ce448ea), Music#4, Quantum#2, AI-Manifest#6 — 4 public branch-protected, ∞Life pre-push hook + doc, AC7 smoke verified merge-block (PR#25 405) | 2026-04-25 | 2026-04-25 |
 | FR-20260422-music-repo-purge | Purge oversized binaries from ❤Music history | chore | ❤Music | MERGED | force-push @ 0abdef4 | 2026-04-22 | 2026-04-22 |
 | FR-20260422-db-backup-strategy | DB backup strategy for all project databases | chore | All 5 projects | CLOSED (rejected — deferred) | N/A | 2026-04-22 | 2026-04-22 |
 | FR-20260422-gitignore-sweep | Add .gitignore to all remaining projects | chore | ∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace | CLOSED | e3586e6 / af188c9 / f90f64c / bab2dad | 2026-04-22 | 2026-04-22 |
