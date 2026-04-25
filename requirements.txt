@@ -1,0 +1,14 @@
+# ⊕Workspace runtime + test dependencies
+# Pinned to versions compatible with Python 3.11 on Ubuntu CI.
+#
+# Required by:
+#   - tests/test_agent_ops_monitor.py imports tools/agent_ops_monitor.py,
+#     which imports src/utils/init_db.py (sqlcipher3 + python-dotenv at module load).
+#   - tests/test_fr_server.py imports src/utils/fr_server.py (stdlib only).
+#
+# pytest is also installed by the workflow's `pip install pytest` step,
+# but pinning here keeps local + CI in sync.
+
+pytest>=8.0,<9.0
+python-dotenv>=1.0,<2.0
+sqlcipher3-binary==0.6.0
