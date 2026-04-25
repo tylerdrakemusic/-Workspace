@@ -32,6 +32,26 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "✔ Dashboard ready" -ForegroundColor Green
 }
 
-# ── 3. Open Portal ────────────────────────────────────────────────────────────
+# ── 3. Start FR Ledger Panel server (port 7474) if not already running ───────
+$FrServerScript = "f:\⊕Workspace\src\utils\fr_server.py"
+$FrPort         = 7474
+$existingFr = Get-NetTCPConnection -LocalPort $FrPort -State Listen -ErrorAction SilentlyContinue
+if ($existingFr) {
+    Write-Host "✔ FR Ledger server already running on :$FrPort" -ForegroundColor Green
+} else {
+    Write-Host "▶ Starting FR Ledger server on :$FrPort ..." -ForegroundColor Cyan
+    Start-Process -FilePath $Python `
+        -ArgumentList "`"$FrServerScript`"", "--port", $FrPort `
+        -WindowStyle Hidden
+    Start-Sleep -Milliseconds 600
+    $check = Get-NetTCPConnection -LocalPort $FrPort -State Listen -ErrorAction SilentlyContinue
+    if ($check) {
+        Write-Host "✔ FR Ledger server started" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ FR Ledger server may still be starting (check port $FrPort)" -ForegroundColor Yellow
+    }
+}
+
+# ── 4. Open Portal ────────────────────────────────────────────────────────────
 Write-Host "▶ Opening portal ..." -ForegroundColor Cyan
 Start-Process $PortalFile

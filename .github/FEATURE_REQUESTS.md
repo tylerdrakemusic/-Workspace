@@ -30,6 +30,9 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260425-guitar-trainer-new-card-timestamp | Guitar Trainer — "Add New Card" uses wrong song segment timestamps | fix | ❤Music | TRIAGED | fix/heartmusic/guitar-trainer-new-card-timestamp (pending) | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
+| FR-20260425-live-fr-ledger-panel | Live FR Ledger Panel — Synchronous CI Observability + In-Panel Signoff | feature | ⊕Workspace | BRANCHED | feature/workspace/live-fr-ledger-panel | pending | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
+| FR-20260424-infinitelife-db-restore | ∞Life — Restore DB, data sync pipeline, and live Biomarker Dashboard | feature | ∞Life, ⊕Workspace | CLOSED | feature/infinitelife/db-restore | https://github.com/tylerdrakemusic/Life/pull/2 | ⊕workspace-intake | 2026-04-24 | 2026-04-25 |
 | FR-20260424-sqlcipher-mcp-server | Custom SQLCipher MCP Server — encrypted multi-DB access for all workspace DBs | feature | ⊕Workspace | SIGNED_OFF | user-config-only | none | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
 | FR-20260424-sql-mcp-server | Investigate + Install SQL MCP Server for Workspace | feature | ⊕Workspace | DONE | 2026-04-24 | 2026-04-24 | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
 | FR-20260424-todo-ledger-reconcile | Reconcile TODO Lists with FR Ledger + Add ❤Music Human Todos | chore | ⊕Workspace, ❤Music | CLOSED | N/A — markdown-only | N/A | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
@@ -63,3 +66,9 @@ state machine, gateway definitions, and naming rules.
 
 Maximum **3** FRs may be in `IN_PROGRESS` state simultaneously. Additional
 FRs queue in `TRIAGED` state until a slot opens.
+
+## Archive
+
+| FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
+|-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260422-music-repo-purge | Purge oversized binaries from ❤Music history | chore | ❤Music | MERGED | force-push @ 0abdef4 | 2026-04-22 | 2026-04-22 |

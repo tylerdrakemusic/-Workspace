@@ -4,32 +4,47 @@
 <meta charset="utf-8">
 <title>⊕ Feature Request Board</title>
 <style>
+
 :root {
-  --bg: #0a0d12;
-  --surface: #151a22;
-  --surface-2: #1b2230;
-  --border: #1e2530;
-  --accent: #6366f1;
-  --text: #e2e8f0;
-  --muted: #64748b;
-  --ok: #10b981;
-  --warn: #f59e0b;
-  --danger: #ef4444;
-  --info: #60a5fa;
-  --soak: #a78bfa;
-  --done: #34d399;
+  --bg: #0a0d12; --surface: #151a22; --surface-2: #1b2230;
+  --border: #1e2530; --accent: #6366f1; --text: #e2e8f0; --muted: #64748b;
+  --ok: #10b981; --warn: #f59e0b; --danger: #ef4444; --info: #60a5fa;
+  --soak: #a78bfa; --done: #34d399;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 1.5rem;
-  min-height: 100vh;
+  background: var(--bg); color: var(--text);
+  padding: 1.5rem; min-height: 100vh;
 }
 h1 { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem; }
 h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
-.subtitle { color: var(--muted); font-size: 0.78rem; margin-bottom: 1.2rem; }
+.subtitle { color: var(--muted); font-size: 0.78rem; margin-bottom: 0.5rem; }
+.status-bar {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-size: 0.72rem; margin-bottom: 1rem;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dot-warn { background: var(--warn); }
+.dot-danger { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.refreshed { color: var(--muted); margin-left: auto; }
+.banner {
+  padding: 0.6rem 0.9rem; border-radius: 6px; margin-bottom: 1rem;
+  font-size: 0.8rem; font-weight: 600;
+}
+.banner-warn {
+  background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4);
+  color: var(--warn);
+}
+.banner-danger {
+  background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4);
+  color: var(--danger);
+}
+.banner-ok {
+  background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.4);
+  color: var(--done);
+}
 .section-title {
   font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.08em; color: var(--muted);
@@ -41,12 +56,10 @@ h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
 }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.9rem; }
 .fr-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.85rem 0.95rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0.85rem 0.95rem;
   display: flex; flex-direction: column; gap: 0.55rem;
-  transition: border-color .15s, transform .15s;
+  transition: border-color .15s;
 }
 .fr-card:hover { border-color: var(--accent); }
 .fr-top { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
@@ -57,8 +70,7 @@ h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
 .fr-badges { display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; }
 .state-badge {
   font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.05em; padding: 0.18rem 0.45rem; border-radius: 4px;
-  white-space: nowrap;
+  letter-spacing: 0.05em; padding: 0.18rem 0.45rem; border-radius: 4px; white-space: nowrap;
 }
 .state-ok    { background: rgba(16,185,129,0.16); color: var(--ok); }
 .state-warn  { background: rgba(245,158,11,0.16); color: var(--warn); }
@@ -67,22 +79,10 @@ h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
 .state-soak  { background: rgba(167,139,250,0.18); color: var(--soak); }
 .state-done  { background: rgba(52,211,153,0.18); color: var(--done); }
 .state-muted { background: var(--surface-2); color: var(--muted); }
-.soak-badge {
-  font-size: 0.62rem; font-weight: 600; padding: 0.18rem 0.5rem;
-  border-radius: 10px; background: rgba(167,139,250,0.12);
-  color: var(--soak); border: 1px solid rgba(167,139,250,0.35);
-  white-space: nowrap;
-}
 .fr-title { font-size: 0.98rem; font-weight: 700; line-height: 1.25; }
-.fr-summary {
-  font-size: 0.8rem; color: var(--text); opacity: 0.78; line-height: 1.45;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 .fr-meta {
   display: flex; flex-direction: column; gap: 0.2rem;
-  border-top: 1px solid var(--border); padding-top: 0.5rem;
-  font-size: 0.72rem;
+  border-top: 1px solid var(--border); padding-top: 0.5rem; font-size: 0.72rem;
 }
 .meta-row { display: flex; justify-content: space-between; gap: 0.5rem; }
 .meta-key { color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.66rem; }
@@ -93,56 +93,28 @@ h1 .sigil { color: var(--accent); margin-right: 0.3rem; }
 }
 .meta-val a { color: var(--accent); text-decoration: none; }
 .meta-val a:hover { text-decoration: underline; }
-.cta {
-  font-size: 0.72rem; color: var(--soak);
-  background: rgba(167,139,250,0.06);
-  border: 1px dashed rgba(167,139,250,0.35);
-  border-radius: 6px; padding: 0.55rem 0.6rem;
-  display: flex; flex-direction: column; gap: 0.4rem;
-}
-.cta code {
-  background: var(--surface-2); padding: 0.05rem 0.35rem;
-  border-radius: 3px; color: #a5f3fc;
-}
-.cta-actions { display: flex; gap: 0.4rem; align-items: center; }
-.cta-actions input[type="text"] {
-  flex: 1; background: var(--surface-2); color: var(--text);
-  border: 1px solid var(--border); border-radius: 4px;
-  padding: 0.3rem 0.5rem; font-size: 0.72rem; font-family: inherit;
-}
-.cta-actions input[type="text"]:focus { outline: none; border-color: var(--soak); }
-.signoff-btn {
+.approve-btn {
   background: var(--soak); color: #0a0d12;
   border: none; border-radius: 4px;
   padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 700;
-  cursor: pointer; white-space: nowrap;
-  transition: filter .1s;
-  display: inline-block; text-decoration: none;
+  cursor: pointer; white-space: nowrap; transition: filter .1s;
+  width: 100%; margin-top: 0.3rem;
 }
-.signoff-btn:hover { filter: brightness(1.15); }
-.signoff-btn:active { filter: brightness(0.9); }
-.cta-hint { font-size: 0.66rem; color: var(--muted); }
-.flash {
-  margin: 0 0 1rem; padding: 0.6rem 0.9rem;
-  background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.4);
-  color: var(--done); border-radius: 6px; font-size: 0.8rem;
-}
+.approve-btn:hover { filter: brightness(1.15); }
+.approve-btn:active { filter: brightness(0.9); }
+.approve-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
 .fr-foot {
-  font-size: 0.72rem; border-top: 1px solid var(--border); padding-top: 0.4rem;
-  text-align: right;
+  font-size: 0.72rem; border-top: 1px solid var(--border);
+  padding-top: 0.4rem; text-align: right;
 }
 .fr-foot a { color: var(--accent); text-decoration: none; }
 .fr-foot a:hover { text-decoration: underline; }
-.muted { color: var(--muted); }
 details.archive { margin-top: 1rem; }
 details.archive > summary {
   cursor: pointer; padding: 0.5rem 0; color: var(--muted);
-  font-size: 0.8rem; font-weight: 600;
-  list-style: none;
+  font-size: 0.8rem; font-weight: 600; list-style: none;
 }
-details.archive > summary::before {
-  content: '▸ '; display: inline-block; transition: transform .15s;
-}
+details.archive > summary::before { content: '▸ '; display: inline-block; transition: transform .15s; }
 details.archive[open] > summary::before { transform: rotate(90deg); }
 .empty {
   padding: 1.5rem; text-align: center; color: var(--muted);
@@ -156,581 +128,494 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
   background: var(--surface); padding: 0.1rem 0.35rem;
   border-radius: 3px; color: #a5f3fc;
 }
+
 </style>
 </head>
 <body>
   <h1><span class="sigil">⊕</span> Feature Request Board</h1>
   <div class="subtitle">
-    Generated 2026-04-24 16:23:59 ·
-    Ledger: <code>.github/FR_LEDGERS/</code> · Registry: <code>.github/FEATURE_REQUESTS.md</code>
+    Live panel · auto-refreshes every 3 s ·
+    Registry: <code>.github/FEATURE_REQUESTS.md</code>
   </div>
-  <script>document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(location.search);const id=p.get('signed_off');if(!id)return;const slot=document.getElementById('flash-slot');if(!slot)return;slot.className='flash';slot.textContent='✓ Signed off on '+id+' — FR moved to Archived.';history.replaceState({},'',location.pathname);});</script>
-  <div id="flash-slot"></div>
 
-  <div class="section-title">Active <span class="count">1</span></div>
-  <div class="grid">
+  <div class="status-bar">
+    <div class="dot dot-warn" id="status-dot"></div>
+    <span id="status-label">Connecting…</span>
+    <span class="refreshed" id="refreshed">Last refresh: —</span>
+  </div>
+
+  <div class="banner banner-danger" id="offline-banner" style="display:none">
+    &#9888; FR server offline &mdash; start it with:
+    <code>F:\⊕Workspace\src\utils\fr_server.py</code>
+  </div>
+  <div class="banner banner-warn" id="stale-banner" style="display:none">⚠ Registry file unavailable — showing last known data.</div>
+
+  <div id="flash-slot" class="banner banner-ok" style="display:none"></div>
+
+  <div class="section-title">
+    Active <span class="count" id="active-count">2</span>
+  </div>
+  <div class="grid" id="active-grid">
     
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260423-audio-brief-elevenlabs-fix</div>
+        <div class="fr-id">FR-20260425-live-fr-ledger-panel</div>
         <div class="fr-badges">
-          <span class="state-badge state-info">REVIEW_REQUESTED</span>
-          
+          <span class="state-badge state-warn">BRANCHED</span>
         </div>
       </div>
-      <div class="fr-title">Fix Executive Audio Brief Dashboard + Centralize ElevenLabs Client</div>
-      <div class="fr-summary">Fix the broken executive audio brief dashboard in the 👁AI-Manifest project. As part of the fix: 1. Move the ElevenLabs API client (currently at `f:\👁AI-Manifest\src\integrations\elevenlabs\`) into the shared ⊕Workspace repo as a common API </div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">👁AI-Manifest, ⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>fix/workspace/elevenlabs-shared-client (tylerdrakemusic/-Workspace), fix/ai-manifest/audio-brief-dashboard (tylerdrakemusic/AI-Manifest)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/9" target="_blank" rel="noopener">#9</a> · <a href="https://github.com/tylerdrakemusic/AI-Manifest/pull/2" target="_blank" rel="noopener">#2</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-audio-brief-elevenlabs-fix.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-  </div>
-
-  <details class="archive">
-    <summary>Archived / Signed off <span class="count">25</span></summary>
-    <div class="grid" style="margin-top:0.6rem">
-      
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260422-disable-plumbing-agents-dropdown</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Disable Plumbing Agents from VS Code Agent Dropdown</div>
-      <div class="fr-summary">&quot;Let&#x27;s disable agents from being shown in the drop down if they are just plumbing&quot;</div>
+      <div class="fr-title">Live FR Ledger Panel — Synchronous CI Observability + In-Panel Signoff</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>superseded by FR-20260423-disable-plumbing-agents-branch</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">superseded</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/live-fr-ledger-panel</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/23" target="_blank" rel="noopener">#23</a></span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-25</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-25</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-disable-plumbing-agents-dropdown.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260425-live-fr-ledger-panel.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260422-playwright-mcp-setup</div>
         <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
+          <span class="state-badge state-info">REVIEW_REQUESTED</span>
         </div>
       </div>
       <div class="fr-title">Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json</div>
-      <div class="fr-summary">Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/playwright-mcp-setup</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/5" target="_blank" rel="noopener">#5</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/playwright-mcp-setup</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">pending</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-23</span></div>
       </div>
       
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-playwright-mcp-setup.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+  </div>
+
+  <details class="archive">
+    <summary>Archived / Signed off <span class="count" id="archived-count">13</span></summary>
+    <div class="grid" id="archived-grid" style="margin-top:0.6rem">
+      
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260423-disable-plumbing-agents-branch</div>
+        <div class="fr-id">FR-20260424-infinitelife-db-restore</div>
         <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
+          <span class="state-badge state-muted">CLOSED</span>
         </div>
       </div>
-      <div class="fr-title">Branch + Implement: Disable Plumbing Agents from VS Code Agent Dropdown</div>
-      <div class="fr-summary">&quot;FR-20260422-disable-plumbing-agents-dropdown is TRIAGED but has never been branched. It asks to hide internal plumbing/subagent-only agents from the VS Code agent dropdown so Tyler doesn&#x27;t see them when picking an agent. Confirm Tyler stil</div>
+      <div class="fr-title">∞Life — Restore DB, data sync pipeline, and live Biomarker Dashboard</div>
+      <div class="fr-meta">
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">∞Life, ⊕Workspace</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/infinitelife/db-restore</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">https://github.com/tylerdrakemusic/Life/pull/2</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-25</span></div>
+      </div>
+      
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260424-infinitelife-db-restore.md" target="_blank" rel="noopener">ledger →</a></div>
+    </div>
+
+    <div class="fr-card">
+      <div class="fr-top">
+        <div class="fr-id">FR-20260424-sqlcipher-mcp-server</div>
+        <div class="fr-badges">
+          <span class="state-badge state-done">SIGNED_OFF</span>
+        </div>
+      </div>
+      <div class="fr-title">Custom SQLCipher MCP Server — encrypted multi-DB access for all workspace DBs</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/disable-plumbing-agents</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/16" target="_blank" rel="noopener">#16</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>user-config-only</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">none</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-24</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-disable-plumbing-agents-branch.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260424-sqlcipher-mcp-server.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260423-portal-autoregeneration</div>
+        <div class="fr-id">FR-20260424-sql-mcp-server</div>
         <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
+          <span class="state-badge state-done">DONE</span>
         </div>
       </div>
-      <div class="fr-title">Portal Auto-Regeneration + Gap Count Accuracy</div>
-      <div class="fr-summary">&quot;The Agent Ops health card in the portal shows a stale warning with a manual CLI regen command — that should be automatic, not a user task. The portal currently auto-regens only when `--regen` is passed. Additionally there is a gap count di</div>
+      <div class="fr-title">Investigate + Install SQL MCP Server for Workspace</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/portal-autoregeneration</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/18" target="_blank" rel="noopener">#18</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>2026-04-24</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-24</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-portal-autoregeneration.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260424-sql-mcp-server.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260423-vscode-autodetect-soak-verify</div>
+        <div class="fr-id">FR-20260424-todo-ledger-reconcile</div>
         <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
+          <span class="state-badge state-muted">CLOSED</span>
         </div>
       </div>
-      <div class="fr-title">Soak Verification: vscode-session-autodetect (PR#11)</div>
-      <div class="fr-summary">&quot;FR-20260423-vscode-session-autodetect is in SOAKING state — it was merged (PR#11, 2026-04-23T08:33:21Z). We need to confirm the feature is actually working (auto-detect live VS Code sessions shows in the live agent banner), verify acceptan</div>
+      <div class="fr-title">Reconcile TODO Lists with FR Ledger + Add ❤Music Human Todos</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/vscode-autodetect-soak-verify</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/17" target="_blank" rel="noopener">#17</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:10:00Z</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace, ❤Music</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>N/A — markdown-only</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-24</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-vscode-autodetect-soak-verify.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260424-todo-ledger-reconcile.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-vscode-session-autodetect</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required</div>
-      <div class="fr-summary">Auto-detect live VS Code Copilot chat sessions in agent ops monitor — no manual perf_cli start required.  The agent ops monitor &quot;Live sessions (last 10 min)&quot; count only reflects sessions that explicitly called `perf_cli.py start` at the beg</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/vscode-session-autodetect</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/11" target="_blank" rel="noopener">#11</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-23T08:33:21Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T03:05:00Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-vscode-session-autodetect.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-workspace-gitignore-sweep</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">⊕Workspace .gitignore sweep + commit stranded ledgers + purge review screenshots</div>
-      <div class="fr-summary">Post-signoff reconciliation of `⊕Workspace` repo main branch. Clean up `main` working tree drift. Add ignore patterns for ephemeral state, untrack files that shouldn&#x27;t be in git, commit two stranded FR ledgers, delete post-signoff review sc</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/gitignore-sweep</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/14" target="_blank" rel="noopener">#14</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:32:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T02:28:22Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-workspace-gitignore-sweep.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-stash-audit</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Stash audit + drop orphaned stashes</div>
-      <div class="fr-summary">Review 4 accumulated git stashes, drop any whose content is already merged to main, apply anything genuinely orphaned. 3 of 4 stashes are on branches that have been merged + deleted. Likely all droppable but needs verification.</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/stash-audit</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/15" target="_blank" rel="noopener">#15</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:32:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T02:26:57Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-stash-audit.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-sibling-gitignore-parity</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Sibling-project .gitignore parity sweep</div>
-      <div class="fr-summary">Apply the same .gitignore hygiene sweep to the four sibling project repos so every project is consistently clone-ready on Mac/Linux. Tyler wants the repo close to working out-of-the-box on Mac/Linux even though dev happens on Windows. Parit</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/life/gitignore-parity · chore/music/gitignore-parity · chore/quantum/gitignore-parity · chore/ai-manifest/gitignore-parity</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/Life/pull/1" target="_blank" rel="noopener">#1</a> · <a href="https://github.com/tylerdrakemusic/Music/pull/1" target="_blank" rel="noopener">#1</a> · <a href="https://github.com/tylerdrakemusic/Quantum/pull/1" target="_blank" rel="noopener">#1</a> · <a href="https://github.com/tylerdrakemusic/AI-Manifest/pull/5" target="_blank" rel="noopener">#5</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:35:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T02:24:40Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-sibling-gitignore-parity.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-fr-state-drift-fix</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">FR state drift reconciliation (signoff queue accuracy)</div>
-      <div class="fr-summary">Fix FR state inconsistencies so the signoff queue is accurate. FR-20260423-vscode-session-autodetect silently merged without state bump — needs to appear in Tyler&#x27;s signoff queue. Two BRANCHED FRs with no recent activity may be stale.</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>chore/workspace/fr-state-drift-fix</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/13" target="_blank" rel="noopener">#13</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T01:35:00Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T02:21:19Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-fr-state-drift-fix.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-fr-portal-soak-gate</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">FR Hyperledger Portal View + SOAK/SIGNED_OFF Gate</div>
-      <div class="fr-summary">we seem to be creating a hyperledger for the feature requests of this project. It should be integrated into the portal interface, so Tyler can keep track of features perform signoff. Also I have signed off on proofs and then come to see the</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/FR-20260423-fr-portal-soak-gate (merged &amp; deleted)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/12" target="_blank" rel="noopener">#12</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24T00:48:48Z</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T01:07:03Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-fr-portal-soak-gate.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-agent-ops-monitor-sync</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Reconcile agent ops monitor with current workspace architecture and improve portal visibility</div>
-      <div class="fr-summary">&quot;let&#x27;s shore up the agent ops monitor through portal. I see 48 runs in session inventory but only 2 including yourself in session view in vscode, what is the existing gap and unverified agent, we need to sync it to current project architect</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>fix/FR-20260423-agent-ops-monitor-sync (merged &amp; deleted; worktree removed)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/7" target="_blank" rel="noopener">#7</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24T00:42:02Z</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-agent-ops-monitor-sync.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260423-repo-privacy-audit</div>
-        <div class="fr-badges">
-          <span class="state-badge state-done">SIGNED_OFF</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness for Public/Private Status</div>
-      <div class="fr-summary">Tyler is currently hosting all workspace repos publicly but is questioning that decision. `∞Life` contains private health/biomarker/genomic data. He wants: 1. A recommendation on which repos to privatize vs leave public (with rationale) 2. </div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/repo-privacy-audit</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/20" target="_blank" rel="noopener">#20</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-repo-privacy-audit.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
+
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260424-cc-prost-setlist-05022026</div>
         <div class="fr-badges">
           <span class="state-badge state-done">SIGNED_OFF</span>
-          
         </div>
       </div>
       <div class="fr-title">CC Prost 05022026 — Setlist DB Update (Revised)</div>
-      <div class="fr-summary">Update the ❤Music database (`f:\❤Music\src\data\heartmusic.db`) to reflect the revised/final setlist for the Copper Creek Prost gig on 2026-05-02. The source file is: `F:\❤Music\catalog\setlists\Rough CC Prost 05022026.xlsx`. This is a REVI</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">❤Music</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/music/cc-prost-setlist-05022026</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">merged main (6af031a)</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-24</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-24</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/music/cc-prost-setlist-05022026</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">merged main 6af031a</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-24</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-24</span></div>
       </div>
       
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260424-cc-prost-setlist-05022026.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260423-agent-ops-live-session-fix</div>
+        <div class="fr-id">FR-20260423-band-mgmt-panel-music</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-muted">MERGED / CLOSED</span>
         </div>
       </div>
-      <div class="fr-title">Fix agent ops monitor live session detection — stale closed sessions appearing, active sessions not shown</div>
-      <div class="fr-summary">&quot;The live agents section in the agent ops dashboard isn&#x27;t working — it&#x27;s showing an old agent I closed. I have 2 other agents running besides you right now.&quot;  &quot;Also noticed agent proof coverage has an ops-monitor agent that doesn&#x27;t exist in</div>
+      <div class="fr-title">Band Management Panel — ❤Music portal pane with multi-band selector, setlist, sheet music links</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>fix/workspace/agent-ops-live-session-fix</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/10" target="_blank" rel="noopener">#10</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-23 (merge SHA 921b891f43d3)</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">❤Music, ⊕Workspace</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/heartmusic/band-mgmt-panel</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/22" target="_blank" rel="noopener">#22</a></span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-23</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-agent-ops-live-session-fix.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-band-mgmt-panel-music.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260423-audio-brief-base64-embed</div>
+        <div class="fr-id">FR-20260423-repo-privacy-audit</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-done">SIGNED_OFF</span>
         </div>
       </div>
-      <div class="fr-title">Embed TTS Audio as Base64 in Executive Brief Portal HTML</div>
-      <div class="fr-summary">Currently the executive audio brief portal (`tools/executive_audio_brief.py`) requires `--serve` mode to generate and play audio. The goal is to make the generated HTML fully self-contained: when audio is synthesized, encode it as a base64 </div>
+      <div class="fr-title">Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">👁AI-Manifest</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/ai-manifest/audio-brief-base64-embed</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/AI-Manifest/pull/4" target="_blank" rel="noopener">#4</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">All 5 + .github/</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/repo-privacy-audit</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/20" target="_blank" rel="noopener">#20</a></span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-24</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-audio-brief-base64-embed.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-repo-privacy-audit.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260423-living-security-dashboard</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-muted">CLOSED (NOT MERGED)</span>
         </div>
       </div>
-      <div class="fr-title">Living Security Dashboard + Close Remediated SQL Injection Findings (IDs 7–11)</div>
-      <div class="fr-summary">Tyler has 5 HIGH SQL injection findings from a prior security scan that appear to already be remediated: - Finding 7: ❤Music/src/analysis/music_dashboard.py:1300 - Finding 8: ❤Music/src/analysis/music_dashboard.py:1592 - Finding 10: ❤Music/</div>
+      <div class="fr-title">Living Security Dashboard + close remediated SQL injection findings (IDs 7–11)</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace, ❤Music</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>merged (feature/workspace/living-security-dashboard)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/8" target="_blank" rel="noopener">#8</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>feature/workspace/living-security-dashboard</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/19" target="_blank" rel="noopener">#19</a> — PR closed, work missed scope (landed on ops pane not security pane). Re-open via fresh intake.</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-23</span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">2026-04-23</span></div>
       </div>
       
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-living-security-dashboard.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260422-band-mgmt-panel</div>
+        <div class="fr-id">FR-20260422-music-repo-purge</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-done">MERGED</span>
         </div>
       </div>
-      <div class="fr-title">Band Management Panel (Workspace Portal)</div>
-      <div class="fr-summary">Add a new **Band Management Panel** to `f:\⊕Workspace\reports\portal.html`. The panel should: - Display the active gig setlist as the baseline music catalog - Include song metadata: title, artist, key, BPM (cross-reference `G:\Muzic` audio </div>
+      <div class="fr-title">Purge oversized binaries from ❤Music history</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">❤Music, ⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>main (inline delivery by other agent)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">delivered inline on main by other agent; confirmed by Tyler 2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">❤Music</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>force-push @ 0abdef4</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">2026-04-22</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val"></span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">FR-20260422-db-backup-strategy</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-band-mgmt-panel.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-music-repo-purge.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260422-db-backup-strategy</div>
-        <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Design and implement DB backup strategy for all project SQLite databases</div>
-      <div class="fr-summary">&quot;yes&quot; (to filing follow-ups from FR-20260422-music-repo-purge: &quot;heartmusic.db is no longer versioned in git; needs a separate backup approach&quot;)</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">❤Music, ∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>N/A</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">N/A</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-db-backup-strategy.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260422-github-dir-reconcile</div>
-        <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Reconcile Divergent `.github/` Directory Trees (workspace root vs ⊕Workspace repo)</div>
-      <div class="fr-summary">Reconcile the divergent `.github/` directory trees in the workspace.  - `f:\.github\` exists and is what VS Code actually loads for copilot-instructions, instructions files, agent definitions, and skills. It is NOT inside any git repo. - `f</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace (tracked repo) + workspace-root `.github/` (VS Code discovery path)</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>`chore/FR-20260422-github-dir-reconcile` (worktree: `f:\⊕Workspace-worktrees\FR-20260422-github-dir-reconcile\`)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/2" target="_blank" rel="noopener">#2</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-github-dir-reconcile.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
+
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260422-gitignore-sweep</div>
         <div class="fr-badges">
           <span class="state-badge state-muted">CLOSED</span>
-          
         </div>
       </div>
-      <div class="fr-title">Add .gitignore to all projects that lack one (preventive binary exclusion)</div>
-      <div class="fr-summary">&quot;yes&quot; (to filing follow-ups from FR-20260422-music-repo-purge: &quot;preventive .gitignore sweep for the other 4 projects so they don&#x27;t hit the same wall&quot;)</div>
+      <div class="fr-title">Add .gitignore to all remaining projects</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>main (direct commit per-repo — small chore, no feature branch)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">n/a</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>e3586e6 / af188c9 / f90f64c / bab2dad</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">2026-04-22</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val"></span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">FR-20260422-sigil-encoding-map</span></div>
       </div>
       
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-gitignore-sweep.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260422-multi-root-workspace</div>
+        <div class="fr-id">FR-20260422-github-dir-reconcile</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-muted">MERGED_PARTIAL (Phase 1 only; Phase 2 infeasible — F: is exFAT, junctions unsupported)</span>
         </div>
       </div>
-      <div class="fr-title">Adopt Multi-Root VS Code Workspace (`.code-workspace`)</div>
-      <div class="fr-summary">A `.code-workspace` file exists that, when opened in VS Code, yields the same multi-project view Tyler currently gets by opening `f:\`.</div>
+      <div class="fr-title">Reconcile Divergent `.github/` Directory Trees</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace (primary); indirectly all 5 projects via the workspace file</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>`chore/FR-20260422-multi-root-workspace` (worktree: `f:\⊕Workspace-worktrees\FR-20260422-multi-root-workspace\`)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/3" target="_blank" rel="noopener">#3</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>[#2](https://github.com/tylerdrakemusic/-Workspace/pull/2) @ 2b9e612</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">2026-04-22</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val"></span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">FR-20260422-multi-root-workspace</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-multi-root-workspace.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-github-dir-reconcile.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
-    <div class="fr-card">
-      <div class="fr-top">
-        <div class="fr-id">FR-20260422-music-repo-purge</div>
-        <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
-        </div>
-      </div>
-      <div class="fr-title">Purge oversized audio/video/binary files from ❤Music git history</div>
-      <div class="fr-summary">&quot;.db files may be excluded they may grow. We&#x27;ll have to form a backup strategy later for db. .png can be tracked that&#x27;s fine. leave in place for now. Cloudlared.exe should be removed, its a solution no being pursued, FR flow for dogfooding.</div>
-      <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">❤Music</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>direct on main (solo repo, backup taken)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">N/A (force-push to main)</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">—</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
-      </div>
-      
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-music-repo-purge.md" target="_blank" rel="noopener">ledger →</a></div>
-    </div>
+
     <div class="fr-card">
       <div class="fr-top">
         <div class="fr-id">FR-20260422-remove-service-label-field</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-done">MERGED</span>
         </div>
       </div>
       <div class="fr-title">Remove &quot;Service/Label&quot; Field from Password Generator Panel</div>
-      <div class="fr-summary">Remove the &quot;Service/Label&quot; field from the password generator panel in the portal (dashboard). The password generator panel in the workspace portal has a &quot;Service/Label&quot; field. Tyler says this field is not needed and wants it removed from th</div>
       <div class="fr-meta">
         <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>n/a (delivered by other agent)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val">delivered by other agent; confirmed by Tyler 2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>delivered by other agent; confirmed by Tyler</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">2026-04-22</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val"></span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">FR-20260422-band-mgmt-panel</span></div>
       </div>
       
       <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-remove-service-label-field.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
+
     <div class="fr-card">
       <div class="fr-top">
-        <div class="fr-id">FR-20260422-sigil-encoding-map</div>
+        <div class="fr-id">FR-20260423-fr-state-drift-fix</div>
         <div class="fr-badges">
-          <span class="state-badge state-muted">CLOSED</span>
-          
+          <span class="state-badge state-done">MERGED</span>
         </div>
       </div>
-      <div class="fr-title">Sigil Encoding Reference Map</div>
-      <div class="fr-summary">Create a sigil encoding reference map to help future agents handle encoding issues with project sigils. The workspace uses Unicode sigils as project prefixes: ∞ (∞Life), ❤ (❤Music), ⟨ψ⟩ (⟨ψ⟩Quantum), 👁 (👁AI-Manifest), ⊕ (⊕Workspace). Agents</div>
+      <div class="fr-title">FR state drift reconciliation (signoff queue accuracy)</div>
       <div class="fr-meta">
-        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace (cross-cutting reference, agent-facing)</span></div>
-<div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>`chore/FR-20260422-sigil-encoding-map` (worktree: `f:\⊕Workspace-worktrees\FR-20260422-sigil-encoding-map\`)</code></span></div>
-<div class="meta-row"><span class="meta-key">PR</span><span class="meta-val"><a href="https://github.com/tylerdrakemusic/-Workspace/pull/4" target="_blank" rel="noopener">#4</a></span></div>
-<div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Merged</span><span class="meta-val">2026-04-22</span></div>
-<div class="meta-row"><span class="meta-key">Signed off</span><span class="meta-val">—</span></div>
+        <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">⊕Workspace</span></div>
+        <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>[#13](https://github.com/tylerdrakemusic/-Workspace/pull/13)</code></span></div>
+        <div class="meta-row"><span class="meta-key">PRs</span><span class="meta-val">2026-04-23</span></div>
+        <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val"></span></div>
+        <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">FR-20260423-stash-audit</span></div>
       </div>
       
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260422-sigil-encoding-map.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><a href="../.github/FR_LEDGERS/FR-20260423-fr-state-drift-fix.md" target="_blank" rel="noopener">ledger →</a></div>
     </div>
     </div>
   </details>
 
   <div class="footer">
     Soak protocol: after merge, FRs enter <code>SOAKING</code> so Tyler can verify
-    the feature is actually present on <code>main</code> before signing off.
-    Signoff moves the FR to <code>SIGNED_OFF → ARCHIVED</code> and it drops off the
-    active board. <br>
-    Regenerate HTML: <code>C:\G\python.exe tools/fr_dashboard.py</code> ·
-    Serve + enable signoff buttons: <code>C:\G\python.exe tools/fr_portal_server.py</code>
+    the feature is live on <code>main</code> before signing off.<br>
+    Server: <code>C:\G\python.exe f:\⊕Workspace\src\utils\fr_server.py</code> ·
+    Generated: 2026-04-25 16:59:32 UTC
   </div>
+
+  <script>
+
+(function () {
+  const API = 'http://localhost:7474';
+  let serverOnline = false;
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function stateClass(state) {
+    const map = {
+      MERGED:'state-done', CLOSED:'state-muted', SIGNED_OFF:'state-done',
+      DONE:'state-done', SOAKING:'state-soak', REVIEW_REQUESTED:'state-info',
+      AUTO_REVIEWED:'state-info', TYLER_APPROVED:'state-ok',
+      IN_PROGRESS:'state-warn', BRANCHED:'state-warn', TRIAGED:'state-warn',
+      OPEN:'state-warn', CHANGES_REQUESTED:'state-danger',
+    };
+    return map[state] || 'state-muted';
+  }
+
+  function prsHtml(prs) {
+    if (!prs || prs === '—' || prs === '-') return '<span class="meta-val">—</span>';
+    // linkify #N
+    const linked = prs.replace(/#(\d+)/g, '<a href="https://github.com/tylerdrakemusic/-Workspace/pull/$1" target="_blank" rel="noopener">#$1</a>');
+    return '<span class="meta-val">' + linked + '</span>';
+  }
+
+  function renderFR(fr) {
+    const approveBtn = fr.signoff_eligible
+      ? `<button class="approve-btn" onclick="approvePR('${escHtml(fr.id)}', ${fr.pr_number}, this)">
+           ✓ Approve PR #${fr.pr_number}
+         </button>`
+      : '';
+
+    return `
+      <div class="fr-card">
+        <div class="fr-top">
+          <div class="fr-id">${escHtml(fr.id)}</div>
+          <div class="fr-badges">
+            <span class="state-badge ${stateClass(fr.state)}">${escHtml(fr.state)}</span>
+          </div>
+        </div>
+        <div class="fr-title">${escHtml(fr.title)}</div>
+        <div class="fr-meta">
+          <div class="meta-row"><span class="meta-key">Projects</span><span class="meta-val">${escHtml(fr.projects)}</span></div>
+          <div class="meta-row"><span class="meta-key">Branch</span><span class="meta-val"><code>${escHtml(fr.branch)}</code></span></div>
+          <div class="meta-row"><span class="meta-key">PRs</span>${prsHtml(fr.prs)}</div>
+          <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">${escHtml(fr.opened)}</span></div>
+          <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">${escHtml(fr.updated)}</span></div>
+        </div>
+        ${approveBtn}
+        <div class="fr-foot"><a href="../.github/FR_LEDGERS/${escHtml(fr.id)}.md" target="_blank" rel="noopener">ledger →</a></div>
+      </div>`;
+  }
+
+  function renderBoard(frs) {
+    const active = frs.filter(f => f.is_active);
+    const archived = frs.filter(f => !f.is_active);
+
+    const activeHtml = active.length
+      ? active.map(renderFR).join('')
+      : '<div class="empty">No active FRs.</div>';
+
+    const archivedHtml = archived.length
+      ? archived.map(renderFR).join('')
+      : '<div class="empty">No archived FRs.</div>';
+
+    document.getElementById('active-count').textContent = active.length;
+    document.getElementById('active-grid').innerHTML = activeHtml;
+    document.getElementById('archived-count').textContent = archived.length;
+    document.getElementById('archived-grid').innerHTML = archivedHtml;
+  }
+
+  function setStatus(online, refreshed) {
+    const dot = document.getElementById('status-dot');
+    const label = document.getElementById('status-label');
+    const offlineBanner = document.getElementById('offline-banner');
+    const staleBanner = document.getElementById('stale-banner');
+    if (online) {
+      dot.className = 'dot dot-ok';
+      label.textContent = 'Server online';
+      if (offlineBanner) offlineBanner.style.display = 'none';
+    } else {
+      dot.className = 'dot dot-danger';
+      label.textContent = 'Server offline';
+      if (offlineBanner) offlineBanner.style.display = '';
+    }
+    if (refreshed) {
+      document.getElementById('refreshed').textContent = 'Refreshed ' + refreshed;
+    }
+    serverOnline = online;
+  }
+
+  async function fetchFRs() {
+    try {
+      const r = await fetch(API + '/api/frs', {cache: 'no-store'});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      if (data.stale) {
+        const sb = document.getElementById('stale-banner');
+        if (sb) sb.style.display = '';
+      } else {
+        const sb = document.getElementById('stale-banner');
+        if (sb) sb.style.display = 'none';
+      }
+      renderBoard(data.frs || []);
+      const now = new Date().toLocaleTimeString();
+      setStatus(true, now);
+    } catch (e) {
+      setStatus(false, null);
+    }
+  }
+
+  window.approvePR = async function(frId, prNumber, btn) {
+    if (!serverOnline) {
+      alert('FR server is offline. Cannot approve PR.');
+      return;
+    }
+    if (!confirm('Approve PR #' + prNumber + ' for ' + frId + '?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Approving…';
+    try {
+      const r = await fetch(API + '/signoff', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({fr_id: frId, pr_number: prNumber}),
+      });
+      const data = await r.json();
+      if (r.ok && data.ok) {
+        btn.textContent = '✓ Approved';
+        btn.style.background = 'var(--ok)';
+        const flash = document.getElementById('flash-slot');
+        if (flash) {
+          flash.className = 'banner banner-ok';
+          flash.textContent = '✓ PR #' + prNumber + ' approved for ' + frId;
+          flash.style.display = '';
+          setTimeout(() => { flash.style.display = 'none'; }, 8000);
+        }
+      } else {
+        btn.textContent = '✗ Failed: ' + (data.error || 'unknown');
+        btn.disabled = false;
+        btn.style.background = 'var(--danger)';
+        btn.style.color = '#fff';
+      }
+    } catch (e) {
+      btn.textContent = '✗ Network error';
+      btn.disabled = false;
+    }
+  };
+
+  // Initial load + polling
+  fetchFRs();
+  setInterval(fetchFRs, 3000);
+})();
+
+  </script>
 </body>
 </html>
