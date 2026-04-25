@@ -997,8 +997,17 @@
     function launchServers() {
       const btn = document.getElementById('launch-btn');
       if (btn) { btn.textContent = 'Launching…'; btn.disabled = true; }
-      window.location = 'portal://launch';
-      setTimeout(() => { if (btn) { btn.textContent = 'Start all servers'; btn.disabled = false; } pollServers(); }, 4000);
+      // Use a hidden anchor click to invoke portal:// without navigating the current page.
+      // window.location would cause the tab to navigate away from the portal.
+      const a = document.createElement('a');
+      a.href = 'portal://launch';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Re-poll twice: once at 4s (servers binding) and again at 9s (slower starts)
+      setTimeout(() => { pollServers(); }, 4000);
+      setTimeout(() => { if (btn) { btn.textContent = 'Start all servers'; btn.disabled = false; } pollServers(); }, 9000);
     }
     const SERVERS = [{port:5050,label:'Music Dashboard'},{port:8100,label:'TJD Radio'},{port:5055,label:'Guitar Trainer'}];
     async function checkServer(port, dotId) {

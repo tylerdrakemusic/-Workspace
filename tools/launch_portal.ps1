@@ -1,4 +1,7 @@
 ﻿# Portal Launcher - config-driven, reads portal_servers.json
+# When invoked via portal:// custom protocol handler, pass -NoOpen to skip
+# re-opening the browser (the portal is already open in the tab that triggered it).
+param([switch]$NoOpen)
 
 $TOOLS_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CONFIG    = Join-Path $TOOLS_DIR "portal_servers.json"
@@ -26,5 +29,9 @@ Write-Host "  Waiting ${delay}s for servers to bind..." -ForegroundColor DarkGra
 Start-Sleep -Seconds $delay
 
 $portalUri = "file:///" + ($PORTAL -replace "\\", "/")
-if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
-Write-Host "  Portal opened." -ForegroundColor Green
+if (-not $NoOpen) {
+    if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
+    Write-Host "  Portal opened." -ForegroundColor Green
+} else {
+    Write-Host "  Skipping browser open (invoked via protocol handler)." -ForegroundColor DarkGray
+}
