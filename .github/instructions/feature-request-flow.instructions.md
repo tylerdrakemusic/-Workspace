@@ -50,8 +50,8 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
 | `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
 | `BRANCHED` | Isolated branch + worktree + draft PR created per repo | ⊕workspace-ci |
 | `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
-| `REVIEW_REQUESTED` | Implementation claims done, PR marked ready | project orchestrator |
-| `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof) | ⊕workspace-reviewer |
+| `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. | project orchestrator |
+| `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof). Required `test` status check must be green before merge can be attempted. | ⊕workspace-reviewer |
 | `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
 | `CHANGES_REQUESTED` | Auto-review or Tyler requested fixes | ⊕workspace-reviewer / Tyler |
 | `TYLER_APPROVED` | Tyler approved the PR | Tyler |
@@ -61,7 +61,33 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
 | `ARCHIVED` | FR drops off the active portal FR panel. Ledger file remains in the repo as permanent history. | ⊕workspace-ci |
 | `CLOSED` | Legacy terminal state (pre-SOAK protocol). Still accepted for backward compat; treat as equivalent to `ARCHIVED` for portal filtering. | ⊕workspace-ci |
 
+## CI Gateway (LIVE as of FR-20260425)
+
+Every PR to `main` in every repo runs `.github/workflows/test.yml` (pytest,
+Python 3.11, 10-min timeout). The required status check is named **`test`**.
+
+- **All 4 public repos** (⊕Workspace, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest) have
+  GitHub classic branch protection on `main`: strict mode, `test` check
+  required + must be up-to-date, **no admin bypass**, no force-push, no
+  deletions. GitHub will reject merge attempts on red CI with HTTP 405.
+- **∞Life** (private, free tier — no server-side branch protection available)
+  is mitigated by a local `pre-push` hook at `.git/hooks/pre-push` that blocks
+  direct pushes to `main`, plus `⊕workspace-ci` agent discipline (always PR).
+  See `f:\∞Life\docs\PROTECTION_HOOK.md`.
+- **∞Life CI** also runs a health-data gitignore audit step (deny list:
+  `*.db`, `data/bloodwork/`, `data/medical_records/`, `data/genomics/`,
+  `SUBJECT_PROFILE.json`) that fail-closes the build if any match the diff.
+
+### Hard merge rules
+- **Direct pushes / merges to `main` are forbidden** in every repo. All work
+  flows: feature branch → PR → green `test` check → merge.
+- Agents MUST wait for the `test` status check to be green before invoking
+  the merge API. Attempting merge on a red PR will be rejected by GitHub
+  (public repos) or fail review (∞Life).
+- `--no-verify` on ∞Life pushes requires Tyler's explicit per-task approval.
+
 ## Tyler's Gateways (ONLY places humans act)
+
 
 1. **Open** — Tyler files the FR in plain language (chat, or a GitHub issue).
 2. **Approve scope** — After `TRIAGED`, Tyler confirms scope + acceptance
@@ -265,7 +291,10 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 ## Hard Rules (apply to every agent)
 
 - NEVER start implementation before the FR is in `BRANCHED` state.
+- NEVER push or merge directly to `main` in any repo — every change goes
+  through a PR with a green `test` status check.
 - NEVER merge a PR that is not in `TYLER_APPROVED` state.
+- NEVER merge a PR while its required `test` status check is red or pending.
 - NEVER archive an FR before it reaches `SIGNED_OFF`. Merged ≠ done.
 - NEVER let two agent sessions write to the same worktree.
 - NEVER edit the registry except via `⊕workspace-intake` or `⊕workspace-ci`.

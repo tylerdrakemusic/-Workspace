@@ -77,3 +77,24 @@ When Tyler makes a repo private or public:
 2. Update `f:\⊕Workspace\REPO_VISIBILITY.md`
 3. Update the table in `f:\⊕Workspace\.github\copilot-instructions.md`
 4. Commit all three files together with message: `chore: update repo visibility policy`
+
+## Branch Protection (FR-20260425, live)
+
+Canonical detail in `f:\⊕Workspace\REPO_VISIBILITY.md` ("Branch Protection
+Status" section). Summary for agents:
+
+| Repo | Server-side protection | Local guard |
+|------|------------------------|-------------|
+| ⊕Workspace, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest | ✅ Classic strict, `test` check required + up-to-date, **no admin bypass** | — |
+| ∞Life | ❌ Not available (free-tier private) | ✅ `.git/hooks/pre-push` blocks direct pushes to `main` |
+
+**Agent rules:**
+- Direct pushes / merges to `main` are forbidden in all 5 repos. Always use
+  feature branch → PR → green `test` check → merge.
+- For the 4 public repos: GitHub will reject merges with red CI (HTTP 405);
+  agents MUST wait for green `test` before attempting merge via API.
+- For ∞Life: the pre-push hook lives on Tyler's local clone only. Agents
+  pushing from that clone will be blocked from `main` and must use a feature
+  branch + PR. Never use `--no-verify` to bypass the hook without Tyler's
+  explicit per-task approval.
+
