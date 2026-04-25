@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260425-guitar-trainer-new-card-timestamp | Guitar Trainer — "Add New Card" uses wrong song segment timestamps | fix | ❤Music | TRIAGED | fix/heartmusic/guitar-trainer-new-card-timestamp (pending) | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
 | FR-20260425-live-fr-ledger-panel | Live FR Ledger Panel — Synchronous CI Observability + In-Panel Signoff | feature | ⊕Workspace | BRANCHED | feature/workspace/live-fr-ledger-panel | pending | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260424-infinitelife-db-restore | ∞Life — Restore DB, data sync pipeline, and live Biomarker Dashboard | feature | ∞Life, ⊕Workspace | CLOSED | feature/infinitelife/db-restore | https://github.com/tylerdrakemusic/Life/pull/2 | ⊕workspace-intake | 2026-04-24 | 2026-04-25 |
 | FR-20260424-sqlcipher-mcp-server | Custom SQLCipher MCP Server — encrypted multi-DB access for all workspace DBs | feature | ⊕Workspace | SIGNED_OFF | user-config-only | none | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
@@ -65,15 +66,6 @@ state machine, gateway definitions, and naming rules.
 
 Maximum **3** FRs may be in `IN_PROGRESS` state simultaneously. Additional
 FRs queue in `TRIAGED` state until a slot opens.
-| FR-20260424-sql-mcp-server | Investigate + Install SQL MCP Server for Workspace | feature | ⊕Workspace | DONE | 2026-04-24 | 2026-04-24 | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
-| FR-20260424-todo-ledger-reconcile | Reconcile TODO Lists with FR Ledger + Add ❤Music Human Todos | chore | ⊕Workspace, ❤Music | CLOSED | N/A — markdown-only | N/A | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
-| FR-20260424-cc-prost-setlist-05022026 | CC Prost 05022026 — Setlist DB Update (Revised) | chore | ❤Music | SIGNED_OFF | feature/music/cc-prost-setlist-05022026 | merged main 6af031a | ❤music-catalog | 2026-04-24 | 2026-04-24 |
-| FR-20260423-band-mgmt-panel-music | Band Management Panel — ❤Music portal pane with multi-band selector, setlist, sheet music links | feature | ❤Music, ⊕Workspace | MERGED / CLOSED | feature/heartmusic/band-mgmt-panel | [#22](https://github.com/tylerdrakemusic/-Workspace/pull/22) | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
-| FR-20260423-repo-privacy-audit | Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness | feature | All 5 + .github/ | SIGNED_OFF | feature/repo-privacy-audit | [#20](https://github.com/tylerdrakemusic/-Workspace/pull/20) | ⊕workspace-overseer | 2026-04-23 | 2026-04-24 |
-| FR-20260422-playwright-mcp-setup | Wire Playwright MCP into workspace — install Node.js + @playwright/mcp + configure mcp.json | chore | ⊕Workspace | REVIEW_REQUESTED | chore/workspace/playwright-mcp-setup | pending | ⊕workspace-commitment | 2026-04-22 | 2026-04-23 |
-| FR-20260423-living-security-dashboard | Living Security Dashboard + close remediated SQL injection findings (IDs 7–11) | feature | ⊕Workspace | CLOSED (NOT MERGED) | feature/workspace/living-security-dashboard | [#19](https://github.com/tylerdrakemusic/-Workspace/pull/19) — PR closed, work missed scope (landed on ops pane not security pane). Re-open via fresh intake. | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
-
-
 
 ## Archive
 

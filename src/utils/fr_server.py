@@ -712,12 +712,12 @@ def _make_handler(watcher: "_WatcherThread") -> type:
             if args and str(args[1]) not in ("200", "304"):
                 super().log_message(fmt, *args)
 
-        def _send_json(self, data: Any, status: int = 200) -> None:
+        def _send_json(self, data: Any, status: int = 200, cors_origin: str = "*") -> None:
             body = json.dumps(data, ensure_ascii=False).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.end_headers()
             self.wfile.write(body)
 
@@ -762,7 +762,7 @@ def _make_handler(watcher: "_WatcherThread") -> type:
 
                 result = approve_pr(pr_number, fr_id)
                 status = 200 if result["ok"] else 502
-                self._send_json(result, status)
+                self._send_json(result, status, cors_origin="http://localhost:7474")
             else:
                 self.send_error(HTTPStatus.NOT_FOUND)
 
