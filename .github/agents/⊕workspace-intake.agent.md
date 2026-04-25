@@ -26,6 +26,53 @@ and do NOT start implementation.
 
 Input: Tyler's plain-language request.
 
+#### Phase A — Interview (before triage)
+
+Read the request first. Then decide: is the intent already unambiguous?
+
+**Skip the interview** (go straight to Phase B) when ALL of these are true:
+- The affected project is explicit or trivially obvious
+- The desired outcome is stated (not just a complaint or vague wish)
+- The scope boundary is clear (what's in vs out)
+
+**Run the interview** when ANY of these is unclear:
+- What problem this solves or what motivated it
+- What "done" looks like (expected outcome / success state)
+- Which project(s) are affected
+- What should explicitly NOT be in scope
+
+Interview rules:
+- Ask **2–5 targeted questions** — no more, no fewer when interview is needed
+- **Use `vscode_askQuestions`** — never ask questions as plain text
+- Group all questions into a **single `vscode_askQuestions` call** (don't drip one at a time)
+- For each question, supply **prefilled `options`** drawn from context (project names, common outcomes, etc.)
+- Always set `allowFreeformInput: true` (the default) — Tyler can always type a custom answer
+- Ask only what you cannot reasonably infer from the request + codebase context
+- Do NOT ask about implementation approach — that's the orchestrator's job
+- Do NOT ask questions whose answers are already in the request
+
+Question pool — pick the relevant ones, populate `options` from context:
+
+1. **Motivation** — "What problem or friction is this solving?"
+   - Options: derive 2-3 candidates from the request wording (e.g. "Current behavior is slow", "Missing feature", "Bug / incorrect output", "Workflow friction")
+
+2. **Outcome** — "What does done look like?"
+   - Options: derive from domain (e.g. "New UI panel", "CLI command works end-to-end", "Tests pass on CI", "Agent produces structured output")
+
+3. **Scope / project** — "Which project does this live in?"
+   - Options: `∞Life`, `❤Music`, `⟨ψ⟩Quantum`, `👁AI-Manifest`, `⊕Workspace`, `Cross-cutting (multiple)`
+
+4. **Boundary** — "Anything explicitly out of scope for this FR?"
+   - Options: `No exclusions`, `Keep to this file/module only`, `Defer DB changes`, `Defer UI changes`, `Other (describe below)`
+
+5. **Anchoring** — "Does this build on or replace an existing feature?"
+   - Options: derive from codebase inspection (e.g. specific file names, "New from scratch", "Replaces FR-XXXXXX")
+
+After Tyler answers → briefly summarize what you heard in 2-3 sentences, then
+proceed to Phase B.
+
+#### Phase B — Triage
+
 Steps:
 1. Generate FR ID: `FR-YYYYMMDD-<slug>` (slug is 2-5 kebab-case words)
 2. Classify type: `feature` | `fix` | `chore`
@@ -34,6 +81,7 @@ Steps:
    - Multi-project if the request names multiple projects or describes a
      cross-cutting change
 4. Draft acceptance criteria (3-7 concrete, testable checks)
+   - Each AC must map to something Tyler stated or confirmed — not agent inference
 5. Estimate risk: `low` | `medium` | `high` (high = touches auth, secrets,
    agent framework, DB schema, or health interventions)
 6. **Create the FR ledger:** copy `f:\.github\FR_LEDGERS\_TEMPLATE.md` to
@@ -147,6 +195,11 @@ archive section with final state, PR URLs, and merge SHAs.
 - DO NOT skip Tyler's scope confirmation
 - DO NOT allow more than 3 FRs to be `IN_PROGRESS` simultaneously
 - DO NOT skip ledger creation — every FR must have a ledger file
+- DO NOT ask more than 5 interview questions — no interrogations
+- DO NOT ask questions whose answers are already stated in the request
+- DO NOT ask interview questions as plain text — always use `vscode_askQuestions`
+- DO NOT omit `options` from interview questions — always prefill at least 2 candidates
+- ALWAYS summarize what you heard (2-3 sentences) before presenting the scope card
 - ALWAYS check for conflicts before approving scope
 - ALWAYS keep the registry up to date (it's the source of truth)
 - ALWAYS append an Event Log entry to the FR ledger after every action

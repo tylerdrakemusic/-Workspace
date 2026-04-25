@@ -30,6 +30,9 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260425-intake-interview-driven | Make Intake More Interview-Driven and Less Assumption-Heavy | chore | ⊕Workspace | BRANCHED | chore/workspace/intake-interview-driven | https://github.com/tylerdrakemusic/-Workspace/pull/32 | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
+| FR-20260425-guitar-trainer-metronome | Add metronome to Guitar Trainer portal panel | feature | ❤Music | TRIAGED | feature/heartmusic/guitar-trainer-metronome | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
+| FR-20260425-guitar-trainer-data-to-db | Guitar Trainer exercise data should not be tracked by git | chore | ❤Music | TRIAGED | chore/heartmusic/guitar-trainer-data-to-db | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-panel-startup | Guitar Trainer Panel: Server Auto-Start + Remove Live-Dash Chrome | fix | ❤Music, ⊕Workspace | MERGED → CLOSED | fix/workspace/guitar-trainer-panel-startup (deleted) | https://github.com/tylerdrakemusic/-Workspace/pull/29 (squash 229807ac) | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-album-art | Guitar Trainer — Album Art Display from Embedded Audio Metadata | feature | ❤Music | MERGED → CLOSED | feature/heartmusic/guitar-trainer-album-art (deleted) | https://github.com/tylerdrakemusic/Music/pull/3 (merged 08cfd48) | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-new-card-timestamp | Guitar Trainer — "Add New Card" uses wrong song segment timestamps | fix | ❤Music | MERGED → CLOSED | fix/heartmusic/guitar-trainer-new-card-timestamp (deleted) | https://github.com/tylerdrakemusic/Music/pull/2 (merged c03de6f) | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
