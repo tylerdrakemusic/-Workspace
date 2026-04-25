@@ -9,7 +9,7 @@
 MCP (Model Context Protocol) servers extend agent capabilities inside VS Code Copilot.
 These need analysis before install — let them soak.
 
-- [ ] **Audit: inventory all currently active MCP servers** — check `settings.json` / `.vscode/mcp.json` for what is already installed and enabled. Document what each does and which projects benefit.
+- [x] **Audit: inventory all currently active MCP servers** — Playwright MCP (`@playwright/mcp`) + GitHub MCP (`api.githubcopilot.com/mcp`) confirmed wired in `C:\Users\tyler\AppData\Roaming\Code\User\mcp.json`. Both active. (2026-04-24)
 
 - [ ] **Research: identify gold-standard MCP servers for this workspace** — candidate list to evaluate:
   - **Playwright MCP** (`@playwright/mcp`) — browser automation: headless print, web scraping, Spotify/DistroKid UI automation, screenshot capture for ❤Music 1-pagers
@@ -20,11 +20,11 @@ These need analysis before install — let them soak.
   - **Memory MCP** — persistent knowledge graph across sessions (evaluate vs. current `/memories/` file approach)
   - **Sequential Thinking MCP** — structured reasoning chains for ∞life-risk and ∞life-research agents
 
-- [ ] **Decision: install Playwright MCP** — highest immediate ROI: replaces the Edge headless subprocess hack in `❤Music/tools/print_doc.py`, enables Spotify web scraping for ❤Music catalog, enables DistroKid automation. After analysis soak, install via `npm i @playwright/mcp` and wire into `.vscode/mcp.json`.
+- [x] **Decision: install Playwright MCP** — DONE. `@playwright/mcp@latest` wired in user-level `mcp.json`. FR-20260422-playwright-mcp-setup REVIEW_REQUESTED. (2026-04-24)
 
 - [ ] **Decision: install SQLite MCP** — direct DB queries from agent context without Python subprocess round-trips. Evaluate read-only vs. read-write mode for safety.
 
-- [ ] **Decision: install GitHub MCP** — needed for `⊕workspace-ci` agent to commit/push without terminal approval gates. Evaluate OAuth scope requirements.
+- [x] **Decision: install GitHub MCP** — DONE. GitHub MCP (`api.githubcopilot.com/mcp`, type: http) wired in user-level `mcp.json`. Agents use it actively. (2026-04-24)
 
 - [ ] **Post-install: alignment audit** — after any MCP installs, run `⊕workspace-alignment` to verify all agent startup files reference new capabilities correctly.
 
