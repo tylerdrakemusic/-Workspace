@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260424-todo-ledger-reconcile | Reconcile TODO Lists with FR Ledger + Add ❤Music Human Todos | chore | ⊕Workspace, ❤Music | CLOSED | N/A — markdown-only | N/A | ⊕workspace-overseer | 2026-04-24 | 2026-04-24 |
 | FR-20260424-cc-prost-setlist-05022026 | CC Prost 05022026 — Setlist DB Update (Revised) | chore | ❤Music | SIGNED_OFF | feature/music/cc-prost-setlist-05022026 | merged main 6af031a | ❤music-catalog | 2026-04-24 | 2026-04-24 |
 | FR-20260423-band-mgmt-panel-music | Band Management Panel — ❤Music portal pane with multi-band selector, setlist, sheet music links | feature | ❤Music, ⊕Workspace | MERGED / CLOSED | feature/heartmusic/band-mgmt-panel | [#22](https://github.com/tylerdrakemusic/-Workspace/pull/22) | ⊕workspace-ci | 2026-04-23 | 2026-04-23 |
 | FR-20260423-repo-privacy-audit | Repo Privacy Audit — Privatize Sensitive Repos + Agent Awareness | feature | All 5 + .github/ | SIGNED_OFF | feature/repo-privacy-audit | [#20](https://github.com/tylerdrakemusic/-Workspace/pull/20) | ⊕workspace-overseer | 2026-04-23 | 2026-04-24 |
