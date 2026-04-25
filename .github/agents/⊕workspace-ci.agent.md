@@ -109,8 +109,20 @@ Steps:
 5. Report a summary of reconciled FRs (count, IDs, cycle times)
 
 ## Safety Rules
+- **NEVER push or merge directly to `main` in any repo.** All changes flow:
+  feature branch → PR → green `test` status check → merge. (FR-20260425
+  CI gateway is live — direct-to-main is forbidden as a workflow rule.)
+- **NEVER attempt to merge a PR while its required `test` check is red or
+  pending.** The 4 public repos will reject the merge API call with HTTP 405
+  ("Required status check 'test' is failing"); ∞Life relies on agent
+  discipline to enforce the same rule.
+- **For ∞Life specifically:** respect the local `pre-push` hook at
+  `f:\∞Life\.git\hooks\pre-push` (blocks direct pushes to `main`). Never use
+  `git push --no-verify` to bypass the hook without Tyler's explicit
+  per-task approval. See `f:\∞Life\docs\PROTECTION_HOOK.md`.
 - **NEVER let multiple agents write to the same branch or worktree**
 - **NEVER merge code-changing work directly to `main`** when an isolated branch/PR should exist
+- **NEVER merge a PR with red or pending `test` CI** — wait for green
 - **NEVER force push** (`--force` or `--force-with-lease`) without explicit Tyler approval
 - **NEVER commit secrets** â€” grep for API keys, tokens, passwords before staging
 - **NEVER commit .env files** â€” verify `.gitignore` covers them
