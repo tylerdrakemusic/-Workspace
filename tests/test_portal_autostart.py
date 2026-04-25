@@ -12,7 +12,7 @@ Covers:
 from __future__ import annotations
 
 import re
-import winreg
+import sys
 from pathlib import Path
 
 import pytest
@@ -96,11 +96,16 @@ def test_register_protocol_handler_command_structure(register_protocol_text: str
 
 
 # ---------------------------------------------------------------------------
-# Windows Registry — live check
+# Windows Registry — live check (Windows-only)
 # ---------------------------------------------------------------------------
 
+windows_only = pytest.mark.skipif(sys.platform != "win32", reason="Windows registry not available on this platform")
+
+
+@windows_only
 def test_registry_portal_protocol_registered() -> None:
     """HKCU portal:// protocol handler must exist in the registry."""
+    import winreg
     try:
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
@@ -115,8 +120,10 @@ def test_registry_portal_protocol_registered() -> None:
         )
 
 
+@windows_only
 def test_registry_handler_includes_noopen() -> None:
     """Registered portal:// handler command must include -NoOpen."""
+    import winreg
     try:
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
@@ -131,8 +138,10 @@ def test_registry_handler_includes_noopen() -> None:
         pytest.fail("portal:// protocol not registered")
 
 
+@windows_only
 def test_registry_handler_points_to_launch_portal() -> None:
     """Registered handler must reference launch_portal.ps1."""
+    import winreg
     try:
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
