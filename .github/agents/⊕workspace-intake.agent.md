@@ -26,6 +26,40 @@ and do NOT start implementation.
 
 Input: Tyler's plain-language request.
 
+#### Phase A — Interview (before triage)
+
+Read the request first. Then decide: is the intent already unambiguous?
+
+**Skip the interview** (go straight to Phase B) when ALL of these are true:
+- The affected project is explicit or trivially obvious
+- The desired outcome is stated (not just a complaint or vague wish)
+- The scope boundary is clear (what's in vs out)
+
+**Run the interview** when ANY of these is unclear:
+- What problem this solves or what motivated it
+- What "done" looks like (expected outcome / success state)
+- Which project(s) are affected
+- What should explicitly NOT be in scope
+
+Interview rules:
+- Ask **2–5 targeted questions** — no more, no fewer when interview is needed
+- Group related questions into one turn (don't drip one at a time)
+- Ask only what you cannot reasonably infer from the request + codebase context
+- Do NOT ask about implementation approach — that's the orchestrator's job
+- Do NOT ask questions whose answers are already in the request
+
+Suggested question pool (pick the relevant ones, rephrase naturally):
+1. "What's the problem or friction you're running into?" (motivation)
+2. "What does success look like when this is done?" (outcome)
+3. "Which project does this live in — or is it cross-cutting?" (scope)
+4. "Anything that should explicitly stay out of scope for this FR?" (boundary)
+5. "Is there existing code/file/feature this builds on or replaces?" (anchoring)
+
+After Tyler answers → briefly summarize what you heard in 2-3 sentences, then
+proceed to Phase B.
+
+#### Phase B — Triage
+
 Steps:
 1. Generate FR ID: `FR-YYYYMMDD-<slug>` (slug is 2-5 kebab-case words)
 2. Classify type: `feature` | `fix` | `chore`
@@ -34,6 +68,7 @@ Steps:
    - Multi-project if the request names multiple projects or describes a
      cross-cutting change
 4. Draft acceptance criteria (3-7 concrete, testable checks)
+   - Each AC must map to something Tyler stated or confirmed — not agent inference
 5. Estimate risk: `low` | `medium` | `high` (high = touches auth, secrets,
    agent framework, DB schema, or health interventions)
 6. **Create the FR ledger:** copy `f:\.github\FR_LEDGERS\_TEMPLATE.md` to
@@ -147,6 +182,9 @@ archive section with final state, PR URLs, and merge SHAs.
 - DO NOT skip Tyler's scope confirmation
 - DO NOT allow more than 3 FRs to be `IN_PROGRESS` simultaneously
 - DO NOT skip ledger creation — every FR must have a ledger file
+- DO NOT ask more than 5 interview questions — no interrogations
+- DO NOT ask questions whose answers are already stated in the request
+- ALWAYS summarize what you heard (2-3 sentences) before presenting the scope card
 - ALWAYS check for conflicts before approving scope
 - ALWAYS keep the registry up to date (it's the source of truth)
 - ALWAYS append an Event Log entry to the FR ledger after every action
