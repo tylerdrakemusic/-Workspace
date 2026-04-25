@@ -2,7 +2,7 @@
 # Run once. Works without admin (registers in HKCU).
 
 $scriptPath = "f:\⊕Workspace\tools\launch_portal.ps1"
-$cmd = "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File ""$scriptPath"""
+$cmd = "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File ""$scriptPath"" -NoOpen"
 $regBase = "HKCU:\Software\Classes\portal"
 
 New-Item -Path $regBase -Force | Out-Null
