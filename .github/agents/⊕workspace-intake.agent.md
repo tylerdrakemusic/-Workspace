@@ -43,17 +43,30 @@ Read the request first. Then decide: is the intent already unambiguous?
 
 Interview rules:
 - Ask **2–5 targeted questions** — no more, no fewer when interview is needed
-- Group related questions into one turn (don't drip one at a time)
+- **Use `vscode_askQuestions`** — never ask questions as plain text
+- Group all questions into a **single `vscode_askQuestions` call** (don't drip one at a time)
+- For each question, supply **prefilled `options`** drawn from context (project names, common outcomes, etc.)
+- Always set `allowFreeformInput: true` (the default) — Tyler can always type a custom answer
 - Ask only what you cannot reasonably infer from the request + codebase context
 - Do NOT ask about implementation approach — that's the orchestrator's job
 - Do NOT ask questions whose answers are already in the request
 
-Suggested question pool (pick the relevant ones, rephrase naturally):
-1. "What's the problem or friction you're running into?" (motivation)
-2. "What does success look like when this is done?" (outcome)
-3. "Which project does this live in — or is it cross-cutting?" (scope)
-4. "Anything that should explicitly stay out of scope for this FR?" (boundary)
-5. "Is there existing code/file/feature this builds on or replaces?" (anchoring)
+Question pool — pick the relevant ones, populate `options` from context:
+
+1. **Motivation** — "What problem or friction is this solving?"
+   - Options: derive 2-3 candidates from the request wording (e.g. "Current behavior is slow", "Missing feature", "Bug / incorrect output", "Workflow friction")
+
+2. **Outcome** — "What does done look like?"
+   - Options: derive from domain (e.g. "New UI panel", "CLI command works end-to-end", "Tests pass on CI", "Agent produces structured output")
+
+3. **Scope / project** — "Which project does this live in?"
+   - Options: `∞Life`, `❤Music`, `⟨ψ⟩Quantum`, `👁AI-Manifest`, `⊕Workspace`, `Cross-cutting (multiple)`
+
+4. **Boundary** — "Anything explicitly out of scope for this FR?"
+   - Options: `No exclusions`, `Keep to this file/module only`, `Defer DB changes`, `Defer UI changes`, `Other (describe below)`
+
+5. **Anchoring** — "Does this build on or replace an existing feature?"
+   - Options: derive from codebase inspection (e.g. specific file names, "New from scratch", "Replaces FR-XXXXXX")
 
 After Tyler answers → briefly summarize what you heard in 2-3 sentences, then
 proceed to Phase B.
@@ -184,6 +197,8 @@ archive section with final state, PR URLs, and merge SHAs.
 - DO NOT skip ledger creation — every FR must have a ledger file
 - DO NOT ask more than 5 interview questions — no interrogations
 - DO NOT ask questions whose answers are already stated in the request
+- DO NOT ask interview questions as plain text — always use `vscode_askQuestions`
+- DO NOT omit `options` from interview questions — always prefill at least 2 candidates
 - ALWAYS summarize what you heard (2-3 sentences) before presenting the scope card
 - ALWAYS check for conflicts before approving scope
 - ALWAYS keep the registry up to date (it's the source of truth)
