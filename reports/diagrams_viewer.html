@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>&#x2295; Workspace &mdash; Diagram Gallery</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0f14;color:#d0d8e8;font-family:'Segoe UI',system-ui,sans-serif;padding:24px 32px}
+h1{font-size:1.5rem;margin-bottom:4px;color:#6ad4b4;letter-spacing:.04em}
+.meta{color:#4a6a80;font-size:.82rem;margin-bottom:32px}
+section.project{margin-bottom:44px}
+section.project h2{font-size:1rem;padding:5px 14px;border-radius:5px;margin-bottom:14px;display:inline-block;font-weight:600}
+.life h2{background:#1a2e3a;border-left:3px solid #6ab4d4;color:#6ab4d4}
+.music h2{background:#3a1a24;border-left:3px solid #d47a8f;color:#d47a8f}
+.quantum h2{background:#251a3a;border-left:3px solid #a07adf;color:#a07adf}
+.manifest h2{background:#3a2e1a;border-left:3px solid #d4a96a;color:#d4a96a}
+.ws h2{background:#1a3a30;border-left:3px solid #6ad4b4;color:#6ad4b4}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:16px}
+.card{background:#141820;border:1px solid #242c3a;border-radius:10px;padding:18px;overflow:auto}
+.card-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#4a6a80;margin-bottom:12px}
+.mermaid{display:flex;justify-content:center;align-items:flex-start;min-height:100px;overflow:auto}
+svg{max-width:100%;height:auto}
+.loading{color:#4a6a80;font-size:.8rem;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<h1>&#x2295; Workspace &mdash; Diagram Gallery</h1>
+<div class="meta">19 diagrams &mdash; styled with STYLE_GUIDE.md pastel palette (FR-20260425-architecture-beautifier-styling)</div>
+<section class="project life"><h2>∞ Life</h2><div class="grid"><div class="card" id="life-architecture"><div class="card-title">Life Architecture</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Inputs[MyFitnessPal · TrainingZones&lt;br/&gt;Bloodwork · Genomics · Journal]
+    Inputs --&gt; ETL[src/etl/&lt;br/&gt;importers + sync]
+    ETL --&gt; DB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+    DB --&gt; Analytics[src/analytics/&lt;br/&gt;longevity · risk · trends]
+    Analytics --&gt; Reports[reports/&lt;br/&gt;longevity dashboard]
+    DB --&gt; Protocols[Protocols &amp; Experiments]
+    DB --&gt; Budget[Budget Ledger]
+    class Inputs,Reports io
+    class ETL,DB,Analytics,Protocols,Budget core
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="life-db-schema"><div class="card-title">Life Db Schema</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BIOMARKERS ||--o{ MEASUREMENTS : tracks
+    PROTOCOLS ||--o{ PROTOCOL_RUNS : executes
+    BUDGET ||--o{ BUDGET_ENTRIES : contains
+    NUTRITION ||--o{ MEALS : logs
+    TRAINING ||--o{ WORKOUTS : records
+
+    BIOMARKERS {
+        text marker PK
+        text unit
+        real target_low
+        real target_high
+    }
+    MEASUREMENTS {
+        integer id PK
+        text marker FK
+        real value
+        text date
+        text source
+    }
+    PROTOCOLS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    BUDGET {
+        text category PK
+        real monthly_target
+    }</div></div><div class="card" id="life-tech-stack"><div class="card-title">Life Tech Stack</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
+    Python --&gt; Pandas[pandas · numpy]
+    Python --&gt; Requests[requests&lt;br/&gt;MFP · TZ APIs]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Matplotlib[matplotlib&lt;br/&gt;plotly]
+    class Python lang
+    class SQLCipher,Pandas,Requests,Pytest,Matplotlib lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div></div></section><section class="project music"><h2>❤ Music</h2><div class="grid"><div class="card" id="music-architecture"><div class="card-title">Music Architecture</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Inputs
+        Suno[Suno releases]
+        Audius[Audius catalog]
+        SheetMusic[Sheet Music PDFs]
+        Setlists[Band setlists]
+    end
+    subgraph Catalog[&quot;catalog/&quot;]
+        Export[export_catalog.py]
+        Songs[(songs · setlists&lt;br/&gt;sheet_music · audio)]
+    end
+    subgraph Trainer[&quot;Guitar Trainer&quot;]
+        TrainerApp[Flask app:5055]
+        TrainerDB[(exercises&lt;br/&gt;cards)]
+    end
+    subgraph Reports[&quot;reports/&quot;]
+        Portal[portal.html]
+        Dash[band-mgmt dashboard]
+    end
+    Inputs --&gt; Catalog
+    Catalog --&gt; Songs
+    Songs --&gt; Export
+    Export --&gt; Portal
+    Export --&gt; Dash
+    TrainerApp --&gt; TrainerDB
+    Songs -.shared db.-&gt; TrainerDB
+    class Inputs,Reports io
+    class Catalog,Trainer core
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="music-db-schema"><div class="card-title">Music Db Schema</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    SONGS ||--o{ SETLIST_SONGS : appears_in
+    SETLISTS ||--o{ SETLIST_SONGS : contains
+    SONGS ||--o{ SHEET_MUSIC : has
+    SONGS ||--o{ AUDIO_SOURCES : has
+    BANDS ||--o{ SETLISTS : owns
+    EXERCISES ||--o{ EXERCISE_CARDS : composes
+
+    SONGS {
+        integer song_id PK
+        text title
+        text artist
+        integer bpm
+        text key_signature
+    }
+    SETLISTS {
+        integer setlist_id PK
+        text band
+        text name
+    }
+    SHEET_MUSIC {
+        integer id PK
+        integer song_id FK
+        text path
+        text format
+    }
+    AUDIO_SOURCES {
+        integer id PK
+        integer song_id FK
+        text source_type
+        text url_or_path
+    }
+    EXERCISES {
+        integer exercise_id PK
+        text title
+        text difficulty
+        text category
+    }</div></div><div class="card" id="music-tech-stack"><div class="card-title">Music Tech Stack</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
+    Python --&gt; Flask[Flask&lt;br/&gt;:5050 · :5055]
+    Python --&gt; Librosa[librosa&lt;br/&gt;BPM detection]
+    Python --&gt; Mutagen[mutagen&lt;br/&gt;audio tags]
+    Python --&gt; Pytest[pytest]
+    Web[HTML · CSS · JS] --&gt; Tone[Tone.js&lt;br/&gt;Strudel]
+    class Python,Web lang
+    class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div></div></section><section class="project quantum"><h2>⟨ψ⟩ Quantum</h2><div class="grid"><div class="card" id="quantum-architecture"><div class="card-title">Quantum Architecture</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Algorithms[&quot;src/algorithms/&quot;]
+        Shor[Shor&#x27;s Algorithm]
+        QRNG[Quantum RNG]
+        QAOA[QAOA]
+        VQE[VQE]
+    end
+    subgraph Backends
+        IBM[IBM Quantum&lt;br/&gt;QISKIT_TOKEN]
+        Sim[Aer Simulator&lt;br/&gt;local]
+    end
+    subgraph Storage
+        DB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
+        Bench[benchmarks table]
+    end
+    subgraph Outputs
+        Reports[reports/&lt;br/&gt;benchmark dashboard]
+    end
+    Algorithms --&gt; IBM
+    Algorithms --&gt; Sim
+    Algorithms --&gt; Bench
+    Bench --&gt; Reports
+    class Algorithms alg
+    class Backends back
+    class Storage,Outputs store
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="quantum-db-schema"><div class="card-title">Quantum Db Schema</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BENCHMARKS ||--o{ CIRCUIT_RUNS : contains
+    BENCHMARKS {
+        integer id PK
+        text algorithm
+        integer n_value
+        integer required_qubits
+        integer order_r
+        integer factor1
+        integer factor2
+        real total_time_sec
+        text backend
+        text timestamp
+    }
+    CIRCUIT_RUNS {
+        integer id PK
+        integer benchmark_id FK
+        integer shots
+        text counts_json
+    }
+    QRNG_BATCHES {
+        integer id PK
+        integer bytes_generated
+        text source
+        text timestamp
+    }</div></div><div class="card" id="quantum-tech-stack"><div class="card-title">Quantum Tech Stack</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; Qiskit[qiskit · qiskit-aer&lt;br/&gt;qiskit-ibm-runtime]
+    Python --&gt; Numpy[numpy · scipy]
+    Python --&gt; SQLCipher[sqlcipher3]
+    Python --&gt; Pytest[pytest]
+    HF[Hugging Face&lt;br/&gt;HF_TOKEN] -.optional.-&gt; Python
+    class Python lang
+    class Qiskit,Numpy,SQLCipher,Pytest,HF lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div></div></section><section class="project manifest"><h2>👁 AI-Manifest</h2><div class="grid"><div class="card" id="manifest-architecture"><div class="card-title">Manifest Architecture</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Triggers[Cron · CLI · Manual] --&gt; Tools[tools/&lt;br/&gt;executive_audio_brief.py]
+    Tools --&gt; Briefs[brief generators]
+    Briefs --&gt; OpenAI[OpenAI&lt;br/&gt;OPENAPI_TOKEN]
+    Briefs --&gt; ElevenLabs[ElevenLabs&lt;br/&gt;ELEVENLABS_API_KEY]
+    OpenAI --&gt; TextOut[output/briefs/*.md]
+    ElevenLabs --&gt; AudioOut[output/tts/*.mp3]
+    TextOut --&gt; Portal[output/&lt;br/&gt;executive_brief_portal.html]
+    AudioOut --&gt; Portal
+    class Triggers trig
+    class OpenAI,ElevenLabs api
+    class TextOut,AudioOut,Portal out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="manifest-db-schema"><div class="card-title">Manifest Db Schema</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BRIEFS ||--o{ BRIEF_AUDIO : has
+    BRIEFS {
+        text brief_id PK
+        text title
+        text source_topic
+        text content_md
+        text generated_at
+    }
+    BRIEF_AUDIO {
+        integer id PK
+        text brief_id FK
+        text voice_id
+        text mp3_path
+        real duration_sec
+    }
+    VOICES {
+        text voice_id PK
+        text label
+        text provider
+    }</div></div><div class="card" id="manifest-tech-stack"><div class="card-title">Manifest Tech Stack</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; Requests[requests · httpx]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Dotenv[python-dotenv]
+    OpenAI[OpenAI API] --&gt; GPT[GPT models]
+    ElevenLabs[ElevenLabs API] --&gt; TTS[Voice synthesis]
+    HF[Hugging Face] --&gt; Models[hosted models]
+    class Python lang
+    class OpenAI,ElevenLabs,HF api
+    class Requests,Pytest,Dotenv,GPT,TTS,Models lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div></div></section><section class="project ws"><h2>⊕ Workspace</h2><div class="grid"><div class="card" id="workspace-architecture"><div class="card-title">Workspace Architecture</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Workspace[&quot;⊕ Workspace&quot;]
+        Portal[reports/portal.html&lt;br/&gt;Unified Dashboard Portal]
+        Registry[dashboard_registry.py&lt;br/&gt;Spec Discovery]
+        FRBoard[Feature Request Ledger&lt;br/&gt;FEATURE_REQUESTS.md]
+    end
+    subgraph Life[&quot;∞ Life&quot;]
+        LifeDB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+        LifeApp[Health &amp; Longevity&lt;br/&gt;Tracking]
+    end
+    subgraph Music[&quot;❤ Music&quot;]
+        MusicDB[(heartmusic.db&lt;br/&gt;SQLCipher)]
+        MusicApp[Catalog · Setlist&lt;br/&gt;Guitar Trainer]
+    end
+    subgraph Quantum[&quot;⟨ψ⟩ Quantum&quot;]
+        QDB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
+        QApp[Shor · QRNG&lt;br/&gt;IBM Quantum]
+    end
+    subgraph Manifest[&quot;👁 AI-Manifest&quot;]
+        MAPI[ElevenLabs · OpenAI&lt;br/&gt;Voice &amp; Briefs]
+    end
+    Portal --&gt; Registry
+    Registry -.scans.-&gt; Life
+    Registry -.scans.-&gt; Music
+    Registry -.scans.-&gt; Quantum
+    Registry -.scans.-&gt; Manifest
+    Registry -.scans.-&gt; Workspace
+    Life --&gt; LifeDB
+    Music --&gt; MusicDB
+    Quantum --&gt; QDB
+    class Workspace workspace
+    class Life,Music,Quantum,Manifest project
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="workspace-architecture-detail"><div class="card-title">Workspace Architecture Detail</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Tools[&quot;tools/&quot;]
+        Portal[dashboard_portal.py]
+        Registry[dashboard_registry.py]
+        Bench[bench_dashboard.py]
+        Diagrams[diagrams_dashboard.py]
+        FR[fr_dashboard.py]
+        Sec[security_dashboard.py]
+        Ops[agent_ops_monitor.py]
+    end
+    subgraph Src[&quot;src/&quot;]
+        Utils[utils/&lt;br/&gt;perf_cli · proof_cli&lt;br/&gt;init_db · key_loader]
+        Integrations[integrations/&lt;br/&gt;elevenlabs · mermaid]
+        Config[config/&lt;br/&gt;repo_visibility]
+        Data[(data/&lt;br/&gt;workspace.db)]
+    end
+    subgraph Reports[&quot;reports/&quot;]
+        PortalHtml[portal.html]
+        Dashes[*_dashboard.html]
+    end
+    Portal --&gt; Registry
+    Registry --&gt; PortalHtml
+    Bench --&gt; Dashes
+    Diagrams --&gt; Dashes
+    FR --&gt; Dashes
+    Utils --&gt; Data
+    class Tools tool
+    class Src src
+    class Reports out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="workspace-db-schema"><div class="card-title">Workspace Db Schema</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    PERF_RUNS ||--o{ PERF_PROOFS : has
+    PERF_RUNS {
+        text run_id PK
+        text task
+        text agent
+        text status
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PERF_PROOFS {
+        integer id PK
+        text run_id FK
+        text agent
+        text proof_type
+        text title
+        text path
+        text detail
+        real ts
+    }
+    DASHBOARD_REGISTRY {
+        text id PK
+        text title
+        text project
+        text type
+        text generator
+        text output
+    }</div></div><div class="card" id="workspace-tech-stack"><div class="card-title">Workspace Tech Stack</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11&lt;br/&gt;C:\\G\\python.exe] --&gt; SQLCipher[sqlcipher3&lt;br/&gt;encrypted SQLite]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Flask[Flask&lt;br/&gt;portal servers]
+    Python --&gt; Playwright[playwright&lt;br/&gt;portal checks]
+    Python --&gt; Dotenv[python-dotenv]
+    Node[Node.js] --&gt; Mmdc[mermaid-cli&lt;br/&gt;mmdc]
+    PowerShell[PowerShell 7] --&gt; LaunchScripts[open_portal.ps1&lt;br/&gt;start_*.ps1]
+    GitHub[GitHub Actions] --&gt; CI_Tests[test workflow]
+    class Python,Node,PowerShell lang
+    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests tool
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="workspace-agent-topology"><div class="card-title">Workspace Agent Topology</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Tyler([Tyler]) --&gt; Overseer[⊕ overseer]
+    Overseer --&gt; Intake[⊕ intake]
+    Overseer --&gt; CI[⊕ ci]
+    Overseer --&gt; Reviewer[⊕ reviewer]
+    Overseer --&gt; Doer[⊕ doer]
+    Overseer --&gt; Alignment[⊕ alignment]
+    Overseer --&gt; Security[⊕ security]
+    Overseer --&gt; Hygiene[⊕ hygiene]
+    Overseer --&gt; ArchReviewer[⊕ architecture-reviewer]
+    Overseer --&gt; ArchBeautifier[⊕ architecture-beautifier]
+    ArchReviewer -.-&gt;|delegates STALE/MISSING| ArchBeautifier
+    Overseer --&gt; LifeOrch[∞ orchestrator]
+    Overseer --&gt; MusicOrch[❤ orchestrator]
+    Overseer --&gt; QuantumOrch[⟨ψ⟩ orchestrator]
+    Overseer --&gt; ManifestOrch[👁 orchestrator]
+    LifeOrch --&gt; LifeAgents[∞ research&lt;br/&gt;brainstorm&lt;br/&gt;budget&lt;br/&gt;data-analytics&lt;br/&gt;risk]
+    MusicOrch --&gt; MusicAgents[❤ catalog&lt;br/&gt;performance&lt;br/&gt;production&lt;br/&gt;signatures]
+    QuantumOrch --&gt; QResearch[⟨ψ⟩ research]
+    class Overseer,LifeOrch,MusicOrch,QuantumOrch,ManifestOrch orch
+    class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene,ArchReviewer,ArchBeautifier ws
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div><div class="card" id="workspace-fr-flow"><div class="card-title">Workspace Fr Flow</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+stateDiagram-v2
+    [*] --&gt; TRIAGED: Tyler opens FR
+    TRIAGED --&gt; BRANCHED: Tyler approves scope
+    BRANCHED --&gt; IN_PROGRESS: implementation begins
+    IN_PROGRESS --&gt; ARCHITECTURE_REVIEW: implementation done
+    ARCHITECTURE_REVIEW --&gt; ARCHITECTURE_REVIEW: STALE/MISSING → beautifier → re-verify
+    ARCHITECTURE_REVIEW --&gt; REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES
+    REVIEW_REQUESTED --&gt; AUTO_REVIEWED: ⊕workspace-reviewer
+    AUTO_REVIEWED --&gt; TYLER_APPROVED: Tyler approves PR
+    TYLER_APPROVED --&gt; MERGED: ⊕workspace-ci merges
+    MERGED --&gt; SOAKING: post-merge soak window
+    SOAKING --&gt; SIGNED_OFF: signoff verified
+    SIGNED_OFF --&gt; [*]
+
+    AUTO_REVIEWED --&gt; IN_PROGRESS: changes requested</div></div><div class="card" id="workspace-integrations"><div class="card-title">Workspace Integrations</div><div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    %% Cross-project integration points across the ⊕Workspace
+    %% Updated when new src/integrations/ modules or cross-project wiring is added.
+    %% Maintained by ⊕workspace-architecture-beautifier (FR-20260425-architecture-review-agents)
+    %% External services
+    GitHub[(GitHub)]:::ext
+    IBMQ[(IBM Quantum)]:::ext
+    OpenAI[(OpenAI)]:::ext
+    ElevenLabs[(ElevenLabs)]:::ext
+    HF[(Hugging Face)]:::ext
+    Suno[(Suno)]:::ext
+    MFP[(MyFitnessPal)]:::ext
+    TZ[(TrainingZones)]:::ext
+    Mermaid[(mermaid.ink)]:::ext
+    %% Project sigils
+    Workspace[⊕ Workspace]:::ws
+    Life[∞ Life]:::orch
+    Music[❤ Music]:::orch
+    Quantum[⟨ψ⟩ Quantum]:::orch
+    Manifest[👁 AI-Manifest]:::orch
+    %% Databases
+    WSDB[(workspace.db)]:::db
+    LifeDB[(infinitelife.db)]:::db
+    MusicDB[(heartmusic.db)]:::db
+    QDB[(quantumpsi.db)]:::db
+    %% Workspace → external
+    Workspace --&gt;|mcp_github| GitHub
+    Workspace --&gt;|diagrams render| Mermaid
+    Workspace --&gt; WSDB
+    %% ∞Life → external + DB
+    Life --&gt;|nutrition sync| MFP
+    Life --&gt;|workout sync| TZ
+    Life --&gt;|llm research| OpenAI
+    Life --&gt; LifeDB
+    %% ❤Music → external + DB
+    Music --&gt;|catalog import| Suno
+    Music --&gt; MusicDB
+    %% ⟨ψ⟩Quantum → external + DB
+    Quantum --&gt;|qiskit jobs| IBMQ
+    Quantum --&gt;|model hub| HF
+    Quantum --&gt; QDB
+    %% 👁AI-Manifest → external
+    Manifest --&gt;|tts synthesis| ElevenLabs
+    Manifest --&gt;|llm orchestration| OpenAI
+    Manifest --&gt;|model hub| HF
+    %% Cross-project integrations (the workspace&#x27;s connective tissue)
+    Quantum -.-&gt;|QRNG entropy| Workspace
+    Workspace -.-&gt;|gen-qee passwords| Life
+    Workspace -.-&gt;|gen-qee passwords| Music
+    Workspace -.-&gt;|gen-qee passwords| Quantum
+    Workspace -.-&gt;|gen-qee passwords| Manifest
+    Manifest -.-&gt;|executive briefs| Life
+    Music -.-&gt;|signature generation| Quantum
+
+
+
+    subgraph Legend[&quot; Legend &quot;]
+        direction LR
+    L_ws([⊕ Workspace]):::ws
+    L_db[(DB)]:::db
+    L_ext{{Ext}}:::ext
+    end
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div></div></div></section>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  securityLevel: 'loose',
+  themeVariables: {
+    primaryColor: '#1a2e3a',
+    primaryTextColor: '#d0ecf8',
+    edgeLabelBackground: '#0f1318',
+    lineColor: '#4a7a9a'
+  }
+});
+</script>
+</body>
+</html>
