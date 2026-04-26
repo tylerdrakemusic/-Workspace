@@ -72,6 +72,27 @@ if ($existingGt) {
     }
 }
 
-# ── 5. Open Portal ────────────────────────────────────────────────────────────
+# ── 5. Start Executive Audio Brief server (port 8200) ─────────────────────────
+$BriefScript = "f:\👁AI-Manifest\tools\executive_audio_brief.py"
+$BriefPort   = 8200
+$existingBrief = Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue
+if ($existingBrief) {
+    Write-Host "✔ Executive Brief server already running on :$BriefPort" -ForegroundColor Green
+} else {
+    Write-Host "▶ Starting Executive Brief server on :$BriefPort ..." -ForegroundColor Cyan
+    Start-Process -FilePath $Python `
+        -ArgumentList "`"$BriefScript`"", "--serve", "--port", $BriefPort, "--text-only" `
+        -WorkingDirectory "f:\👁AI-Manifest" `
+        -WindowStyle Hidden
+    Start-Sleep -Milliseconds 1500
+    $checkBrief = Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue
+    if ($checkBrief) {
+        Write-Host "✔ Executive Brief server started" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ Executive Brief server may still be starting (check port $BriefPort)" -ForegroundColor Yellow
+    }
+}
+
+# ── 6. Open Portal ────────────────────────────────────────────────────────────
 Write-Host "▶ Opening portal ..." -ForegroundColor Cyan
 Start-Process $PortalFile
