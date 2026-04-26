@@ -10,14 +10,14 @@
 - **Type:** feature
 - **Risk:** low (replaces a single dashboard panel, not the portal)
 - **Projects:** ⊕Workspace
-- **State:** IN_PROGRESS
-- **Branch:** feature/workspace/mermaid-diagrams-integration
-- **PRs:** #35 (draft)
-- **Cycle timer:** 5252e153-6c3e-4305-953b-1e4901fa84f6
+- **State:** MERGED
+- **Branch:** feature/workspace/mermaid-diagrams-integration (deleted, merged via PR #37)
+- **PRs:** #35 (draft, superseded), #37 (merged @ bccbb71)
+- **Cycle timer:** 5252e153-6c3e-4305-953b-1e4901fa84f6 (closed, 3,622,298ms)
 - **Opened:** 2026-04-25
-- **Last updated:** 2026-04-25
-- **Merged at:** —
-- **Signed off at:** —
+- **Last updated:** 2026-04-26
+- **Merged at:** 2026-04-26 (PR #37 merge commit bccbb71)
+- **Signed off at:** 2026-04-26
 - **Closed:** —
 - **Final state:** —
 
@@ -146,12 +146,29 @@
 
 ---
 
+### 2026-04-26T04:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Tyler approved and merged PR #35 → MERGED
+
+**Details:**
+- Tyler approved and merged PR #35 (the FR's PR; effective merge landed via PR #37 @ bccbb71 after force-push cleanup)
+- Local feature branch `feature/workspace/mermaid-diagrams-integration` deleted (force-delete; was at bccbb71, fully merged to main)
+- Cycle perf timer `5252e153-6c3e-4305-953b-1e4901fa84f6` closed: status=ok, wall-clock=3,622,298ms (≈60.4 min), detail="merged PR #35"
+- Registry row moved Active → Archive (state MERGED)
+- 18 .mmd diagrams + 18 SVGs + dashboard + integration module + 18/18 tests all live on main
+
+**Next:** none — FR closed out
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
-- **Perf runs:** 5252e153-6c3e-4305-953b-1e4901fa84f6 — fr-cycle-FR-20260425-mermaid-diagrams-integration
+- **Perf runs:** 5252e153-6c3e-4305-953b-1e4901fa84f6 — fr-cycle-FR-20260425-mermaid-diagrams-integration (closed, 3,622,298ms / ok)
 - **Proof artifacts:** —
-- **PRs:** #35 (draft) — https://github.com/tylerdrakemusic/-Workspace/pull/35
-- **Commits:** —
-- **Reports / dashboards:** target outputs — `reports/diagrams/*.svg`, `reports/diagrams_dashboard.html` (will replace `reports/portal.html` as unified entry)
+- **PRs:** #35 (draft, superseded) — https://github.com/tylerdrakemusic/-Workspace/pull/35; #37 (merged) — https://github.com/tylerdrakemusic/-Workspace/pull/37
+- **Commits:** bccbb71 (merge), 9440b0a, f5cb22f, c87475c, eae64ee
+- **Reports / dashboards:** `reports/diagrams/*.svg` (18 files), `reports/diagrams_dashboard.html` (replaces unified-benchmarks panel in dashboard.json)
