@@ -12,7 +12,7 @@
 - **Projects:** ⊕Workspace
 - **State:** BRANCHED
 - **Branch:** feature/workspace/architecture-beautifier-styling
-- **PRs:** pending
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/41 (draft)
 - **Cycle timer:** 7705dd8d-10dc-4b20-8600-2fb2e602a367
 - **Opened:** 2026-04-25
 - **Last updated:** 2026-04-26
@@ -82,7 +82,7 @@
 **Details:**
 - Branch: `feature/workspace/architecture-beautifier-styling` (pushed to origin)
 - Base commit: `e5ed94be` (PR #40 — close FR-20260425-architecture-review-agents PARTIAL_MERGED)
-- Draft PR: opened in this same commit cycle (URL appended in follow-up commit once PR # known)
+- Draft PR: https://github.com/tylerdrakemusic/-Workspace/pull/41
 - Registry: state cell updated to BRANCHED, branch cell de-suffixed
 - Implementation deferred to overseer's next pass per Tyler's instruction
 
@@ -96,6 +96,6 @@
 
 - **Perf runs:** 7705dd8d-10dc-4b20-8600-2fb2e602a367 — fr-cycle timer (intake start)
 - **Proof artifacts:** —
-- **PRs:** pending
-- **Commits:** —
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/41 (draft)
+- **Commits:** b5d49cb — chore(fr): branch FR-20260425-architecture-beautifier-styling (TRIAGED -> BRANCHED)
 - **Reports / dashboards:** —
