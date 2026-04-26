@@ -3,6 +3,10 @@ graph LR
     Python[Python 3.11] --> Requests[requests · httpx]
     Python --> Pytest[pytest]
     Python --> Dotenv[python-dotenv]
+    Python --> SQLite[SQLite 3]
+    SQLite --> TodosDB[manifest_todos.db]
+    class SQLite lib
+    class TodosDB db
     OpenAI[OpenAI API] --> GPT[GPT models]
     ElevenLabs[ElevenLabs API] --> TTS[Voice synthesis]
     HF[Hugging Face] --> Models[hosted models]

@@ -46,6 +46,12 @@ graph LR
     Manifest -->|tts synthesis| ElevenLabs
     Manifest -->|llm orchestration| OpenAI
     Manifest -->|model hub| HF
+    ManifestTodoDB[(manifest_todos.db)]:::db
+    Manifest --> ManifestTodoDB
+    Manifest -.->|migrate_todos.py reads TODO_*.md| Life
+    Manifest -.->|migrate_todos.py reads TODO_*.md| Music
+    Manifest -.->|migrate_todos.py reads TODO_*.md| Quantum
+    Manifest -.->|migrate_todos.py reads TODO_*.md| Workspace
     %% Cross-project integrations (the workspace's connective tissue)
     Quantum -.->|QRNG entropy| Workspace
     Workspace -.->|gen-qee passwords| Life
