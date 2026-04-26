@@ -93,6 +93,29 @@ if ($existingBrief) {
     }
 }
 
-# ── 6. Open Portal ────────────────────────────────────────────────────────────
-Write-Host "▶ Opening portal ..." -ForegroundColor Cyan
-Start-Process $PortalFile
+# ── 6. Serve Portal via HTTP (required for live iframe panels) ───────────────
+# Browsers block http:// iframes in file:// pages (mixed content policy).
+# Serving via HTTP on :8080 lets all live panels load correctly.
+$PortalPort    = 8080
+$PortalDir     = "f:\⊕Workspace\reports"
+$PortalUrl     = "http://localhost:$PortalPort/portal.html"
+$existingPortal = Get-NetTCPConnection -LocalPort $PortalPort -State Listen -ErrorAction SilentlyContinue
+if ($existingPortal) {
+    Write-Host "✔ Portal HTTP server already running on :$PortalPort" -ForegroundColor Green
+} else {
+    Write-Host "▶ Starting Portal HTTP server on :$PortalPort ..." -ForegroundColor Cyan
+    Start-Process -FilePath $Python `
+        -ArgumentList "-m", "http.server", $PortalPort, "--directory", "`"$PortalDir`"" `
+        -WindowStyle Hidden
+    Start-Sleep -Milliseconds 800
+    $checkPortal = Get-NetTCPConnection -LocalPort $PortalPort -State Listen -ErrorAction SilentlyContinue
+    if ($checkPortal) {
+        Write-Host "✔ Portal HTTP server started" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ Portal HTTP server may still be starting (check port $PortalPort)" -ForegroundColor Yellow
+    }
+}
+
+# ── 7. Open Portal ────────────────────────────────────────────────────────────
+Write-Host "▶ Opening portal at $PortalUrl ..." -ForegroundColor Cyan
+Start-Process $PortalUrl
