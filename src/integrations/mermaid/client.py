@@ -20,6 +20,7 @@ from typing import Literal
 
 import urllib.request
 import urllib.error
+import urllib.parse
 
 
 class MermaidRenderError(RuntimeError):
@@ -103,17 +104,28 @@ class MermaidClient:
             return out_path.read_bytes()
 
     def _render_http(self, source: str, fmt: str) -> bytes:
-        encoded = self._encode_source(source)
+        encoded = urllib.parse.quote(self._encode_source(source), safe="")
         path = "svg" if fmt == "svg" else "img"
         url = f"{self.http_base}/{path}/{encoded}"
         req = urllib.request.Request(url, headers={"User-Agent": "workspace-mermaid/1.0"})
-        try:
-            with urllib.request.urlopen(req, timeout=self.HTTP_TIMEOUT_SEC) as resp:
-                return resp.read()
-        except urllib.error.HTTPError as exc:
-            raise MermaidRenderError(f"HTTP {exc.code}: {exc.reason}") from exc
-        except urllib.error.URLError as exc:
-            raise MermaidRenderError(f"URL error: {exc.reason}") from exc
+        # Retry transient 5xx / connection errors with linear backoff
+        # (mermaid.ink rate-limits under burst).
+        import time
+        last_exc: Exception | None = None
+        for attempt in range(4):
+            if attempt:
+                time.sleep(attempt * 1.5)
+            try:
+                with urllib.request.urlopen(req, timeout=self.HTTP_TIMEOUT_SEC) as resp:
+                    return resp.read()
+            except urllib.error.HTTPError as exc:
+                last_exc = MermaidRenderError(f"HTTP {exc.code}: {exc.reason}")
+                if exc.code < 500 and exc.code != 429:
+                    raise last_exc from exc
+            except urllib.error.URLError as exc:
+                last_exc = MermaidRenderError(f"URL error: {exc.reason}")
+        assert last_exc is not None
+        raise last_exc
 
     # ── helpers ──────────────────────────────────────────────────
 
