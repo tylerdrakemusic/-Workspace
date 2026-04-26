@@ -33,7 +33,6 @@ state machine, gateway definitions, and naming rules.
 | FR-20260425-guitar-trainer-db-migration | Guitar Trainer: Full DB Migration + Data Recovery + Card CRUD UI | feature | ❤Music | BRANCHED | feature/heartmusic/guitar-trainer-db-migration | https://github.com/tylerdrakemusic/Music/pull/8 | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-data-to-db | Guitar Trainer exercise data should not be tracked by git | chore | ❤Music | TRIAGED (superseded by FR-20260425-guitar-trainer-db-migration — recommend close) | chore/heartmusic/guitar-trainer-data-to-db | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
 | FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | IN_PROGRESS | feature/workspace/mermaid-diagrams-integration | https://github.com/tylerdrakemusic/-Workspace/pull/35 | ⊕workspace-overseer | 2026-04-25 | 2026-04-26 |
-| FR-20260425-architecture-review-agents | Architecture Review + Beautifier Agents in FR Flow (.mmd diagrams stay in sync) | feature | ⊕Workspace | REVIEW_REQUESTED | feature/workspace/architecture-review-agents | https://github.com/tylerdrakemusic/-Workspace/pull/38 | ⊕workspace-overseer | 2026-04-25 | 2026-04-25 |
 
 
 
@@ -41,6 +40,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260425-architecture-review-agents | Architecture Review + Beautifier Agents in FR Flow (.mmd diagrams stay in sync) | feature | ⊕Workspace | PARTIAL_MERGED → CLOSED | -Workspace#38 (squash 5a5b48e8) — AC1–AC8 delivered; AC9–AC12 deferred to FR-20260425-architecture-beautifier-styling | 2026-04-25 | 2026-04-26 |
 | FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | MERGED | -Workspace#35→#37 (merged @ bccbb71) | 2026-04-25 | 2026-04-26 |
 | FR-20260425-guitar-trainer-metronome | Add metronome to Guitar Trainer portal panel | feature | ❤Music | MERGED → CLOSED | feature/heartmusic/guitar-trainer-metronome — Tyler signed off 2026-04-25 | 2026-04-25 | 2026-04-25 |
 | FR-20260425-band-mgmt-playback-sheets | Band Management Panel: Per-Row Audio Playback + Sheet Music Viewer | feature | ❤Music | MERGED → CLOSED | Music#7 — Tyler signed off 2026-04-25 | 2026-04-25 | 2026-04-25 |
