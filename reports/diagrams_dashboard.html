@@ -23,10 +23,16 @@
   .card { background: var(--panel); border: 1px solid var(--border);
            border-radius: 8px; padding: 12px; overflow: hidden; }
   .card.error { border-color: var(--err); }
-  .card-title { font-weight: 600; margin-bottom: 8px; }
+  .card-title { font-weight: 600; margin-bottom: 8px;
+                 display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .zoom-btn { background: var(--panel); color: var(--accent);
+               border: 1px solid var(--border); border-radius: 4px;
+               padding: 2px 8px; cursor: pointer; font-size: 14px; line-height: 1; }
+  .zoom-btn:hover { background: var(--accent); color: #fff; }
   .svg-wrap { background: #fff; border-radius: 4px; padding: 8px;
-               min-height: 200px; display: flex; align-items: center; justify-content: center; }
-  .svg-wrap object { width: 100%; max-height: 500px; }
+               min-height: 200px; display: flex; align-items: center; justify-content: center;
+               cursor: zoom-in; }
+  .svg-wrap object { width: 100%; max-height: 500px; pointer-events: none; }
   details { margin-top: 8px; }
   summary { color: var(--muted); cursor: pointer; font-size: 12px; }
   pre { background: #0a0e13; padding: 8px; border-radius: 4px; overflow: auto;
@@ -45,18 +51,40 @@
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px;
             background: var(--panel); border: 1px solid var(--border);
             font-size: 12px; margin-left: 6px; }
+
+  /* Lightbox / zoom modal */
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+               display: none; flex-direction: column; z-index: 9999; }
+  .lightbox.open { display: flex; }
+  .lightbox-bar { display: flex; align-items: center; gap: 12px;
+                   padding: 10px 18px; background: var(--panel);
+                   border-bottom: 1px solid var(--border); color: var(--text); }
+  .lightbox-bar .lb-title { font-weight: 600; flex: 1; }
+  .lightbox-bar button { background: var(--bg); color: var(--text);
+                          border: 1px solid var(--border); border-radius: 4px;
+                          padding: 4px 12px; cursor: pointer; font-size: 14px; }
+  .lightbox-bar button:hover { background: var(--accent); color: #fff; }
+  .lightbox-bar .lb-zoom { color: var(--muted); font-variant-numeric: tabular-nums;
+                            min-width: 60px; text-align: right; }
+  .lightbox-stage { flex: 1; overflow: hidden; position: relative;
+                     background: #fff; cursor: grab; }
+  .lightbox-stage.dragging { cursor: grabbing; }
+  .lightbox-stage .lb-content { position: absolute; top: 0; left: 0;
+                                 transform-origin: 0 0; transition: none; }
+  .lightbox-stage .lb-content svg { display: block; }
+  .lightbox-stage .lb-content object { display: block; pointer-events: none; }
 </style>
 </head>
 <body>
 <header>
   <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">18 diagrams · 18 rendered · generated 2026-04-25 21:10:16</span>
+  <span class="meta">18 diagrams · 18 rendered · generated 2026-04-25 21:15:20</span>
   <span class="badge">mermaid.js</span>
 </header>
 <main>
 <h2 class="proj-header">⊕ Workspace</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Agent Topology</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/workspace-agent-topology.svg"><a href="diagrams/workspace-agent-topology.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Agent Topology<button class="zoom-btn" data-svg="diagrams/workspace-agent-topology.svg" data-title="Agent Topology" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-agent-topology.svg" data-title="Agent Topology"><object type="image/svg+xml" data="diagrams/workspace-agent-topology.svg"><a href="diagrams/workspace-agent-topology.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Tyler([Tyler]) --&gt; Overseer[⊕ overseer]
     Overseer --&gt; Intake[⊕ intake]
     Overseer --&gt; CI[⊕ ci]
@@ -80,7 +108,7 @@
     class Overseer,LifeOrch,MusicOrch,QuantumOrch,ManifestOrch orch
     class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene ws
 </pre></details></div>
-<div class="card"><div class="card-title">Architecture</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/workspace-architecture.svg"><a href="diagrams/workspace-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/workspace-architecture.svg" data-title="Architecture" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-architecture.svg" data-title="Architecture"><object type="image/svg+xml" data="diagrams/workspace-architecture.svg"><a href="diagrams/workspace-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
     subgraph Workspace[&quot;⊕ Workspace&quot;]
         Portal[reports/portal.html&lt;br/&gt;Unified Dashboard Portal]
         Registry[dashboard_registry.py&lt;br/&gt;Spec Discovery]
@@ -122,7 +150,7 @@
     class Workspace workspace
     class Life,Music,Quantum,Manifest project
 </pre></details></div>
-<div class="card"><div class="card-title">Architecture Detail</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/workspace-architecture-detail.svg"><a href="diagrams/workspace-architecture-detail.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture Detail<button class="zoom-btn" data-svg="diagrams/workspace-architecture-detail.svg" data-title="Architecture Detail" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-architecture-detail.svg" data-title="Architecture Detail"><object type="image/svg+xml" data="diagrams/workspace-architecture-detail.svg"><a href="diagrams/workspace-architecture-detail.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
     subgraph Tools[&quot;tools/&quot;]
         Portal[dashboard_portal.py]
         Registry[dashboard_registry.py]
@@ -159,7 +187,7 @@
     class Src src
     class Reports out
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/workspace-db-schema.svg"><a href="diagrams/workspace-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/workspace-db-schema.svg" data-title="Db Schema" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-db-schema.svg" data-title="Db Schema"><object type="image/svg+xml" data="diagrams/workspace-db-schema.svg"><a href="diagrams/workspace-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
     PERF_RUNS ||--o{ PERF_PROOFS : has
     PERF_RUNS {
         text run_id PK
@@ -189,7 +217,7 @@
         text output
     }
 </pre></details></div>
-<div class="card"><div class="card-title">Fr Flow</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/workspace-fr-flow.svg"><a href="diagrams/workspace-fr-flow.svg">View SVG</a></object></div><details><summary>source</summary><pre>stateDiagram-v2
+<div class="card"><div class="card-title">Fr Flow<button class="zoom-btn" data-svg="diagrams/workspace-fr-flow.svg" data-title="Fr Flow" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-fr-flow.svg" data-title="Fr Flow"><object type="image/svg+xml" data="diagrams/workspace-fr-flow.svg"><a href="diagrams/workspace-fr-flow.svg">View SVG</a></object></div><details><summary>source</summary><pre>stateDiagram-v2
     [*] --&gt; TRIAGED: Tyler opens FR
     TRIAGED --&gt; BRANCHED: Tyler approves scope
     BRANCHED --&gt; IN_PROGRESS: implementation begins
@@ -203,7 +231,7 @@
 
     AUTO_REVIEWED --&gt; IN_PROGRESS: changes requested
 </pre></details></div>
-<div class="card"><div class="card-title">Tech Stack</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/workspace-tech-stack.svg"><a href="diagrams/workspace-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack"><object type="image/svg+xml" data="diagrams/workspace-tech-stack.svg"><a href="diagrams/workspace-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Python[Python 3.11&lt;br/&gt;C:\\G\\python.exe] --&gt; SQLCipher[sqlcipher3&lt;br/&gt;encrypted SQLite]
     Python --&gt; Pytest[pytest]
     Python --&gt; Flask[Flask&lt;br/&gt;portal servers]
@@ -224,7 +252,7 @@
 </div>
 <h2 class="proj-header">∞ Life</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/life-architecture.svg"><a href="diagrams/life-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/life-architecture.svg" data-title="Architecture" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-architecture.svg" data-title="Architecture"><object type="image/svg+xml" data="diagrams/life-architecture.svg"><a href="diagrams/life-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
     Tyler([Tyler]) --&gt; Inputs[MyFitnessPal · TrainingZones&lt;br/&gt;Bloodwork · Genomics · Journal]
     Inputs --&gt; ETL[src/etl/&lt;br/&gt;importers + sync]
     ETL --&gt; DB[(infinitelife.db&lt;br/&gt;SQLCipher)]
@@ -238,7 +266,7 @@
     class Inputs,Reports io
     class ETL,DB,Analytics,Protocols,Budget core
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/life-db-schema.svg"><a href="diagrams/life-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/life-db-schema.svg" data-title="Db Schema" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-db-schema.svg" data-title="Db Schema"><object type="image/svg+xml" data="diagrams/life-db-schema.svg"><a href="diagrams/life-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
     BIOMARKERS ||--o{ MEASUREMENTS : tracks
     PROTOCOLS ||--o{ PROTOCOL_RUNS : executes
     BUDGET ||--o{ BUDGET_ENTRIES : contains
@@ -268,7 +296,7 @@
         real monthly_target
     }
 </pre></details></div>
-<div class="card"><div class="card-title">Tech Stack</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/life-tech-stack.svg"><a href="diagrams/life-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/life-tech-stack.svg" data-title="Tech Stack" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-tech-stack.svg" data-title="Tech Stack"><object type="image/svg+xml" data="diagrams/life-tech-stack.svg"><a href="diagrams/life-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
     Python --&gt; Pandas[pandas · numpy]
     Python --&gt; Requests[requests&lt;br/&gt;MFP · TZ APIs]
@@ -283,7 +311,7 @@
 </div>
 <h2 class="proj-header">❤ Music</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/music-architecture.svg"><a href="diagrams/music-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/music-architecture.svg" data-title="Architecture" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-architecture.svg" data-title="Architecture"><object type="image/svg+xml" data="diagrams/music-architecture.svg"><a href="diagrams/music-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
     subgraph Inputs
         Suno[Suno releases]
         Audius[Audius catalog]
@@ -320,7 +348,7 @@
     class Inputs,Reports io
     class Catalog,Trainer core
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/music-db-schema.svg"><a href="diagrams/music-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/music-db-schema.svg" data-title="Db Schema" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-db-schema.svg" data-title="Db Schema"><object type="image/svg+xml" data="diagrams/music-db-schema.svg"><a href="diagrams/music-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
     SONGS ||--o{ SETLIST_SONGS : appears_in
     SETLISTS ||--o{ SETLIST_SONGS : contains
     SONGS ||--o{ SHEET_MUSIC : has
@@ -359,7 +387,7 @@
         text category
     }
 </pre></details></div>
-<div class="card"><div class="card-title">Tech Stack</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/music-tech-stack.svg"><a href="diagrams/music-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack"><object type="image/svg+xml" data="diagrams/music-tech-stack.svg"><a href="diagrams/music-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
     Python --&gt; Flask[Flask&lt;br/&gt;:5050 · :5055]
     Python --&gt; Librosa[librosa&lt;br/&gt;BPM detection]
@@ -376,7 +404,7 @@
 </div>
 <h2 class="proj-header">⟨ψ⟩ Quantum</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/quantum-architecture.svg"><a href="diagrams/quantum-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/quantum-architecture.svg" data-title="Architecture" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-architecture.svg" data-title="Architecture"><object type="image/svg+xml" data="diagrams/quantum-architecture.svg"><a href="diagrams/quantum-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
     subgraph Algorithms[&quot;src/algorithms/&quot;]
         Shor[Shor&#x27;s Algorithm]
         QRNG[Quantum RNG]
@@ -410,7 +438,7 @@
     class Backends back
     class Storage,Outputs store
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/quantum-db-schema.svg"><a href="diagrams/quantum-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/quantum-db-schema.svg" data-title="Db Schema" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-db-schema.svg" data-title="Db Schema"><object type="image/svg+xml" data="diagrams/quantum-db-schema.svg"><a href="diagrams/quantum-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
     BENCHMARKS ||--o{ CIRCUIT_RUNS : contains
     BENCHMARKS {
         integer id PK
@@ -437,7 +465,7 @@
         text timestamp
     }
 </pre></details></div>
-<div class="card"><div class="card-title">Tech Stack</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/quantum-tech-stack.svg"><a href="diagrams/quantum-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/quantum-tech-stack.svg" data-title="Tech Stack" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-tech-stack.svg" data-title="Tech Stack"><object type="image/svg+xml" data="diagrams/quantum-tech-stack.svg"><a href="diagrams/quantum-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Python[Python 3.11] --&gt; Qiskit[qiskit · qiskit-aer&lt;br/&gt;qiskit-ibm-runtime]
     Python --&gt; Numpy[numpy · scipy]
     Python --&gt; SQLCipher[sqlcipher3]
@@ -453,7 +481,7 @@
 </div>
 <h2 class="proj-header">👁 AI-Manifest</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/manifest-architecture.svg"><a href="diagrams/manifest-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/manifest-architecture.svg" data-title="Architecture" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-architecture.svg" data-title="Architecture"><object type="image/svg+xml" data="diagrams/manifest-architecture.svg"><a href="diagrams/manifest-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
     Triggers[Cron · CLI · Manual] --&gt; Tools[tools/&lt;br/&gt;executive_audio_brief.py]
     Tools --&gt; Briefs[brief generators]
     Briefs --&gt; OpenAI[OpenAI&lt;br/&gt;OPENAPI_TOKEN]
@@ -470,7 +498,7 @@
     class OpenAI,ElevenLabs api
     class TextOut,AudioOut,Portal out
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/manifest-db-schema.svg"><a href="diagrams/manifest-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/manifest-db-schema.svg" data-title="Db Schema" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-db-schema.svg" data-title="Db Schema"><object type="image/svg+xml" data="diagrams/manifest-db-schema.svg"><a href="diagrams/manifest-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
     BRIEFS ||--o{ BRIEF_AUDIO : has
     BRIEFS {
         text brief_id PK
@@ -492,7 +520,7 @@
         text provider
     }
 </pre></details></div>
-<div class="card"><div class="card-title">Tech Stack</div><div class="svg-wrap"><object type="image/svg+xml" data="diagrams/manifest-tech-stack.svg"><a href="diagrams/manifest-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/manifest-tech-stack.svg" data-title="Tech Stack" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-tech-stack.svg" data-title="Tech Stack"><object type="image/svg+xml" data="diagrams/manifest-tech-stack.svg"><a href="diagrams/manifest-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Python[Python 3.11] --&gt; Requests[requests · httpx]
     Python --&gt; Pytest[pytest]
     Python --&gt; Dotenv[python-dotenv]
@@ -529,6 +557,22 @@
 </section>
 </main>
 
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="lightbox-bar">
+    <span class="lb-title" id="lb-title"></span>
+    <button id="lb-zoom-out" title="Zoom out (−)">−</button>
+    <span class="lb-zoom" id="lb-zoom">100%</span>
+    <button id="lb-zoom-in" title="Zoom in (+)">+</button>
+    <button id="lb-fit" title="Fit to window (0)">Fit</button>
+    <button id="lb-100" title="Actual size (1)">1:1</button>
+    <a id="lb-open" target="_blank" rel="noopener"><button>Open SVG</button></a>
+    <button id="lb-close" title="Close (Esc)">✕</button>
+  </div>
+  <div class="lightbox-stage" id="lb-stage">
+    <div class="lb-content" id="lb-content"></div>
+  </div>
+</div>
+
 <script type="module">
   import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
   mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
@@ -561,6 +605,140 @@
     timer = setTimeout(renderPreview, 350);
   });
   renderPreview();
+</script>
+
+<script>
+  // Lightbox: click thumb or zoom button → fullscreen pan/zoom view.
+  (function() {
+    const lb = document.getElementById("lightbox");
+    const stage = document.getElementById("lb-stage");
+    const content = document.getElementById("lb-content");
+    const lbTitle = document.getElementById("lb-title");
+    const lbZoom = document.getElementById("lb-zoom");
+    const lbOpen = document.getElementById("lb-open");
+    let scale = 1, tx = 0, ty = 0;
+    let dragging = false, lastX = 0, lastY = 0;
+    let naturalW = 0, naturalH = 0;
+
+    function apply() {
+      content.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+      lbZoom.textContent = Math.round(scale * 100) + "%";
+    }
+    function fit() {
+      if (!naturalW || !naturalH) return;
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      scale = Math.min(sw / naturalW, sh / naturalH) * 0.95;
+      tx = (sw - naturalW * scale) / 2;
+      ty = (sh - naturalH * scale) / 2;
+      apply();
+    }
+    function actual() {
+      scale = 1;
+      tx = (stage.clientWidth - naturalW) / 2;
+      ty = (stage.clientHeight - naturalH) / 2;
+      apply();
+    }
+    function open(svgPath, title) {
+      lbTitle.textContent = title;
+      lbOpen.href = svgPath;
+      content.innerHTML = "";
+      // Fetch SVG inline so we can measure natural dimensions
+      fetch(svgPath).then(r => r.text()).then(txt => {
+        content.innerHTML = txt;
+        const svg = content.querySelector("svg");
+        if (svg) {
+          // Strip width/height attrs so we control sizing
+          const vb = svg.getAttribute("viewBox");
+          if (vb) {
+            const parts = vb.split(/\s+/);
+            naturalW = parseFloat(parts[2]);
+            naturalH = parseFloat(parts[3]);
+          } else {
+            naturalW = parseFloat(svg.getAttribute("width")) || 800;
+            naturalH = parseFloat(svg.getAttribute("height")) || 600;
+          }
+          svg.setAttribute("width", naturalW);
+          svg.setAttribute("height", naturalH);
+          svg.style.display = "block";
+          fit();
+        }
+      });
+      lb.classList.add("open");
+      lb.setAttribute("aria-hidden", "false");
+    }
+    function close() {
+      lb.classList.remove("open");
+      lb.setAttribute("aria-hidden", "true");
+      content.innerHTML = "";
+    }
+    function zoomBy(factor, cx, cy) {
+      const newScale = Math.max(0.05, Math.min(20, scale * factor));
+      // Zoom toward (cx, cy) in stage coordinates
+      const sx = (cx - tx) / scale;
+      const sy = (cy - ty) / scale;
+      scale = newScale;
+      tx = cx - sx * scale;
+      ty = cy - sy * scale;
+      apply();
+    }
+
+    // Wire up triggers
+    document.querySelectorAll(".zoom-btn, .svg-wrap").forEach(el => {
+      el.addEventListener("click", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const svg = el.dataset.svg;
+        const title = el.dataset.title || "Diagram";
+        if (svg) open(svg, title);
+      });
+    });
+    document.getElementById("lb-close").addEventListener("click", close);
+    document.getElementById("lb-zoom-in").addEventListener("click", () =>
+      zoomBy(1.25, stage.clientWidth / 2, stage.clientHeight / 2));
+    document.getElementById("lb-zoom-out").addEventListener("click", () =>
+      zoomBy(0.8, stage.clientWidth / 2, stage.clientHeight / 2));
+    document.getElementById("lb-fit").addEventListener("click", fit);
+    document.getElementById("lb-100").addEventListener("click", actual);
+
+    // Wheel zoom
+    stage.addEventListener("wheel", e => {
+      e.preventDefault();
+      const rect = stage.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      zoomBy(e.deltaY < 0 ? 1.15 : 0.87, cx, cy);
+    }, { passive: false });
+
+    // Pan
+    stage.addEventListener("mousedown", e => {
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      stage.classList.add("dragging");
+    });
+    window.addEventListener("mousemove", e => {
+      if (!dragging) return;
+      tx += e.clientX - lastX; ty += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      apply();
+    });
+    window.addEventListener("mouseup", () => {
+      dragging = false; stage.classList.remove("dragging");
+    });
+
+    // Keyboard
+    window.addEventListener("keydown", e => {
+      if (!lb.classList.contains("open")) return;
+      if (e.key === "Escape") close();
+      else if (e.key === "+" || e.key === "=")
+        zoomBy(1.25, stage.clientWidth / 2, stage.clientHeight / 2);
+      else if (e.key === "-" || e.key === "_")
+        zoomBy(0.8, stage.clientWidth / 2, stage.clientHeight / 2);
+      else if (e.key === "0") fit();
+      else if (e.key === "1") actual();
+    });
+
+    // Click outside content (on backdrop) closes
+    lb.addEventListener("click", e => { if (e.target === lb) close(); });
+  })();
 </script>
 </body>
 </html>

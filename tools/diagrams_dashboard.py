@@ -110,8 +110,13 @@ def build_index(results: dict[str, dict]) -> str:
                 rel = info["path"].relative_to(REPORTS_DIR).as_posix()
                 cards.append(
                     f'<div class="card">'
-                    f'<div class="card-title">{html.escape(title)}</div>'
-                    f'<div class="svg-wrap"><object type="image/svg+xml" data="{html.escape(rel)}">'
+                    f'<div class="card-title">{html.escape(title)}'
+                    f'<button class="zoom-btn" data-svg="{html.escape(rel)}" '
+                    f'data-title="{html.escape(title)}" title="Zoom">⛶</button>'
+                    f'</div>'
+                    f'<div class="svg-wrap" data-svg="{html.escape(rel)}" '
+                    f'data-title="{html.escape(title)}">'
+                    f'<object type="image/svg+xml" data="{html.escape(rel)}">'
                     f'<a href="{html.escape(rel)}">View SVG</a></object></div>'
                     f'<details><summary>source</summary>'
                     f'<pre>{html.escape(info["source"])}</pre></details>'
@@ -162,10 +167,16 @@ def build_index(results: dict[str, dict]) -> str:
   .card {{ background: var(--panel); border: 1px solid var(--border);
            border-radius: 8px; padding: 12px; overflow: hidden; }}
   .card.error {{ border-color: var(--err); }}
-  .card-title {{ font-weight: 600; margin-bottom: 8px; }}
+  .card-title {{ font-weight: 600; margin-bottom: 8px;
+                 display: flex; align-items: center; justify-content: space-between; gap: 8px; }}
+  .zoom-btn {{ background: var(--panel); color: var(--accent);
+               border: 1px solid var(--border); border-radius: 4px;
+               padding: 2px 8px; cursor: pointer; font-size: 14px; line-height: 1; }}
+  .zoom-btn:hover {{ background: var(--accent); color: #fff; }}
   .svg-wrap {{ background: #fff; border-radius: 4px; padding: 8px;
-               min-height: 200px; display: flex; align-items: center; justify-content: center; }}
-  .svg-wrap object {{ width: 100%; max-height: 500px; }}
+               min-height: 200px; display: flex; align-items: center; justify-content: center;
+               cursor: zoom-in; }}
+  .svg-wrap object {{ width: 100%; max-height: 500px; pointer-events: none; }}
   details {{ margin-top: 8px; }}
   summary {{ color: var(--muted); cursor: pointer; font-size: 12px; }}
   pre {{ background: #0a0e13; padding: 8px; border-radius: 4px; overflow: auto;
@@ -184,6 +195,28 @@ def build_index(results: dict[str, dict]) -> str:
   .badge {{ display: inline-block; padding: 2px 8px; border-radius: 10px;
             background: var(--panel); border: 1px solid var(--border);
             font-size: 12px; margin-left: 6px; }}
+
+  /* Lightbox / zoom modal */
+  .lightbox {{ position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+               display: none; flex-direction: column; z-index: 9999; }}
+  .lightbox.open {{ display: flex; }}
+  .lightbox-bar {{ display: flex; align-items: center; gap: 12px;
+                   padding: 10px 18px; background: var(--panel);
+                   border-bottom: 1px solid var(--border); color: var(--text); }}
+  .lightbox-bar .lb-title {{ font-weight: 600; flex: 1; }}
+  .lightbox-bar button {{ background: var(--bg); color: var(--text);
+                          border: 1px solid var(--border); border-radius: 4px;
+                          padding: 4px 12px; cursor: pointer; font-size: 14px; }}
+  .lightbox-bar button:hover {{ background: var(--accent); color: #fff; }}
+  .lightbox-bar .lb-zoom {{ color: var(--muted); font-variant-numeric: tabular-nums;
+                            min-width: 60px; text-align: right; }}
+  .lightbox-stage {{ flex: 1; overflow: hidden; position: relative;
+                     background: #fff; cursor: grab; }}
+  .lightbox-stage.dragging {{ cursor: grabbing; }}
+  .lightbox-stage .lb-content {{ position: absolute; top: 0; left: 0;
+                                 transform-origin: 0 0; transition: none; }}
+  .lightbox-stage .lb-content svg {{ display: block; }}
+  .lightbox-stage .lb-content object {{ display: block; pointer-events: none; }}
 </style>
 </head>
 <body>
@@ -209,6 +242,22 @@ def build_index(results: dict[str, dict]) -> str:
   </div>
 </section>
 </main>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="lightbox-bar">
+    <span class="lb-title" id="lb-title"></span>
+    <button id="lb-zoom-out" title="Zoom out (−)">−</button>
+    <span class="lb-zoom" id="lb-zoom">100%</span>
+    <button id="lb-zoom-in" title="Zoom in (+)">+</button>
+    <button id="lb-fit" title="Fit to window (0)">Fit</button>
+    <button id="lb-100" title="Actual size (1)">1:1</button>
+    <a id="lb-open" target="_blank" rel="noopener"><button>Open SVG</button></a>
+    <button id="lb-close" title="Close (Esc)">✕</button>
+  </div>
+  <div class="lightbox-stage" id="lb-stage">
+    <div class="lb-content" id="lb-content"></div>
+  </div>
+</div>
 
 <script type="module">
   import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
@@ -242,6 +291,140 @@ def build_index(results: dict[str, dict]) -> str:
     timer = setTimeout(renderPreview, 350);
   }});
   renderPreview();
+</script>
+
+<script>
+  // Lightbox: click thumb or zoom button → fullscreen pan/zoom view.
+  (function() {{
+    const lb = document.getElementById("lightbox");
+    const stage = document.getElementById("lb-stage");
+    const content = document.getElementById("lb-content");
+    const lbTitle = document.getElementById("lb-title");
+    const lbZoom = document.getElementById("lb-zoom");
+    const lbOpen = document.getElementById("lb-open");
+    let scale = 1, tx = 0, ty = 0;
+    let dragging = false, lastX = 0, lastY = 0;
+    let naturalW = 0, naturalH = 0;
+
+    function apply() {{
+      content.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+      lbZoom.textContent = Math.round(scale * 100) + "%";
+    }}
+    function fit() {{
+      if (!naturalW || !naturalH) return;
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      scale = Math.min(sw / naturalW, sh / naturalH) * 0.95;
+      tx = (sw - naturalW * scale) / 2;
+      ty = (sh - naturalH * scale) / 2;
+      apply();
+    }}
+    function actual() {{
+      scale = 1;
+      tx = (stage.clientWidth - naturalW) / 2;
+      ty = (stage.clientHeight - naturalH) / 2;
+      apply();
+    }}
+    function open(svgPath, title) {{
+      lbTitle.textContent = title;
+      lbOpen.href = svgPath;
+      content.innerHTML = "";
+      // Fetch SVG inline so we can measure natural dimensions
+      fetch(svgPath).then(r => r.text()).then(txt => {{
+        content.innerHTML = txt;
+        const svg = content.querySelector("svg");
+        if (svg) {{
+          // Strip width/height attrs so we control sizing
+          const vb = svg.getAttribute("viewBox");
+          if (vb) {{
+            const parts = vb.split(/\\s+/);
+            naturalW = parseFloat(parts[2]);
+            naturalH = parseFloat(parts[3]);
+          }} else {{
+            naturalW = parseFloat(svg.getAttribute("width")) || 800;
+            naturalH = parseFloat(svg.getAttribute("height")) || 600;
+          }}
+          svg.setAttribute("width", naturalW);
+          svg.setAttribute("height", naturalH);
+          svg.style.display = "block";
+          fit();
+        }}
+      }});
+      lb.classList.add("open");
+      lb.setAttribute("aria-hidden", "false");
+    }}
+    function close() {{
+      lb.classList.remove("open");
+      lb.setAttribute("aria-hidden", "true");
+      content.innerHTML = "";
+    }}
+    function zoomBy(factor, cx, cy) {{
+      const newScale = Math.max(0.05, Math.min(20, scale * factor));
+      // Zoom toward (cx, cy) in stage coordinates
+      const sx = (cx - tx) / scale;
+      const sy = (cy - ty) / scale;
+      scale = newScale;
+      tx = cx - sx * scale;
+      ty = cy - sy * scale;
+      apply();
+    }}
+
+    // Wire up triggers
+    document.querySelectorAll(".zoom-btn, .svg-wrap").forEach(el => {{
+      el.addEventListener("click", e => {{
+        e.preventDefault();
+        e.stopPropagation();
+        const svg = el.dataset.svg;
+        const title = el.dataset.title || "Diagram";
+        if (svg) open(svg, title);
+      }});
+    }});
+    document.getElementById("lb-close").addEventListener("click", close);
+    document.getElementById("lb-zoom-in").addEventListener("click", () =>
+      zoomBy(1.25, stage.clientWidth / 2, stage.clientHeight / 2));
+    document.getElementById("lb-zoom-out").addEventListener("click", () =>
+      zoomBy(0.8, stage.clientWidth / 2, stage.clientHeight / 2));
+    document.getElementById("lb-fit").addEventListener("click", fit);
+    document.getElementById("lb-100").addEventListener("click", actual);
+
+    // Wheel zoom
+    stage.addEventListener("wheel", e => {{
+      e.preventDefault();
+      const rect = stage.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      zoomBy(e.deltaY < 0 ? 1.15 : 0.87, cx, cy);
+    }}, {{ passive: false }});
+
+    // Pan
+    stage.addEventListener("mousedown", e => {{
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      stage.classList.add("dragging");
+    }});
+    window.addEventListener("mousemove", e => {{
+      if (!dragging) return;
+      tx += e.clientX - lastX; ty += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      apply();
+    }});
+    window.addEventListener("mouseup", () => {{
+      dragging = false; stage.classList.remove("dragging");
+    }});
+
+    // Keyboard
+    window.addEventListener("keydown", e => {{
+      if (!lb.classList.contains("open")) return;
+      if (e.key === "Escape") close();
+      else if (e.key === "+" || e.key === "=")
+        zoomBy(1.25, stage.clientWidth / 2, stage.clientHeight / 2);
+      else if (e.key === "-" || e.key === "_")
+        zoomBy(0.8, stage.clientWidth / 2, stage.clientHeight / 2);
+      else if (e.key === "0") fit();
+      else if (e.key === "1") actual();
+    }});
+
+    // Click outside content (on backdrop) closes
+    lb.addEventListener("click", e => {{ if (e.target === lb) close(); }});
+  }})();
 </script>
 </body>
 </html>
