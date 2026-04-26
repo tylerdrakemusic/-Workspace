@@ -31,15 +31,15 @@ Every feature request gets a stable ID: `FR-YYYYMMDD-<slug>` (e.g.
 ## State Machine
 
 ```
-OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVIEWED
-       ↑                                                          │
-       └──── CHANGES_REQUESTED ←──────────────────────────────────┘
-                                                                  │
-                                                     BRANCH_CHECKED_OUT
-                                                                  │
-                                               TYLER_APPROVED ←───┘
-                                                    │
-                                                 MERGED → SOAKING → SIGNED_OFF → ARCHIVED
+OPEN → TRIAGED → BRANCHED → IN_PROGRESS → ARCHITECTURE_REVIEW → REVIEW_REQUESTED → AUTO_REVIEWED
+       ↑                                                                                  │
+       └──── CHANGES_REQUESTED ←──────────────────────────────────────────────────────────┘
+                                                                                          │
+                                                                         BRANCH_CHECKED_OUT
+                                                                                          │
+                                                                   TYLER_APPROVED ←───────┘
+                                                                        │
+                                                                     MERGED → SOAKING → SIGNED_OFF → ARCHIVED
 ```
 
 ### State Definitions
@@ -50,6 +50,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → REVIEW_REQUESTED → AUTO_REVI
 | `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
 | `BRANCHED` | Isolated branch + worktree + draft PR created per repo | ⊕workspace-ci |
 | `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
+| `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
 | `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. | project orchestrator |
 | `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof). Required `test` status check must be green before merge can be attempted. | ⊕workspace-reviewer |
 | `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
@@ -283,6 +284,8 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 | `⊕workspace-ci` | Own branches, worktrees, merges, conflict resolution. After AUTO_REVIEWED, check out the feature branch locally and set BRANCH_CHECKED_OUT before notifying Tyler. |
 | `⊕workspace-overseer` | Route implementation to orchestrators; coordinate multi-project FRs. |
 | project orchestrators | Implement on the assigned branch only. |
+| `⊕workspace-architecture-reviewer` | Detect architectural impact in the PR diff; verify the relevant `.mmd` diagrams were updated. Hard-blocks merge on STALE/MISSING. |
+| `⊕workspace-architecture-beautifier` | Update or create `.mmd` files in `f:\⊕Workspace\diagrams\` per the architecture-reviewer's required-updates list. |
 | `⊕workspace-reviewer` | Run alignment + security + tests + proof; post automated PR review. |
 | `⊕workspace-commitment` | Protected commit batching inside an active FR branch. |
 | `⊕workspace-security` | Security gate invoked by reviewer; can block before merge. |

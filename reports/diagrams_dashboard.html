@@ -78,7 +78,7 @@
 <body>
 <header>
   <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">18 diagrams · 18 rendered · generated 2026-04-25 21:19:24</span>
+  <span class="meta">19 diagrams · 19 rendered · generated 2026-04-25 21:35:01</span>
   <span class="badge">mermaid.js</span>
 </header>
 <main>
@@ -230,6 +230,75 @@
     SIGNED_OFF --&gt; [*]
 
     AUTO_REVIEWED --&gt; IN_PROGRESS: changes requested
+</pre></details></div>
+<div class="card"><div class="card-title">Integrations<button class="zoom-btn" data-svg="diagrams/workspace-integrations.svg" data-title="Integrations" data-w="1141" data-h="929" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-integrations.svg" data-title="Integrations" data-w="1141" data-h="929"><object type="image/svg+xml" data="diagrams/workspace-integrations.svg"><a href="diagrams/workspace-integrations.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+    %% Cross-project integration points across the ⊕Workspace
+    %% Updated when new src/integrations/ modules or cross-project wiring is added.
+    %% Maintained by ⊕workspace-architecture-beautifier (FR-20260425-architecture-review-agents)
+
+    %% External services
+    GitHub[(GitHub)]:::ext
+    IBMQ[(IBM Quantum)]:::ext
+    OpenAI[(OpenAI)]:::ext
+    ElevenLabs[(ElevenLabs)]:::ext
+    HF[(Hugging Face)]:::ext
+    Suno[(Suno)]:::ext
+    MFP[(MyFitnessPal)]:::ext
+    TZ[(TrainingZones)]:::ext
+    Mermaid[(mermaid.ink)]:::ext
+
+    %% Project sigils
+    Workspace[⊕ Workspace]:::ws
+    Life[∞ Life]:::orch
+    Music[❤ Music]:::orch
+    Quantum[⟨ψ⟩ Quantum]:::orch
+    Manifest[👁 AI-Manifest]:::orch
+
+    %% Databases
+    WSDB[(workspace.db)]:::db
+    LifeDB[(infinitelife.db)]:::db
+    MusicDB[(heartmusic.db)]:::db
+    QDB[(quantumpsi.db)]:::db
+
+    %% Workspace → external
+    Workspace --&gt;|mcp_github| GitHub
+    Workspace --&gt;|diagrams render| Mermaid
+    Workspace --&gt; WSDB
+
+    %% ∞Life → external + DB
+    Life --&gt;|nutrition sync| MFP
+    Life --&gt;|workout sync| TZ
+    Life --&gt;|llm research| OpenAI
+    Life --&gt; LifeDB
+
+    %% ❤Music → external + DB
+    Music --&gt;|catalog import| Suno
+    Music --&gt; MusicDB
+
+    %% ⟨ψ⟩Quantum → external + DB
+    Quantum --&gt;|qiskit jobs| IBMQ
+    Quantum --&gt;|model hub| HF
+    Quantum --&gt; QDB
+
+    %% 👁AI-Manifest → external
+    Manifest --&gt;|tts synthesis| ElevenLabs
+    Manifest --&gt;|llm orchestration| OpenAI
+    Manifest --&gt;|model hub| HF
+
+    %% Cross-project integrations (the workspace&#x27;s connective tissue)
+    Quantum -.-&gt;|QRNG entropy| Workspace
+    Workspace -.-&gt;|gen-qee passwords| Life
+    Workspace -.-&gt;|gen-qee passwords| Music
+    Workspace -.-&gt;|gen-qee passwords| Quantum
+    Workspace -.-&gt;|gen-qee passwords| Manifest
+    Manifest -.-&gt;|executive briefs| Life
+    Music -.-&gt;|signature generation| Quantum
+
+    classDef tyler  fill:#3a1a52,stroke:#9e4aff,color:#fff
+    classDef orch   fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef ws     fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    classDef ext    fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+    classDef db     fill:#4e4a2a,stroke:#ffe14a,color:#fff
 </pre></details></div>
 <div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" data-w="425" data-h="918" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" data-w="425" data-h="918"><object type="image/svg+xml" data="diagrams/workspace-tech-stack.svg"><a href="diagrams/workspace-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
     Python[Python 3.11&lt;br/&gt;C:\\G\\python.exe] --&gt; SQLCipher[sqlcipher3&lt;br/&gt;encrypted SQLite]
