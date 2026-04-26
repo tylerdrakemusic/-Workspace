@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260425-band-mgmt-playback-sheets | Band Management Panel: Per-Row Audio Playback + Sheet Music Viewer | feature | ❤Music | BRANCHED | feature/heartmusic/band-mgmt-playback-sheets (from feature/heartmusic/guitar-trainer-metronome) | https://github.com/tylerdrakemusic/Music/pull/7 | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260425-intake-interview-driven | Make Intake More Interview-Driven and Less Assumption-Heavy | chore | ⊕Workspace | BRANCHED | chore/workspace/intake-interview-driven | https://github.com/tylerdrakemusic/-Workspace/pull/32 | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-metronome | Add metronome to Guitar Trainer portal panel | feature | ❤Music | TRIAGED | feature/heartmusic/guitar-trainer-metronome | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-data-to-db | Guitar Trainer exercise data should not be tracked by git | chore | ❤Music | TRIAGED | chore/heartmusic/guitar-trainer-data-to-db | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
