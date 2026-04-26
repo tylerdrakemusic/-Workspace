@@ -76,3 +76,6 @@ Thumbs.db
 src/data/backups/
 fr_dashboard_*.png
 
+# generated dump artifacts
+reports/all_diagrams_dump.txt
+
