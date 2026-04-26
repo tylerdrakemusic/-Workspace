@@ -2,15 +2,28 @@
 graph TB
     Triggers[Cron · CLI · Manual] --> Tools[tools/<br/>executive_audio_brief.py]
     Tools --> Briefs[brief generators]
+    Tools --> LilyPortrait[src/utils/<br/>lily_portrait.py]
     Briefs --> OpenAI[OpenAI<br/>OPENAPI_TOKEN]
     Briefs --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
+    LilyPortrait -->|1st try| DallE3[DallE3Client<br/>⊕Workspace integration]
+    LilyPortrait -->|2nd try| HFImage[HuggingFaceImageClient<br/>⊕Workspace integration]
+    LilyPortrait -->|fallback| SVGFallback[SVG silhouette]
+    DallE3 -->|importlib cross-project| WSIntegrations[(⊕Workspace<br/>src/integrations/)]
+    HFImage -->|importlib cross-project| WSIntegrations
+    DallE3 --> ImagesOut[output/images/*.png]
+    HFImage --> ImagesOut
+    SVGFallback --> ImagesOut
+    ImagesOut --> Portal[output/<br/>executive_brief_portal.html]
     OpenAI --> TextOut[output/briefs/*.md]
     ElevenLabs --> AudioOut[output/tts/*.mp3]
-    TextOut --> Portal[output/<br/>executive_brief_portal.html]
+    TextOut --> Portal
     AudioOut --> Portal
     class Triggers trig
-    class OpenAI,ElevenLabs api
-    class TextOut,AudioOut,Portal out
+    class OpenAI,ElevenLabs,DallE3,HFImage api
+    class TextOut,AudioOut,Portal,ImagesOut out
+    class WSIntegrations ws
+    class LilyPortrait util
+    class SVGFallback fallback
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -21,3 +34,8 @@ classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef api      fill:#2a1a3a,stroke:#9e7aff,color:#e8d0f8
+classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
