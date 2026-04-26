@@ -1,0 +1,17 @@
+graph LR
+    Python[Python 3.11<br/>C:\\G\\python.exe] --> SQLCipher[sqlcipher3<br/>encrypted SQLite]
+    Python --> Pytest[pytest]
+    Python --> Flask[Flask<br/>portal servers]
+    Python --> Playwright[playwright<br/>portal checks]
+    Python --> Dotenv[python-dotenv]
+
+    Node[Node.js] --> Mmdc[mermaid-cli<br/>mmdc]
+
+    PowerShell[PowerShell 7] --> LaunchScripts[open_portal.ps1<br/>start_*.ps1]
+
+    GitHub[GitHub Actions] --> CI_Tests[test workflow]
+
+    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef tool fill:#2a2a3e,stroke:#888,color:#fff
+    class Python,Node,PowerShell lang
+    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests tool

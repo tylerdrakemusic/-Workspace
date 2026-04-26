@@ -32,7 +32,7 @@ state machine, gateway definitions, and naming rules.
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
 | FR-20260425-guitar-trainer-db-migration | Guitar Trainer: Full DB Migration + Data Recovery + Card CRUD UI | feature | ❤Music | BRANCHED | feature/heartmusic/guitar-trainer-db-migration | https://github.com/tylerdrakemusic/Music/pull/8 | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
 | FR-20260425-guitar-trainer-data-to-db | Guitar Trainer exercise data should not be tracked by git | chore | ❤Music | TRIAGED (superseded by FR-20260425-guitar-trainer-db-migration — recommend close) | chore/heartmusic/guitar-trainer-data-to-db | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
-| FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | BRANCHED | feature/workspace/mermaid-diagrams-integration | https://github.com/tylerdrakemusic/-Workspace/pull/35 | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
+| FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | IN_PROGRESS | feature/workspace/mermaid-diagrams-integration | https://github.com/tylerdrakemusic/-Workspace/pull/35 | ⊕workspace-overseer | 2026-04-25 | 2026-04-26 |
 
 
 

@@ -1,0 +1,13 @@
+stateDiagram-v2
+    [*] --> TRIAGED: Tyler opens FR
+    TRIAGED --> BRANCHED: Tyler approves scope
+    BRANCHED --> IN_PROGRESS: implementation begins
+    IN_PROGRESS --> REVIEW_REQUESTED: PR ready
+    REVIEW_REQUESTED --> AUTO_REVIEWED: ⊕workspace-reviewer
+    AUTO_REVIEWED --> TYLER_APPROVED: Tyler approves PR
+    TYLER_APPROVED --> MERGED: ⊕workspace-ci merges
+    MERGED --> SOAKING: post-merge soak window
+    SOAKING --> SIGNED_OFF: signoff verified
+    SIGNED_OFF --> [*]
+
+    AUTO_REVIEWED --> IN_PROGRESS: changes requested

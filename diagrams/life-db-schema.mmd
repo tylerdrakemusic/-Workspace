@@ -1,0 +1,29 @@
+erDiagram
+    BIOMARKERS ||--o{ MEASUREMENTS : tracks
+    PROTOCOLS ||--o{ PROTOCOL_RUNS : executes
+    BUDGET ||--o{ BUDGET_ENTRIES : contains
+    NUTRITION ||--o{ MEALS : logs
+    TRAINING ||--o{ WORKOUTS : records
+
+    BIOMARKERS {
+        text marker PK
+        text unit
+        real target_low
+        real target_high
+    }
+    MEASUREMENTS {
+        integer id PK
+        text marker FK
+        real value
+        text date
+        text source
+    }
+    PROTOCOLS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    BUDGET {
+        text category PK
+        real monthly_target
+    }

@@ -10,7 +10,7 @@
 - **Type:** feature
 - **Risk:** low (replaces a single dashboard panel, not the portal)
 - **Projects:** ⊕Workspace
-- **State:** BRANCHED
+- **State:** IN_PROGRESS
 - **Branch:** feature/workspace/mermaid-diagrams-integration
 - **PRs:** #35 (draft)
 - **Cycle timer:** 5252e153-6c3e-4305-953b-1e4901fa84f6
@@ -43,14 +43,14 @@
 
 | #   | Deliverable                                        | Owner   | Status      | Proof | Updated |
 | --- | -------------------------------------------------- | ------- | ----------- | ----- | ------- |
-| AC1 | `diagrams/` folder + auto-generated seed .mmd set  | TBD     | not-started | —     | —       |
-| AC2 | `src/integrations/mermaid/` module (HTTP + CLI)    | TBD     | not-started | —     | —       |
-| AC3 | `tools/diagrams_dashboard.py` generator + index    | TBD     | not-started | —     | —       |
-| AC4 | Built-in live editor on dashboard                  | TBD     | not-started | —     | —       |
-| AC5 | Replace `unified-benchmarks` panel with diagrams   | TBD     | not-started | —     | —       |
-| AC6 | `dashboard.json` registry update (swap entry)      | TBD     | not-started | —     | —       |
-| AC7 | `open_portal.ps1` unchanged; portal lists diagrams | TBD     | not-started | —     | —       |
-| AC8 | Tests for integration, generator, registry         | TBD     | not-started | —     | —       |
+| AC1 | `diagrams/` folder + auto-generated seed .mmd set  | overseer | done | 18 .mmd files | 2026-04-25 |
+| AC2 | `src/integrations/mermaid/` module (HTTP + CLI)    | overseer | done | client.py + 7 unit tests | 2026-04-25 |
+| AC3 | `tools/diagrams_dashboard.py` generator + index    | overseer | done | 18/18 SVGs rendered | 2026-04-25 |
+| AC4 | Built-in live editor on dashboard                  | overseer | done | mermaid.js textarea+preview | 2026-04-25 |
+| AC5 | Replace `unified-benchmarks` panel with diagrams   | overseer | done | dashboard.json swap | 2026-04-25 |
+| AC6 | `dashboard.json` registry update (swap entry)      | overseer | done | registry test passing | 2026-04-25 |
+| AC7 | `open_portal.ps1` unchanged; portal lists diagrams | overseer | done | file untouched | 2026-04-25 |
+| AC8 | Tests for integration, generator, registry         | overseer | done | 18/18 tests passing | 2026-04-25 |
 
 ### Tyler's Original Request
 > https://mermaid.js.org/config/usage.html — new FR I would like to consider setting up some diagrams to visualize the projects, the architecture, the technology, current state. I love working with .mmd mermaid files to visualize. Can we integrate with their api in workspace integrations, perhaps create an architecture folder or diagrams folder in workspace to get visuals on the project?
@@ -121,6 +121,28 @@
 - Cycle timer `5252e153-6c3e-4305-953b-1e4901fa84f6` continues running
 
 **Next:** handoff to `⊕workspace-overseer` for implementation kickoff
+
+---
+
+### 2026-04-26T03:30:00Z — ⊕workspace-overseer
+
+**Event:** implementation + state-transition
+
+**Summary:** All 8 ACs implemented; tests passing; dashboard rendered → IN_PROGRESS
+
+**Details:**
+- Backfill PR #36 merged first to clean PR #35 diff (5 band-mgmt portal-refresh commits)
+- Feature branch reset onto fresh `main`, force-pushed
+- AC1: 18 seed `.mmd` files in `diagrams/` (workspace ×5, life ×3, music ×3, quantum ×3, manifest ×3)
+- AC2: `src/integrations/mermaid/client.py` — `MermaidClient` with local `mmdc` CLI preferred, mermaid.ink HTTP fallback (raw base64 endpoint, no API key)
+- AC3: `tools/diagrams_dashboard.py` — discovers, renders, builds project-grouped index with error cards
+- AC4: Live editor: textarea + client-side mermaid.js preview (loaded from jsDelivr CDN)
+- AC5+AC6: `dashboard.json` — `unified-benchmarks` entry replaced by `diagrams` entry
+- AC7: `open_portal.ps1` untouched
+- AC8: 18/18 tests passing across `test_mermaid_client.py` (7), `test_diagrams_dashboard.py` (8), `test_dashboard_registry_diagrams.py` (3)
+- Demo: rendered 18/18 SVGs to `reports/diagrams/`, dashboard at `reports/diagrams_dashboard.html` opened in browser
+
+**Next:** push commits → request auto-review → REVIEW_REQUESTED
 
 ---
 

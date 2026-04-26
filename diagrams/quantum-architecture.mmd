@@ -1,0 +1,33 @@
+graph TB
+    subgraph Algorithms["src/algorithms/"]
+        Shor[Shor's Algorithm]
+        QRNG[Quantum RNG]
+        QAOA[QAOA]
+        VQE[VQE]
+    end
+
+    subgraph Backends
+        IBM[IBM Quantum<br/>QISKIT_TOKEN]
+        Sim[Aer Simulator<br/>local]
+    end
+
+    subgraph Storage
+        DB[(quantumpsi.db<br/>SQLCipher)]
+        Bench[benchmarks table]
+    end
+
+    subgraph Outputs
+        Reports[reports/<br/>benchmark dashboard]
+    end
+
+    Algorithms --> IBM
+    Algorithms --> Sim
+    Algorithms --> Bench
+    Bench --> Reports
+
+    classDef alg fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef back fill:#2a2a3e,stroke:#888,color:#fff
+    classDef store fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    class Algorithms alg
+    class Backends back
+    class Storage,Outputs store

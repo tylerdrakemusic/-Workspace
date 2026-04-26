@@ -1,0 +1,16 @@
+graph TB
+    Triggers[Cron · CLI · Manual] --> Tools[tools/<br/>executive_audio_brief.py]
+    Tools --> Briefs[brief generators]
+    Briefs --> OpenAI[OpenAI<br/>OPENAPI_TOKEN]
+    Briefs --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
+    OpenAI --> TextOut[output/briefs/*.md]
+    ElevenLabs --> AudioOut[output/tts/*.mp3]
+    TextOut --> Portal[output/<br/>executive_brief_portal.html]
+    AudioOut --> Portal
+
+    classDef trig fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    classDef api fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef out fill:#2a2a3e,stroke:#888,color:#fff
+    class Triggers trig
+    class OpenAI,ElevenLabs api
+    class TextOut,AudioOut,Portal out
