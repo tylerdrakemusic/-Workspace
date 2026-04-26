@@ -142,6 +142,32 @@ After the sweep, perform self-audit per `agent-self-regen.instructions.md`:
 
 ---
 
+### Phase 3b — FR Ledger Reconciliation
+
+Read `f:\⊕Workspace\.github\FEATURE_REQUESTS.md` and audit the Active FRs table:
+
+1. **Duplicate detection** — scan Active table for FR IDs that also appear in Archive → remove the Active row (archive is source of truth for closed/merged FRs)
+2. **Superseded detection** — Active rows whose own description says "superseded by" or "recommend close" → move to Archive as `CLOSED (superseded by <FR-ID>)`, set Closed date
+3. **Stale TRIAGED** — Active FRs in TRIAGED state for > 7 days with no branch → add a `⚠ stale` annotation to that row and flag for Tyler
+4. **IN_PROGRESS concurrency cap** — count IN_PROGRESS rows; if > 3, flag the excess for Tyler
+5. **TODO cross-validation** — for each unchecked item in any `TODO_AI.md` that describes a full feature (not a minor task), check whether an Active FR covers it. If not, flag as "FR candidate" in the TODO file with a comment `<!-- FR candidate: open via ⊕workspace-intake -->`
+
+---
+
+### Phase 3c — Agent Ops Monitor Sweep
+
+Run the auto-fix pass as a routine hygiene step:
+
+```powershell
+C:\G\python.exe f:\⊕Workspace\tools\agent_ops_monitor.py --fix --no-open
+```
+
+- Capture the output: health %, runs closed, proofs verified, orphans backfilled
+- **Target: health ≥ 95%** — if below, include in "Action required from Tyler" section
+- Include health score in the Phase 4 hygiene report
+
+---
+
 ### Phase 4 — Report & Perf Close
 
 Generate a structured report:
@@ -160,6 +186,12 @@ Agent files audited: N
   Phantom agents flagged: N
 Instruction files audited: N
   Broken inherits fixed: N
+FR ledger:
+  Duplicate rows removed: N
+  Superseded FRs archived: N
+  Stale TRIAGED flagged: N
+  TODO FR candidates flagged: N
+Agent ops monitor: N% health (N runs closed, N proofs verified)
 
 Action required from Tyler:
   - [list items needing human confirmation]
