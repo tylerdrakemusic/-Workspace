@@ -1,0 +1,68 @@
+graph LR
+    %% Cross-project integration points across the ⊕Workspace
+    %% Updated when new src/integrations/ modules or cross-project wiring is added.
+    %% Maintained by ⊕workspace-architecture-beautifier (FR-20260425-architecture-review-agents)
+
+    %% External services
+    GitHub[(GitHub)]:::ext
+    IBMQ[(IBM Quantum)]:::ext
+    OpenAI[(OpenAI)]:::ext
+    ElevenLabs[(ElevenLabs)]:::ext
+    HF[(Hugging Face)]:::ext
+    Suno[(Suno)]:::ext
+    MFP[(MyFitnessPal)]:::ext
+    TZ[(TrainingZones)]:::ext
+    Mermaid[(mermaid.ink)]:::ext
+
+    %% Project sigils
+    Workspace[⊕ Workspace]:::ws
+    Life[∞ Life]:::orch
+    Music[❤ Music]:::orch
+    Quantum[⟨ψ⟩ Quantum]:::orch
+    Manifest[👁 AI-Manifest]:::orch
+
+    %% Databases
+    WSDB[(workspace.db)]:::db
+    LifeDB[(infinitelife.db)]:::db
+    MusicDB[(heartmusic.db)]:::db
+    QDB[(quantumpsi.db)]:::db
+
+    %% Workspace → external
+    Workspace -->|mcp_github| GitHub
+    Workspace -->|diagrams render| Mermaid
+    Workspace --> WSDB
+
+    %% ∞Life → external + DB
+    Life -->|nutrition sync| MFP
+    Life -->|workout sync| TZ
+    Life -->|llm research| OpenAI
+    Life --> LifeDB
+
+    %% ❤Music → external + DB
+    Music -->|catalog import| Suno
+    Music --> MusicDB
+
+    %% ⟨ψ⟩Quantum → external + DB
+    Quantum -->|qiskit jobs| IBMQ
+    Quantum -->|model hub| HF
+    Quantum --> QDB
+
+    %% 👁AI-Manifest → external
+    Manifest -->|tts synthesis| ElevenLabs
+    Manifest -->|llm orchestration| OpenAI
+    Manifest -->|model hub| HF
+
+    %% Cross-project integrations (the workspace's connective tissue)
+    Quantum -.->|QRNG entropy| Workspace
+    Workspace -.->|gen-qee passwords| Life
+    Workspace -.->|gen-qee passwords| Music
+    Workspace -.->|gen-qee passwords| Quantum
+    Workspace -.->|gen-qee passwords| Manifest
+    Manifest -.->|executive briefs| Life
+    Music -.->|signature generation| Quantum
+
+    classDef tyler  fill:#3a1a52,stroke:#9e4aff,color:#fff
+    classDef orch   fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef ws     fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    classDef ext    fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+    classDef db     fill:#4e4a2a,stroke:#ffe14a,color:#fff

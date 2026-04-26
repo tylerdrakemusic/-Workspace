@@ -40,6 +40,16 @@ make his final approval decision.
 - Test harness consistency
 - Naming conventions
 
+### Gate 3.5: Architecture Diagrams (HARD BLOCK)
+- Verify the FR's ARCHITECTURE_REVIEW state produced a PASS or PASS_WITH_UPDATES
+  result from `⊕workspace-architecture-reviewer`. Read the latest impact report
+  from the FR ledger.
+- If the report says STALE or MISSING for any `.mmd` diagram → **REQUEST_CHANGES**
+  and require `⊕workspace-architecture-beautifier` to update the diagrams, then
+  re-run the architecture-reviewer until PASS / PASS_WITH_UPDATES is recorded.
+- Diagrams that must stay in sync live in `f:\⊕Workspace\diagrams\*.mmd`.
+  See `⊕workspace-architecture-reviewer.agent.md` for the detection heuristics.
+
 ### Gate 4: Tests
 - All existing tests pass (`pytest` in each touched project)
 - New tests added for new behavior (or explicit "no test needed" rationale)
@@ -90,6 +100,7 @@ Post ONE top-level review per PR with the full structured report.
 | Scope conformance | ✅ / ⚠️ / ❌ | ... |
 | Security | ✅ / ⚠️ / ❌ | ... |
 | Alignment | ✅ / ⚠️ / ❌ | ... |
+| Architecture Diagrams | ✅ / ⚠️ / ❌ | ... |
 | Tests | ✅ / ⚠️ / ❌ | ... |
 | Proof-in-the-pudding | ✅ / ⚠️ / ❌ | ... |
 | Demo | ✅ / ⚠️ / ❌ | ... |
@@ -139,7 +150,7 @@ After posting the review:
 
 **PR:** <URL>
 **Decision:** <APPROVE | REQUEST_CHANGES | COMMENT>
-**Gates:** <X/6 passed>
+**Gates:** <X/7 passed>
 
 **Posted to GitHub:** yes | no (reason)
 **Registry:** transitioned to <new state>
