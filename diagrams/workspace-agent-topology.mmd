@@ -7,6 +7,10 @@ graph LR
     Overseer --> Alignment[⊕ alignment]
     Overseer --> Security[⊕ security]
     Overseer --> Hygiene[⊕ hygiene]
+    Overseer --> ArchReviewer[⊕ architecture-reviewer]
+    Overseer --> ArchBeautifier[⊕ architecture-beautifier]
+
+    ArchReviewer -.->|delegates STALE/MISSING| ArchBeautifier
 
     Overseer --> LifeOrch[∞ orchestrator]
     Overseer --> MusicOrch[❤ orchestrator]
@@ -20,4 +24,4 @@ graph LR
     classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
     classDef ws fill:#2a4e3a,stroke:#4aff9e,color:#fff
     class Overseer,LifeOrch,MusicOrch,QuantumOrch,ManifestOrch orch
-    class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene ws
+    class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene,ArchReviewer,ArchBeautifier ws

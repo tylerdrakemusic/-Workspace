@@ -2,7 +2,9 @@ stateDiagram-v2
     [*] --> TRIAGED: Tyler opens FR
     TRIAGED --> BRANCHED: Tyler approves scope
     BRANCHED --> IN_PROGRESS: implementation begins
-    IN_PROGRESS --> REVIEW_REQUESTED: PR ready
+    IN_PROGRESS --> ARCHITECTURE_REVIEW: implementation done
+    ARCHITECTURE_REVIEW --> ARCHITECTURE_REVIEW: STALE/MISSING → beautifier → re-verify
+    ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES
     REVIEW_REQUESTED --> AUTO_REVIEWED: ⊕workspace-reviewer
     AUTO_REVIEWED --> TYLER_APPROVED: Tyler approves PR
     TYLER_APPROVED --> MERGED: ⊕workspace-ci merges
