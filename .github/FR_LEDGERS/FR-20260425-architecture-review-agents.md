@@ -7,9 +7,9 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** TRIAGED
-- **Branch:** feature/workspace/architecture-review-agents (pending CI creation)
-- **PRs:** pending
+- **State:** BRANCHED
+- **Branch:** feature/workspace/architecture-review-agents
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/38 (draft)
 - **Cycle timer:** 68252422-8919-4a26-9bf0-3b7d7fa2eb04
 - **Opened:** 2026-04-25
 - **Last updated:** 2026-04-25
@@ -75,10 +75,28 @@
 
 ---
 
+### 2026-04-25 — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** TRIAGED → BRANCHED — branch created from latest `main`, pushed, draft PR opened
+
+**Details:**
+- Base: `main` @ `bccbb71` (post-mermaid-diagrams merge, fast-forwarded from origin)
+- Branch: `feature/workspace/architecture-review-agents` pushed to `origin`
+- Initial commit `17d5c9e`: FR ledger seed file
+- Draft PR: https://github.com/tylerdrakemusic/-Workspace/pull/38
+- Title: `feat(workspace): architecture review + beautifier agents [FR-20260425-architecture-review-agents]`
+- All 8 ACs reproduced in PR body
+
+**Next:** handoff to `⊕workspace-overseer` for implementation (AC1–AC8). Do NOT mark `READY_FOR_REVIEW` until tests + frontmatter checks pass on the branch.
+
+---
+
 ## Artifacts
 
 - **Perf runs:** 68252422-8919-4a26-9bf0-3b7d7fa2eb04 — fr-cycle-FR-20260425-architecture-review-agents
 - **Proof artifacts:** —
-- **PRs:** pending CI
-- **Commits:** —
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/38 (draft)
+- **Commits:** 17d5c9e (FR ledger seed)
 - **Reports / dashboards:** existing `f:\⊕Workspace\reports\diagrams_dashboard.html` (target dashboard this FR keeps fresh)
