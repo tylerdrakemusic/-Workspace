@@ -90,6 +90,30 @@ def _group_by_project(results: dict[str, dict]) -> dict[str, list[tuple[str, dic
     return groups
 
 
+import re
+_VIEWBOX_RE = re.compile(r'viewBox="([^"]+)"')
+
+
+def _svg_dims(svg_path: Path) -> tuple[float, float]:
+    """Extract natural width/height from SVG viewBox. Returns (w, h) or (800, 600)."""
+    try:
+        head = svg_path.read_text(encoding="utf-8", errors="ignore")[:1024]
+    except OSError:
+        return (800.0, 600.0)
+    m = _VIEWBOX_RE.search(head)
+    if not m:
+        return (800.0, 600.0)
+    parts = m.group(1).replace(",", " ").split()
+    if len(parts) != 4:
+        return (800.0, 600.0)
+    try:
+        w = float(parts[2])
+        h = float(parts[3])
+        return (w if w > 0 else 800.0, h if h > 0 else 600.0)
+    except ValueError:
+        return (800.0, 600.0)
+
+
 def build_index(results: dict[str, dict]) -> str:
     """Build the dashboard HTML string."""
     groups = _group_by_project(results)
@@ -108,14 +132,17 @@ def build_index(results: dict[str, dict]) -> str:
             title = stem.replace(f"{proj}-", "").replace("-", " ").title()
             if info["ok"]:
                 rel = info["path"].relative_to(REPORTS_DIR).as_posix()
+                w, h = _svg_dims(info["path"])
                 cards.append(
                     f'<div class="card">'
                     f'<div class="card-title">{html.escape(title)}'
                     f'<button class="zoom-btn" data-svg="{html.escape(rel)}" '
-                    f'data-title="{html.escape(title)}" title="Zoom">⛶</button>'
+                    f'data-title="{html.escape(title)}" '
+                    f'data-w="{w:.0f}" data-h="{h:.0f}" title="Zoom">⛶</button>'
                     f'</div>'
                     f'<div class="svg-wrap" data-svg="{html.escape(rel)}" '
-                    f'data-title="{html.escape(title)}">'
+                    f'data-title="{html.escape(title)}" '
+                    f'data-w="{w:.0f}" data-h="{h:.0f}">'
                     f'<object type="image/svg+xml" data="{html.escape(rel)}">'
                     f'<a href="{html.escape(rel)}">View SVG</a></object></div>'
                     f'<details><summary>source</summary>'
@@ -324,31 +351,26 @@ def build_index(results: dict[str, dict]) -> str:
       ty = (stage.clientHeight - naturalH) / 2;
       apply();
     }}
-    function open(svgPath, title) {{
+    function open(svgPath, title, hintW, hintH) {{
       lbTitle.textContent = title;
       lbOpen.href = svgPath;
       content.innerHTML = "";
-      // Fetch SVG inline so we can measure natural dimensions
-      fetch(svgPath).then(r => r.text()).then(txt => {{
-        content.innerHTML = txt;
-        const svg = content.querySelector("svg");
-        if (svg) {{
-          // Strip width/height attrs so we control sizing
-          const vb = svg.getAttribute("viewBox");
-          if (vb) {{
-            const parts = vb.split(/\\s+/);
-            naturalW = parseFloat(parts[2]);
-            naturalH = parseFloat(parts[3]);
-          }} else {{
-            naturalW = parseFloat(svg.getAttribute("width")) || 800;
-            naturalH = parseFloat(svg.getAttribute("height")) || 600;
-          }}
-          svg.setAttribute("width", naturalW);
-          svg.setAttribute("height", naturalH);
-          svg.style.display = "block";
-          fit();
-        }}
-      }});
+      const img = new Image();
+      img.onload = () => {{
+        // Prefer dimensions hint embedded at generation time (from viewBox)
+        // because mermaid SVGs use width="100%" which yields tiny naturalWidth.
+        naturalW = hintW || img.naturalWidth || img.width || 800;
+        naturalH = hintH || img.naturalHeight || img.height || 600;
+        img.style.display = "block";
+        img.style.width = naturalW + "px";
+        img.style.height = naturalH + "px";
+        content.appendChild(img);
+        fit();
+      }};
+      img.onerror = () => {{
+        content.innerHTML = "<div style='color:#c00;padding:20px'>Failed to load " + svgPath + "</div>";
+      }};
+      img.src = svgPath;
       lb.classList.add("open");
       lb.setAttribute("aria-hidden", "false");
     }}
@@ -375,7 +397,9 @@ def build_index(results: dict[str, dict]) -> str:
         e.stopPropagation();
         const svg = el.dataset.svg;
         const title = el.dataset.title || "Diagram";
-        if (svg) open(svg, title);
+        const w = parseFloat(el.dataset.w) || 0;
+        const h = parseFloat(el.dataset.h) || 0;
+        if (svg) open(svg, title, w, h);
       }});
     }});
     document.getElementById("lb-close").addEventListener("click", close);
