@@ -469,6 +469,12 @@
         </div>
     </div>
     
+    <div class="server-status" id="server-status-block" style="display:none">
+      <div class="server-row"><span class="server-dot" id="dot-5050"></span><span class="server-name">Music Dashboard</span></div>
+      <div class="server-row"><span class="server-dot" id="dot-8100"></span><span class="server-name">TJD Radio</span></div>
+      <div class="server-row"><span class="server-dot" id="dot-5055"></span><span class="server-name">Guitar Trainer</span></div>
+      <button id="launch-btn" onclick="launchServers()" style="margin-top:.4rem;width:100%;padding:.35rem .5rem;background:var(--accent);color:#fff;border:none;border-radius:4px;font-size:.72rem;font-weight:600;cursor:pointer">▶ Start all servers</button>
+    </div>
     <div class="sidebar-footer">
       Generated 2026-04-23 21:12:53 &middot; 12 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
@@ -1074,8 +1080,17 @@
     function launchServers() {
       const btn = document.getElementById('launch-btn');
       if (btn) { btn.textContent = 'Launching…'; btn.disabled = true; }
-      window.location = 'portal://launch';
-      setTimeout(() => { if (btn) { btn.textContent = 'Start all servers'; btn.disabled = false; } pollServers(); }, 4000);
+      // Use a hidden anchor click to invoke portal:// without navigating the current page.
+      // window.location would cause the tab to navigate away from the portal.
+      const a = document.createElement('a');
+      a.href = 'portal://launch';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Re-poll twice: once at 4s (servers binding) and again at 9s (slower starts)
+      setTimeout(() => { pollServers(); }, 4000);
+      setTimeout(() => { if (btn) { btn.textContent = '\u25b6 Start all servers'; btn.disabled = false; btn.style.animation = ''; } pollServers(); }, 9000);
     }
     const SERVERS = [{port:5050,label:'Music Dashboard'},{port:8100,label:'TJD Radio'},{port:5055,label:'Guitar Trainer'}];
     async function checkServer(port, dotId) {
@@ -1100,7 +1115,14 @@
           anyUp = true;
         } catch {}
       }
-      if (!anyUp && SERVERS.length > 0) launchServers();
+      const block = document.getElementById('server-status-block');
+      if (block) block.style.display = 'block';
+      // Cannot auto-invoke portal:// from a timeout — browser requires a real user gesture.
+      // Show the button; user clicks it once and servers start.
+      if (!anyUp) {
+        const btn = document.getElementById('launch-btn');
+        if (btn) { btn.textContent = '▶ Start all servers'; btn.style.animation = 'livingPulse 1.5s ease-in-out infinite'; }
+      }
     }
     pollServers();
     setInterval(pollServers, 5000);
