@@ -327,14 +327,14 @@
     <div class="health-card clickable" onclick="switchDashById(3)">
       <div class="health-card-top">
         <span class="health-card-title">🔬 Agent Ops Health</span>
-        <span class="health-fresh fresh" title="Dashboard mtime">Generated 23s ago</span>
+        <span class="health-fresh fresh" title="Dashboard mtime">Generated 11m ago</span>
       </div>
       <div class="health-score-row">
-        <div class="health-pct warn">63<span class="pct-sym">%</span></div>
+        <div class="health-pct warn">60<span class="pct-sym">%</span></div>
         <div class="health-meta">
           <div class="health-label warn">Needs Attention</div>
-          <div class="health-gaps">17 gaps
-            <span class="gap-breakdown">(0z · 14o · 3u)</span>
+          <div class="health-gaps">18 gaps
+            <span class="gap-breakdown">(1z · 14o · 3u)</span>
           </div>
         </div>
       </div>
@@ -459,9 +459,14 @@
           <span class="nav-badge static">interactive_html</span>
         </div>
     </div>
-    
+    <div class="server-status" id="server-status-block">
+      <div class="server-row"><span class="server-dot" id="dot-5050"></span><span class="server-name">Music Dashboard :5050</span><button class="server-launch" onclick="openServer(5050)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-8100"></span><span class="server-name">TJD Radio :8100</span><button class="server-launch" onclick="openServer(8100)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-5055"></span><span class="server-name">Guitar Trainer :5055</span><button class="server-launch" onclick="openServer(5055)" title="Open">&nearr;</button></div>
+      <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#9889; Start all servers</button></div>
+    </div>
     <div class="sidebar-footer">
-      Generated 2026-04-25 22:10:19 &middot; 12 dashboards<br>
+      Generated 2026-04-25 22:21:15 &middot; 12 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
@@ -592,7 +597,7 @@
 <div class="dash-pane" id="pane-6" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/fr_dashboard.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-7" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-8" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-9" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5055" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5055" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+<div class="dash-pane" id="pane-9" style="display:none"><iframe src="http://localhost:5055" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-10" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
   </main>
   <script>
@@ -623,10 +628,21 @@
     function launchServers() {
       const btn = document.getElementById('launch-btn');
       if (btn) { btn.textContent = 'Launching…'; btn.disabled = true; }
-      window.location = 'portal://launch';
-      setTimeout(() => { if (btn) { btn.textContent = 'Start all servers'; btn.disabled = false; } pollServers(); }, 4000);
+      // Use a hidden anchor click to invoke portal:// without navigating away
+      const a = document.createElement('a');
+      a.href = 'portal://launch';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Re-poll for server status after 4s and 9s
+      setTimeout(() => { pollServers(); }, 4000);
+      setTimeout(() => {
+        if (btn) { btn.textContent = '▶ Start all servers'; btn.disabled = false; btn.style.animation = ''; }
+        pollServers();
+      }, 9000);
     }
-    const SERVERS = [];
+    const SERVERS = [{"port": 5050, "name": "Music Dashboard"}, {"port": 8100, "name": "TJD Radio"}, {"port": 5055, "name": "Guitar Trainer"}];
     async function checkServer(port, dotId) {
       const dot = document.getElementById(dotId);
       if (!dot) return;
@@ -649,7 +665,16 @@
           anyUp = true;
         } catch {}
       }
-      if (!anyUp && SERVERS.length > 0) launchServers();
+      const block = document.getElementById('server-status-block');
+      if (block) block.style.display = 'block';
+      // Requires a user gesture to invoke portal://, so we show the pulsed button if none are up.
+      if (!anyUp) {
+        const btn = document.getElementById('launch-btn');
+        if (btn) {
+          btn.textContent = '▶ Start all servers';
+          btn.style.animation = 'livingPulse 1.5s ease-in-out infinite';
+        }
+      }
     }
     pollServers();
     setInterval(pollServers, 5000);

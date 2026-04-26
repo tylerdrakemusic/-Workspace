@@ -291,7 +291,8 @@ def _load_servers() -> list[dict]:
     if not SERVERS_CONFIG.exists():
         return []
     try:
-        data = json.loads(SERVERS_CONFIG.read_text(encoding="utf-8"))
+        # portal_servers.json may be written by PowerShell with a UTF-8 BOM
+        data = json.loads(SERVERS_CONFIG.read_text(encoding="utf-8-sig"))
         return [s for s in data.get("servers", []) if s.get("enabled", True)]
     except Exception:
         return []
@@ -502,14 +503,21 @@ def _content_frames(manifest: dict) -> str:
         elif dash["type"] == "flask_app":
             url = dash.get("url", "http://localhost:5050")
             cli = _esc(dash.get("cli", ""))
-            panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                         f'<div class="live-dash">'
-                         f'<div class="live-header">'
-                         f'<span class="live-dot"></span> Live Dashboard'
-                         f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-                         f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" '
-                         f'onerror="this.style.display=\'none\'"></iframe>'
-                         f'</div></div>')
+            # Guitar Trainer renders best as a bare iframe — the live-dash chrome
+            # (header bar + Open in Browser link) crowds the practice UI.
+            # See FR-20260425-guitar-trainer-panel-startup.
+            if dash.get("id") == "guitar-trainer":
+                panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+                             f'<iframe src="{_esc(url)}" frameborder="0"></iframe></div>')
+            else:
+                panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+                             f'<div class="live-dash">'
+                             f'<div class="live-header">'
+                             f'<span class="live-dot"></span> Live Dashboard'
+                             f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
+                             f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" '
+                             f'onerror="this.style.display=\'none\'"></iframe>'
+                             f'</div></div>')
         elif dash["type"] == "inline_html":
             inline_id = dash.get("inline_id", "")
             panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">' +
@@ -561,7 +569,7 @@ def _render_server_sidebar(servers: list[dict]) -> str:
             f'</div>\n      '
         )
     return (
-        '<div class="server-status">\n      '
+        '<div class="server-status" id="server-status-block">\n      '
         + rows
         + '<div style="margin-top:.2rem">'
         '<button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" '
@@ -895,8 +903,19 @@ def render_portal(manifest: dict) -> str:
     function launchServers() {{
       const btn = document.getElementById('launch-btn');
       if (btn) {{ btn.textContent = 'Launching…'; btn.disabled = true; }}
-      window.location = 'portal://launch';
-      setTimeout(() => {{ if (btn) {{ btn.textContent = 'Start all servers'; btn.disabled = false; }} pollServers(); }}, 4000);
+      // Use a hidden anchor click to invoke portal:// without navigating away
+      const a = document.createElement('a');
+      a.href = 'portal://launch';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Re-poll for server status after 4s and 9s
+      setTimeout(() => {{ pollServers(); }}, 4000);
+      setTimeout(() => {{
+        if (btn) {{ btn.textContent = '\u25b6 Start all servers'; btn.disabled = false; btn.style.animation = ''; }}
+        pollServers();
+      }}, 9000);
     }}
     const SERVERS = {server_js_list};
     async function checkServer(port, dotId) {{
@@ -921,7 +940,16 @@ def render_portal(manifest: dict) -> str:
           anyUp = true;
         }} catch {{}}
       }}
-      if (!anyUp && SERVERS.length > 0) launchServers();
+      const block = document.getElementById('server-status-block');
+      if (block) block.style.display = 'block';
+      // Requires a user gesture to invoke portal://, so we show the pulsed button if none are up.
+      if (!anyUp) {{
+        const btn = document.getElementById('launch-btn');
+        if (btn) {{
+          btn.textContent = '\u25b6 Start all servers';
+          btn.style.animation = 'livingPulse 1.5s ease-in-out infinite';
+        }}
+      }}
     }}
     pollServers();
     setInterval(pollServers, 5000);
