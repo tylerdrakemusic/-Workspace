@@ -327,14 +327,14 @@
     <div class="health-card clickable" onclick="switchDashById(3)">
       <div class="health-card-top">
         <span class="health-card-title">🔬 Agent Ops Health</span>
-        <span class="health-fresh fresh" title="Dashboard mtime">Generated 7s ago</span>
+        <span class="health-fresh fresh" title="Dashboard mtime">Generated 11m ago</span>
       </div>
       <div class="health-score-row">
-        <div class="health-pct excellent">98<span class="pct-sym">%</span></div>
+        <div class="health-pct warn">60<span class="pct-sym">%</span></div>
         <div class="health-meta">
-          <div class="health-label excellent">Excellent</div>
-          <div class="health-gaps">3 gaps
-            <span class="gap-breakdown">(0z · 1o · 2u)</span>
+          <div class="health-label warn">Needs Attention</div>
+          <div class="health-gaps">18 gaps
+            <span class="gap-breakdown">(1z · 14o · 3u)</span>
           </div>
         </div>
       </div>
@@ -357,13 +357,13 @@
             <span class="nav-title">Biomarker Dashboard</span>
             <span class="nav-project">∞Life</span>
           </div>
-          <span class="nav-badge living">Living</span>
+          <span class="nav-badge static">Static</span>
         </div>
 
         <div class="nav-item" data-idx="1" onclick="switchDash(1, this)">
-          <span class="nav-icon">⚡</span>
+          <span class="nav-icon">📐</span>
           <div class="nav-text">
-            <span class="nav-title">Unified Benchmarks</span>
+            <span class="nav-title">Architecture Diagrams</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
           <span class="nav-badge static">Static</span>
@@ -458,31 +458,21 @@
           </div>
           <span class="nav-badge static">interactive_html</span>
         </div>
-
-        <div class="nav-item" data-idx="14" onclick="switchDash(14, this)">
-          <span class="nav-icon">🎤</span>
-          <div class="nav-text">
-            <span class="nav-title">Band Management</span>
-            <span class="nav-project">❤Music</span>
-          </div>
-          <span class="nav-badge static">Inline</span>
-        </div>
     </div>
-    
-    <div class="server-status" id="server-status-block" style="display:none">
-      <div class="server-row"><span class="server-dot" id="dot-5050"></span><span class="server-name">Music Dashboard</span></div>
-      <div class="server-row"><span class="server-dot" id="dot-8100"></span><span class="server-name">TJD Radio</span></div>
-      <div class="server-row"><span class="server-dot" id="dot-5055"></span><span class="server-name">Guitar Trainer</span></div>
-      <button id="launch-btn" onclick="launchServers()" style="margin-top:.4rem;width:100%;padding:.35rem .5rem;background:var(--accent);color:#fff;border:none;border-radius:4px;font-size:.72rem;font-weight:600;cursor:pointer">▶ Start all servers</button>
+    <div class="server-status" id="server-status-block">
+      <div class="server-row"><span class="server-dot" id="dot-5050"></span><span class="server-name">Music Dashboard :5050</span><button class="server-launch" onclick="openServer(5050)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-8100"></span><span class="server-name">TJD Radio :8100</span><button class="server-launch" onclick="openServer(8100)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-5055"></span><span class="server-name">Guitar Trainer :5055</span><button class="server-launch" onclick="openServer(5055)" title="Open">&nearr;</button></div>
+      <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#9889; Start all servers</button></div>
     </div>
     <div class="sidebar-footer">
-      Generated 2026-04-23 21:12:53 &middot; 12 dashboards<br>
+      Generated 2026-04-25 22:21:15 &middot; 12 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
   <main class="main-content">
-    <div class="dash-pane" id="pane-0" style="display:block"><iframe src="http://localhost:9999/biomarker_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-1" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
+    <div class="dash-pane" id="pane-0" style="display:block"><iframe src="file:///f:/%E2%88%9ELife/tmp/biomarker_dashboard.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-1" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/diagrams_dashboard.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-2" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/security_dashboard.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-3" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/agent_ops_dashboard.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-4" style="display:none"><iframe src="file:///f:/%E2%8A%95Workspace/reports/copilot_usage_dashboard.html" frameborder="0"></iframe></div>
@@ -609,448 +599,6 @@
 <div class="dash-pane" id="pane-8" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-9" style="display:none"><iframe src="http://localhost:5055" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-10" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-11" style="display:none"><iframe src="file:///f:/%F0%9F%91%81AI-Manifest/output/executive_brief_portal.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-14" style="display:none">
-<style>
-  .bm-wrap { display:flex; flex-direction:column; height:100%; background:var(--bg); overflow:hidden; }
-  .bm-header { padding:1rem 1.5rem 0.75rem; border-bottom:1px solid var(--border); flex-shrink:0; }
-  .bm-title { font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:0.5rem; }
-  .bm-subtitle { font-size:0.7rem; color:var(--muted); margin-left:0.4rem; font-weight:400; }
-  .bm-meta { font-size:0.72rem; color:var(--muted); margin-top:0.25rem; display:flex; gap:1.2rem; flex-wrap:wrap; }
-  .bm-view-toggle { display:flex; gap:0.4rem; margin-top:0.5rem; }
-  .bm-vtab { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:0.25rem 0.9rem; font-size:0.78rem; color:var(--muted); cursor:pointer; user-select:none; transition:all .15s; font-weight:600; }
-  .bm-vtab.active { background:rgba(99,102,241,.2); border-color:var(--accent); color:#a5b4fc; }
-  .bm-controls { padding:0.65rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; flex-shrink:0; }
-  .bm-search { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:0.35rem 0.7rem; color:var(--text); font-size:0.82rem; outline:none; width:220px; }
-  .bm-search:focus { border-color:var(--accent); }
-  .bm-tabs { display:flex; gap:0.4rem; }
-  .bm-tab { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:0.2rem 0.75rem; font-size:0.75rem; color:var(--muted); cursor:pointer; user-select:none; transition:all .15s; }
-  .bm-tab.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:#818cf8; }
-  .bm-stat-chips { display:flex; gap:0.4rem; margin-left:auto; flex-wrap:wrap; }
-  .bm-chip { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:0.15rem 0.5rem; font-size:0.68rem; color:var(--muted); }
-  .bm-chip b { color:var(--text); }
-  .bm-table-wrap { flex:1; overflow-y:auto; padding:0.5rem 1.5rem 1.5rem; }
-  .bm-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
-  .bm-table th { position:sticky; top:0; background:var(--sidebar-bg); color:var(--muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:0.5rem 0.6rem; text-align:left; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap; }
-  .bm-table th:hover { color:var(--text); }
-  .bm-table th .sort-arrow { opacity:0.4; margin-left:0.3rem; font-size:0.6rem; }
-  .bm-table th.sorted .sort-arrow { opacity:1; color:var(--accent); }
-  .bm-table td { padding:0.45rem 0.6rem; border-bottom:1px solid var(--border); vertical-align:middle; }
-  .bm-table tr:hover td { background:var(--accent-glow); }
-  .bm-set-header td { background:var(--surface); color:var(--muted); font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; padding:0.4rem 0.6rem; }
-  .bm-play-btn { background:none; border:1px solid var(--border); color:var(--accent); border-radius:4px; padding:0 0.45rem; height:1.5rem; cursor:pointer; font-size:0.78rem; line-height:1; transition:background .15s,border-color .15s; white-space:nowrap; }
-  .bm-play-btn:hover { background:var(--accent-glow,rgba(99,102,241,.15)); border-color:var(--accent); }
-  .bm-play-btn.playing { border-color:var(--accent); color:#fff; background:var(--accent); }
-  .bm-progress { width:62px; height:3px; cursor:pointer; accent-color:var(--accent); vertical-align:middle; margin-left:5px; }
-  .key-badge { display:inline-block; padding:0.15rem 0.45rem; border-radius:4px; font-size:0.72rem; font-weight:700; letter-spacing:.03em; }
-  .key-major { background:rgba(16,185,129,.15); color:#34d399; }
-  .key-minor { background:rgba(99,102,241,.15); color:#818cf8; }
-  .bpm-val { font-family:'Cascadia Code','Consolas',monospace; font-size:0.8rem; }
-  .bpm-unknown { color:var(--muted); font-style:italic; }
-  .bm-footer { padding:0.5rem 1.5rem; border-top:1px solid var(--border); font-size:0.68rem; color:var(--muted); display:flex; gap:1rem; align-items:center; flex-shrink:0; }
-  .bm-footer a { color:var(--accent); text-decoration:none; }
-  .bm-footer a:hover { text-decoration:underline; }
-  .bm-no-results { text-align:center; padding:3rem; color:var(--muted); }
-  .bm-loading { text-align:center; padding:3rem; color:var(--muted); font-style:italic; }
-  .bm-err { text-align:center; padding:2rem; color:#f87171; background:rgba(239,68,68,.08); border-radius:8px; margin:1rem; }
-</style>
-<div class="bm-wrap">
-  <div class="bm-header">
-    <div class="bm-title">🎤 Band Management &mdash; <select id="bm-band-select" onchange="bmSwitchBand(this.value)" style="background:var(--bg2,#2a2a2a);border:1px solid var(--accent,#7ecfff);border-radius:5px;color:var(--text);font-size:inherit;font-weight:700;cursor:pointer;outline:none;padding:.15rem .5rem .15rem .4rem;appearance:auto;-webkit-appearance:auto"></select> <span class="bm-subtitle" id="bm-view-label">· Active Setlist</span></div>
-    <div class="bm-view-toggle">
-      <span class="bm-vtab active" id="vtab-setlist" onclick="bmSwitchView('setlist',this)">🎯 Active Setlist</span>
-      <span class="bm-vtab" id="vtab-catalog" onclick="bmSwitchView('catalog',this)">📚 Full Catalog</span>
-    </div>
-    <div class="bm-meta">
-      <span id="bm-meta-songs">—</span>
-      <span id="bm-meta-source"></span>
-      <span id="bm-meta-ts" style="color:var(--muted)"></span>
-    </div>
-  </div>
-  <div class="bm-controls">
-    <input class="bm-search" id="bm-search" type="text" placeholder="Search song or artist…" oninput="bmFilter()">
-    <div class="bm-tabs" id="bm-set-tabs">
-      <span class="bm-tab active" onclick="bmSetFilter('all',this)">All Sets</span>
-      <span class="bm-tab" onclick="bmSetFilter('1',this)">Set 1</span>
-      <span class="bm-tab" onclick="bmSetFilter('2',this)">Set 2</span>
-      <span class="bm-tab" onclick="bmSetFilter('3',this)">Set 3</span>
-    </div>
-    <div class="bm-stat-chips">
-      <span class="bm-chip"><b id="bm-visible-count">—</b> shown</span>
-      <span class="bm-chip" id="bm-bpm-chip"></span>
-    </div>
-    <span class="bm-vtab" id="bm-print-btn" onclick="bmPrint()" style="margin-left:auto">🖨 Print Setlist</span>
-  </div>
-  <div class="bm-table-wrap">
-    <div class="bm-loading" id="bm-loading">Loading from database…</div>
-    <table class="bm-table" id="bm-table" style="display:none">
-      <thead>
-        <tr>
-          <th id="bm-th-pos" onclick="bmSort('pos')">#<span class="sort-arrow">▲</span></th>
-          <th id="bm-th-set" onclick="bmSort('set')">Set<span class="sort-arrow"></span></th>
-          <th onclick="bmSort('title')">Title<span class="sort-arrow"></span></th>
-          <th onclick="bmSort('artist')">Artist<span class="sort-arrow"></span></th>
-          <th onclick="bmSort('key')">Key<span class="sort-arrow"></span></th>
-          <th onclick="bmSort('bpm')">BPM<span class="sort-arrow"></span></th>
-          <th id="bm-th-audio">&#9654;</th>
-          <th id="bm-th-sheet">Sheet Music</th>
-        </tr>
-      </thead>
-      <tbody id="bm-tbody"></tbody>
-    </table>
-    <div class="bm-no-results" id="bm-no-results" style="display:none">No songs match your search.</div>
-    <div class="bm-err" id="bm-err" style="display:none"></div>
-  </div>
-  <div class="bm-footer">
-    BPM: librosa on <code>G:\Muzic</code> &middot;
-    Source: <a href="file:///f:/%E2%9D%A4Music/catalog/setlists/catalog_export.json">catalog_export.json</a> &middot;
-    <a href="file:///f:/%E2%9D%A4Music/catalog/setlists/setlist_active_export.json">setlist_active_export.json</a> &middot;
-    <span id="bm-sort-info" style="color:var(--muted)">Default order</span>
-  </div>
-  <audio id="bm-audio" preload="none"></audio>
-</div>
-<script>
-(function(){
-  // Data injected by export_catalog.py — do not edit between BM_DATA markers
-  // <!--BM_DATA_START-->
-  const BM_INLINE = {"exported_at": "2026-04-26T02:31:19.972238+00:00", "bands": [{"id": 1, "name": "Copper Creek", "genre": "Rock / Pop / Country", "active": true, "catalog": {"count": 40, "songs": [{"id": 26, "title": "Heavy Chevy", "artist": "Alabama Shakes", "key": "C", "bpm": 152, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Heavy%20Chevy%20-%20Alabama%20Shakes.docx"], "audio_url": "file:///G:/Muzic/Heavy%20Chevy%20-%20Alabama%20Shakes%20%282%29.mp3"}, {"id": 27, "title": "Pick Up the Pieces", "artist": "Average White Band", "key": "Fm", "bpm": 108, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Pick%20Up%20The%20Pieces%20-%20Average%20White%20Band%20%28Trombone%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Pick%20Up%20The%20Pieces%20-%20Average%20White%20Band%20%28Trombone%20Page%201%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Pick%20Up%20The%20Pieces%20-%20Average%20White%20Band%20%28Trombone%20Page%202%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Pick%20Up%20The%20Pieces%20-%20Average%20White%20Band%20%28Trombone%20Page%203%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Pick%20Up%20The%20Pieces%20-%20Average%20White%20Band.jpg"], "audio_url": "file:///G:/Muzic/Pick%20Up%20the%20Pieces%20-%20Average%20White%20Band.mp3"}, {"id": 7, "title": "Call Me", "artist": "Blondie", "key": "B", "bpm": 144, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Call%20Me%20-%20Blondie%20%28in%20B%29.docx"], "audio_url": "file:///G:/Muzic/Call%20Me%20-%20Blondie.mp3"}, {"id": 11, "title": "Love Sneakin' Up on You", "artist": "Bonnie Raitt", "key": "D", "bpm": 94, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Love%20Sneakin%20Up%20on%20You%20-%20Bonnie%20Raitt.docx"], "audio_url": "file:///G:/Muzic/Love%20Sneakin%27%20Up%20On%20You%20-%20Bonnie%20Raitt.mp3"}, {"id": 24, "title": "I Feel the Earth Move", "artist": "Carole King", "key": "Cm", "bpm": 120, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/I%20Feel%20the%20Earth%20Move%20-%20Carole%20King.docx"], "audio_url": "file:///G:/Muzic/I%20Feel%20the%20Earth%20Move%20-%20Carole%20King.mp3"}, {"id": 14, "title": "25 or 6 to 4", "artist": "Chicago", "key": "A", "bpm": 148, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/25%20or%206%20to%204%20-%20Chicago.docx"], "audio_url": "file:///G:/Muzic/25%20or%206%20to%204%20-%20Chicago.mp3"}, {"id": 5, "title": "Rhiannon", "artist": "Fleetwood Mac", "key": "Am", "bpm": 129, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Rhiannon%20-%20Fleetwood%20Mac.docx"], "audio_url": "file:///G:/Muzic/Rhiannon%20-%20Fleetwood%20Mac%20%28in%20Bm%29.wav"}, {"id": 17, "title": "Baker Street", "artist": "Gerry Rafferty", "key": "D", "bpm": 115, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Baker%20Street%20-%20Gerry%20Rafferty.docx"], "audio_url": "file:///G:/Muzic/Baker%20Street%20-%20Gerry%20Rafferty.mp3"}, {"id": 10, "title": "I Will Survive", "artist": "Gloria Gaynor", "key": "Am", "bpm": 117, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/I%20Will%20Survive%20-%20Gloria%20Gaynor.docx"], "audio_url": "file:///G:/Muzic/I%20Will%20Survive%20-%20Gloria%20Gaynor.mp3"}, {"id": 13, "title": "I Can't Go for That", "artist": "Hall & Oates", "key": "F", "bpm": 110, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/I%20Cant%20Go%20for%20That%20-%20Hall%20%26%20Oates.docx"], "audio_url": "file:///G:/Muzic/I%20Can%27t%20Go%20for%20That%20%28No%20Can%20Do%29%20-%20Daryl%20Hall%20and%20John%20Oates.mp3"}, {"id": 25, "title": "Heart of Rock & Roll", "artist": "Huey Lewis and the News", "key": "C", "bpm": 144, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Heart%20of%20Rock%20%26%20Roll%20-%20Huey%20Lewis%20%26%20The%20News.docx"], "audio_url": "file:///G:/Muzic/The%20Heart%20of%20Rock%20and%20Roll%20-%20Huey%20Lewis%20and%20the%20News.mp3"}, {"id": 15, "title": "What You Need", "artist": "INXS", "key": "F#", "bpm": 115, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/What%20You%20Need%20-%20INXS.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/What%20You%20Need%20-%20INXS%20%28Sax%201%29.png", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/What%20You%20Need%20-%20INXS%20%28Sax%202%29.png"], "audio_url": "file:///G:/Muzic/What%20You%20Need%20-%20INXS.mp3"}, {"id": 4, "title": "Me and Bobby McGee", "artist": "Janis Joplin", "key": "G", "bpm": 185, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Me%20and%20Bobby%20Mcgee%20-%20Janis%20Joplin.docx"], "audio_url": "file:///G:/Muzic/Me%20and%20Bobby%20McGee%20-%20Janis%20Joplin.mp3"}, {"id": 22, "title": "Jacky", "artist": "Jim Mann", "key": "Gm", "bpm": 126, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Jacky%20-%20Jim%20Mann.docx"], "audio_url": "file:///G:/Muzic/Jacky%20-%20Jim%20Mann%20%281-7-24%29.mp3"}, {"id": 35, "title": "The Letter", "artist": "Joe Cocker", "key": "Bbm", "bpm": 91, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/The%20Letter%20-%20Joe%20Cocker.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/The%20Letter%20-%20Joe%20Cocker.docx"], "audio_url": "file:///G:/Muzic/The%20Letter%20-%20Joe%20Cocker%20%28Live%29.mp3"}, {"id": 29, "title": "On the Dark Side", "artist": "John Cafferty", "key": "E", "bpm": 162, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/On%20the%20Dark%20Side%20-%20John%20Cafferty.docx"], "audio_url": "file:///G:/Muzic/On%20the%20Darkside%20-%20John%20Cafferty.mp3"}, {"id": 3, "title": "I'm Alright", "artist": "Kenny Loggins", "key": "D", "bpm": 162, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Im%20Alright%20-%20Kenny%20Loggins.docx"], "audio_url": "file:///G:/Muzic/I%27m%20Alright%20-%20Kenny%20Loggins.mp3"}, {"id": 36, "title": "Blue on Black", "artist": "Kenny Wayne Shepherd", "key": "C", "bpm": 157, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Blue%20on%20Black%20-%20Kenny%20Wayne%20Shepherd%20%28in%20C%29.docx"], "audio_url": "file:///G:/Muzic/Blue%20On%20Black%20-%20Kenny%20Wayne%20Shepherd.mp3"}, {"id": 83, "title": "Talk Me Into It", "artist": "Kevin Redmond", "key": "G", "bpm": 112, "bpm_source": null, "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Talk%20Me%20Into%20It%20-%20Kevin%20Redmond.docx"], "audio_url": "file:///G:/Muzic/Talk%20Me%20Into%20It%20-%20Kevin%20Redmond.mp3"}, {"id": 18, "title": "Celebrate", "artist": "Kool & the Gang", "key": "Ab", "bpm": 123, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Celebrate%20-%20Kool%20%26%20the%20Gang.docx"], "audio_url": "file:///G:/Muzic/Celebration%20-%20Kool%20and%20The%20Gang.mp3"}, {"id": 12, "title": "These Boots Are Made for Walkin'", "artist": "Nancy Sinatra", "key": "E", "bpm": 83, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/These%20Boots%20Are%20Made%20for%20Walkin%20-%20Nancy%20Sinatra.docx"], "audio_url": "file:///G:/Muzic/These%20Boots%20Are%20Made%20for%20Walkin%27%20-%20Nancy%20Sinatra.mp3"}, {"id": 23, "title": "Carnival", "artist": "Natalie Merchant", "key": "F#m", "bpm": 94, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Carnival%20-%20Natalie%20Merchant.docx"], "audio_url": "file:///G:/Muzic/Carnival%20-%20Natalie%20Merchant.mp3"}, {"id": 39, "title": "Roll with the Changes", "artist": "REO Speedwagon", "key": "C", "bpm": 126, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Roll%20With%20The%20Changes%20-%20REO%20Speedwagon.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Roll%20with%20the%20Changes%20-%20REO%20Speedwagon.docx"], "audio_url": "file:///G:/Muzic/Roll%20With%20the%20Changes%20-%20REO%20Speedwagon.mp3"}, {"id": 31, "title": "Smooth Operator", "artist": "Sade", "key": "Dm", "bpm": 120, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Smooth%20Operator%20-%20Sade%20%28Tenor%20Sax%20Advanced%29.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Smooth%20Operator%20-%20Sade%20%28Tenor%20Sax%20Easy%29.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Smooth%20Operator%20-%20Sade.docx"], "audio_url": "file:///G:/Muzic/Smooth%20Operator%20-%20Sade.mp3"}, {"id": 20, "title": "Black Magic Woman", "artist": "Santana", "key": "Dm", "bpm": 120, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Black%20Magic%20Woman%20-%20Santana.docx"], "audio_url": "file:///G:/Muzic/Black%20Magic%20Woman%20-%20Santana%20%28Gypsy%20Queen%20medley%29.m4a"}, {"id": 37, "title": "Evil Ways", "artist": "Santana", "key": "Gm", "bpm": 117, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Evil%20Ways%20-%20Santana.docx"], "audio_url": "file:///G:/Muzic/Evil%20Ways%20-%20Santana.mp3"}, {"id": 32, "title": "Smooth", "artist": "Santana feat. Rob Thomas", "key": "Am", "bpm": 115, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Smooth%20-%20Santana.docx"], "audio_url": "file:///G:/Muzic/Smooth%20-%20Santana%20feat.%20Rob%20Thomas.mp3"}, {"id": 16, "title": "Do It Again", "artist": "Steely Dan", "key": "Gm", "bpm": 123, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Do%20It%20Again%20-%20Steely%20Dan.docx"], "audio_url": "file:///G:/Muzic/Do%20It%20Again%20-%20Steely%20Dan.mp3"}, {"id": 38, "title": "Peg", "artist": "Steely Dan", "key": "G", "bpm": 117, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Peg%20-%20Steely%20Dan.docx"], "audio_url": "file:///G:/Muzic/Peg%20-%20Steely%20Dan.mp3"}, {"id": 9, "title": "Reelin' in the Years", "artist": "Steely Dan", "key": "A", "bpm": 136, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Reelin%20in%20the%20Years%20-%20Steely%20Dan.docx"], "audio_url": "file:///G:/Muzic/Reeling%20In%20the%20Years%20-%20Steely%20Dan.mp3"}, {"id": 34, "title": "Stop Draggin' My Heart Around", "artist": "Stevie Nicks", "key": "Em", "bpm": 108, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Stop%20Draggin%20My%20Heart%20Around%20-%20Stevie%20Nicks.docx"], "audio_url": "file:///G:/Muzic/Stop%20Draggin%27%20My%20Heart%20Around%20-%20Stevie%20Nicks.mp3"}, {"id": 2, "title": "Too Much Time on My Hands", "artist": "Styx", "key": "A", "bpm": 133, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Too%20Much%20Time%20on%20My%20Hands%20-%20Styx.docx"], "audio_url": "file:///G:/Muzic/Too%20Much%20Time%20On%20My%20Hands%20-%20Styx.mp3"}, {"id": 21, "title": "The Logical Song", "artist": "Supertramp", "key": "C", "bpm": 117, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/The%20Logical%20Song%20-%20Supertramp.docx"], "audio_url": "file:///G:/Muzic/The%20Logical%20Song%20-%20Supertramp.mp3"}, {"id": 8, "title": "Shaded Jade", "artist": "Tamala Cameron & Gene Ngo", "key": "Bm", "bpm": 129, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Shaded%20Jade%20-%20Tamala%20Cameron%20%26%20Gene%20Ngo.docx"], "audio_url": "file:///G:/Muzic/Shaded%20Jade%20-%20Tamala%20Cameron%20and%20Gene%20Ngo.mp3"}, {"id": 6, "title": "Gold on the Ceiling", "artist": "The Black Keys", "key": "G", "bpm": 131, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Gold%20on%20the%20Ceiling%20-%20The%20Black%20Keys.docx"], "audio_url": "file:///G:/Muzic/Gold%20On%20the%20Ceiling%20-%20The%20Black%20Keys.mp3"}, {"id": 1, "title": "Long Train Runnin", "artist": "The Doobie Brothers", "key": "Gm", "bpm": 117, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Long%20Train%20Runnin%20-%20The%20Doobie%20Brothers.docx"], "audio_url": "file:///G:/Muzic/Long%20Train%20Runnin%27%20-%20The%20Doobie%20Brothers.mp3"}, {"id": 30, "title": "What I Like About You", "artist": "The Romantics", "key": "E", "bpm": 161, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/What%20I%20Like%20About%20You%20-%20The%20Romantics.docx"], "audio_url": "file:///G:/Muzic/What%20I%20Like%20About%20You%20-%20The%20Romantics.mp3"}, {"id": 19, "title": "Disco Inferno", "artist": "Tina Turner", "key": "Ab", "bpm": 131, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Disco%20Inferno%20-%20The%20Trammps%20%28Score%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Disco%20Inferno%20-%20The%20Trammps%20%28Score%20Page%202%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Disco%20Inferno%20-%20The%20Trammps%20%28Score%20Page%203%29.jpg", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Disco%20Inferno%20-%20Tina%20Turner.docx"], "audio_url": "file:///G:/Muzic/Disco%20Inferno%20-%20Tina%20Turner%20%28Live%29.mp3"}, {"id": 33, "title": "What I Do", "artist": "Tyler James Drake", "key": "Bm", "bpm": 167, "bpm_source": "librosa", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/What%20I%20Do%20-%20Tyler%20James%20Drake.docx"], "audio_url": "file:///G:/Muzic/What%20I%20Do%20-%20Tyler%20James%20Drake%20%28Clean%20Master%29.mp3"}, {"id": 28, "title": "Play That Funky Music", "artist": "Wild Cherry", "key": "Em", "bpm": 108, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Play%20That%20Funky%20Music%20-%20Wild%20Cherry.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Play%20That%20Funky%20Music%20-%20Wild%20Cherry%20%28Alt%20Ending%29.docx"], "audio_url": "file:///G:/Muzic/Play%20That%20Funky%20Music%20-%20Wild%20Cherry.mp3"}]}, "setlist": {"setlist": {"id": 3, "name": "Copper Creek Prost 2026-05-02", "band": "Copper Creek", "gig_date": "2026-05-02", "venue": "Copper Creek Brewery"}, "count": 37, "songs": [{"set": 1, "order": 1, "title": "Long Train Runnin", "artist": "The Doobie Brothers", "key": "Gm", "bpm": 117, "bpm_source": "librosa", "catalog_id": 1, "notes": null, "audio_url": "file:///G:/Muzic/Long%20Train%20Runnin%27%20-%20The%20Doobie%20Brothers.mp3", "catalog_warning": false}, {"set": 1, "order": 2, "title": "I'm Alright", "artist": "Kenny Loggins", "key": "D", "bpm": 162, "bpm_source": "unknown", "catalog_id": 3, "notes": null, "audio_url": "file:///G:/Muzic/I%27m%20Alright%20-%20Kenny%20Loggins.mp3", "catalog_warning": false}, {"set": 1, "order": 3, "title": "Me and Bobby McGee", "artist": "Janis Joplin", "key": "G", "bpm": 185, "bpm_source": "librosa", "catalog_id": 4, "notes": null, "audio_url": "file:///G:/Muzic/Me%20and%20Bobby%20McGee%20-%20Janis%20Joplin.mp3", "catalog_warning": false}, {"set": 1, "order": 4, "title": "Rhiannon", "artist": "Fleetwood Mac", "key": "Am", "bpm": 129, "bpm_source": "librosa", "catalog_id": 5, "notes": null, "audio_url": "file:///G:/Muzic/Rhiannon%20-%20Fleetwood%20Mac%20%28in%20Bm%29.wav", "catalog_warning": false}, {"set": 1, "order": 5, "title": "Talk Me Into It", "artist": "Kevin Redmond", "key": "B", "bpm": 112, "bpm_source": null, "catalog_id": 83, "notes": null, "audio_url": "file:///G:/Muzic/Talk%20Me%20Into%20It%20-%20Kevin%20Redmond.mp3", "catalog_warning": false}, {"set": 1, "order": 6, "title": "Reelin' in the Years", "artist": "Steely Dan", "key": "A", "bpm": 136, "bpm_source": "librosa", "catalog_id": 9, "notes": null, "audio_url": "file:///G:/Muzic/Reeling%20In%20the%20Years%20-%20Steely%20Dan.mp3", "catalog_warning": false}, {"set": 1, "order": 7, "title": "Shaded Jade", "artist": "Tamala Cameron & Gene Ngo", "key": "Bm", "bpm": 129, "bpm_source": "unknown", "catalog_id": 8, "notes": null, "audio_url": "file:///G:/Muzic/Shaded%20Jade%20-%20Tamala%20Cameron%20and%20Gene%20Ngo.mp3", "catalog_warning": false}, {"set": 1, "order": 8, "title": "I Will Survive", "artist": "Gloria Gaynor", "key": "Am", "bpm": 117, "bpm_source": "librosa", "catalog_id": 10, "notes": null, "audio_url": "file:///G:/Muzic/I%20Will%20Survive%20-%20Gloria%20Gaynor.mp3", "catalog_warning": false}, {"set": 1, "order": 9, "title": "Play That Funky Music", "artist": "Wild Cherry", "key": "Em", "bpm": 108, "bpm_source": "unknown", "catalog_id": 28, "notes": null, "audio_url": "file:///G:/Muzic/Play%20That%20Funky%20Music%20-%20Wild%20Cherry.mp3", "catalog_warning": false}, {"set": 1, "order": 10, "title": "Love Sneakin' Up on You", "artist": "Bonnie Raitt", "key": "D", "bpm": 94, "bpm_source": "librosa", "catalog_id": 11, "notes": null, "audio_url": "file:///G:/Muzic/Love%20Sneakin%27%20Up%20On%20You%20-%20Bonnie%20Raitt.mp3", "catalog_warning": false}, {"set": 1, "order": 11, "title": "Evil Ways", "artist": "Santana", "key": "Gm", "bpm": 117, "bpm_source": "librosa", "catalog_id": 37, "notes": null, "audio_url": "file:///G:/Muzic/Evil%20Ways%20-%20Santana.mp3", "catalog_warning": false}, {"set": 1, "order": 12, "title": "I Can't Go for That", "artist": "Hall & Oates", "key": "F", "bpm": 110, "bpm_source": "librosa", "catalog_id": 13, "notes": null, "audio_url": "file:///G:/Muzic/I%20Can%27t%20Go%20for%20That%20%28No%20Can%20Do%29%20-%20Daryl%20Hall%20and%20John%20Oates.mp3", "catalog_warning": false}, {"set": 2, "order": 1, "title": "Too Much Time on My Hands", "artist": "Styx", "key": "A", "bpm": 133, "bpm_source": "librosa", "catalog_id": 2, "notes": null, "audio_url": "file:///G:/Muzic/Too%20Much%20Time%20On%20My%20Hands%20-%20Styx.mp3", "catalog_warning": false}, {"set": 2, "order": 2, "title": "25 or 6 to 4", "artist": "Chicago", "key": "A", "bpm": 148, "bpm_source": "librosa", "catalog_id": 14, "notes": null, "audio_url": "file:///G:/Muzic/25%20or%206%20to%204%20-%20Chicago.mp3", "catalog_warning": false}, {"set": 2, "order": 3, "title": "Do It Again", "artist": "Steely Dan", "key": "Gm", "bpm": 123, "bpm_source": "librosa", "catalog_id": 16, "notes": null, "audio_url": "file:///G:/Muzic/Do%20It%20Again%20-%20Steely%20Dan.mp3", "catalog_warning": false}, {"set": 2, "order": 4, "title": "Baker Street", "artist": "Gerry Rafferty", "key": "D", "bpm": 115, "bpm_source": "librosa", "catalog_id": 17, "notes": null, "audio_url": "file:///G:/Muzic/Baker%20Street%20-%20Gerry%20Rafferty.mp3", "catalog_warning": false}, {"set": 2, "order": 5, "title": "Black Magic Woman", "artist": "Santana", "key": "Dm", "bpm": 120, "bpm_source": "librosa", "catalog_id": 20, "notes": null, "audio_url": "file:///G:/Muzic/Black%20Magic%20Woman%20-%20Santana%20%28Gypsy%20Queen%20medley%29.m4a", "catalog_warning": false}, {"set": 2, "order": 6, "title": "The Logical Song", "artist": "Supertramp", "key": "C", "bpm": 117, "bpm_source": "librosa", "catalog_id": 21, "notes": null, "audio_url": "file:///G:/Muzic/The%20Logical%20Song%20-%20Supertramp.mp3", "catalog_warning": false}, {"set": 2, "order": 7, "title": "Jacky", "artist": "Jim Mann", "key": "Gm", "bpm": 126, "bpm_source": "librosa", "catalog_id": 22, "notes": null, "audio_url": "file:///G:/Muzic/Jacky%20-%20Jim%20Mann%20%281-7-24%29.mp3", "catalog_warning": false}, {"set": 2, "order": 8, "title": "Carnival", "artist": "Natalie Merchant", "key": "F#m", "bpm": 94, "bpm_source": "librosa", "catalog_id": 23, "notes": null, "audio_url": "file:///G:/Muzic/Carnival%20-%20Natalie%20Merchant.mp3", "catalog_warning": false}, {"set": 2, "order": 9, "title": "I Feel the Earth Move", "artist": "Carole King", "key": "Cm", "bpm": 120, "bpm_source": "librosa", "catalog_id": 24, "notes": null, "audio_url": "file:///G:/Muzic/I%20Feel%20the%20Earth%20Move%20-%20Carole%20King.mp3", "catalog_warning": false}, {"set": 2, "order": 10, "title": "Disco Inferno", "artist": "Tina Turner", "key": "Ab", "bpm": 131, "bpm_source": "librosa", "catalog_id": 19, "notes": null, "audio_url": "file:///G:/Muzic/Disco%20Inferno%20-%20Tina%20Turner%20%28Live%29.mp3", "catalog_warning": false}, {"set": 2, "order": 11, "title": "Heart of Rock & Roll", "artist": "Huey Lewis and the News", "key": "C", "bpm": 144, "bpm_source": "librosa", "catalog_id": 25, "notes": null, "audio_url": "file:///G:/Muzic/The%20Heart%20of%20Rock%20and%20Roll%20-%20Huey%20Lewis%20and%20the%20News.mp3", "catalog_warning": false}, {"set": 2, "order": 12, "title": "Heavy Chevy", "artist": "Alabama Shakes", "key": "C", "bpm": 152, "bpm_source": "librosa", "catalog_id": 26, "notes": null, "audio_url": "file:///G:/Muzic/Heavy%20Chevy%20-%20Alabama%20Shakes%20%282%29.mp3", "catalog_warning": false}, {"set": 3, "order": 1, "title": "Call Me", "artist": "Blondie", "key": "B", "bpm": 144, "bpm_source": "librosa", "catalog_id": 7, "notes": null, "audio_url": "file:///G:/Muzic/Call%20Me%20-%20Blondie.mp3", "catalog_warning": false}, {"set": 3, "order": 2, "title": "On the Dark Side", "artist": "John Cafferty", "key": "E", "bpm": 162, "bpm_source": "unknown", "catalog_id": 29, "notes": null, "audio_url": "file:///G:/Muzic/On%20the%20Darkside%20-%20John%20Cafferty.mp3", "catalog_warning": false}, {"set": 3, "order": 3, "title": "What I Like About You", "artist": "The Romantics", "key": "E", "bpm": 161, "bpm_source": "librosa", "catalog_id": 30, "notes": null, "audio_url": "file:///G:/Muzic/What%20I%20Like%20About%20You%20-%20The%20Romantics.mp3", "catalog_warning": false}, {"set": 3, "order": 4, "title": "These Boots Are Made for Walkin'", "artist": "Nancy Sinatra", "key": "E", "bpm": 83, "bpm_source": "librosa", "catalog_id": 12, "notes": null, "audio_url": "file:///G:/Muzic/These%20Boots%20Are%20Made%20for%20Walkin%27%20-%20Nancy%20Sinatra.mp3", "catalog_warning": false}, {"set": 3, "order": 5, "title": "Blue on Black", "artist": "Kenny Wayne Shepherd", "key": "C", "bpm": 157, "bpm_source": "librosa", "catalog_id": 36, "notes": null, "audio_url": "file:///G:/Muzic/Blue%20On%20Black%20-%20Kenny%20Wayne%20Shepherd.mp3", "catalog_warning": false}, {"set": 3, "order": 6, "title": "Smooth", "artist": "Santana feat. Rob Thomas", "key": "Am", "bpm": 115, "bpm_source": "librosa", "catalog_id": 32, "notes": null, "audio_url": "file:///G:/Muzic/Smooth%20-%20Santana%20feat.%20Rob%20Thomas.mp3", "catalog_warning": false}, {"set": 3, "order": 7, "title": "Pick Up the Pieces", "artist": "Average White Band", "key": "Fm", "bpm": 108, "bpm_source": "librosa", "catalog_id": 27, "notes": null, "audio_url": "file:///G:/Muzic/Pick%20Up%20the%20Pieces%20-%20Average%20White%20Band.mp3", "catalog_warning": false}, {"set": 3, "order": 8, "title": "Stop Draggin' My Heart Around", "artist": "Stevie Nicks", "key": "Em", "bpm": 108, "bpm_source": "librosa", "catalog_id": 34, "notes": null, "audio_url": "file:///G:/Muzic/Stop%20Draggin%27%20My%20Heart%20Around%20-%20Stevie%20Nicks.mp3", "catalog_warning": false}, {"set": 3, "order": 9, "title": "What I Do", "artist": "Tyler James Drake", "key": "Bm", "bpm": 167, "bpm_source": "librosa", "catalog_id": 33, "notes": null, "audio_url": "file:///G:/Muzic/What%20I%20Do%20-%20Tyler%20James%20Drake%20%28Clean%20Master%29.mp3", "catalog_warning": false}, {"set": 3, "order": 10, "title": "Smooth Operator", "artist": "Sade", "key": "Dm", "bpm": 120, "bpm_source": "librosa", "catalog_id": 31, "notes": null, "audio_url": "file:///G:/Muzic/Smooth%20Operator%20-%20Sade.mp3", "catalog_warning": false}, {"set": 3, "order": 11, "title": "Peg", "artist": "Steely Dan", "key": "G", "bpm": 117, "bpm_source": "librosa", "catalog_id": 38, "notes": null, "audio_url": "file:///G:/Muzic/Peg%20-%20Steely%20Dan.mp3", "catalog_warning": false}, {"set": 3, "order": 12, "title": "Roll with the Changes", "artist": "REO Speedwagon", "key": "C", "bpm": 126, "bpm_source": "librosa", "catalog_id": 39, "notes": null, "audio_url": "file:///G:/Muzic/Roll%20With%20the%20Changes%20-%20REO%20Speedwagon.mp3", "catalog_warning": false}, {"set": 4, "order": 1, "title": "Celebrate", "artist": "Kool & the Gang", "key": "Ab", "bpm": 123, "bpm_source": "unknown", "catalog_id": 18, "notes": "May be played for special occasion", "audio_url": "file:///G:/Muzic/Celebration%20-%20Kool%20and%20The%20Gang.mp3", "catalog_warning": false}]}}, {"id": 2, "name": "The Groove Unit", "genre": "Funk / R&B / Soul", "active": true, "catalog": {"count": 2, "songs": [{"id": 18, "title": "Celebrate", "artist": "Kool & the Gang", "key": "Bb", "bpm": 122, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Celebrate%20-%20Kool%20%26%20the%20Gang.docx"], "audio_url": "file:///G:/Muzic/Celebration%20-%20Kool%20and%20The%20Gang.mp3"}, {"id": 28, "title": "Play That Funky Music", "artist": "Wild Cherry", "key": "Dm", "bpm": 98, "bpm_source": "unknown", "genre": null, "sheet_music": ["file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Play%20That%20Funky%20Music%20-%20Wild%20Cherry.pdf", "file:///f:/%E2%9D%A4Music/catalog/sheet_music/covers/Play%20That%20Funky%20Music%20-%20Wild%20Cherry%20%28Alt%20Ending%29.docx"], "audio_url": "file:///G:/Muzic/Play%20That%20Funky%20Music%20-%20Wild%20Cherry.mp3"}]}, "setlist": {"setlist": {}, "count": 0, "songs": []}}]};
-  // <!--BM_DATA_END-->
-
-  let currentView = 'setlist';
-  let currentBandId = null;
-  let allSongs = [];
-  let activeSet = 'all';
-  let sortCol = null;
-  let sortAsc = true;
-  let dataCache = {}; // keyed by 'bandId:view'
-
-  function getBandData(bandId) {
-    if (!BM_INLINE || !BM_INLINE.bands) return null;
-    return BM_INLINE.bands.find(function(b){ return b.id == bandId; }) || null;
-  }
-
-  function populateBandSelect() {
-    const sel = document.getElementById('bm-band-select');
-    if (!BM_INLINE || !BM_INLINE.bands) return;
-    sel.innerHTML = '';
-    BM_INLINE.bands.forEach(function(b) {
-      const opt = document.createElement('option');
-      opt.value = b.id;
-      opt.textContent = b.name + (b.active ? '' : ' (inactive)');
-      sel.appendChild(opt);
-    });
-    currentBandId = BM_INLINE.bands[0].id;
-  }
-
-  function bmSwitchBand(bandId) {
-    currentBandId = parseInt(bandId);
-    dataCache = {};
-    document.getElementById('bm-search').value = '';
-    activeSet = 'all';
-    sortCol = null; sortAsc = true;
-    loadView(currentView);
-  }
-  window.bmSwitchBand = bmSwitchBand;
-
-  function keyBadge(key) {
-    if (!key) return '<span style="color:var(--muted)">—</span>';
-    const minor = /m$/.test(key);
-    return '<span class="key-badge ' + (minor ? 'key-minor' : 'key-major') + '">' + key + '</span>';
-  }
-
-  function showErr(msg) {
-    document.getElementById('bm-loading').style.display = 'none';
-    document.getElementById('bm-err').style.display = 'block';
-    document.getElementById('bm-err').textContent = '⚠ ' + msg;
-  }
-
-  function render(songs) {
-    const tbody   = document.getElementById('bm-tbody');
-    const noRes   = document.getElementById('bm-no-results');
-    const tbl     = document.getElementById('bm-table');
-    const loading = document.getElementById('bm-loading');
-    const countEl = document.getElementById('bm-visible-count');
-    loading.style.display = 'none';
-    if (!songs.length) {
-      tbody.innerHTML = '';
-      tbl.style.display = 'none';
-      noRes.style.display = 'block';
-      countEl.textContent = '0';
-      return;
-    }
-    noRes.style.display = 'none';
-    tbl.style.display = 'table';
-    countEl.textContent = songs.length;
-    const grouped = sortCol === null && currentView === 'setlist';
-    let html = '';
-    let lastSet = null;
-    songs.forEach(function(s) {
-      if (grouped && s.set !== lastSet) {
-        lastSet = s.set;
-        const headerLabel = s.set > 3 ? '\u2500\u2500 Backup' : '\u2500\u2500 Set ' + s.set;
-        html += '<tr class="bm-set-header"><td colspan="8">' + headerLabel + '</td></tr>';
-      }
-      const isSetlist = currentView === 'setlist';
-      const bpmHtml  = s.bpm != null ? '<span class="bpm-val">' + s.bpm + '</span>' : '<span class="bpm-val bpm-unknown">?</span>';
-      const posCell  = isSetlist ? '<td style="color:var(--muted);font-size:.73rem">' + (s.set > 3 ? 'B-' + s.order : s.set + '-' + s.order) + '</td>' : '';
-      const setCell  = isSetlist ? '<td style="color:var(--muted);font-size:.75rem">' + (s.set > 3 ? 'B' : s.set) + '</td>' : '';
-      const smLinks  = (s.sheet_music || []);
-      const smCell   = '<td>' + (smLinks.length
-        ? smLinks.map(function(u){
-            const fname = decodeURIComponent(u.split('/').pop());
-            const variant = fname.replace(/^[^(]+/, '').replace(/\.[^.]+$/, '').trim();
-            const label = variant || '&#128206;';
-            return '<a href="' + u + '" target="_blank" style="font-size:.72rem;margin-right:.4rem;color:var(--accent);text-decoration:none" title="' + fname + '">' + label + '</a>';
-          }).join('')
-        : '<span style="color:var(--muted);font-size:.7rem">—</span>') + '</td>';
-      const audioUrl = s.audio_url || '';
-      const audioCell = '<td>' + (audioUrl
-        ? '<button class="bm-play-btn" data-audio-url="' + audioUrl.replace(/"/g, '%22') + '" onclick="bmPlayRow(this)">&#9654;</button>'
-          + '<input type="range" class="bm-progress" min="0" max="100" value="0" step="0.1" oninput="bmSeek(this)">'
-        : '<span style="color:var(--muted);font-size:.7rem">—</span>') + '</td>';
-      const noteHtml = s.notes ? '<div style="font-size:.68rem;color:#f59e0b;margin-top:.15rem;font-style:italic">&#128221; ' + s.notes + '</div>' : '';
-      html += '<tr>' + posCell + setCell
-            + '<td style="font-weight:600">' + s.title + (noteHtml ? noteHtml : '') + '</td>'
-            + '<td style="color:var(--muted)">' + (s.catalog_warning ? '<span title="Not in catalog — add artist/BPM data" style="color:#f59e0b;margin-right:.25rem">&#9888;</span>' : '') + (s.artist || '') + '</td>'
-            + '<td>' + keyBadge(s.key) + '</td>'
-            + '<td>' + bpmHtml + '</td>' + audioCell + smCell + '</tr>';
-    });
-    tbody.innerHTML = html;
-  }
-
-  function getFiltered() {
-    const q = (document.getElementById('bm-search').value || '').toLowerCase();
-    return allSongs.filter(function(s) {
-      const setOk = currentView !== 'setlist' || activeSet === 'all' || s.set === parseInt(activeSet);
-      const qOk   = !q || (s.title||'').toLowerCase().includes(q)
-                       || (s.artist||'').toLowerCase().includes(q)
-                       || (s.key||'').toLowerCase().includes(q);
-      return setOk && qOk;
-    });
-  }
-
-  function getSorted(songs) {
-    if (!sortCol) return songs;
-    return songs.slice().sort(function(a, b) {
-      var av = a[sortCol], bv = b[sortCol];
-      if (av == null) av = sortAsc ? Infinity : -Infinity;
-      if (bv == null) bv = sortAsc ? Infinity : -Infinity;
-      if (typeof av === 'string') av = av.toLowerCase();
-      if (typeof bv === 'string') bv = bv.toLowerCase();
-      return sortAsc ? (av > bv ? 1 : av < bv ? -1 : 0) : (av < bv ? 1 : av > bv ? -1 : 0);
-    });
-  }
-
-  function bmFilter() { render(getSorted(getFiltered())); }
-
-  function loadView(view) {
-    document.getElementById('bm-loading').style.display = 'block';
-    document.getElementById('bm-table').style.display = 'none';
-    document.getElementById('bm-err').style.display = 'none';
-    const cacheKey = currentBandId + ':' + view;
-    if (dataCache[cacheKey]) { applyData(view, dataCache[cacheKey]); return; }
-    if (!BM_INLINE || !BM_INLINE.bands) {
-      showErr('No data injected. Run export_catalog.py to regenerate portal data.');
-      return;
-    }
-    const band = getBandData(currentBandId);
-    if (!band) {
-      showErr('Band data not found. Run export_catalog.py to regenerate portal data.');
-      return;
-    }
-    const data = band[view];
-    if (!data) {
-      showErr('No ' + view + ' data found for this band.');
-      return;
-    }
-    dataCache[cacheKey] = data;
-    applyData(view, data);
-  }
-
-  function applyData(view, data) {
-    if (view === 'setlist') {
-      var catalogSongs = (getBandData(currentBandId).catalog && getBandData(currentBandId).catalog.songs) || [];
-      var catalogMap = {};
-      catalogSongs.forEach(function(cs) { catalogMap[cs.id] = cs; });
-      allSongs = (data.songs || []).map(function(s) {
-        var cat = catalogMap[s.catalog_id] || {};
-        return Object.assign({}, s, {
-          pos: s.set * 100 + s.order,
-          sheet_music: s.sheet_music || cat.sheet_music || [],
-          audio_url: s.audio_url || cat.audio_url || null
-        });
-      });
-      const meta = data.setlist || {};
-      document.getElementById('bm-meta-songs').textContent =
-        allSongs.length + ' songs · ' + allSongs.filter(function(s){return s.bpm;}).length + ' BPM · ' + allSongs.filter(function(s){return !s.bpm;}).length + ' pending';
-      document.getElementById('bm-meta-source').textContent =
-        (meta.name || 'Active setlist') + (meta.venue ? ' · ' + meta.venue : '') + (meta.gig_date ? ' · ' + meta.gig_date : '');
-      document.getElementById('bm-set-tabs').style.display = 'flex';
-      document.getElementById('bm-th-pos').style.display = '';
-      document.getElementById('bm-th-set').style.display = '';
-      document.getElementById('bm-th-sheet').style.display = '';
-    } else {
-      allSongs = (data.songs || []).map(function(s, i) { return Object.assign({}, s, {pos: i+1, set: null, order: null}); });
-      const smCount = allSongs.filter(function(s){return s.sheet_music && s.sheet_music.length;}).length;
-      document.getElementById('bm-meta-songs').textContent =
-        allSongs.length + ' songs in catalog · ' + allSongs.filter(function(s){return s.bpm;}).length + ' with BPM · ' + smCount + ' with sheet music';
-      document.getElementById('bm-meta-source').textContent = 'Full catalog · heartmusic.db';
-      document.getElementById('bm-set-tabs').style.display = 'none';
-      document.getElementById('bm-th-pos').style.display = 'none';
-      document.getElementById('bm-th-set').style.display = 'none';
-      document.getElementById('bm-th-sheet').style.display = '';
-      activeSet = 'all';
-    }
-    const ts = BM_INLINE.exported_at ? new Date(BM_INLINE.exported_at).toLocaleString() : '';
-    document.getElementById('bm-meta-ts').textContent = ts ? 'Exported ' + ts : '';
-    const bpmCount = allSongs.filter(function(s){return s.bpm;}).length;
-    document.getElementById('bm-bpm-chip').innerHTML = '<b>' + bpmCount + '</b> BPM / <b>' + (allSongs.length - bpmCount) + '</b> ?';
-    sortCol = null; sortAsc = true;
-    render(allSongs);
-  }
-
-  function bmSwitchView(view, el) {
-    currentView = view;
-    document.querySelectorAll('.bm-vtab').forEach(function(t){ t.classList.remove('active'); });
-    el.classList.add('active');
-    document.getElementById('bm-view-label').textContent = view === 'setlist' ? '· Active Setlist' : '· Full Catalog';
-    document.getElementById('bm-search').value = '';
-    document.getElementById('bm-print-btn').style.display = view === 'setlist' ? '' : 'none';
-    activeSet = 'all';
-    document.querySelectorAll('.bm-tab').forEach(function(t,i){ t.classList.toggle('active', i===0); });
-    loadView(view);
-  }
-
-  function bmSetFilter(set, el) {
-    activeSet = set;
-    document.querySelectorAll('.bm-tab').forEach(function(t){ t.classList.remove('active'); });
-    el.classList.add('active');
-    bmFilter();
-  }
-
-  function bmSort(col) {
-    if (sortCol === col) { sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
-    document.querySelectorAll('.bm-table th').forEach(function(th){
-      th.classList.remove('sorted');
-      const arr = th.querySelector('.sort-arrow');
-      if (arr) arr.textContent = '';
-    });
-    const colMap = {pos:0, set:1, title:2, artist:3, key:4, bpm:5};
-    const idx = colMap[col];
-    const ths = document.querySelectorAll('.bm-table th');
-    if (ths[idx]) {
-      ths[idx].classList.add('sorted');
-      const arr = ths[idx].querySelector('.sort-arrow');
-      if (arr) arr.textContent = sortAsc ? ' ▲' : ' ▼';
-    }
-    document.getElementById('bm-sort-info').textContent = 'Sorted by ' + col + ' (' + (sortAsc ? 'asc' : 'desc') + ')';
-    render(getSorted(getFiltered()));
-  }
-
-  window.bmFilter = bmFilter;
-  window.bmSetFilter = bmSetFilter;
-  window.bmSort = bmSort;
-  window.bmSwitchView = bmSwitchView;
-  window.bmPrint = bmPrint;
-
-  // ── Audio controller ───────────────────────────────────────────────────────────────────
-  var _bmCurrentUrl = null;
-  var _bmActiveBtn  = null;
-  var _bmActiveProg = null;
-
-  function bmPlayRow(btn) {
-    var url   = btn.dataset.audioUrl;
-    var audio = document.getElementById('bm-audio');
-    if (_bmActiveBtn && _bmActiveBtn !== btn) {
-      _bmActiveBtn.innerHTML = '&#9654;';
-      _bmActiveBtn.classList.remove('playing');
-      if (_bmActiveProg) { _bmActiveProg.value = 0; }
-    }
-    if (_bmCurrentUrl === url && !audio.paused) {
-      audio.pause();
-      return;
-    }
-    _bmActiveBtn  = btn;
-    _bmActiveProg = btn.nextElementSibling;
-    if (_bmCurrentUrl !== url) {
-      _bmCurrentUrl = url;
-      audio.src = url;
-      audio.load();
-    }
-    audio.play().catch(function() {
-      btn.innerHTML = '&#9654;';
-      btn.classList.remove('playing');
-    });
-  }
-  window.bmPlayRow = bmPlayRow;
-
-  function bmSeek(inp) {
-    var audio = document.getElementById('bm-audio');
-    if (audio.duration) { audio.currentTime = (inp.value / 100) * audio.duration; }
-  }
-  window.bmSeek = bmSeek;
-
-  function bmPrint() {
-    const band = getBandData(currentBandId);
-    if (!band || !band.setlist) return;
-    const d = band.setlist;
-    const meta = d.setlist || {};
-    const songs = d.songs || [];
-    let rows = '';
-    let lastSet = null;
-    songs.forEach(function(s) {
-      if (s.set !== lastSet) {
-        lastSet = s.set;
-        rows += '<tr class="set-hdr"><td colspan="5">Set ' + s.set + '</td></tr>';
-      }
-      rows += '<tr><td>' + s.set + '-' + s.order + '</td><td>' + (s.title||'') + '</td><td>' + (s.artist||'') + '</td><td>' + (s.key||'—') + '</td><td>' + (s.bpm != null ? s.bpm : '?') + '</td></tr>';
-    });
-    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Setlist — ' + (meta.name||'') + '</title>'
-      + '<style>body{font-family:Arial,sans-serif;font-size:11pt;margin:1in}'
-      + 'h1{font-size:14pt;margin-bottom:2px}h2{font-size:10pt;font-weight:normal;color:#555;margin-top:0}'
-      + 'table{width:100%;border-collapse:collapse;margin-top:1em}'
-      + 'th{text-align:left;border-bottom:2px solid #333;padding:4px 8px;font-size:9pt}'
-      + 'td{padding:4px 8px;border-bottom:1px solid #ddd;font-size:10pt}'
-      + 'tr.set-hdr td{background:#f0f0f0;font-weight:bold;font-size:9pt;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-top:2px solid #999;border-bottom:1px solid #999}'
-      + '@media print{body{margin:.5in}}</style>'
-      + '</head><body>'
-      + '<h1>&#x1F3A4; ' + (meta.name||'Active Setlist') + '</h1>'
-      + '<h2>' + [meta.band, meta.venue, meta.gig_date].filter(Boolean).join(' · ') + '</h2>'
-      + '<table><thead><tr><th>#</th><th>Title</th><th>Artist</th><th>Key</th><th>BPM</th></tr></thead><tbody>'
-      + rows + '</tbody></table></body></html>';
-    const w = window.open('', '_blank', 'width=800,height=900');
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    w.print();
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    populateBandSelect();
-    loadView('setlist');
-    var audio = document.getElementById('bm-audio');
-    if (audio) {
-      audio.addEventListener('timeupdate', function() {
-        if (_bmActiveProg && audio.duration) {
-          _bmActiveProg.value = (audio.currentTime / audio.duration) * 100;
-        }
-      });
-      audio.addEventListener('ended', function() {
-        if (_bmActiveBtn) { _bmActiveBtn.innerHTML = '&#9654;'; _bmActiveBtn.classList.remove('playing'); }
-        if (_bmActiveProg) { _bmActiveProg.value = 0; }
-        _bmActiveBtn = null; _bmActiveProg = null; _bmCurrentUrl = null;
-      });
-      audio.addEventListener('pause', function() {
-        if (_bmActiveBtn) { _bmActiveBtn.innerHTML = '&#9654;'; _bmActiveBtn.classList.remove('playing'); }
-      });
-      audio.addEventListener('play', function() {
-        if (_bmActiveBtn) { _bmActiveBtn.innerHTML = '&#9208;'; _bmActiveBtn.classList.add('playing'); }
-      });
-    }
-  });
-})();
-</script>
-</div>
   </main>
   <script>
     function switchDash(idx, el) {
@@ -1080,19 +628,21 @@
     function launchServers() {
       const btn = document.getElementById('launch-btn');
       if (btn) { btn.textContent = 'Launching…'; btn.disabled = true; }
-      // Use a hidden anchor click to invoke portal:// without navigating the current page.
-      // window.location would cause the tab to navigate away from the portal.
+      // Use a hidden anchor click to invoke portal:// without navigating away
       const a = document.createElement('a');
       a.href = 'portal://launch';
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // Re-poll twice: once at 4s (servers binding) and again at 9s (slower starts)
+      // Re-poll for server status after 4s and 9s
       setTimeout(() => { pollServers(); }, 4000);
-      setTimeout(() => { if (btn) { btn.textContent = '\u25b6 Start all servers'; btn.disabled = false; btn.style.animation = ''; } pollServers(); }, 9000);
+      setTimeout(() => {
+        if (btn) { btn.textContent = '▶ Start all servers'; btn.disabled = false; btn.style.animation = ''; }
+        pollServers();
+      }, 9000);
     }
-    const SERVERS = [{port:5050,label:'Music Dashboard'},{port:8100,label:'TJD Radio'},{port:5055,label:'Guitar Trainer'}];
+    const SERVERS = [{"port": 5050, "name": "Music Dashboard"}, {"port": 8100, "name": "TJD Radio"}, {"port": 5055, "name": "Guitar Trainer"}];
     async function checkServer(port, dotId) {
       const dot = document.getElementById(dotId);
       if (!dot) return;
@@ -1117,11 +667,13 @@
       }
       const block = document.getElementById('server-status-block');
       if (block) block.style.display = 'block';
-      // Cannot auto-invoke portal:// from a timeout — browser requires a real user gesture.
-      // Show the button; user clicks it once and servers start.
+      // Requires a user gesture to invoke portal://, so we show the pulsed button if none are up.
       if (!anyUp) {
         const btn = document.getElementById('launch-btn');
-        if (btn) { btn.textContent = '▶ Start all servers'; btn.style.animation = 'livingPulse 1.5s ease-in-out infinite'; }
+        if (btn) {
+          btn.textContent = '▶ Start all servers';
+          btn.style.animation = 'livingPulse 1.5s ease-in-out infinite';
+        }
       }
     }
     pollServers();
