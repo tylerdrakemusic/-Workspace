@@ -118,11 +118,15 @@ def test_open_portal_guitar_trainer_checks_existing_process(open_portal_text: st
 
 
 def test_open_portal_guitar_trainer_before_open(open_portal_text: str) -> None:
-    """Guitar Trainer startup block must appear before 'Start-Process $PortalFile'."""
+    """Guitar Trainer startup block must appear before the portal is opened."""
     gt_idx = open_portal_text.find("start_guitar_trainer.ps1")
-    open_idx = open_portal_text.find("Start-Process $PortalFile")
+    # Portal is now opened via HTTP server (Start-Process $PortalUrl) rather than
+    # the old direct file open (Start-Process $PortalFile). Accept either form.
+    open_idx = open_portal_text.find("Start-Process $PortalUrl")
+    if open_idx == -1:
+        open_idx = open_portal_text.find("Start-Process $PortalFile")
     assert gt_idx != -1, "start_guitar_trainer.ps1 not found in open_portal.ps1"
-    assert open_idx != -1, "'Start-Process $PortalFile' not found in open_portal.ps1"
+    assert open_idx != -1, "Portal open command not found in open_portal.ps1"
     assert gt_idx < open_idx, (
         "Guitar Trainer startup must come before portal is opened"
     )

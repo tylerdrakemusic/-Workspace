@@ -493,9 +493,16 @@ def _content_frames(manifest: dict) -> str:
         if dash["type"] in ("static_html", "living_html"):
             out = dash.get("output_abs", "")
             if out and Path(out).exists():
-                file_uri = Path(out).as_uri()
+                # Use relative path for files in the same reports/ directory so the
+                # portal works when served via HTTP (file:// iframes are blocked by
+                # browsers when the parent page is on http://).
+                out_path = Path(out)
+                if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
+                    iframe_src = out_path.name
+                else:
+                    iframe_src = out_path.as_uri()
                 panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                             f'<iframe src="{file_uri}" frameborder="0"></iframe></div>')
+                             f'<iframe src="{iframe_src}" frameborder="0"></iframe></div>')
             else:
                 panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
                              f'<div class="placeholder">Dashboard not yet generated.<br>'
