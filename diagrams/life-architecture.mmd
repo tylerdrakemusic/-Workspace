@@ -1,0 +1,13 @@
+graph TB
+    Tyler([Tyler]) --> Inputs[MyFitnessPal · TrainingZones<br/>Bloodwork · Genomics · Journal]
+    Inputs --> ETL[src/etl/<br/>importers + sync]
+    ETL --> DB[(infinitelife.db<br/>SQLCipher)]
+    DB --> Analytics[src/analytics/<br/>longevity · risk · trends]
+    Analytics --> Reports[reports/<br/>longevity dashboard]
+    DB --> Protocols[Protocols & Experiments]
+    DB --> Budget[Budget Ledger]
+
+    classDef io fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    classDef core fill:#1a3a52,stroke:#4a9eff,color:#fff
+    class Inputs,Reports io
+    class ETL,DB,Analytics,Protocols,Budget core

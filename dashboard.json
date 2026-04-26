@@ -3,15 +3,15 @@
   "sigil": "⊕",
   "dashboards": [
     {
-      "id": "unified-benchmarks",
-      "title": "Unified Benchmarks",
-      "description": "Quantum + Agent perf data from all encrypted DBs",
+      "id": "diagrams",
+      "title": "Architecture Diagrams",
+      "description": "Mermaid-rendered architecture, tech-stack, and DB schema diagrams for all 5 projects + workspace topology. Includes built-in live editor.",
       "type": "static_html",
-      "generator": "tools/bench_dashboard.py",
-      "output": "reports/benchmark_dashboard.html",
-      "cli": "C:\\G\\python.exe tools/bench_dashboard.py --no-open",
+      "generator": "tools/diagrams_dashboard.py",
+      "output": "reports/diagrams_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/diagrams_dashboard.py --no-open",
       "category": "performance",
-      "icon": "⚡"
+      "icon": "📐"
     },
     {
       "id": "security-vulns",

@@ -1,0 +1,36 @@
+graph TB
+    subgraph Tools["tools/"]
+        Portal[dashboard_portal.py]
+        Registry[dashboard_registry.py]
+        Bench[bench_dashboard.py]
+        Diagrams[diagrams_dashboard.py]
+        FR[fr_dashboard.py]
+        Sec[security_dashboard.py]
+        Ops[agent_ops_monitor.py]
+    end
+
+    subgraph Src["src/"]
+        Utils[utils/<br/>perf_cli · proof_cli<br/>init_db · key_loader]
+        Integrations[integrations/<br/>elevenlabs · mermaid]
+        Config[config/<br/>repo_visibility]
+        Data[(data/<br/>workspace.db)]
+    end
+
+    subgraph Reports["reports/"]
+        PortalHtml[portal.html]
+        Dashes[*_dashboard.html]
+    end
+
+    Portal --> Registry
+    Registry --> PortalHtml
+    Bench --> Dashes
+    Diagrams --> Dashes
+    FR --> Dashes
+    Utils --> Data
+
+    classDef tool fill:#2a2a3e,stroke:#888,color:#fff
+    classDef src fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef out fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    class Tools tool
+    class Src src
+    class Reports out

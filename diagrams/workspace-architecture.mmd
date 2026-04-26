@@ -1,0 +1,41 @@
+graph TB
+    subgraph Workspace["⊕ Workspace"]
+        Portal[reports/portal.html<br/>Unified Dashboard Portal]
+        Registry[dashboard_registry.py<br/>Spec Discovery]
+        FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
+    end
+
+    subgraph Life["∞ Life"]
+        LifeDB[(infinitelife.db<br/>SQLCipher)]
+        LifeApp[Health & Longevity<br/>Tracking]
+    end
+
+    subgraph Music["❤ Music"]
+        MusicDB[(heartmusic.db<br/>SQLCipher)]
+        MusicApp[Catalog · Setlist<br/>Guitar Trainer]
+    end
+
+    subgraph Quantum["⟨ψ⟩ Quantum"]
+        QDB[(quantumpsi.db<br/>SQLCipher)]
+        QApp[Shor · QRNG<br/>IBM Quantum]
+    end
+
+    subgraph Manifest["👁 AI-Manifest"]
+        MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
+    end
+
+    Portal --> Registry
+    Registry -.scans.-> Life
+    Registry -.scans.-> Music
+    Registry -.scans.-> Quantum
+    Registry -.scans.-> Manifest
+    Registry -.scans.-> Workspace
+
+    Life --> LifeDB
+    Music --> MusicDB
+    Quantum --> QDB
+
+    classDef workspace fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef project fill:#2a2a3e,stroke:#888,color:#fff
+    class Workspace workspace
+    class Life,Music,Quantum,Manifest project

@@ -1,0 +1,26 @@
+erDiagram
+    BENCHMARKS ||--o{ CIRCUIT_RUNS : contains
+    BENCHMARKS {
+        integer id PK
+        text algorithm
+        integer n_value
+        integer required_qubits
+        integer order_r
+        integer factor1
+        integer factor2
+        real total_time_sec
+        text backend
+        text timestamp
+    }
+    CIRCUIT_RUNS {
+        integer id PK
+        integer benchmark_id FK
+        integer shots
+        text counts_json
+    }
+    QRNG_BATCHES {
+        integer id PK
+        integer bytes_generated
+        text source
+        text timestamp
+    }

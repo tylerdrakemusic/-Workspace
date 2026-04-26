@@ -1,0 +1,23 @@
+graph LR
+    Tyler([Tyler]) --> Overseer[⊕ overseer]
+    Overseer --> Intake[⊕ intake]
+    Overseer --> CI[⊕ ci]
+    Overseer --> Reviewer[⊕ reviewer]
+    Overseer --> Doer[⊕ doer]
+    Overseer --> Alignment[⊕ alignment]
+    Overseer --> Security[⊕ security]
+    Overseer --> Hygiene[⊕ hygiene]
+
+    Overseer --> LifeOrch[∞ orchestrator]
+    Overseer --> MusicOrch[❤ orchestrator]
+    Overseer --> QuantumOrch[⟨ψ⟩ orchestrator]
+    Overseer --> ManifestOrch[👁 orchestrator]
+
+    LifeOrch --> LifeAgents[∞ research<br/>brainstorm<br/>budget<br/>data-analytics<br/>risk]
+    MusicOrch --> MusicAgents[❤ catalog<br/>performance<br/>production<br/>signatures]
+    QuantumOrch --> QResearch[⟨ψ⟩ research]
+
+    classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef ws fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    class Overseer,LifeOrch,MusicOrch,QuantumOrch,ManifestOrch orch
+    class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene ws

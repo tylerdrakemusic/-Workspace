@@ -1,0 +1,12 @@
+graph LR
+    Python[Python 3.11] --> Qiskit[qiskit · qiskit-aer<br/>qiskit-ibm-runtime]
+    Python --> Numpy[numpy · scipy]
+    Python --> SQLCipher[sqlcipher3]
+    Python --> Pytest[pytest]
+
+    HF[Hugging Face<br/>HF_TOKEN] -.optional.-> Python
+
+    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
+    class Python lang
+    class Qiskit,Numpy,SQLCipher,Pytest,HF lib

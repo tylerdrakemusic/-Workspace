@@ -1,0 +1,29 @@
+erDiagram
+    PERF_RUNS ||--o{ PERF_PROOFS : has
+    PERF_RUNS {
+        text run_id PK
+        text task
+        text agent
+        text status
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PERF_PROOFS {
+        integer id PK
+        text run_id FK
+        text agent
+        text proof_type
+        text title
+        text path
+        text detail
+        real ts
+    }
+    DASHBOARD_REGISTRY {
+        text id PK
+        text title
+        text project
+        text type
+        text generator
+        text output
+    }

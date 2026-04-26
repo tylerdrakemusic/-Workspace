@@ -1,0 +1,21 @@
+erDiagram
+    BRIEFS ||--o{ BRIEF_AUDIO : has
+    BRIEFS {
+        text brief_id PK
+        text title
+        text source_topic
+        text content_md
+        text generated_at
+    }
+    BRIEF_AUDIO {
+        integer id PK
+        text brief_id FK
+        text voice_id
+        text mp3_path
+        real duration_sec
+    }
+    VOICES {
+        text voice_id PK
+        text label
+        text provider
+    }

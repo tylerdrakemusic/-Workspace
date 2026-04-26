@@ -1,0 +1,38 @@
+erDiagram
+    SONGS ||--o{ SETLIST_SONGS : appears_in
+    SETLISTS ||--o{ SETLIST_SONGS : contains
+    SONGS ||--o{ SHEET_MUSIC : has
+    SONGS ||--o{ AUDIO_SOURCES : has
+    BANDS ||--o{ SETLISTS : owns
+    EXERCISES ||--o{ EXERCISE_CARDS : composes
+
+    SONGS {
+        integer song_id PK
+        text title
+        text artist
+        integer bpm
+        text key_signature
+    }
+    SETLISTS {
+        integer setlist_id PK
+        text band
+        text name
+    }
+    SHEET_MUSIC {
+        integer id PK
+        integer song_id FK
+        text path
+        text format
+    }
+    AUDIO_SOURCES {
+        integer id PK
+        integer song_id FK
+        text source_type
+        text url_or_path
+    }
+    EXERCISES {
+        integer exercise_id PK
+        text title
+        text difficulty
+        text category
+    }

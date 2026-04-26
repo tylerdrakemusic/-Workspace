@@ -1,0 +1,36 @@
+graph TB
+    subgraph Inputs
+        Suno[Suno releases]
+        Audius[Audius catalog]
+        SheetMusic[Sheet Music PDFs]
+        Setlists[Band setlists]
+    end
+
+    subgraph Catalog["catalog/"]
+        Export[export_catalog.py]
+        Songs[(songs · setlists<br/>sheet_music · audio)]
+    end
+
+    subgraph Trainer["Guitar Trainer"]
+        TrainerApp[Flask app:5055]
+        TrainerDB[(exercises<br/>cards)]
+    end
+
+    subgraph Reports["reports/"]
+        Portal[portal.html]
+        Dash[band-mgmt dashboard]
+    end
+
+    Inputs --> Catalog
+    Catalog --> Songs
+    Songs --> Export
+    Export --> Portal
+    Export --> Dash
+    TrainerApp --> TrainerDB
+
+    Songs -.shared db.-> TrainerDB
+
+    classDef io fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    classDef core fill:#1a3a52,stroke:#4a9eff,color:#fff
+    class Inputs,Reports io
+    class Catalog,Trainer core

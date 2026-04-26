@@ -1,0 +1,15 @@
+graph LR
+    Python[Python 3.11] --> Requests[requests · httpx]
+    Python --> Pytest[pytest]
+    Python --> Dotenv[python-dotenv]
+
+    OpenAI[OpenAI API] --> GPT[GPT models]
+    ElevenLabs[ElevenLabs API] --> TTS[Voice synthesis]
+    HF[Hugging Face] --> Models[hosted models]
+
+    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef api fill:#2a4e3a,stroke:#4aff9e,color:#fff
+    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
+    class Python lang
+    class OpenAI,ElevenLabs,HF api
+    class Requests,Pytest,Dotenv,GPT,TTS,Models lib

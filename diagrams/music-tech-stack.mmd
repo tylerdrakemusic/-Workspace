@@ -1,0 +1,13 @@
+graph LR
+    Python[Python 3.11] --> SQLCipher[sqlcipher3]
+    Python --> Flask[Flask<br/>:5050 · :5055]
+    Python --> Librosa[librosa<br/>BPM detection]
+    Python --> Mutagen[mutagen<br/>audio tags]
+    Python --> Pytest[pytest]
+
+    Web[HTML · CSS · JS] --> Tone[Tone.js<br/>Strudel]
+
+    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
+    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
+    class Python,Web lang
+    class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone lib
