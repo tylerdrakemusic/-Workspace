@@ -30,12 +30,15 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260426-huggingface-image-integration | HuggingFace Image Generation Client — ⊕Workspace Integration | feature | ⊕Workspace | IN_PROGRESS | feature/workspace/huggingface-image-integration | [-Workspace#47](https://github.com/tylerdrakemusic/-Workspace/pull/47) | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
 
 
 ## Archive
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260426-lily-portrait-executive-brief | Lily Portrait — AI-generated persona image in Executive Audio Brief portal | feature | 👁AI-Manifest | MERGED → CLOSED | AI-Manifest#11 (squash 208daa25) | 2026-04-26 | 2026-04-26 |
+| FR-20260426-dalle3-image-integration | DALL-E 3 Image Generation Client — ⊕Workspace Integration | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#48 (squash 7f58f5d8) | 2026-04-26 | 2026-04-26 |
 | FR-20260426-biomarker-external-portal | External Portal Integration for Biomarker Health Panel | feature | ∞Life | MERGED → CLOSED | Life#4 (merge 25e39a2) | 2026-04-26 | 2026-04-26 |
 | FR-20260425-guitar-trainer-db-migration | Guitar Trainer: Full DB Migration + Data Recovery + Card CRUD UI | feature | ❤Music | MERGED → CLOSED | Music#8 (squash 61f2734f) | 2026-04-25 | 2026-04-26 |
 | FR-20260425-architecture-beautifier-styling | Architecture Beautifier: Self-Mutating Style Guide + Re-Beautify All 18 Diagrams | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#41 (squash 64dc7374) | 2026-04-25 | 2026-04-26 |
