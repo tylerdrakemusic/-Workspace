@@ -30,17 +30,18 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260425-guitar-trainer-db-migration | Guitar Trainer: Full DB Migration + Data Recovery + Card CRUD UI | feature | ❤Music | BRANCHED | feature/heartmusic/guitar-trainer-db-migration | https://github.com/tylerdrakemusic/Music/pull/8 | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
-| FR-20260425-guitar-trainer-data-to-db | Guitar Trainer exercise data should not be tracked by git | chore | ❤Music | TRIAGED (superseded by FR-20260425-guitar-trainer-db-migration — recommend close) | chore/heartmusic/guitar-trainer-data-to-db | pending | ⊕workspace-intake | 2026-04-25 | 2026-04-25 |
-| FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | IN_PROGRESS | feature/workspace/mermaid-diagrams-integration | https://github.com/tylerdrakemusic/-Workspace/pull/35 | ⊕workspace-overseer | 2026-04-25 | 2026-04-26 |
-| FR-20260425-architecture-beautifier-styling | Architecture Beautifier: Self-Mutating Style Guide + Re-Beautify All 18 Diagrams | feature | ⊕Workspace | BRANCHED | feature/workspace/architecture-beautifier-styling | https://github.com/tylerdrakemusic/-Workspace/pull/41 | ⊕workspace-intake | 2026-04-25 | 2026-04-26 |
-
 
 
 ## Archive
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260426-biomarker-external-portal | External Portal Integration for Biomarker Health Panel | feature | ∞Life | MERGED → CLOSED | Life#4 (merge 25e39a2) | 2026-04-26 | 2026-04-26 |
+| FR-20260425-guitar-trainer-db-migration | Guitar Trainer: Full DB Migration + Data Recovery + Card CRUD UI | feature | ❤Music | MERGED → CLOSED | Music#8 (squash 61f2734f) | 2026-04-25 | 2026-04-26 |
+| FR-20260425-architecture-beautifier-styling | Architecture Beautifier: Self-Mutating Style Guide + Re-Beautify All 18 Diagrams | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#41 (squash 64dc7374) | 2026-04-25 | 2026-04-26 |
+| FR-20260426-reconcile-gaps-ledgers-todos | Reconcile Gaps: Agent Ops Monitor, FR Ledgers, and All-Project TODOs | chore | ⊕Workspace, ❤Music, ∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest | MERGED → CLOSED | N/A — markdown-only, Tyler signed off 2026-04-26 | 2026-04-26 | 2026-04-26 |
+| FR-20260426-executive-audio-brief-panel | Executive Audio Brief Panel — per-project TODO+human todo audio brief via ElevenLabs | feature | 👁AI-Manifest, ⊕Workspace | MERGED → CLOSED | AI-Manifest#7 (merged 21c08f98) | 2026-04-26 | 2026-04-26 |
+| FR-20260425-guitar-trainer-data-to-db | Guitar Trainer exercise data should not be tracked by git | chore | ❤Music | CLOSED (superseded by FR-20260425-guitar-trainer-db-migration) | N/A | 2026-04-25 | 2026-04-26 |
 | FR-20260425-architecture-review-agents | Architecture Review + Beautifier Agents in FR Flow (.mmd diagrams stay in sync) | feature | ⊕Workspace | PARTIAL_MERGED → CLOSED | -Workspace#38 (squash 5a5b48e8) — AC1–AC8 delivered; AC9–AC12 deferred to FR-20260425-architecture-beautifier-styling | 2026-04-25 | 2026-04-26 |
 | FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | MERGED | -Workspace#35→#37 (merged @ bccbb71) | 2026-04-25 | 2026-04-26 |
 | FR-20260425-guitar-trainer-metronome | Add metronome to Guitar Trainer portal panel | feature | ❤Music | MERGED → CLOSED | feature/heartmusic/guitar-trainer-metronome — Tyler signed off 2026-04-25 | 2026-04-25 | 2026-04-25 |
