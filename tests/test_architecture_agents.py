@@ -15,7 +15,7 @@ Specific to FR-20260425-architecture-review-agents:
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -95,9 +95,10 @@ def test_architecture_agent_inherits_known_instructions(agent_filename: str):
     inherits = re.findall(r"<!--\s*inherits:\s*(.+?)\s*-->", text)
     assert inherits, f"{agent_filename} missing any <!-- inherits: ... --> block"
     for inh in inherits:
-        # paths in inherits are absolute (start with f:\.github\instructions\)
-        # ensure each referenced filename actually exists in the instructions dir
-        filename = Path(inh).name
+        # paths in inherits are absolute Windows paths (start with f:\.github\instructions\).
+        # On Linux CI, pathlib.Path treats backslashes as part of the filename, so use
+        # PureWindowsPath to extract the basename portably across platforms.
+        filename = PureWindowsPath(inh).name
         assert (INSTRUCTIONS_DIR / filename).exists(), \
             f"{agent_filename} inherits unknown instruction file: {filename}"
 
