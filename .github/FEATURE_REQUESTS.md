@@ -41,6 +41,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260425-mermaid-diagrams-integration | Mermaid Diagrams Integration (replaces Unified Benchmarks panel) | feature | ⊕Workspace | MERGED | -Workspace#35→#37 (merged @ bccbb71) | 2026-04-25 | 2026-04-26 |
 | FR-20260425-guitar-trainer-metronome | Add metronome to Guitar Trainer portal panel | feature | ❤Music | MERGED → CLOSED | feature/heartmusic/guitar-trainer-metronome — Tyler signed off 2026-04-25 | 2026-04-25 | 2026-04-25 |
 | FR-20260425-band-mgmt-playback-sheets | Band Management Panel: Per-Row Audio Playback + Sheet Music Viewer | feature | ❤Music | MERGED → CLOSED | Music#7 — Tyler signed off 2026-04-25 | 2026-04-25 | 2026-04-25 |
 | FR-20260425-intake-interview-driven | Make Intake More Interview-Driven and Less Assumption-Heavy | chore | ⊕Workspace | MERGED → CLOSED | -Workspace#32 — Tyler signed off 2026-04-25 | 2026-04-25 | 2026-04-25 |
