@@ -27,6 +27,8 @@ graph LR
     %% Workspace → external
     Workspace -->|mcp_github| GitHub
     Workspace -->|diagrams render| Mermaid
+    Workspace -->|dalle3 image gen| OpenAI
+    Workspace -->|huggingface inference| HF
     Workspace --> WSDB
     %% ∞Life → external + DB
     Life -->|nutrition sync| MFP
@@ -52,6 +54,7 @@ graph LR
     Workspace -.->|gen-qee passwords| Manifest
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
+    Workspace -.->|dalle3 + hf image clients| Manifest
 
 
 
