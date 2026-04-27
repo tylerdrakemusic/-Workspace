@@ -74,14 +74,40 @@ Step 4: Present summary to Tyler
 3. Re-run targeted tests after conflict resolution
 4. Merge through the PR after checks and approval, then delete the branch/worktree only after merge
 5. Treat the PR body and comments as the shared handoff artifact between CLI and chat agents
-6. **On merge of an FR's PR:** close the FR cycle timer:
+6. **On merge of an FR's PR:** close the FR cycle timer, then open a ledger
+   closeout PR:
    ```
    C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py end <cycle_run_id> \
        --status ok --detail "FR-<ID> merged: <merge SHAs>"
    ```
    Read the cycle run_id from the FR ledger's Header `Cycle timer` field.
-   Update the ledger state to `MERGED → CLOSED` and append the final Event
-   Log entry.
+   Update the ledger header (`State`, `Merged at`) and append the final Event
+   Log entry. Update the registry row state and move to archive section.
+   Then **commit via a short-lived closeout branch** (branch protection blocks
+   direct pushes to `main` even for metadata):
+   ```bash
+   cd f:\⊕Workspace
+   git switch -c chore/ledger-<FR-ID>-closeout
+   git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+   git commit -m "⊕ workspace: ledger — <FR-ID> → MERGED"
+   git push origin chore/ledger-<FR-ID>-closeout
+   # Open a PR; CI will be green (no code touched) — merge promptly
+   ```
+   The closeout PR touches only markdown files; pytest passes trivially.
+   Merge it as soon as CI is green without requiring Tyler's review.
+
+7. **On Tyler's post-soak signoff (SIGNED_OFF → ARCHIVED):**
+   Record `Signed off at` timestamp in the ledger header, append Event Log
+   entry, update state. Reuse the open closeout branch if still live, or
+   open a new `chore/ledger-<FR-ID>-archive` branch:
+   ```bash
+   cd f:\⊕Workspace
+   git switch -c chore/ledger-<FR-ID>-archive
+   git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+   git commit -m "⊕ workspace: ledger — <FR-ID> → ARCHIVED"
+   git push origin chore/ledger-<FR-ID>-archive
+   # Open PR; merge after green CI
+   ```
 
 ### 6. Reconcile FR Cycle Timers (safety net)
 
@@ -103,15 +129,29 @@ Steps:
          --status ok --detail "FR-<ID> merged via GitHub" \
          --at <unix_merged_at>
      ```
-   - Update the FR ledger: state → `MERGED → CLOSED`, append Event Log entry
-     with the reconciliation details and actual merge SHA
+   - Update the FR ledger: state → `MERGED`, fill `Merged at`, append Event
+     Log entry with the reconciliation details and actual merge SHA
    - Update the registry: move row to archive section
-5. Report a summary of reconciled FRs (count, IDs, cycle times)
+5. **After processing all FRs in the reconcile run**, batch-commit all
+   updated ledger files and the registry via a single closeout branch:
+   ```bash
+   cd f:\⊕Workspace
+   git switch -c chore/ledger-reconcile-<YYYYMMDD>
+   git add .github/FR_LEDGERS/  .github/FEATURE_REQUESTS.md
+   git commit -m "⊕ workspace: ledger — reconcile <N> FRs (MERGED)"
+   git push origin chore/ledger-reconcile-<YYYYMMDD>
+   # Open PR; CI passes trivially (markdown only) — merge promptly
+   ```
+   If only one FR was reconciled, use the single-FR format:
+   `⊕ workspace: ledger — <FR-ID> → MERGED`
+6. Report a summary of reconciled FRs (count, IDs, cycle times)
 
 ## Safety Rules
 - **NEVER push or merge directly to `main` in any repo.** All changes flow:
   feature branch → PR → green `test` status check → merge. (FR-20260425
   CI gateway is live — direct-to-main is forbidden as a workflow rule.)
+  This applies to ledger/registry files too — use a `chore/ledger-*` branch
+  and PR for all post-merge ledger closeout commits.
 - **NEVER attempt to merge a PR while its required `test` check is red or
   pending.** The 4 public repos will reject the merge API call with HTTP 405
   ("Required status check 'test' is failing"); ∞Life relies on agent
@@ -127,6 +167,7 @@ Steps:
 - **NEVER commit secrets** â€” grep for API keys, tokens, passwords before staging
 - **NEVER commit .env files** â€” verify `.gitignore` covers them
 - **NEVER amend published commits** without approval
+- **NEVER leave ledger or registry changes uncommitted** — use a `chore/ledger-*` branch + PR for all ledger writes. Never push `.github/FR_LEDGERS/` or `.github/FEATURE_REQUESTS.md` directly to `main`.
 - **ALWAYS show Tyler the commit plan before executing** (list of groups + messages)
 - **ALWAYS run `git diff --staged` summary before each commit**
 - **ALWAYS create or reuse the correct isolated session branch/worktree before staging**
