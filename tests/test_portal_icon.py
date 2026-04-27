@@ -10,11 +10,14 @@ Verifies:
 - regen_portal_icon.py script exists and is importable
 """
 import json
+import os
 import re
 import importlib.util
 from pathlib import Path
 
 import pytest
+
+_ON_CI = bool(os.getenv("CI"))
 
 pytest.importorskip("PIL", reason="Pillow not installed — skipping PIL-dependent icon tests")
 try:
@@ -22,7 +25,7 @@ try:
 except ImportError:  # pragma: no cover
     Image = None  # type: ignore[assignment]
 
-WORKSPACE_ROOT = Path(r"f:\⊕Workspace")
+WORKSPACE_ROOT = Path(__file__).parent.parent
 PORTAL_HTML    = WORKSPACE_ROOT / "reports" / "portal.html"
 PORTAL_PNG     = WORKSPACE_ROOT / "src" / "data" / "portal_icon.png"
 PORTAL_ICO     = WORKSPACE_ROOT / "src" / "data" / "portal_icon.ico"
@@ -176,6 +179,8 @@ def test_portal_html_has_server_status_dots() -> None:
 
 def test_music_server_scripts_exist() -> None:
     """The ❤Music server Python scripts that the launcher starts must exist on disk."""
+    if _ON_CI:
+        pytest.skip("Cross-project paths not checked out on CI")
     for port, script_path in _MUSIC_SCRIPTS.items():
         assert Path(script_path).is_file(), (
             f"Server script missing for port {port}: {script_path}"
@@ -184,6 +189,8 @@ def test_music_server_scripts_exist() -> None:
 
 def test_all_server_scripts_exist() -> None:
     """All server scripts (❤Music + FR + AI brief) must exist on disk."""
+    if _ON_CI:
+        pytest.skip("Cross-project paths not checked out on CI")
     for port, script_path in _ALL_SCRIPTS.items():
         assert Path(script_path).is_file(), (
             f"Server script missing for port {port}: {script_path}"
