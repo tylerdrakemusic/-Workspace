@@ -16,8 +16,11 @@ from pathlib import Path
 
 import pytest
 
-PIL = pytest.importorskip("PIL", reason="Pillow not installed — skipping PIL-dependent icon tests")
-Image = PIL.Image
+pytest.importorskip("PIL", reason="Pillow not installed — skipping PIL-dependent icon tests")
+try:
+    from PIL import Image
+except ImportError:  # pragma: no cover
+    Image = None  # type: ignore[assignment]
 
 WORKSPACE_ROOT = Path(r"f:\⊕Workspace")
 PORTAL_HTML    = WORKSPACE_ROOT / "reports" / "portal.html"
