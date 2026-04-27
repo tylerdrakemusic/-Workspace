@@ -10,9 +10,9 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** TRIAGED
+- **State:** REVIEW_REQUESTED
 - **Branch:** feature/workspace/portal-icon-design
-- **PRs:** pending
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/58
 - **Cycle timer:** 8f4d13ef-caa3-4ed5-b3a8-e9a5dabbee7b
 - **Opened:** 2026-04-26
 - **Last updated:** 2026-04-26
@@ -41,12 +41,12 @@
 
 | #   | Deliverable                                              | Owner                   | Status      | Proof | Updated    |
 | --- | -------------------------------------------------------- | ----------------------- | ----------- | ----- | ---------- |
-| AC1 | Generate icon PNG via DALL-E 3 (fallback HuggingFace)    | ⊕workspace-orchestrator | not-started | —     | —          |
-| AC2 | Save portal_icon.png to src/data/                        | ⊕workspace-orchestrator | not-started | —     | —          |
-| AC3 | Convert PNG → ICO (16/32/48/256px) to src/data/          | ⊕workspace-orchestrator | not-started | —     | —          |
-| AC4 | Embed favicon in reports/portal.html                     | ⊕workspace-orchestrator | not-started | —     | —          |
-| AC5 | Update open_portal.ps1 to set desktop shortcut icon      | ⊕workspace-orchestrator | not-started | —     | —          |
-| AC6 | Tests in tests/test_portal_icon.py                       | ⊕workspace-orchestrator | not-started | —     | —          |
+| AC1 | Generate icon PNG via DALL-E 3 (fallback HuggingFace)    | ⊕workspace-orchestrator | done        | —     | 2026-04-26 |
+| AC2 | Save portal_icon.png to src/data/                        | ⊕workspace-orchestrator | done        | —     | 2026-04-26 |
+| AC3 | Convert PNG → ICO (16/32/48/256px) to src/data/          | ⊕workspace-orchestrator | done        | —     | 2026-04-26 |
+| AC4 | Embed favicon in reports/portal.html                     | ⊕workspace-orchestrator | done        | —     | 2026-04-26 |
+| AC5 | Update open_portal.ps1 to set desktop shortcut icon      | ⊕workspace-orchestrator | done        | —     | 2026-04-26 |
+| AC6 | Tests in tests/test_portal_icon.py                       | ⊕workspace-orchestrator | done        | —     | 2026-04-26 |
 
 ### Tyler's Original Request
 > "design a special icon for the portal.html file, apply to both the desktop shortcut and the repo portal.html. You can use the image generation integrations we have."
@@ -75,12 +75,52 @@
 
 ---
 
+---
+
+### 2026-04-26T00:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Implementation complete → REVIEW_REQUESTED
+
+**Details:**
+- AC1–AC3: portal_icon.png generated (AI-generated ⊕ cosmic theme), converted to portal_icon.ico (16/32/48/256px)
+- AC4: Favicon injected into reports/portal.html via tools/inject_favicon.py; base64 encoded in src/data/portal_icon_b64.txt
+- AC5: open_portal.ps1 updated to create Windows desktop shortcut with portal_icon.ico
+- AC6: tests/test_portal_icon.py added — verifies favicon tag in portal.html, PNG and ICO exist in src/data/
+- All acceptance criteria marked done
+- Branch: feature/workspace/portal-icon-design
+- PR opening: pending push
+
+**Next:** Tyler review and merge
+
+---
+
+### 2026-04-26T00:00:00Z — ⊕workspace-ci
+
+**Event:** branch-pushed + pr-opened
+
+**Summary:** Branch pushed to GitHub, draft PR #58 opened → REVIEW_REQUESTED
+
+**Details:**
+- Secrets scan: CLEAN (reports/portal.html, open_portal.ps1, tests/test_portal_icon.py)
+- Tests: 5/5 passed (test_portal_icon.py)
+- Branch: `feature/workspace/portal-icon-design` pushed to `origin`
+- Commit: `5c0ba81` — `feat(workspace): portal icon -- AI-generated sigil favicon + desktop shortcut`
+- Files committed: src/data/portal_icon.png, src/data/portal_icon.ico, reports/portal.html, open_portal.ps1, tests/test_portal_icon.py
+- Draft PR: https://github.com/tylerdrakemusic/-Workspace/pull/58
+- Registry row updated: TRIAGED → REVIEW_REQUESTED
+
+**Next:** ⊕workspace-reviewer automated review, then Tyler approval + merge
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
 - **Perf runs:** 8f4d13ef-caa3-4ed5-b3a8-e9a5dabbee7b — FR cycle timer started at intake (2026-04-26)
 - **Proof artifacts:** —
-- **PRs:** pending
-- **Commits:** —
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/58
+- **Commits:** 5c0ba81 (feat(workspace): portal icon -- AI-generated sigil favicon + desktop shortcut)
 - **Reports / dashboards:** —
