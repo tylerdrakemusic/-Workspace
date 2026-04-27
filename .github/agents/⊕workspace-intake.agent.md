@@ -96,7 +96,21 @@ Steps:
 8. Append row to the registry as `OPEN → TRIAGED`
 9. Append the first Event Log entry to the ledger (state-transition to
    TRIAGED)
-10. **STOP and present to Tyler** for scope confirmation
+10. **Commit the ledger and registry** via a short-lived branch (branch
+    protection blocks direct pushes to `main`):
+    ```bash
+    cd f:\⊕Workspace
+    git switch -c chore/ledger-<FR-ID>-open
+    git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+    git commit -m "⊕ workspace: ledger — <FR-ID> → TRIAGED"
+    git push origin chore/ledger-<FR-ID>-open
+    # Open a PR; CI passes trivially (markdown only) — CI agent merges after green
+    ```
+    Delegate the merge of this PR to `⊕workspace-ci` immediately after
+    presenting the scope card to Tyler. Do not wait for Tyler's scope
+    approval before opening the ledger PR — the ledger records the intent
+    regardless of whether Tyler approves the scope.
+11. **STOP and present to Tyler** for scope confirmation
 
 ### 2. Confirm Scope (Tyler's 2nd Gateway)
 
@@ -117,12 +131,31 @@ Present a compact scope card:
 Approve? (yes / revise / reject)
 ```
 
-If Tyler says "approve" → mark `TRIAGED → BRANCHED (pending)`, delegate to
-`⊕workspace-ci` to create branches + worktrees + draft PRs.
+If Tyler says "approve" → mark `TRIAGED → BRANCHED (pending)` in the ledger
+and registry. Commit the update to the open ledger branch (or open a new
+`chore/ledger-<FR-ID>-branched` branch if the earlier PR already merged):
+```bash
+cd f:\⊕Workspace
+git switch -c chore/ledger-<FR-ID>-branched   # or reuse chore/ledger-<FR-ID>-open if still open
+git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+git commit -m "⊕ workspace: ledger — <FR-ID> → BRANCHED"
+git push origin chore/ledger-<FR-ID>-branched
+# Open/update PR; CI agent merges after green CI
+```
+Then delegate to `⊕workspace-ci` to create branches + worktrees + draft PRs.
 
 If Tyler says "revise" → capture changes, re-present.
 
 If Tyler says "reject" → mark `CLOSED (rejected)`, archive registry row.
+Commit the rejection update on the existing open ledger branch (or a new one):
+```bash
+cd f:\⊕Workspace
+git switch -c chore/ledger-<FR-ID>-closed   # or reuse open branch
+git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+git commit -m "⊕ workspace: ledger — <FR-ID> → CLOSED (rejected)"
+git push origin chore/ledger-<FR-ID>-closed
+# Open/update PR; CI agent merges after green CI
+```
 
 ### 3. Route to CI
 
@@ -195,6 +228,7 @@ archive section with final state, PR URLs, and merge SHAs.
 - DO NOT skip Tyler's scope confirmation
 - DO NOT allow more than 3 FRs to be `IN_PROGRESS` simultaneously
 - DO NOT skip ledger creation — every FR must have a ledger file
+- DO NOT leave ledger or registry changes uncommitted — use a `chore/ledger-<FR-ID>` branch + PR; never push metadata directly to `main`
 - DO NOT ask more than 5 interview questions — no interrogations
 - DO NOT ask questions whose answers are already stated in the request
 - DO NOT ask interview questions as plain text — always use `vscode_askQuestions`
