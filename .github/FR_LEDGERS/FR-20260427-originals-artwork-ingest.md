@@ -10,12 +10,12 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ❤Music
-- **State:** TRIAGED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** BRANCHED
+- **Branch:** chore/heartmusic/originals-artwork-ingest
+- **PRs:** [Music#18](https://github.com/tylerdrakemusic/Music/pull/18)
 - **Cycle timer:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61
 - **Opened:** 2026-04-27
-- **Last updated:** 2026-04-27
+- **Last updated:** 2026-04-27T00:01:00Z
 - **Merged at:** —
 - **Signed off at:** —
 - **Closed:** —
@@ -74,6 +74,23 @@
 
 ---
 
+### 2026-04-27T00:01:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Gate 2 approved by Tyler → BRANCHED
+
+**Details:**
+- Created branch `chore/heartmusic/originals-artwork-ingest` from `main` (HEAD `b280657c`)
+- Scaffold commit: `catalog/artwork/originals/.gitkeep` pushed to origin
+- Draft PR opened: [Music#18](https://github.com/tylerdrakemusic/Music/pull/18)
+
+**Next:** ❤music-orchestrator implements AC1–AC6
+
+---
+
 ## Artifacts
 
 - **Perf runs:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61 — FR cycle timer
+- **Branch HEAD:** b280657c4c58753090dc0783ab3120c1ecb86dec
+- **Draft PR:** https://github.com/tylerdrakemusic/Music/pull/18
