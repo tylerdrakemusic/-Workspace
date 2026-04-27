@@ -57,7 +57,14 @@ import os
 import re  # Added for regex operations
 import signal
 import sys
+from pathlib import Path
 from time import sleep
+
+# ── Quantum RT bootstrap ─────────────────────────────────────────────────────
+_Q_UTILS = Path(__file__).resolve().parents[2] / "\u27e8\u03c8\u27e9Quantum" / "src" / "utils"
+if _Q_UTILS.exists() and str(_Q_UTILS) not in sys.path:
+    sys.path.insert(0, str(_Q_UTILS))
+
 from quantum_rt import qhoice
 from colorama import Fore, Style, init
 from ty_py import loader
@@ -66,7 +73,6 @@ import concurrent.futures
 import subprocess
 from datetime import datetime
 import argparse
-from pathlib import Path  # Added for root/tyPython resolution
 
 
 # Initialize colorama

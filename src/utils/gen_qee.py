@@ -27,13 +27,14 @@ import sys
 from pathlib import Path
 
 # ── Quantum RNG bootstrap ─────────────────────────────────────────────────────
-# quantum_rt.py shim lives at f:\executedcode\quantum_rt.py and delegates to
-# ⟨ψ⟩Quantum/src/core/quantum_rt.py. Add executedcode root to sys.path so the
-# import works regardless of invocation working directory.
+# Canonical quantum_rt lives at f:\⟨ψ⟩Quantum\src\utils\quantum_rt.py.
+# Resolve the drive root (parents[3] from src/utils/gen_qee.py) and inject
+# the canonical utils directory so `import quantum_rt` resolves directly.
 
-_EXECUTEDCODE_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(_EXECUTEDCODE_ROOT) not in sys.path:
-    sys.path.insert(0, str(_EXECUTEDCODE_ROOT))
+_DRIVE_ROOT = Path(__file__).resolve().parents[3]  # ⊕Workspace/src/utils -> f:\
+_QUANTUM_UTILS = _DRIVE_ROOT / "\u27e8\u03c8\u27e9Quantum" / "src" / "utils"
+if _QUANTUM_UTILS.exists() and str(_QUANTUM_UTILS) not in sys.path:
+    sys.path.insert(0, str(_QUANTUM_UTILS))
 
 try:
     from quantum_rt import qhoice  # noqa: E402
