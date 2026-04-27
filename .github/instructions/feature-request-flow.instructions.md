@@ -161,6 +161,66 @@ the ledger's **Event Log** section. Format:
   appended to the Artifacts section
 - **On close**, the ledger stays in the repo as permanent historical record
 
+### Ledger Persistence Protocol (MANDATORY)
+
+Ledger files and the registry MUST be committed immediately after every write.
+Dangling uncommitted ledger changes are a protocol violation.
+
+Branch protection blocks direct pushes to `main` in all repos (including
+⊕Workspace), so the strategy differs by lifecycle phase:
+
+**Pre-merge (OPEN through TYLER_APPROVED):**
+Ledger and registry writes during this phase go on the **feature branch**
+alongside implementation commits. They merge to `main` with the PR. The
+writing agent appends to the ledger and commits to the active feature branch:
+```bash
+cd f:\⊕Workspace
+git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+git commit -m "⊕ workspace: ledger — <FR-ID> → <new-state>"
+# pushed to the feature branch, not main
+```
+
+**Post-merge (MERGED through ARCHIVED):**
+After the feature branch PR is merged, any remaining ledger updates (cycle
+timer close, soak/sign-off state transitions) must go through a short-lived
+`chore/ledger-<FR-ID>` branch and an immediate PR. The PR touches only
+markdown files so pytest passes trivially → CI is green → merge promptly.
+```bash
+cd f:\⊕Workspace
+git switch -c chore/ledger-<FR-ID>-closeout
+git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
+git commit -m "⊕ workspace: ledger — <FR-ID> → MERGED"
+git push origin chore/ledger-<FR-ID>-closeout
+# open PR immediately; merge after green CI
+```
+
+For reconcile runs covering multiple FRs, batch all updates onto a single
+`chore/ledger-reconcile-<YYYYMMDD>` branch in one PR.
+
+**Commit scope:**
+- Include both the ledger file AND `FEATURE_REQUESTS.md` if either changed.
+- Only include files that actually changed (use `git diff --name-only` to
+  confirm before staging).
+
+**Trigger points — when the commit is required:**
+
+| Event | Phase | Writing agent | Branch |
+|-------|-------|---------------|--------|
+| FR opened / triaged | pre-merge | `⊕workspace-intake` | feature branch |
+| Scope approved → BRANCHED | pre-merge | `⊕workspace-intake` | feature branch |
+| Any in-progress event log append | pre-merge | any agent | feature branch |
+| PR merged → MERGED | post-merge | `⊕workspace-ci` | `chore/ledger-<FR-ID>-closeout` |
+| Tyler signs off → SIGNED_OFF / ARCHIVED | post-merge | `⊕workspace-ci` | `chore/ledger-<FR-ID>-archive` |
+| Reconcile run | post-merge | `⊕workspace-ci` | `chore/ledger-reconcile-<YYYYMMDD>` |
+
+**Commit message format:** `⊕ workspace: ledger — <FR-ID> → <new-state>`
+
+Examples:
+- `⊕ workspace: ledger — FR-20260426-foo → TRIAGED`
+- `⊕ workspace: ledger — FR-20260426-foo → MERGED`
+- `⊕ workspace: ledger — FR-20260426-foo → ARCHIVED`
+- `⊕ workspace: ledger — reconcile 3 FRs (MERGED)` (for multi-FR reconcile runs)
+
 ## FR Cycle Timer (full intake-to-merge timing)
 
 Every FR has one perf_cli run that measures the full cycle: from intake open
