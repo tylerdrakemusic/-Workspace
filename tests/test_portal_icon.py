@@ -125,10 +125,22 @@ _MUSIC_SERVERS = {
     "Guitar Trainer":  5055,
 }
 
+_ALL_SERVERS = {
+    **_MUSIC_SERVERS,
+    "FR server":              7474,
+    "Executive Audio Brief":  8200,
+}
+
 _MUSIC_SCRIPTS = {
     5050: r"f:\❤Music\src\analysis\music_dashboard.py",
     8100: r"f:\❤Music\src\radio\tjd_radio.py",
     5055: r"f:\❤Music\src\training\musician_training_ui.py",
+}
+
+_ALL_SCRIPTS = {
+    **_MUSIC_SCRIPTS,
+    7474: r"f:\⊕Workspace\src\utils\fr_server.py",
+    8200: r"f:\👁AI-Manifest\tools\executive_audio_brief.py",
 }
 
 
@@ -158,6 +170,23 @@ def test_music_server_scripts_exist() -> None:
         )
 
 
+def test_all_server_scripts_exist() -> None:
+    """All server scripts (❤Music + FR + AI brief) must exist on disk."""
+    for port, script_path in _ALL_SCRIPTS.items():
+        assert Path(script_path).is_file(), (
+            f"Server script missing for port {port}: {script_path}"
+        )
+
+
+def test_portal_html_has_fr_and_brief_servers() -> None:
+    """portal.html must embed fr_dashboard.html (uses :7474) and the AI brief iframe (:8200)."""
+    html = PORTAL_HTML.read_text(encoding="utf-8")
+    assert "fr_dashboard.html" in html, "portal.html missing fr_dashboard.html pane"
+    assert "127.0.0.1:8200" in html or "localhost:8200" in html, (
+        "portal.html missing Executive Audio Brief iframe (:8200)"
+    )
+
+
 def test_staged_launcher_starts_music_servers() -> None:
     """The staged open_portal.ps1 launcher must contain start commands for all servers.
 
@@ -171,7 +200,7 @@ def test_staged_launcher_starts_music_servers() -> None:
         import pytest
         pytest.skip("Staged launcher not yet created — run create_desktop_shortcut.py first")
     content = staged_ps1.read_text(encoding="utf-8-sig")
-    for name, port in _MUSIC_SERVERS.items():
+    for name, port in _ALL_SERVERS.items():
         assert str(port) in content, (
             f"Staged open_portal.ps1 missing start command for {name} (port {port})"
         )
