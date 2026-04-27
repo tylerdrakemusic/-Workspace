@@ -13,6 +13,9 @@ Usage
     # Use a new prompt (saves it to config):
     python tools/regen_portal_icon.py --prompt "neon quantum rings on black void"
 
+    # Quantum-vary the aesthetics each run:
+    python tools/regen_portal_icon.py --vary
+
     # Preview config without regenerating:
     python tools/regen_portal_icon.py --show-prompt
 """
@@ -22,6 +25,8 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
+import shutil
 import sys
 from datetime import date
 from pathlib import Path
@@ -35,8 +40,78 @@ PORTAL_HTML = WORKSPACE_ROOT / "reports" / "portal.html"
 ICON_PNG    = WORKSPACE_ROOT / "src" / "data" / "portal_icon.png"
 ICON_ICO    = WORKSPACE_ROOT / "src" / "data" / "portal_icon.ico"
 
-# ICO sizes to embed
 ICO_SIZES = [(16, 16), (32, 32), (48, 48), (256, 256)]
+
+# ── quantum prompt variation ───────────────────────────────────────────────────
+
+_STYLE_POOLS: dict[str, list[str]] = {
+    "palette": [
+        "electric indigo and violet",
+        "electric teal and magenta",
+        "deep amber and gold",
+        "neon cyan and cobalt blue",
+        "crimson and rose gold",
+        "emerald green and silver",
+        "ultraviolet and ice white",
+    ],
+    "texture": [
+        "geometric precision, minimal",
+        "crystalline faceted surface",
+        "liquid metal ripple",
+        "holographic iridescent sheen",
+        "circuit-board engraved lines",
+        "frosted glass depth",
+        "particle field, scattered light",
+    ],
+    "glow": [
+        "radiating luminous halo",
+        "pulsing core light",
+        "diffuse nebula glow",
+        "sharp laser-edge emission",
+        "soft bioluminescent bloom",
+    ],
+    "background": [
+        "dark space, deep navy and black",
+        "void black with faint star field",
+        "dark cosmic nebula",
+        "obsidian gradient",
+        "deep charcoal with subtle grid",
+    ],
+}
+
+_PROMPT_TEMPLATE = (
+    "A striking circular icon for a unified software workspace portal. "
+    "{background} background. "
+    "A glowing circled-plus symbol (oplus, \u2295) with {palette} light, {glow}. "
+    "{texture} design, tech aesthetic. "
+    "The symbol should appear luminous, like a portal or gateway. "
+    "No text. Square composition. Dark cosmic theme."
+)
+
+
+def _build_varied_prompt(base_prompt: str) -> str:
+    """Return a quantum-varied prompt. Falls back to secrets.choice if quantum_rt unavailable."""
+    import secrets
+    import importlib
+    try:
+        for candidate in [r"f:\executedcode", r"f:\⟨ψ⟩Quantum\src\core"]:
+            if candidate not in sys.path:
+                sys.path.insert(0, candidate)
+        _qrt = importlib.import_module("quantum_rt")
+        _pick = _qrt.qhoice
+        source = "quantum_rt"
+    except Exception:
+        _pick = secrets.choice
+        source = "secrets.choice (fallback)"
+    varied = _PROMPT_TEMPLATE.format(
+        background=_pick(_STYLE_POOLS["background"]),
+        palette=_pick(_STYLE_POOLS["palette"]),
+        glow=_pick(_STYLE_POOLS["glow"]),
+        texture=_pick(_STYLE_POOLS["texture"]),
+    )
+    print(f"  variation: {source}")
+    return varied
+
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +124,7 @@ def _load_config() -> dict:
         "size": "1024x1024",
         "quality": "hd",
         "generated_at": "",
+        "cooldown_days": 3,
         "icon_png": "src/data/portal_icon.png",
         "icon_ico": "src/data/portal_icon.ico",
     }
@@ -77,10 +153,8 @@ def _generate_image(prompt: str, cfg: dict) -> Path:
         size=cfg["size"],
         quality=cfg["quality"],
     )
-    # Copy / rename to canonical portal_icon.png
-    import shutil
     shutil.copy2(raw_path, ICON_PNG)
-    print(f"✔ PNG saved → {ICON_PNG}")
+    print(f"\u2714 PNG saved \u2192 {ICON_PNG}")
     return ICON_PNG
 
 
@@ -89,8 +163,28 @@ def _build_ico(png_path: Path) -> Path:
 
     img = Image.open(png_path).convert("RGBA")
     img.save(ICON_ICO, format="ICO", sizes=ICO_SIZES)
-    print(f"✔ ICO saved → {ICON_ICO} ({ICON_ICO.stat().st_size:,} bytes)")
+    print(f"\u2714 ICO saved \u2192 {ICON_ICO} ({ICON_ICO.stat().st_size:,} bytes)")
     return ICON_ICO
+
+
+def _escape_attr(s: str) -> str:
+    return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
+
+
+def _update_sigil_tooltip(html: str, prompt: str) -> str:
+    import re
+    escaped = _escape_attr(prompt)
+    html = re.sub(
+        r'(<span[^>]*class="sigil"[^>]*)data-icon-prompt="[^"]*"',
+        rf'\1data-icon-prompt="{escaped}"',
+        html,
+    )
+    if "data-icon-prompt" not in html:
+        html = html.replace(
+            '<span class="sigil">\u2295</span>',
+            f'<span class="sigil" data-icon-prompt="{escaped}" title="Icon prompt: {escaped}">\u2295</span>',
+        )
+    return html
 
 
 def _inject_favicon(ico_path: Path, prompt: str) -> None:
@@ -99,76 +193,64 @@ def _inject_favicon(ico_path: Path, prompt: str) -> None:
         f'<link rel="icon" type="image/x-icon" '
         f'href="data:image/x-icon;base64,{ico_b64}">'
     )
-    prompt_meta = (
-        f'<meta name="portal-icon-prompt" content="{_escape_attr(prompt)}">'
-    )
+    prompt_meta = f'<meta name="portal-icon-prompt" content="{_escape_attr(prompt)}">'
 
     html = PORTAL_HTML.read_text(encoding="utf-8")
-
-    # Strip any existing favicon / prompt meta lines
     lines = html.splitlines(keepends=True)
-    cleaned = [
-        l for l in lines
-        if 'rel="icon"' not in l and 'portal-icon-prompt' not in l
-    ]
-    html = "".join(cleaned)
+    html = "".join(l for l in lines if 'rel="icon"' not in l and "portal-icon-prompt" not in l)
 
-    # Inject after charset meta
     anchor = '<meta charset="utf-8">'
-    replacement = f'{anchor}\n{favicon_tag}\n{prompt_meta}'
     if anchor not in html:
-        print("⚠  Could not find charset anchor in portal.html — favicon NOT injected.")
+        print("\u26a0  Could not find charset anchor in portal.html \u2014 favicon NOT injected.")
         return
-    html = html.replace(anchor, replacement, 1)
-
-    # Also update the sigil tooltip data-attribute if present
+    html = html.replace(anchor, f"{anchor}\n{favicon_tag}\n{prompt_meta}", 1)
     html = _update_sigil_tooltip(html, prompt)
-
     PORTAL_HTML.write_text(html, encoding="utf-8")
-    print(f"✔ Favicon re-injected → {PORTAL_HTML.name}")
-
-
-def _escape_attr(s: str) -> str:
-    return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
-
-
-def _update_sigil_tooltip(html: str, prompt: str) -> str:
-    """Update the data-icon-prompt attribute on the .sigil span if present."""
-    import re
-    escaped = _escape_attr(prompt)
-    # Replace existing data-icon-prompt
-    html = re.sub(
-        r'(<span[^>]*class="sigil"[^>]*)data-icon-prompt="[^"]*"',
-        rf'\1data-icon-prompt="{escaped}"',
-        html,
-    )
-    # Add data-icon-prompt if not present
-    if 'data-icon-prompt' not in html:
-        html = html.replace(
-            '<span class="sigil">⊕</span>',
-            f'<span class="sigil" data-icon-prompt="{escaped}" title="Icon prompt: {escaped}">⊕</span>',
-        )
-    return html
+    print(f"\u2714 Favicon re-injected \u2192 {PORTAL_HTML.name}")
 
 
 def _refresh_shortcut(ico_path: Path) -> None:
-    import os
-    desktop = Path(os.path.expanduser("~")) / "Desktop"
-    shortcut_path = desktop / "\u2295 Workspace Portal.lnk"
+    """Rebuild desktop shortcut with all three WScript.Shell Unicode workarounds.
+
+    1. ASCII temp filename → rename to Unicode via Path.rename()
+    2. Stage ICO to ASCII path (WScript.Shell silently drops Unicode IconLocation)
+    3. Stage PS1 launcher to ASCII path (WScript.Shell corrupts Unicode in Arguments)
+    """
+    desktop    = Path(os.path.expanduser("~")) / "Desktop"
+    tmp_lnk    = desktop / "_workspace_portal_tmp.lnk"
+    final_lnk  = desktop / "\u2295 Workspace Portal.lnk"
+    staging    = Path(os.environ["LOCALAPPDATA"]) / "WorkspacePortal"
+    staging.mkdir(parents=True, exist_ok=True)
+    staged_ico = staging / "portal_icon.ico"
+    staged_ps1 = staging / "open_portal.ps1"
+    shutil.copy2(ico_path, staged_ico)
+    # BOM (utf-8-sig) required so PowerShell 5.1 reads the \u2295 path correctly
+    staged_ps1.write_text(
+        f'Start-Process "{WORKSPACE_ROOT / "reports" / "portal.html"}"\n',
+        encoding="utf-8-sig",
+    )
+    for lnk in (tmp_lnk, final_lnk):
+        if lnk.exists():
+            lnk.unlink()
     try:
+        import ctypes
+        import subprocess
         import win32com.client  # type: ignore[import]
+
+        powershell = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
         shell = win32com.client.Dispatch("WScript.Shell")
-        sc = shell.CreateShortcut(str(shortcut_path))
-        sc.TargetPath       = "powershell.exe"
-        sc.Arguments        = (
-            r'-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden '
-            r'-File "f:\⊕Workspace\open_portal.ps1"'
-        )
-        sc.WorkingDirectory = str(WORKSPACE_ROOT)
-        sc.IconLocation     = f"{ico_path},0"
+        sc = shell.CreateShortcut(str(tmp_lnk))
+        sc.TargetPath       = powershell
+        sc.Arguments        = f'-WindowStyle Hidden -NonInteractive -File "{staged_ps1}"'
+        sc.WindowStyle      = 7
+        sc.WorkingDirectory = str(WORKSPACE_ROOT / "reports")
+        sc.IconLocation     = f"{staged_ico},0"
         sc.Description      = "\u2295 Workspace Portal \u2014 unified project dashboard"
         sc.Save()
-        print(f"\u2714 Desktop shortcut refreshed \u2192 {shortcut_path.name}")
+        tmp_lnk.rename(final_lnk)
+        ctypes.windll.shell32.SHChangeNotify(0x08000000, 0x0000, None, None)
+        subprocess.run(["ie4uinit.exe", "-show"], capture_output=True)
+        print(f"\u2714 Desktop shortcut refreshed + icon cache flushed \u2192 {final_lnk.name}")
     except Exception as exc:
         print(f"\u26a0  Could not refresh desktop shortcut: {exc}")
 
@@ -177,9 +259,11 @@ def _refresh_shortcut(ico_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Regenerate the ⊕ Workspace Portal icon from a configurable DALL-E 3 prompt."
+        description="Regenerate the \u2295 Workspace Portal icon from a configurable DALL-E 3 prompt."
     )
     parser.add_argument("--prompt", metavar="TEXT", help="New generation prompt (saves to config)")
+    parser.add_argument("--vary", action="store_true",
+                        help="Quantum-vary the prompt aesthetics each run (does not overwrite stored prompt)")
     parser.add_argument("--show-prompt", action="store_true", help="Print current stored prompt and exit")
     parser.add_argument("--skip-shortcut", action="store_true", help="Skip desktop shortcut refresh")
     args = parser.parse_args()
@@ -191,34 +275,35 @@ def main() -> None:
         print(cfg.get("prompt", "(none)"))
         return
 
-    prompt = args.prompt or cfg.get("prompt", "")
-    if not prompt:
+    base_prompt = args.prompt or cfg.get("prompt", "")
+    if not base_prompt:
         print("Error: no prompt configured. Run with --prompt 'your prompt here'")
         sys.exit(1)
 
     if args.prompt:
         cfg["prompt"] = args.prompt
 
+    prompt = _build_varied_prompt(base_prompt) if args.vary else base_prompt
     cfg["generated_at"] = date.today().isoformat()
     _save_config(cfg)
 
-    print("\n⊕ Portal Icon Regeneration")
+    print("\n\u2295 Portal Icon Regeneration")
     print("=" * 50)
 
-    print("\n[1/4] Generating image via DALL-E 3 …")
+    print("\n[1/4] Generating image via DALL-E 3 \u2026")
     _generate_image(prompt, cfg)
 
-    print("\n[2/4] Building multi-resolution ICO …")
+    print("\n[2/4] Building multi-resolution ICO \u2026")
     _build_ico(ICON_PNG)
 
-    print("\n[3/4] Re-injecting favicon + prompt into portal.html …")
+    print("\n[3/4] Re-injecting favicon + prompt into portal.html \u2026")
     _inject_favicon(ICON_ICO, prompt)
 
     if not args.skip_shortcut:
-        print("\n[4/4] Refreshing desktop shortcut …")
+        print("\n[4/4] Refreshing desktop shortcut \u2026")
         _refresh_shortcut(ICON_ICO)
 
-    print("\n✔ Done. Reload portal.html in your browser to see the new icon.")
+    print("\n\u2714 Done. Reload portal.html in your browser to see the new icon.")
 
 
 if __name__ == "__main__":
