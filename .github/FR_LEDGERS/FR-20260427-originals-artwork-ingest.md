@@ -10,16 +10,16 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ❤Music
-- **State:** REVIEW_REQUESTED
+- **State:** MERGED
 - **Branch:** chore/heartmusic/originals-artwork-ingest
 - **PRs:** [Music#18](https://github.com/tylerdrakemusic/Music/pull/18)
 - **Cycle timer:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61
 - **Opened:** 2026-04-27
-- **Last updated:** 2026-04-27T01:00:00Z
-- **Merged at:** —
+- **Last updated:** 2026-04-27T23:31:00Z
+- **Merged at:** 2026-04-27
 - **Signed off at:** —
 - **Closed:** —
-- **Final state:** —
+- **Final state:** MERGED → CLOSED
 
 ### Acceptance Criteria
 
@@ -128,11 +128,32 @@
 
 ---
 
+### 2026-04-27T23:30:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Tyler approved → TYLER_APPROVED; CI gate passed → MERGED
+
+**Details:**
+- CI failure diagnosed: Tyler's commit added `.avif` to `IMAGE_EXTS` but `test_non_image_exts_ignored_in_plan` still tested `.avif` as a non-image ext
+- Fix: replaced `bloom.avif` with `bloom.mp3` in test (commit `575b04f8`)
+- `test` check: green ✓
+- PR marked ready for review, squash-merged
+- Merge SHA: `dd410156` (squash → main)
+- Cycle timer closed: 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61 — 1,900,677ms — ok
+
+**Next:** ledger closeout commit → CLOSED
+
+---
+
 ## Artifacts
 
-- **Perf runs:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61 — FR cycle timer
+- **Perf runs:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61 — FR cycle timer — 1,900,677ms — ok
 - **Branch HEAD:** fb552b4 (implementation commit)
+- **Tyler ingest commit:** 2c513681 (8 artworks + fix title discovery)
+- **CI fix commit:** 575b04f8 (fix test for .avif now in IMAGE_EXTS)
+- **Merge SHA:** dd410156 (squash → main)
 - **Scaffold HEAD:** b280657c4c58753090dc0783ab3120c1ecb86dec
-- **Draft PR:** https://github.com/tylerdrakemusic/Music/pull/18
+- **PR:** https://github.com/tylerdrakemusic/Music/pull/18 (merged)
 - **Test result:** 23 passed, 0 failed (`tests/test_ingest_artwork.py`)
-- **Deliverables:** `tools/ingest_artwork.py`, `tests/test_ingest_artwork.py`
+- **Deliverables:** `tools/ingest_artwork.py`, `tests/test_ingest_artwork.py`, `catalog/artwork/originals/` (8 JPGs)
