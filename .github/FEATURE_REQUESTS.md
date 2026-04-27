@@ -40,6 +40,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260426-todo-mark-done-sync | fix(todos): mark-done sync — stale IDs, progress bar, HTTP 404 | fix | 👁AI-Manifest | MERGED → CLOSED | AI-Manifest#14 (merged by Tyler 2026-04-26) | 2026-04-26 | 2026-04-26 |
 | FR-20260426-huggingface-image-integration | HuggingFace Image Generation Client — ⊕Workspace Integration | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#47 (squash 3f7a2efc) | 2026-04-26 | 2026-04-26 |
 | FR-20260426-todo-db-cards-executive-panel | Todo DB Cards: Executive Panel Interactive Close + DB Migration from Flat Files | feature | 👁AI-Manifest | MERGED → CLOSED | AI-Manifest#12 (squash d7b710d6) + -Workspace#52 (diagrams ab4f176b) | 2026-04-26 | 2026-04-26 |
 | FR-20260426-lily-portrait-executive-brief | Lily Portrait — AI-generated persona image in Executive Audio Brief portal | feature | 👁AI-Manifest | MERGED → CLOSED | AI-Manifest#11 (squash 208daa25) | 2026-04-26 | 2026-04-26 |
