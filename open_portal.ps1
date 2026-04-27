@@ -116,6 +116,31 @@ if ($existingPortal) {
     }
 }
 
-# ── 7. Open Portal ────────────────────────────────────────────────────────────
+# ── 7. Create / refresh desktop shortcut with portal icon ────────────────────
+# WScript.Shell drops Unicode in shortcut paths; work around by writing to a
+# temp ASCII name and renaming to the ⊕-prefixed name via Python.
+$IconFile    = "f:\⊕Workspace\src\data\portal_icon.ico"
+$Desktop     = [Environment]::GetFolderPath("Desktop")
+$TmpLnk      = Join-Path $Desktop "_workspace_portal_tmp.lnk"
+$FinalLnk    = Join-Path $Desktop "⊕ Workspace Portal.lnk"
+try {
+    if (Test-Path $TmpLnk)  { Remove-Item $TmpLnk  -Force }
+    if (Test-Path $FinalLnk){ Remove-Item $FinalLnk -Force }
+    $WScript = New-Object -ComObject WScript.Shell
+    $Shortcut = $WScript.CreateShortcut($TmpLnk)
+    $Shortcut.TargetPath       = "powershell.exe"
+    $Shortcut.Arguments        = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"f:\⊕Workspace\open_portal.ps1`""
+    $Shortcut.WorkingDirectory = "f:\⊕Workspace"
+    $Shortcut.IconLocation     = "$IconFile,0"
+    $Shortcut.Description      = "⊕ Workspace Portal — unified project dashboard"
+    $Shortcut.Save()
+    # Rename to Unicode name (Rename-Item / Move-Item handles NTFS Unicode correctly)
+    Move-Item -Path $TmpLnk -Destination $FinalLnk -Force
+    Write-Host "✔ Desktop shortcut refreshed: $FinalLnk" -ForegroundColor Green
+} catch {
+    Write-Host "⚠ Could not create desktop shortcut: $_" -ForegroundColor Yellow
+}
+
+# ── 8. Open Portal ────────────────────────────────────────────────────────────
 Write-Host "▶ Opening portal at $PortalUrl ..." -ForegroundColor Cyan
 Start-Process $PortalUrl
