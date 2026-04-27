@@ -224,11 +224,28 @@ def _refresh_shortcut(ico_path: Path) -> None:
     staged_ico = staging / "portal_icon.ico"
     staged_ps1 = staging / "open_portal.ps1"
     shutil.copy2(ico_path, staged_ico)
-    # BOM (utf-8-sig) required so PowerShell 5.1 reads the \u2295 path correctly
-    staged_ps1.write_text(
-        f'Start-Process "{WORKSPACE_ROOT / "reports" / "portal.html"}"\n',
-        encoding="utf-8-sig",
-    )
+    # BOM (utf-8-sig) required so PowerShell 5.1 reads the ⊕/❤ paths correctly.
+    # Also starts the three ❤Music servers if they aren't already listening.
+    launcher_lines = [
+        # Music Dashboard :5050
+        '$music = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue',
+        'if (-not $music) {',
+        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\analysis\\music_dashboard.py","--port","5050" -WindowStyle Hidden',
+        '}',
+        # TJD Radio :8100
+        '$radio = Get-NetTCPConnection -LocalPort 8100 -ErrorAction SilentlyContinue',
+        'if (-not $radio) {',
+        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\radio\\tjd_radio.py","--port","8100" -WindowStyle Hidden',
+        '}',
+        # Guitar Trainer :5055
+        '$guitar = Get-NetTCPConnection -LocalPort 5055 -ErrorAction SilentlyContinue',
+        'if (-not $guitar) {',
+        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\training\\musician_training_ui.py","--port","5055" -WindowStyle Hidden',
+        '}',
+        # Open the portal
+        f'Start-Process "{WORKSPACE_ROOT / "reports" / "portal.html"}"',
+    ]
+    staged_ps1.write_text("\n".join(launcher_lines) + "\n", encoding="utf-8-sig")
     for lnk in (tmp_lnk, final_lnk):
         if lnk.exists():
             lnk.unlink()

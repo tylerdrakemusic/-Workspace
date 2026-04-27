@@ -10,6 +10,7 @@ Verifies:
 - regen_portal_icon.py script exists and is importable
 """
 import json
+import re
 import importlib.util
 from pathlib import Path
 
@@ -88,14 +89,15 @@ def test_portal_html_has_sigil_tooltip_css() -> None:
 
 
 def test_portal_html_sigil_prompt_matches_config() -> None:
-    """The data-icon-prompt value in portal.html must match portal_icon_config.json."""
-    cfg = json.loads(ICON_CONFIG.read_text(encoding="utf-8"))
-    expected_prompt = cfg["prompt"]
+    """portal.html must have a non-empty data-icon-prompt attribute on the sigil span.
+
+    When --vary is used the injected prompt differs from the stored base prompt, so
+    we only verify presence and non-emptiness rather than an exact string match.
+    """
     html = PORTAL_HTML.read_text(encoding="utf-8")
-    escaped = expected_prompt.replace("&", "&amp;").replace('"', "&quot;")
-    assert escaped in html, (
-        "data-icon-prompt in portal.html does not match portal_icon_config.json prompt"
-    )
+    m = re.search(r'data-icon-prompt="([^"]+)"', html)
+    assert m is not None, "data-icon-prompt attribute missing from portal.html"
+    assert len(m.group(1)) > 20, "data-icon-prompt is present but suspiciously short"
 
 
 def test_regen_script_exists() -> None:
@@ -113,3 +115,64 @@ def test_regen_script_importable() -> None:
         spec.loader.exec_module(module)  # type: ignore[union-attr]
     except SystemExit:
         pass  # argparse calls sys.exit on --help; that's fine
+
+
+# ── ❤Music localhost server tests ─────────────────────────────────────────────
+
+_MUSIC_SERVERS = {
+    "Music Dashboard": 5050,
+    "TJD Radio":       8100,
+    "Guitar Trainer":  5055,
+}
+
+_MUSIC_SCRIPTS = {
+    5050: r"f:\❤Music\src\analysis\music_dashboard.py",
+    8100: r"f:\❤Music\src\radio\tjd_radio.py",
+    5055: r"f:\❤Music\src\training\musician_training_ui.py",
+}
+
+
+def test_portal_html_has_music_server_iframes() -> None:
+    """portal.html must embed iframes for all three ❤Music localhost servers."""
+    html = PORTAL_HTML.read_text(encoding="utf-8")
+    for name, port in _MUSIC_SERVERS.items():
+        assert f"localhost:{port}" in html or f"127.0.0.1:{port}" in html, (
+            f"portal.html missing iframe for {name} (port {port})"
+        )
+
+
+def test_portal_html_has_server_status_dots() -> None:
+    """portal.html must have status indicator elements for each music server."""
+    html = PORTAL_HTML.read_text(encoding="utf-8")
+    for name, port in _MUSIC_SERVERS.items():
+        assert f"dot-{port}" in html, (
+            f"portal.html missing status dot element for {name} (dot-{port})"
+        )
+
+
+def test_music_server_scripts_exist() -> None:
+    """The ❤Music server Python scripts that the launcher starts must exist on disk."""
+    for port, script_path in _MUSIC_SCRIPTS.items():
+        assert Path(script_path).is_file(), (
+            f"Server script missing for port {port}: {script_path}"
+        )
+
+
+def test_staged_launcher_starts_music_servers() -> None:
+    """The staged open_portal.ps1 launcher must contain start commands for all servers.
+
+    This is a structural check — we verify the launcher was written correctly
+    without actually starting servers in the test environment.
+    Skips gracefully if the staged file doesn't exist yet (first run before shortcut creation).
+    """
+    import os
+    staged_ps1 = Path(os.environ.get("LOCALAPPDATA", "")) / "WorkspacePortal" / "open_portal.ps1"
+    if not staged_ps1.is_file():
+        import pytest
+        pytest.skip("Staged launcher not yet created — run create_desktop_shortcut.py first")
+    content = staged_ps1.read_text(encoding="utf-8-sig")
+    for name, port in _MUSIC_SERVERS.items():
+        assert str(port) in content, (
+            f"Staged open_portal.ps1 missing start command for {name} (port {port})"
+        )
+    assert "Start-Process" in content, "Staged open_portal.ps1 missing Start-Process call"

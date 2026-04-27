@@ -26,8 +26,24 @@ staging.mkdir(parents=True, exist_ok=True)
 staged_ico = staging / "portal_icon.ico"
 staged_ps1 = staging / "open_portal.ps1"
 shutil.copy2(src_ico, staged_ico)
-# UTF-8 BOM so PowerShell 5.1 reads the ⊕ in the path correctly
-staged_ps1.write_text(f'Start-Process "{portal_url}"\n', encoding="utf-8-sig")
+# UTF-8 BOM so PowerShell 5.1 reads the ⊕/❤ paths correctly.
+# Starts the three ❤Music servers if not already listening, then opens the portal.
+_music_server_lines = [
+    '$music = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue',
+    'if (-not $music) {',
+    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\analysis\\music_dashboard.py","--port","5050" -WindowStyle Hidden',
+    '}',
+    '$radio = Get-NetTCPConnection -LocalPort 8100 -ErrorAction SilentlyContinue',
+    'if (-not $radio) {',
+    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\radio\\tjd_radio.py","--port","8100" -WindowStyle Hidden',
+    '}',
+    '$guitar = Get-NetTCPConnection -LocalPort 5055 -ErrorAction SilentlyContinue',
+    'if (-not $guitar) {',
+    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\training\\musician_training_ui.py","--port","5055" -WindowStyle Hidden',
+    '}',
+    f'Start-Process "{portal_url}"',
+]
+staged_ps1.write_text("\n".join(_music_server_lines) + "\n", encoding="utf-8-sig")
 
 # ── remove stale shortcuts ────────────────────────────────────────────────────
 for p in (tmp_lnk, final_lnk):
