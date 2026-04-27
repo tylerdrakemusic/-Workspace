@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260426-todo-mark-done-sync | Executive Panel Todo: Mark Done Not Syncing to UI | fix | 👁AI-Manifest | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-26 | 2026-04-26 |
 | FR-20260426-portal-icon-design | Portal Icon Design — AI-generated icon for portal.html favicon and desktop shortcut | feature | ⊕Workspace | TRIAGED | feature/workspace/portal-icon-design | pending | ⊕workspace-intake | 2026-04-26 | 2026-04-26 |
 | FR-20260426-chord-sheets-from-templates | Generate Chord Sheet DOCX Files from All Song Templates | chore | ❤Music | MERGED → CLOSED | chore/heartmusic/sheet-music-from-templates | https://github.com/tylerdrakemusic/Music/pull/15 | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
 | FR-20260426-sheet-music-catalog | Add Original Sheet Music to ❤Music Catalog | chore | ❤Music | BRANCHED | chore/heartmusic/sheet-music-catalog | pending | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
