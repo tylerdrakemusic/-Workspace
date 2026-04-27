@@ -5,5 +5,6 @@
   "quality": "hd",
   "generated_at": "2026-04-26",
   "icon_png": "src/data/portal_icon.png",
-  "icon_ico": "src/data/portal_icon.ico"
+  "icon_ico": "src/data/portal_icon.ico",
+  "cooldown_days": 0
 }
