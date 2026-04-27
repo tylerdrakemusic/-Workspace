@@ -10,12 +10,12 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ❤Music
-- **State:** BRANCHED
+- **State:** REVIEW_REQUESTED
 - **Branch:** chore/heartmusic/originals-artwork-ingest
 - **PRs:** [Music#18](https://github.com/tylerdrakemusic/Music/pull/18)
 - **Cycle timer:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61
 - **Opened:** 2026-04-27
-- **Last updated:** 2026-04-27T00:01:00Z
+- **Last updated:** 2026-04-27T01:00:00Z
 - **Merged at:** —
 - **Signed off at:** —
 - **Closed:** —
@@ -39,12 +39,12 @@
 
 | #   | Deliverable | Owner | Status | Proof | Updated |
 | --- | ----------- | ----- | ------ | ----- | ------- |
-| AC1 | `catalog/artwork/originals/` folder + canonical copy | ❤music-orchestrator | not-started | — | — |
-| AC2 | `artwork_path` column + DB migration | ❤music-orchestrator | not-started | — | — |
-| AC3 | `tools/ingest_artwork.py` dry-run + `--apply` | ❤music-orchestrator | not-started | — | — |
-| AC4 | ID3 APIC embed via mutagen | ❤music-orchestrator | not-started | — | — |
-| AC5 | MANUAL_REVIEW reporting for unmatched files | ❤music-orchestrator | not-started | — | — |
-| AC6 | Tests: copy logic, DB update, embed, path traversal | ❤music-orchestrator | not-started | — | — |
+| AC1 | `catalog/artwork/originals/` folder + canonical copy | ❤music-orchestrator | done | `.gitkeep` present; removed on first `--apply`; canonical `{Title} - Tyler James Drake.{ext}` naming in tool | 2026-04-27 |
+| AC2 | `artwork_path` column + DB migration | ❤music-orchestrator | done | Idempotent `ALTER TABLE catalog_songs ADD COLUMN artwork_path TEXT`; populated on `--apply` | 2026-04-27 |
+| AC3 | `tools/ingest_artwork.py` dry-run + `--apply` | ❤music-orchestrator | done | `tools/ingest_artwork.py` — `--tmp`, `--apply`, COPY_NEW/SKIP_EXACT_DUP/SKIP_SEMANTIC/MANUAL_REVIEW | 2026-04-27 |
+| AC4 | ID3 APIC embed via mutagen | ❤music-orchestrator | done | `embed_cover()` handles MP3/FLAC/MP4/M4A; skips gracefully if mutagen absent or file missing | 2026-04-27 |
+| AC5 | MANUAL_REVIEW reporting for unmatched files | ❤music-orchestrator | done | Formatted table to stdout; 4 MANUAL_REVIEW items in Desktop\tmp (brand images + avif) | 2026-04-27 |
+| AC6 | Tests: copy logic, DB update, embed, path traversal | ❤music-orchestrator | done | `tests/test_ingest_artwork.py` — 23 tests, 23 passed | 2026-04-27 |
 
 ### Tyler's Original Request
 
@@ -89,8 +89,50 @@
 
 ---
 
+### 2026-04-27T00:30:00Z — ❤music-orchestrator
+
+**Event:** state-transition
+
+**Summary:** Implementation started → IN_PROGRESS
+
+**Details:**
+- Read AGENT_STARTUP, inspected `ingest_sheet_music.py` pattern, checked `catalog_songs` schema
+- Scanned `C:\Users\tyler\Desktop\tmp`: 12 files found (8 song art .jpg + 3 brand images + 1 .avif)
+- Song art files: abbey's song art.jpg, bitten song art.jpg, fly away song art.jpg, get out song art.jpg,
+  is it real song art.jpg, lighthouse song art.jpg, same thing song art.jpg, what I do song art image.jpg
+- Brand/non-song files (will be MANUAL_REVIEW): brand image 1.jpg, brand image 2.jpg,
+  tyler in italy social image.jpg, guitar brand image.avif (unsupported ext — not ingested)
+- Implementing AC1–AC6
+
+**Next:** commit + push + REVIEW_REQUESTED
+
+---
+
+### 2026-04-27T01:00:00Z — ❤music-orchestrator
+
+**Event:** state-transition
+
+**Summary:** All AC1–AC6 delivered → REVIEW_REQUESTED
+
+**Details:**
+- Created `tools/ingest_artwork.py` following `ingest_sheet_music.py` pattern
+- Created `tests/test_ingest_artwork.py` — 23 tests, all passing
+- DB migration: idempotent `ALTER TABLE catalog_songs ADD COLUMN artwork_path TEXT`
+- embed_cover(): MP3 (ID3 APIC), FLAC (Picture block), MP4/M4A (covr atom); graceful skip if mutagen absent
+- MANUAL_REVIEW items in Desktop\tmp: brand image 1.jpg, brand image 2.jpg, tyler in italy social image.jpg
+  (guitar brand image.avif ignored — not in supported IMAGE_EXTS .jpg/.jpeg/.png/.webp)
+- Commit: `fb552b4` on branch `chore/heartmusic/originals-artwork-ingest`
+- Pushed to origin; PR Music#18 updated
+
+**Next:** Tyler reviews PR Music#18
+
+---
+
 ## Artifacts
 
 - **Perf runs:** 7f04f9ab-ccd7-4e89-b6e3-54b4f8ed6a61 — FR cycle timer
-- **Branch HEAD:** b280657c4c58753090dc0783ab3120c1ecb86dec
+- **Branch HEAD:** fb552b4 (implementation commit)
+- **Scaffold HEAD:** b280657c4c58753090dc0783ab3120c1ecb86dec
 - **Draft PR:** https://github.com/tylerdrakemusic/Music/pull/18
+- **Test result:** 23 passed, 0 failed (`tests/test_ingest_artwork.py`)
+- **Deliverables:** `tools/ingest_artwork.py`, `tests/test_ingest_artwork.py`
