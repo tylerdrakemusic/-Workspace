@@ -41,6 +41,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260427-fr-flow-auto-ledger-hygiene | FR Flow: Auto Ledger State PR + Post-Merge Hygiene | chore | ⊕Workspace | MERGED → CLOSED | -Workspace#64 (squash 8197eb75) | 2026-04-27 | 2026-04-28 |
 | FR-20260427-print-setlist-button | Add Print Button to Setlist in Band Management Panel | feature | ❤Music | MERGED → CLOSED | Music#19 (squash 850313fc) | 2026-04-27 | 2026-04-28 |
 | FR-20260427-originals-artwork-ingest | Originals Artwork Ingest — catalog storage + audio embed for all Tyler James Drake songs | chore | ❤Music | MERGED → CLOSED | Music#18 (squash dd410156) | 2026-04-27 | 2026-04-27 |
 | FR-20260426-todo-mark-done-sync | fix(todos): mark-done sync — stale IDs, progress bar, HTTP 404 | fix | 👁AI-Manifest | MERGED → CLOSED | AI-Manifest#14 (merged by Tyler 2026-04-26) | 2026-04-26 | 2026-04-26 |

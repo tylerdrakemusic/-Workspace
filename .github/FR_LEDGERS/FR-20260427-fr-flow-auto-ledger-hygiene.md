@@ -10,16 +10,16 @@
 - **Type:** chore
 - **Risk:** medium
 - **Projects:** ⊕Workspace
-- **State:** SOAKING
+- **State:** CLOSED
 - **Branch:** chore/workspace/fr-flow-auto-ledger-hygiene
 - **PRs:** [-Workspace#64](https://github.com/tylerdrakemusic/-Workspace/pull/64) — squash merged `8197eb75`
 - **Cycle timer:** e982ddde-4c04-4de1-af64-ee90bc0cb1f9
 - **Opened:** 2026-04-27
 - **Last updated:** 2026-04-28
 - **Merged at:** 2026-04-28
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Signed off at:** 2026-04-28 (Tyler)
+- **Closed:** 2026-04-28
+- **Final state:** MERGED → CLOSED
 
 ### Acceptance Criteria
 
@@ -120,6 +120,19 @@
 - State → SOAKING (awaiting Tyler's post-merge signoff)
 
 **Next:** Tyler — exercise the feature on `main`, confirm it's working, reply `sign off` to close this FR
+
+---
+
+### 2026-04-28T00:00:00Z — Tyler
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off → CLOSED
+
+**Details:**
+- Feature exercised and proven on main
+- All 6 acceptance criteria satisfied (async ledger PRs, bypass rule, commitment exclusion, hygiene invocation, two-tier scope, command examples)
+- State → CLOSED
 
 ---
 
