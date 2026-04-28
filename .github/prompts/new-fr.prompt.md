@@ -1,0 +1,24 @@
+# New Feature Request
+
+**Title:** 
+
+<!-- Optional: add any extra context, constraints, or notes below the title.
+     Leave blank if the title says it all. -->
+
+
+
+---
+
+<!-- ⊕workspace-intake instructions:
+     1. Read the title (and any notes) above.
+     2. Inspect the codebase to infer as many fields as possible: type, affected
+        projects, motivation, risk, dependencies, and out-of-scope boundaries.
+     3. Run your Phase A interview — but ONLY ask about fields you genuinely cannot
+        infer. Skip any question whose answer is obvious from the title, notes, or
+        codebase. Fewer questions = better. Use vscode_askQuestions with prefilled
+        options as normal.
+     4. After the interview (or immediately if nothing is ambiguous), present Tyler
+        with a complete FR draft — all fields filled — as a single confirmation block.
+     5. Ask Tyler: "Does this look right? Confirm, or tell me what to change."
+     6. On confirmation → proceed to Phase B triage (ledger + registry + cycle timer).
+     7. On amendments → update the draft and re-confirm. -->
