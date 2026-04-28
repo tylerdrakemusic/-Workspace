@@ -47,6 +47,11 @@ from pathlib import Path
 from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+# ── Quantum RT bootstrap ─────────────────────────────────────────────────────
+_Q_UTILS = Path(__file__).resolve().parents[2] / "\u27e8\u03c8\u27e9Quantum" / "src" / "utils"
+if _Q_UTILS.exists() and str(_Q_UTILS) not in sys.path:
+    sys.path.insert(0, str(_Q_UTILS))
+
 # Quantum random imports as per requirements (do not change these)
 from quantum_rt import qRandom, qRax, qhoice, quuffle, qsample, qpermute, qRandomBool, qRandomBitstring
 

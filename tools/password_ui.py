@@ -25,10 +25,10 @@ from threading import Timer
 
 _HERE = Path(__file__).resolve().parent
 
-# Ensure quantum_rt shim is findable (drive root = f:\)
-_root = str(_HERE.parents[1])
-if _root not in sys.path:
-    sys.path.insert(0, _root)
+# Ensure ⊕Workspace/tools is on sys.path so auto_gen_password is importable
+_tools_dir = str(_HERE)
+if _tools_dir not in sys.path:
+    sys.path.insert(0, _tools_dir)
 
 try:
     from auto_gen_password import PasswordGenerator  # type: ignore
