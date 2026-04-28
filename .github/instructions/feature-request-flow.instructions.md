@@ -60,6 +60,9 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → ARCHITECTURE_REVIEW → REVIEW
 | `SOAKING` | Feature is live on main, awaiting Tyler's post-merge "confirmed in solution" signoff. FR is still visible in the portal FR panel so Tyler can exercise the feature before accepting it. | Tyler (gate) / ⊕workspace-ci (transition recorder) |
 | `SIGNED_OFF` | Tyler confirmed the feature is present and working on main. Final human gateway. | Tyler |
 | `ARCHIVED` | FR drops off the active portal FR panel. Ledger file remains in the repo as permanent history. | ⊕workspace-ci |
+
+> **Ledger-only PRs (state transitions: MERGED → SOAKING → SIGNED_OFF → ARCHIVED) bypass Tyler's gateways.**
+> `⊕workspace-ci` opens these PRs and auto-merges them asynchronously once `test` is green — no Tyler approval required. They do not block the calling workflow (fire-and-forget). A ledger-only PR touches **only** `.github/FR_LEDGERS/*.md`, `.github/FEATURE_REQUESTS.md`, and `reports/fr_dashboard.html`.
 | `CLOSED` | Legacy terminal state (pre-SOAK protocol). Still accepted for backward compat; treat as equivalent to `ARCHIVED` for portal filtering. | ⊕workspace-ci |
 
 ## CI Gateway (LIVE as of FR-20260425)
@@ -86,6 +89,12 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
   the merge API. Attempting merge on a red PR will be rejected by GitHub
   (public repos) or fail review (∞Life).
 - `--no-verify` on ∞Life pushes requires Tyler's explicit per-task approval.
+- **Ledger-only PRs are exempt from the human approval gate.** A PR is
+  ledger-only when its entire diff touches only `.github/FR_LEDGERS/*.md`,
+  `.github/FEATURE_REQUESTS.md`, and/or `reports/fr_dashboard.html`. These
+  PRs are opened and auto-merged by `⊕workspace-ci` (via `gh pr merge
+  --squash --auto`) once `test` is green, without waiting for Tyler. No
+  `BRANCH_CHECKED_OUT` or `TYLER_APPROVED` state transitions are required.
 
 ## Tyler's Gateways (ONLY places humans act)
 

@@ -109,7 +109,45 @@ Step 4: Present summary to Tyler
    # Open PR; merge after green CI
    ```
 
-### 6. Reconcile FR Cycle Timers (safety net)
+### 6. Ledger Commit Protocol
+
+After merging a feature PR, immediately open a **ledger-state PR** targeting the ⊕Workspace `main` branch. This PR is **fire-and-forget** — do not await it before proceeding with other work.
+
+**What a ledger-only PR touches (and nothing else):**
+- `.github/FR_LEDGERS/<FR-ID>.md`
+- `.github/FEATURE_REQUESTS.md`
+- `reports/fr_dashboard.html`
+
+**Steps:**
+
+1. Create the ledger branch and commit the state-transition file updates:
+   ```bash
+   git switch -c chore/ledger-<FR-ID>-merged
+   git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md reports/fr_dashboard.html
+   git commit -m "chore(ledger): FR-<FR-ID> → MERGED"
+   git push origin chore/ledger-<FR-ID>-merged
+   ```
+
+2. Open the PR and immediately enable auto-merge:
+   ```bash
+   gh pr create \
+     --title "chore(ledger): FR-<FR-ID> → MERGED" \
+     --body "Automated ledger state transition. No code change." \
+     --base main \
+     --head chore/ledger-<FR-ID>-merged
+   gh pr merge --squash --auto <PR-number>
+   ```
+
+3. Continue the calling workflow without waiting for the auto-merge to complete.
+
+4. After the ledger PR is merged (async), invoke `⊕workspace-hygiene` on the affected project checkout for post-merge artifact cleanup.
+
+**Key rules:**
+- Ledger-only PRs **bypass Tyler's approval gate** per `feature-request-flow.instructions.md`. `test` CI must still pass before auto-merge fires.
+- Never include source code, test files, or config changes in a ledger-only PR. If the diff would touch anything beyond the three paths above, open a separate code PR first.
+- These PRs use `--squash` to keep main history clean.
+
+### 7. Reconcile FR Cycle Timers (safety net)
 
 Invoked on-demand (`@⊕workspace-ci reconcile-fr-timers`) or scheduled. Catches
 FRs where Tyler merged on GitHub.com without the CI agent doing the merge.

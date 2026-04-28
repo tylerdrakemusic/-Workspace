@@ -216,6 +216,69 @@ This agent can be scoped:
 | `hygiene ∞Life` | Single project only |
 | `hygiene agents` | Phase 2 (agent infrastructure) only |
 | `hygiene agents --fix-regen` | Add missing self-regen blocks to all agents |
+| `hygiene post-merge <FR-ID>` | Post-Merge Artifact Cleanup only (invoked by `⊕workspace-ci`) |
+
+---
+
+## Post-Merge Artifact Cleanup
+
+Invoked by `⊕workspace-ci` **after a feature PR is merged**, with the FR-ID as argument. Scoped to the affected project checkout. No full sweep is performed — only artifact removal.
+
+### Tier 1 — Untracked artifact removal
+
+Delete untracked files matching these patterns (no `git rm` needed — they are not tracked):
+
+| Pattern | Notes |
+|---------|-------|
+| `tmp/**` | All contents of any `tmp/` directory |
+| `logs/**` | Log files older than 30 days in any `logs/` directory |
+| `**/*.pyc` | Compiled Python bytecode |
+| `**/__pycache__/` | Python cache directories |
+| `**/.pytest_cache/` | Pytest cache directories |
+| `tests/*.log`, `tests/*.out` | Test output artifacts |
+
+### Tier 2 — Tracked artifact removal
+
+Run `git status --short` and identify **tracked** files matching artifact patterns. For each match:
+
+1. `git rm --cached <file>` — untrack without deleting from disk
+2. Delete the file from disk
+3. Add the pattern to `.gitignore` if not already excluded
+
+**Patterns to scan for:**
+
+| Pattern | Description |
+|---------|-------------|
+| `proof/*.json`, `proof/*.txt` | Generated proof snapshots |
+| `tmp/**` | Temp files accidentally staged/committed |
+| `logs/**` | Log files accidentally staged/committed |
+| `tools/*.html` | Generated HTML files outside `reports/` |
+| `*.html` (root-level) | Root-level generated HTML |
+| `tests/*.log`, `tests/*.out` | Test output files |
+
+**Never touch:**
+- `src/` — never modify source code
+- `tests/*.py` — test files are permanent
+- `reports/` — official reports directory is preserved
+- `*.md` — all markdown files including ledger, README, docs
+- `*.db`, `*.sqlite` — database files
+- Agent files (`.github/agents/`, `.github/instructions/`)
+- Config files (`pytest.ini`, `requirements.txt`, `.gitignore`, `pyproject.toml`)
+
+### Cleanup commit
+
+Bundle all Tier 1 deletions and Tier 2 untracking into a single commit:
+
+```bash
+# Example for FR-XXXX
+git rm --cached proof/some_snapshot.json
+rm proof/some_snapshot.json
+echo "proof/*.json" >> .gitignore
+git add .gitignore
+git commit -m "chore(hygiene): post-merge artifact cleanup for FR-XXXX"
+```
+
+If no artifact files are found, skip the commit (do not create an empty commit).
 
 ---
 
