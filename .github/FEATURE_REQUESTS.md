@@ -30,7 +30,6 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260427-print-setlist-button | Add Print Button to Setlist in Band Management Panel | feature | ❤Music | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-27 | 2026-04-27 |
 | FR-20260427-quantum-rt-fallback-docs | quantum_rt: document secrets fallback paths explicitly | chore | ⟨ψ⟩Quantum | REVIEW_REQUESTED | chore/quantum/quantum-rt-fallback-docs | [Quantum#5](https://github.com/tylerdrakemusic/Quantum/pull/5) | ⊕workspace-ci | 2026-04-27 | 2026-04-27 |
 | FR-20260426-portal-icon-design | Portal Icon Design — AI-generated icon for portal.html favicon and desktop shortcut | feature | ⊕Workspace | MERGED → CLOSED | feature/workspace/portal-icon-design | https://github.com/tylerdrakemusic/-Workspace/pull/58 | ⊕workspace-ci | 2026-04-26 | 2026-04-27 |
 | FR-20260426-chord-sheets-from-templates | Generate Chord Sheet DOCX Files from All Song Templates | chore | ❤Music | MERGED → CLOSED | chore/heartmusic/sheet-music-from-templates | https://github.com/tylerdrakemusic/Music/pull/15 | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
@@ -42,6 +41,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260427-print-setlist-button | Add Print Button to Setlist in Band Management Panel | feature | ❤Music | MERGED → CLOSED | Music#19 (squash 850313fc) | 2026-04-27 | 2026-04-28 |
 | FR-20260427-originals-artwork-ingest | Originals Artwork Ingest — catalog storage + audio embed for all Tyler James Drake songs | chore | ❤Music | MERGED → CLOSED | Music#18 (squash dd410156) | 2026-04-27 | 2026-04-27 |
 | FR-20260426-todo-mark-done-sync | fix(todos): mark-done sync — stale IDs, progress bar, HTTP 404 | fix | 👁AI-Manifest | MERGED → CLOSED | AI-Manifest#14 (merged by Tyler 2026-04-26) | 2026-04-26 | 2026-04-26 |
 | FR-20260426-huggingface-image-integration | HuggingFace Image Generation Client — ⊕Workspace Integration | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#47 (squash 3f7a2efc) | 2026-04-26 | 2026-04-26 |
