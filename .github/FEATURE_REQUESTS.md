@@ -30,7 +30,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260428-quantum-cache-rebuild | ty_string_cache Cleanup + Band-Aware IBM Quantum Cache Filler | fix+feature | ⟨ψ⟩Quantum | BRANCHED | feature/quantum/cache-rebuild | — | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
+| FR-20260428-shors-monthly-qpu-bench | Shor's Monthly QPU Benchmark + Live Dashboard Redesign | feature | ⟨ψ⟩Quantum | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-28 | 2026-04-28 |
+| FR-20260428-quantum-cache-rebuild | ty_string_cache Cleanup + Band-Aware IBM Quantum Cache Filler | fix+feature | ⟨ψ⟩Quantum | DONE | feature/quantum/cache-rebuild | PR #7, #8 merged | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
 | FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | CLOSED | feature/heartmusic/gig-inventory-checklist | [Music#20](https://github.com/tylerdrakemusic/Music/pull/20) (merged) | ❤music-orchestrator | 2026-04-28 | 2026-04-28 |
 | FR-20260426-portal-icon-design | Portal Icon Design — AI-generated icon for portal.html favicon and desktop shortcut | feature | ⊕Workspace | MERGED → CLOSED | feature/workspace/portal-icon-design | https://github.com/tylerdrakemusic/-Workspace/pull/58 | ⊕workspace-ci | 2026-04-26 | 2026-04-27 |
 | FR-20260426-chord-sheets-from-templates | Generate Chord Sheet DOCX Files from All Song Templates | chore | ❤Music | MERGED → CLOSED | chore/heartmusic/sheet-music-from-templates | https://github.com/tylerdrakemusic/Music/pull/15 | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
