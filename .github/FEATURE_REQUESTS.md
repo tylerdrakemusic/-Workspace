@@ -30,6 +30,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260428-quantum-cache-rebuild | ty_string_cache Cleanup + Band-Aware IBM Quantum Cache Filler | fix+feature | ⟨ψ⟩Quantum | BRANCHED | feature/quantum/cache-rebuild | — | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
+| FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | CLOSED | feature/heartmusic/gig-inventory-checklist | [Music#20](https://github.com/tylerdrakemusic/Music/pull/20) (merged) | ❤music-orchestrator | 2026-04-28 | 2026-04-28 |
 | FR-20260426-portal-icon-design | Portal Icon Design — AI-generated icon for portal.html favicon and desktop shortcut | feature | ⊕Workspace | MERGED → CLOSED | feature/workspace/portal-icon-design | https://github.com/tylerdrakemusic/-Workspace/pull/58 | ⊕workspace-ci | 2026-04-26 | 2026-04-27 |
 | FR-20260426-chord-sheets-from-templates | Generate Chord Sheet DOCX Files from All Song Templates | chore | ❤Music | MERGED → CLOSED | chore/heartmusic/sheet-music-from-templates | https://github.com/tylerdrakemusic/Music/pull/15 | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
 
@@ -40,6 +42,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | MERGED → CLOSED | Music#20 (merged by Tyler 2026-04-28) | 2026-04-28 | 2026-04-28 |
+| FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | MERGED → CLOSED | Music#20 (merged by Tyler 2026-04-28) | 2026-04-28 | 2026-04-28 |
 | FR-20260427-quantum-rt-fallback-docs | quantum_rt: document secrets fallback paths explicitly | chore | ⟨ψ⟩Quantum | MERGED → CLOSED | Quantum#5 (Tyler signed off 2026-04-28) | 2026-04-27 | 2026-04-28 |
 | FR-20260426-sheet-music-catalog | Add Original Sheet Music to ❤Music Catalog | chore | ❤Music | MERGED → CLOSED | Music#— (Tyler signed off 2026-04-28) | 2026-04-26 | 2026-04-28 |
 | FR-20260428-pandora-amp-claim | Log completed Pandora AMP artist claim for Tyler James Drake | chore | ❤Music | MERGED → CLOSED | Music#— (squash ed82bc6) | 2026-04-28 | 2026-04-28 |
