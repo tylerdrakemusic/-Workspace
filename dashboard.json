@@ -3,26 +3,16 @@
   "sigil": "⊕",
   "dashboards": [
     {
-      "id": "diagrams",
-      "title": "Architecture Diagrams",
-      "description": "Mermaid-rendered architecture, tech-stack, and DB schema diagrams for all 5 projects + workspace topology. Includes built-in live editor.",
+      "id": "fr-board",
+      "title": "Feature Requests",
+      "description": "Active FRs with state, branch, merge date, soak duration, and signoff status",
       "type": "static_html",
-      "generator": "tools/diagrams_dashboard.py",
-      "output": "reports/diagrams_dashboard.html",
-      "cli": "C:\\G\\python.exe tools/diagrams_dashboard.py --no-open",
-      "category": "performance",
-      "icon": "📐"
-    },
-    {
-      "id": "security-vulns",
-      "title": "Security Vulnerabilities",
-      "description": "OWASP vulnerability inventory with remediation tracking",
-      "type": "static_html",
-      "generator": "tools/security_dashboard.py",
-      "output": "reports/security_dashboard.html",
-      "cli": "C:\\G\\python.exe tools/security_dashboard.py --scan --no-open",
-      "category": "security",
-      "icon": "🛡️"
+      "generator": "tools/fr_dashboard.py",
+      "output": "reports/fr_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/fr_dashboard.py",
+      "category": "workflow",
+      "icon": "📋",
+      "priority": 50
     },
     {
       "id": "agent-ops",
@@ -33,7 +23,8 @@
       "output": "reports/agent_ops_dashboard.html",
       "cli": "C:\\G\\python.exe tools/agent_ops_monitor.py --fix --no-open",
       "category": "performance",
-      "icon": "🔬"
+      "icon": "🔬",
+      "priority": 51
     },
     {
       "id": "copilot-usage",
@@ -44,7 +35,20 @@
       "output": "reports/copilot_usage_dashboard.html",
       "cli": "C:\\G\\python.exe tools/copilot_usage_monitor.py --no-open",
       "category": "performance",
-      "icon": "🤖"
+      "icon": "🤖",
+      "priority": 52
+    },
+    {
+      "id": "security-vulns",
+      "title": "Security Vulnerabilities",
+      "description": "OWASP vulnerability inventory with remediation tracking",
+      "type": "static_html",
+      "generator": "tools/security_dashboard.py",
+      "output": "reports/security_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/security_dashboard.py --scan --no-open",
+      "category": "security",
+      "icon": "🛡️",
+      "priority": 53
     },
     {
       "id": "password-generator",
@@ -53,18 +57,20 @@
       "type": "inline_html",
       "inline_id": "password-generator",
       "category": "security",
-      "icon": "🔑"
+      "icon": "🔑",
+      "priority": 54
     },
     {
-      "id": "fr-board",
-      "title": "Feature Requests",
-      "description": "Active FRs with state, branch, merge date, soak duration, and signoff status",
+      "id": "diagrams",
+      "title": "Architecture Diagrams",
+      "description": "Mermaid-rendered architecture, tech-stack, and DB schema diagrams for all 5 projects + workspace topology. Includes built-in live editor.",
       "type": "static_html",
-      "generator": "tools/fr_dashboard.py",
-      "output": "reports/fr_dashboard.html",
-      "cli": "C:\\G\\python.exe tools/fr_dashboard.py",
-      "category": "workflow",
-      "icon": "📋"
+      "generator": "tools/diagrams_dashboard.py",
+      "output": "reports/diagrams_dashboard.html",
+      "cli": "C:\\G\\python.exe tools/diagrams_dashboard.py --no-open",
+      "category": "performance",
+      "icon": "📐",
+      "priority": 55
     }
   ]
 }

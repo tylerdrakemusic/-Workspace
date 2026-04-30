@@ -321,11 +321,11 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
             if proc.returncode == 0:
-                results.append({**dash, "regen_status": "ok", "regen_detail": proc.stdout.strip()})
+                results.append({**dash, "regen_status": "ok", "regen_detail": (proc.stdout or "").strip()})
                 print(f"    ✓ OK")
             else:
-                results.append({**dash, "regen_status": "error", "regen_detail": proc.stderr.strip()[:200]})
-                print(f"    ✗ Error: {proc.stderr.strip()[:100]}")
+                results.append({**dash, "regen_status": "error", "regen_detail": (proc.stderr or proc.stdout or "")[:200].strip()})
+                print(f"    ✗ Error: {(proc.stderr or proc.stdout or '')[:100].strip()}")
         except subprocess.TimeoutExpired:
             results.append({**dash, "regen_status": "timeout", "regen_detail": "Generator exceeded 120s"})
             print(f"    ✗ Timeout")
