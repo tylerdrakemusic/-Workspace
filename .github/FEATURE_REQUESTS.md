@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260428-gig-inventory-checklist | Gig Inventory Checklist — Band Management Panel Integration + Print | feature | ❤Music | OPEN | pending | pending | ⊕workspace-intake | 2026-04-28 | 2026-04-28 |
 | FR-20260428-gig-inventory-checklist | Gig Inventory Checklist — Band Management Panel Integration + Print | feature | ❤Music | BRANCHED | feature/heartmusic/gig-inventory-checklist | [Music#20](https://github.com/tylerdrakemusic/Music/pull/20) | ⊕workspace-ci | 2026-04-28 | 2026-04-28 |
 | FR-20260427-quantum-rt-fallback-docs | quantum_rt: document secrets fallback paths explicitly | chore | ⟨ψ⟩Quantum | REVIEW_REQUESTED | chore/quantum/quantum-rt-fallback-docs | [Quantum#5](https://github.com/tylerdrakemusic/Quantum/pull/5) | ⊕workspace-ci | 2026-04-27 | 2026-04-27 |
 | FR-20260426-portal-icon-design | Portal Icon Design — AI-generated icon for portal.html favicon and desktop shortcut | feature | ⊕Workspace | MERGED → CLOSED | feature/workspace/portal-icon-design | https://github.com/tylerdrakemusic/-Workspace/pull/58 | ⊕workspace-ci | 2026-04-26 | 2026-04-27 |
