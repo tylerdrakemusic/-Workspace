@@ -179,7 +179,7 @@ def _update_sigil_tooltip(html: str, prompt: str) -> str:
         rf'\1data-icon-prompt="{escaped}"',
         html,
     )
-    if "data-icon-prompt" not in html:
+    if 'data-icon-prompt="' not in html:
         html = html.replace(
             '<span class="sigil">\u2295</span>',
             f'<span class="sigil" data-icon-prompt="{escaped}" title="Icon prompt: {escaped}">\u2295</span>',
