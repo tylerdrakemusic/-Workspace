@@ -10,16 +10,16 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ⊕Workspace
-- **State:** TRIAGED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** MERGED → CLOSED
+- **Branch:** chore/ledger-FR-20260430-grill-me-intake-open
+- **PRs:** https://github.com/tylerdrakemusic/-Workspace/pull/72 (merged)
 - **Cycle timer:** 5e822672-712c-4125-b748-ec77718e05b7
 - **Opened:** 2026-04-30
 - **Last updated:** 2026-04-30
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-04-30
+- **Signed off at:** 2026-04-30
+- **Closed:** 2026-04-30
+- **Final state:** MERGED → CLOSED
 
 ### Acceptance Criteria
 1. `f:\⊕Workspace\.github\skills\grill-me\SKILL.md` exists with the skill definition mirroring Matt Pocock's grill-me source
