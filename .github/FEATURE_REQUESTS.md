@@ -1,4 +1,4 @@
-# Feature Request Registry
+﻿# Feature Request Registry
 
 Live board of all active feature requests (FRs) across the workspace.
 **Single source of truth** — only `⊕workspace-intake` and `⊕workspace-ci`
@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260430-grill-me-intake | Integrate grill-me skill into intake Phase A | feature | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-04-30 | 2026-04-30 |
 | FR-20260429-dashboard-panel-priority | Dashboard Panel Priority Reorder — Value-Aligned Left Sidebar | feature | ⊕Workspace + all projects | MERGED → CLOSED | feature/life/dashboard-panel-priority, feature/heartmusic/gig-inventory-checklist, fix/quantum/qft-gate-deprecation, feature/manifest/dashboard-panel-priority, chore/ledger-FR-20260428-shors-monthly-qpu-bench-open | pending PRs | ⊕workspace-overseer | 2026-04-29 | 2026-04-29 |
 | FR-20260428-shors-monthly-qpu-bench | Shor's Monthly QPU Benchmark + Live Dashboard Redesign | feature | ⟨ψ⟩Quantum | REVIEW_REQUESTED | feature/quantum/shors-monthly-bench | PR #9 open | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
 | FR-20260428-quantum-cache-rebuild | ty_string_cache Cleanup + Band-Aware IBM Quantum Cache Filler | fix+feature | ⟨ψ⟩Quantum | DONE | feature/quantum/cache-rebuild | PR #7, #8 merged | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
@@ -59,6 +60,8 @@ state machine, gateway definitions, and naming rules.
 | FR-20260426-dalle3-image-integration | DALL-E 3 Image Generation Client — ⊕Workspace Integration | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#48 (squash 7f58f5d8) | 2026-04-26 | 2026-04-26 |
 | FR-20260426-biomarker-external-portal | External Portal Integration for Biomarker Health Panel | feature | ∞Life | MERGED → CLOSED | Life#4 (merge 25e39a2) | 2026-04-26 | 2026-04-26 |
 | FR-20260425-guitar-trainer-db-migration | Guitar Trainer: Full DB Migration + Data Recovery + Card CRUD UI | feature | ❤Music | MERGED → CLOSED | Music#8 (squash 61f2734f) | 2026-04-25 | 2026-04-26 |
+| FR-20260429-artist-profile-create | Create ARTIST_PROFILE.json + populate artist_profiles DB from linkTyler.json | chore | ❤Music | MERGED → CLOSED | Music#24 (squash 6722e42) | 2026-04-29 | 2026-04-29 |
+| FR-20260429-hyperthreat-studios-doc | Document Hyperthreat Studios in ARTIST_PROFILE.json (name + website, third-party business) | chore | ❤Music | MERGED → CLOSED | Music#24 (squash 6722e42) | 2026-04-29 | 2026-04-29 |
 | FR-20260425-architecture-beautifier-styling | Architecture Beautifier: Self-Mutating Style Guide + Re-Beautify All 18 Diagrams | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#41 (squash 64dc7374) | 2026-04-25 | 2026-04-26 |
 | FR-20260426-reconcile-gaps-ledgers-todos | Reconcile Gaps: Agent Ops Monitor, FR Ledgers, and All-Project TODOs | chore | ⊕Workspace, ❤Music, ∞Life, ⟨ψ⟩Quantum, 👁AI-Manifest | MERGED → CLOSED | N/A — markdown-only, Tyler signed off 2026-04-26 | 2026-04-26 | 2026-04-26 |
 | FR-20260426-executive-audio-brief-panel | Executive Audio Brief Panel — per-project TODO+human todo audio brief via ElevenLabs | feature | 👁AI-Manifest, ⊕Workspace | MERGED → CLOSED | AI-Manifest#7 (merged 21c08f98) | 2026-04-26 | 2026-04-26 |

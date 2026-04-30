@@ -35,13 +35,20 @@ Read the request first. Then decide: is the intent already unambiguous?
 - The desired outcome is stated (not just a complaint or vague wish)
 - The scope boundary is clear (what's in vs out)
 
-**Run the interview** when ANY of these is unclear:
-- What problem this solves or what motivated it
-- What "done" looks like (expected outcome / success state)
-- Which project(s) are affected
-- What should explicitly NOT be in scope
+**Escalate to grill-me mode** (see `f:\.github\skills\grill-me\SKILL.md`) when
+EITHER of these is true:
+- **Vague:** you cannot resolve ≥2 of the 5 Phase A question-pool fields from
+  the request + codebase alone (motivation, outcome, scope/project, boundary, anchoring)
+- **Medium/high risk:** the FR appears to touch auth, secrets, agent framework,
+  DB schema, or health interventions
 
-Interview rules:
+**Run the standard batch interview** (2–5 questions in one call) when the
+request needs clarification but does NOT meet the grill-me threshold.
+
+---
+
+##### Standard Batch Interview Rules
+
 - Ask **2–5 targeted questions** — no more, no fewer when interview is needed
 - **Use `vscode_askQuestions`** — never ask questions as plain text
 - Group all questions into a **single `vscode_askQuestions` call** (don't drip one at a time)
@@ -70,6 +77,29 @@ Question pool — pick the relevant ones, populate `options` from context:
 
 After Tyler answers → briefly summarize what you heard in 2-3 sentences, then
 proceed to Phase B.
+
+---
+
+##### Grill-Me Mode Rules
+
+When escalating to grill-me, announce it first:
+> "This FR needs deeper scoping — I'll walk through it with you one question at a time."
+
+Then for each open field in the decision tree (working through the question
+pool in order):
+1. If the codebase can answer the question → explore the codebase, state the
+   answer, and advance to the next question without asking Tyler
+2. Otherwise → call `vscode_askQuestions` with **exactly one question** and a
+   **recommended answer** (your best inference, clearly marked "recommended")
+3. Wait for Tyler's response before asking the next question
+4. If an answer opens a new sub-branch, resolve it before advancing
+
+Stop grilling when:
+- All five Phase A fields are resolved
+- No new branch was opened by the last answer
+- Tyler explicitly says "done" or "that's enough"
+
+Then summarize agreed-upon answers in 2-3 sentences and proceed to Phase B.
 
 #### Phase B — Triage
 
