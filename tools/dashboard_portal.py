@@ -321,11 +321,11 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
             if proc.returncode == 0:
-                results.append({**dash, "regen_status": "ok", "regen_detail": proc.stdout.strip()})
+                results.append({**dash, "regen_status": "ok", "regen_detail": (proc.stdout or "").strip()})
                 print(f"    ✓ OK")
             else:
-                results.append({**dash, "regen_status": "error", "regen_detail": proc.stderr.strip()[:200]})
-                print(f"    ✗ Error: {proc.stderr.strip()[:100]}")
+                results.append({**dash, "regen_status": "error", "regen_detail": (proc.stderr or proc.stdout or "")[:200].strip()})
+                print(f"    ✗ Error: {(proc.stderr or proc.stdout or '')[:100].strip()}")
         except subprocess.TimeoutExpired:
             results.append({**dash, "regen_status": "timeout", "regen_detail": "Generator exceeded 120s"})
             print(f"    ✗ Timeout")
@@ -648,7 +648,23 @@ def render_portal(manifest: dict) -> str:
     align-items: center;
     gap: 0.4rem;
   }}
-  .sidebar-header h1 .sigil {{ color: var(--accent); font-size: 1.5rem; }}
+  .sidebar-header h1 .sigil {{ color: var(--accent); font-size: 1.5rem; cursor: help; position: relative; }}
+  .sidebar-header h1 .sigil[data-icon-prompt]:hover::after {{
+    content: attr(data-icon-prompt);
+    position: absolute;
+    left: 0; top: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--muted);
+    white-space: pre-wrap;
+    max-width: 340px;
+    z-index: 999;
+    pointer-events: none;
+  }}
   .sidebar-header .subtitle {{
     color: var(--muted);
     font-size: 0.75rem;

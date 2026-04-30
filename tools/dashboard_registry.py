@@ -121,6 +121,9 @@ def build_manifest(validate_only: bool = False) -> dict[str, Any]:
                 entry["generator_abs"] = str(proj / dash["generator"])
             manifest["dashboards"].append(entry)
 
+    # Sort by priority (ascending). Dashboards without a priority field sort last.
+    manifest["dashboards"].sort(key=lambda d: d.get("priority", 9999))
+
     return manifest
 
 

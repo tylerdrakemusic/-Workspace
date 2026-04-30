@@ -4,7 +4,7 @@ Tests for FR-20260425-guitar-trainer-panel-startup.
 Covers:
   - Port uniqueness: 5055 does not conflict with any other portal service
   - open_portal.ps1: Guitar Trainer server startup block is present and correct
-  - portal.html pane-9: no live-dash/live-header/open-btn chrome; bare iframe only
+  - portal.html pane-3: no live-dash/live-header/open-btn chrome; bare iframe only
   - portal.html SERVERS array: 5055 entry is present for status polling
 """
 from __future__ import annotations
@@ -133,68 +133,68 @@ def test_open_portal_guitar_trainer_before_open(open_portal_text: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# portal.html pane-9 — bare iframe, no live-dash chrome
+# portal.html pane-3 — bare iframe, no live-dash chrome
 # ---------------------------------------------------------------------------
 
 def test_pane9_has_no_live_dash_wrapper(portal_text: str) -> None:
-    """pane-9 must not contain a .live-dash wrapper."""
-    pane9_match = re.search(r'id="pane-9"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-9 not found in portal.html"
+    """pane-3 must not contain a .live-dash wrapper."""
+    pane9_match = re.search(r'id="pane-3"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
+    assert pane9_match, "pane-3 not found in portal.html"
     inner = pane9_match.group(1)
     assert "live-dash" not in inner, (
-        "pane-9 still contains 'live-dash' wrapper — should be bare iframe"
+        "pane-3 still contains 'live-dash' wrapper — should be bare iframe"
     )
 
 
 def test_pane9_has_no_live_header(portal_text: str) -> None:
-    """pane-9 must not contain the live-header div."""
-    pane9_match = re.search(r'id="pane-9"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-9 not found in portal.html"
+    """pane-3 must not contain the live-header div."""
+    pane9_match = re.search(r'id="pane-3"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
+    assert pane9_match, "pane-3 not found in portal.html"
     inner = pane9_match.group(1)
     assert "live-header" not in inner, (
-        "pane-9 still contains 'live-header' element"
+        "pane-3 still contains 'live-header' element"
     )
 
 
 def test_pane9_has_no_open_in_browser_button(portal_text: str) -> None:
-    """pane-9 must not contain the 'Open in Browser' link."""
-    pane9_match = re.search(r'id="pane-9"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-9 not found in portal.html"
+    """pane-3 must not contain the 'Open in Browser' link."""
+    pane9_match = re.search(r'id="pane-3"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
+    assert pane9_match, "pane-3 not found in portal.html"
     inner = pane9_match.group(1)
     assert "open-btn" not in inner, (
-        "pane-9 still contains 'open-btn' element"
+        "pane-3 still contains 'open-btn' element"
     )
     assert "Open in Browser" not in inner, (
-        "pane-9 still contains 'Open in Browser' text"
+        "pane-3 still contains 'Open in Browser' text"
     )
 
 
 def test_pane9_iframe_points_to_5055(portal_text: str) -> None:
-    """pane-9 iframe src must point to localhost:5055."""
-    pane9_match = re.search(r'id="pane-9"[^>]*>.*?</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-9 not found in portal.html"
+    """pane-3 iframe src must point to localhost:5055."""
+    pane9_match = re.search(r'id="pane-3"[^>]*>.*?</div>', portal_text, re.DOTALL)
+    assert pane9_match, "pane-3 not found in portal.html"
     block = pane9_match.group(0)
     assert 'src="http://localhost:5055"' in block, (
-        "pane-9 iframe does not point to http://localhost:5055"
+        "pane-3 iframe does not point to http://localhost:5055"
     )
 
 
 def test_pane9_is_bare_iframe(portal_text: str) -> None:
-    """pane-9 full element must be exactly: dash-pane div containing a single iframe."""
-    # Match the complete pane-9 div (self-contained on one line as generated)
+    """pane-3 full element must be exactly: dash-pane div containing a single iframe."""
+    # Match the complete pane-3 div (self-contained on one line as generated)
     pane9_match = re.search(
-        r'<div class="dash-pane" id="pane-9"[^>]*>(.*?)</div>',
+        r'<div class="dash-pane" id="pane-3"[^>]*>(.*?)</div>',
         portal_text,
         re.DOTALL,
     )
-    assert pane9_match, "pane-9 not found in portal.html"
+    assert pane9_match, "pane-3 not found in portal.html"
     inner = pane9_match.group(1).strip()
     # Inner content should be a single iframe tag and nothing else
-    assert inner.startswith("<iframe"), f"pane-9 inner content does not start with <iframe>: {inner[:80]}"
+    assert inner.startswith("<iframe"), f"pane-3 inner content does not start with <iframe>: {inner[:80]}"
     assert inner.endswith(">") or inner.endswith("></iframe>"), (
-        f"pane-9 inner content has unexpected trailing content: {inner[-80:]}"
+        f"pane-3 inner content has unexpected trailing content: {inner[-80:]}"
     )
-    assert inner.count("<div") == 0, "pane-9 contains unexpected nested <div> elements"
+    assert inner.count("<div") == 0, "pane-3 contains unexpected nested <div> elements"
 
 
 # ---------------------------------------------------------------------------
