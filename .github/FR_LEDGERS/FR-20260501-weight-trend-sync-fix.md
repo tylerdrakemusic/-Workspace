@@ -10,14 +10,14 @@
 - **Type:** fix
 - **Risk:** medium
 - **Projects:** ∞Life
-- **State:** AWAITING_CI
-- **Branch:** fix/∞life/weight-trend-sync-fix (fallback: fix/life/weight-trend-sync-fix if sigil branch naming chokes)
-- **PRs:** pending (⊕workspace-ci to open draft PR)
-- **Cycle timer:** 046bc7a3-cbc4-4f6d-9139-9094a79e2d68
+- **State:** MERGED
+- **Branch:** fix/∞life/weight-trend-sync-fix (deleted post-merge)
+- **PRs:** https://github.com/tylerdrakemusic/Life/pull/8 (squash 3029166f86d5d5aac5222ff284bd0b4a5f1a40d5)
+- **Cycle timer:** 046bc7a3-cbc4-4f6d-9139-9094a79e2d68 (closed: 4,409,182ms ≈ 73m, status=ok)
 - **Repo visibility:** 🔒 PRIVATE — `tylerdrakemusic/Life` (real medical/biometric data; gitignore audit required pre-commit)
 - **Opened:** 2026-05-01
 - **Last updated:** 2026-05-01
-- **Merged at:** —
+- **Merged at:** 2026-05-01T22:35Z
 - **Signed off at:** —
 - **Closed:** —
 - **Final state:** —
@@ -104,8 +104,29 @@ The implementing agent **MUST** engage Tyler interactively rather than fail sile
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
-- **Perf runs:** 046bc7a3-cbc4-4f6d-9139-9094a79e2d68 — fr-cycle-FR-20260501-weight-trend-sync-fix (started at intake)
+- **Perf runs:** 046bc7a3-cbc4-4f6d-9139-9094a79e2d68 — fr-cycle-FR-20260501-weight-trend-sync-fix (closed 2026-05-01T22:35Z, 4,409,182ms, ok)
 - **Proof artifacts:** —
-- **PRs:** pending (⊕workspace-ci)
-- **Commits:** —
-- **Reports / dashboards:** —
+- **PRs:** https://github.com/tylerdrakemusic/Life/pull/8 (merged)
+- **Commits:** 3029166f86d5d5aac5222ff284bd0b4a5f1a40d5 — `fix(∞life): restore Weight Trend live sync (Withings + Garmin) (#8)`
+- **Reports / dashboards:** `f:\∞Life\reports\biomarker_dashboard.html` (regen post-merge: 204 weight points, latest 2026-04-30)
+
+---
+
+### 2026-05-01T22:35Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** AWAITING_CI → MERGED. PR #8 squash-merged to `tylerdrakemusic/Life:main`.
+
+**Details:**
+- CI: `test` check green on head commit `108242f` (Ubuntu requirements.txt unblocked by `sys_platform=='win32'` markers on `pysqlcipher3`, `curl_cffi`, `myfitnesspal`, `rookiepy`).
+- Squash SHA: `3029166f86d5d5aac5222ff284bd0b4a5f1a40d5`
+- All 7 ACs verified prior to merge.
+- AC1 Withings: PASS-with-caveat (pipeline healthy; upstream cloud has no weigh-ins in last 14d — resolves automatically on next weigh-in).
+- No new tests added (real-data, real-API integration; covered end-to-end via `sync_log` assertions and dashboard regen verification).
+- Pre-push gitignore audit re-run on every push.
+- Worktree `f:\∞Life-worktrees\fix-weight-trend-sync-fix\` removed; local + remote branch deleted (remote auto-deleted on merge).
+- Cycle timer closed: 4,409,182ms (~73m), status=ok.
+- ∞Life main fast-forwarded `9a9b600..3029166`. Biomarker dashboard regenerated (204 weight points).
+
+**Next:** Tyler post-merge soak; sign-off → ARCHIVED.
