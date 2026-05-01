@@ -30,10 +30,6 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260430-quantum-skip-slow-tests | Skip @slow tests by default in Quantum CI (pytest.ini) | chore | ⟨ψ⟩Quantum | OPEN | — | — | ⊕workspace-overseer | 2026-04-30 | 2026-04-30 |
-| FR-20260430-quantum-dashboard-gitignore | gitignore generated benchmark_dashboard.html (regen-only) | chore | ⟨ψ⟩Quantum | TRIAGED | chore/ledger-FR-20260430-quantum-dashboard-gitignore-open | [-Workspace#77](https://github.com/tylerdrakemusic/-Workspace/pull/77) (merged) | ⊕workspace-overseer | 2026-04-30 | 2026-04-30 |
-| FR-20260430-vqe-aer-bench | VQE for H₂ + LiH (Aer baseline + dashboard panel) | feature | ⟨ψ⟩Quantum | MERGED → CLOSED | feature/quantum/vqe-aer-bench | [Quantum#12](https://github.com/tylerdrakemusic/Quantum/pull/12) (merged) | ⟨ψ⟩quantum-orchestrator | 2026-04-30 | 2026-04-30 |
-| FR-20260430-grill-me-intake | Integrate grill-me skill into intake Phase A | feature | ⊕Workspace | MERGED → CLOSED | chore/ledger-FR-20260430-grill-me-intake-open | [-Workspace#72](https://github.com/tylerdrakemusic/-Workspace/pull/72) (merged) | ⊕workspace-intake | 2026-04-30 | 2026-04-30 |
 | FR-20260429-dashboard-panel-priority | Dashboard Panel Priority Reorder — Value-Aligned Left Sidebar | feature | ⊕Workspace + all projects | MERGED → CLOSED | feature/life/dashboard-panel-priority, feature/heartmusic/gig-inventory-checklist, fix/quantum/qft-gate-deprecation, feature/manifest/dashboard-panel-priority, chore/ledger-FR-20260428-shors-monthly-qpu-bench-open | pending PRs | ⊕workspace-overseer | 2026-04-29 | 2026-04-29 |
 | FR-20260428-shors-monthly-qpu-bench | Shor's Monthly QPU Benchmark + Live Dashboard Redesign | feature | ⟨ψ⟩Quantum | REVIEW_REQUESTED | feature/quantum/shors-monthly-bench | PR #9 open | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
 | FR-20260428-quantum-cache-rebuild | ty_string_cache Cleanup + Band-Aware IBM Quantum Cache Filler | fix+feature | ⟨ψ⟩Quantum | DONE | feature/quantum/cache-rebuild | PR #7, #8 merged | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
@@ -48,6 +44,10 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | Final State | PRs / Merge SHA | Opened | Closed |
 |-------|-------|------|----------|-------------|-----------------|--------|--------|
+| FR-20260430-quantum-skip-slow-tests | Skip @slow tests by default in Quantum CI (pytest.ini) | chore | ⟨ψ⟩Quantum | MERGED → CLOSED | Quantum#13 (squash 69475a6) | 2026-04-30 | 2026-04-30 |
+| FR-20260430-quantum-dashboard-gitignore | gitignore generated benchmark_dashboard.html (regen-only) | chore | ⟨ψ⟩Quantum | MERGED → CLOSED | Quantum#14 (squash ac2b74f) | 2026-04-30 | 2026-04-30 |
+| FR-20260430-vqe-aer-bench | VQE for H₂ + LiH (Aer baseline + dashboard panel) | feature | ⟨ψ⟩Quantum | MERGED → CLOSED | Quantum#12 (merge 9b8df2e) | 2026-04-30 | 2026-04-30 |
+| FR-20260430-grill-me-intake | Integrate grill-me skill into intake Phase A | feature | ⊕Workspace | MERGED → CLOSED | -Workspace#72 (merge 9b9870e) | 2026-04-30 | 2026-04-30 |
 | FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | MERGED → CLOSED | Music#20 (merged by Tyler 2026-04-28) | 2026-04-28 | 2026-04-28 |
 | FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | MERGED → CLOSED | Music#20 (merged by Tyler 2026-04-28) | 2026-04-28 | 2026-04-28 |
 | FR-20260427-quantum-rt-fallback-docs | quantum_rt: document secrets fallback paths explicitly | chore | ⟨ψ⟩Quantum | MERGED → CLOSED | Quantum#5 (Tyler signed off 2026-04-28) | 2026-04-27 | 2026-04-28 |
