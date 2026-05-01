@@ -10,9 +10,9 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ⟨ψ⟩Quantum
-- **State:** TRIAGED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** BRANCHED
+- **Branch:** feature/quantum/vqe-aer-bench
+- **PRs:** https://github.com/tylerdrakemusic/Quantum/pull/12 (draft)
 - **Cycle timer:** 746313b6-83dd-4a92-a15a-951bd4cdd816
 - **Opened:** 2026-04-30
 - **Last updated:** 2026-04-30
@@ -84,12 +84,28 @@
 
 **Next:** awaiting Tyler scope approval (confirmed) → handoff to ⊕workspace-ci for branching
 
+### 2026-04-30T00:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** TRIAGED → BRANCHED
+
+**Details:**
+- Branch `feature/quantum/vqe-aer-bench` created off `origin/main` (8df9ac0)
+- Worktree at `F:\worktrees\quantum-vqe-aer-bench`
+- Seed commit `1e35b53` pushed (empty, opens PR surface)
+- Draft PR #12 opened: https://github.com/tylerdrakemusic/Quantum/pull/12
+
+**Next:** handoff to ⟨ψ⟩quantum-orchestrator for AC1–AC6 implementation
+
 ---
 
 ## Artifacts
 
 - **Perf runs:** 746313b6-83dd-4a92-a15a-951bd4cdd816 — fr-cycle-FR-20260430-vqe-aer-bench
 - **Proof artifacts:** —
-- **PRs:** —
-- **Commits:** —
+- **PRs:** https://github.com/tylerdrakemusic/Quantum/pull/12 (draft)
+- **Commits:** Quantum@1e35b53 (seed)
 - **Reports / dashboards:** —
+- **Branch:** feature/quantum/vqe-aer-bench
+- **Worktree:** F:\worktrees\quantum-vqe-aer-bench
