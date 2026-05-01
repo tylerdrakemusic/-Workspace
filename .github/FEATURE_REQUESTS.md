@@ -30,7 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260430-vqe-aer-bench | VQE for H₂ + LiH (Aer baseline + dashboard panel) | feature | ⟨ψ⟩Quantum | TRIAGED | pending | pending | ⟨ψ⟩quantum-orchestrator | 2026-04-30 | 2026-04-30 |
+| FR-20260430-vqe-aer-bench | VQE for H₂ + LiH (Aer baseline + dashboard panel) | feature | ⟨ψ⟩Quantum | BRANCHED | feature/quantum/vqe-aer-bench | https://github.com/tylerdrakemusic/Quantum/pull/12 | ⟨ψ⟩quantum-orchestrator | 2026-04-30 | 2026-04-30 |
 | FR-20260430-grill-me-intake | Integrate grill-me skill into intake Phase A | feature | ⊕Workspace | MERGED → CLOSED | chore/ledger-FR-20260430-grill-me-intake-open | [-Workspace#72](https://github.com/tylerdrakemusic/-Workspace/pull/72) (merged) | ⊕workspace-intake | 2026-04-30 | 2026-04-30 |
 | FR-20260429-dashboard-panel-priority | Dashboard Panel Priority Reorder — Value-Aligned Left Sidebar | feature | ⊕Workspace + all projects | MERGED → CLOSED | feature/life/dashboard-panel-priority, feature/heartmusic/gig-inventory-checklist, fix/quantum/qft-gate-deprecation, feature/manifest/dashboard-panel-priority, chore/ledger-FR-20260428-shors-monthly-qpu-bench-open | pending PRs | ⊕workspace-overseer | 2026-04-29 | 2026-04-29 |
 | FR-20260428-shors-monthly-qpu-bench | Shor's Monthly QPU Benchmark + Live Dashboard Redesign | feature | ⟨ψ⟩Quantum | REVIEW_REQUESTED | feature/quantum/shors-monthly-bench | PR #9 open | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
