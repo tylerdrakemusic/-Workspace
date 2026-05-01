@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260501-weight-trend-sync-fix | Restore Weight Trend live sync (Withings + Garmin) | fix | ∞Life | AWAITING_CI | fix/∞life/weight-trend-sync-fix (fallback: fix/life/weight-trend-sync-fix) | pending | ⊕workspace-ci (next: ∞life-orchestrator) | 2026-05-01 | 2026-05-01 |
 | FR-20260429-dashboard-panel-priority | Dashboard Panel Priority Reorder — Value-Aligned Left Sidebar | feature | ⊕Workspace + all projects | MERGED → CLOSED | feature/life/dashboard-panel-priority, feature/heartmusic/gig-inventory-checklist, fix/quantum/qft-gate-deprecation, feature/manifest/dashboard-panel-priority, chore/ledger-FR-20260428-shors-monthly-qpu-bench-open | pending PRs | ⊕workspace-overseer | 2026-04-29 | 2026-04-29 |
 | FR-20260428-shors-monthly-qpu-bench | Shor's Monthly QPU Benchmark + Live Dashboard Redesign | feature | ⟨ψ⟩Quantum | REVIEW_REQUESTED | feature/quantum/shors-monthly-bench | PR #9 open | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
 | FR-20260428-quantum-cache-rebuild | ty_string_cache Cleanup + Band-Aware IBM Quantum Cache Filler | fix+feature | ⟨ψ⟩Quantum | DONE | feature/quantum/cache-rebuild | PR #7, #8 merged | ⊕workspace-overseer | 2026-04-28 | 2026-04-28 |
