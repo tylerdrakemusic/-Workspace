@@ -11,16 +11,16 @@
 - **Type:** chore
 - **Risk:** low
 - **Projects:** ⟨ψ⟩Quantum
-- **State:** OPEN
-- **Branch:** —
-- **PRs:** —
-- **Cycle timer:** (to assign at branch time)
+- **State:** CLOSED
+- **Branch:** chore/quantum/skip-slow-tests
+- **PRs:** [Quantum#13](https://github.com/tylerdrakemusic/Quantum/pull/13) (merged 69475a6)
+- **Cycle timer:** (rolled into 5ab98ec0-be44-4d1c-8446-a6b878de968e batch)
 - **Opened:** 2026-04-30
 - **Last updated:** 2026-04-30
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-04-30
+- **Signed off at:** 2026-04-30 (Tyler approved batch)
+- **Closed:** 2026-04-30
+- **Final state:** MERGED
 
 ### Acceptance Criteria
 1. `tests/test_vqe.py::test_lih_chemical_accuracy` (and any future `@pytest.mark.slow`) is **deselected by default** in Quantum CI runs.
@@ -67,3 +67,26 @@
 ## Artifacts
 
 (populated as work progresses)
+
+### 2026-04-30T03:00:00Z — ⊕workspace-overseer
+
+**Event:** state-transition
+
+**Summary:** OPEN → BRANCHED → MERGED → CLOSED (batched with dashboard-gitignore chore)
+
+**Details:**
+- Branch `chore/quantum/skip-slow-tests` created off Quantum/main (post VQE merge 9b8df2e)
+- Worktree at `F:\worktrees\quantum-skip-slow`
+- Implementation: `addopts = -v --tb=short -m "not slow"` in pytest.ini
+- Verified: `pytest --collect-only` shows "1 deselected" for `test_lih_chemical_accuracy`
+- PR #13 squash-merged at 69475a6
+- Tyler approved as part of overseer batch ("ya")
+
+**AC verification:**
+- AC1 ✅ test_lih deselected by default
+- AC2 ✅ `-m "not slow"` in addopts
+- AC3 ✅ `pytest -m slow` opt-in path preserved
+- AC4 ✅ runtime drops from 525s to ~5s
+- AC5 ✅ inline pytest.ini comment block
+
+**Next:** ledger close, registry archive.
