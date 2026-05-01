@@ -10,16 +10,16 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ⟨ψ⟩Quantum
-- **State:** AUTO_REVIEWED
+- **State:** CLOSED
 - **Branch:** feature/quantum/vqe-aer-bench
-- **PRs:** https://github.com/tylerdrakemusic/Quantum/pull/12 (ready)
+- **PRs:** https://github.com/tylerdrakemusic/Quantum/pull/12 (merged)
 - **Cycle timer:** 746313b6-83dd-4a92-a15a-951bd4cdd816
 - **Opened:** 2026-04-30
 - **Last updated:** 2026-04-30
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-05-01T02:24:29Z
+- **Signed off at:** 2026-04-30 (Tyler approved)
+- **Closed:** 2026-04-30
+- **Final state:** MERGED
 
 ### Acceptance Criteria
 1. `qiskit-nature` added to ⟨ψ⟩Quantum requirements; **PySCF NOT installed** — use qiskit-nature's prebuilt Hamiltonians for H₂ and LiH
@@ -165,3 +165,26 @@
 - **Reports / dashboards:** F:\worktrees\quantum-vqe-aer-bench\reports\benchmark_dashboard.html
 - **Branch:** feature/quantum/vqe-aer-bench
 - **Worktree:** F:\worktrees\quantum-vqe-aer-bench
+
+---
+
+## Closure Event
+
+### 2026-04-30T02:24:29Z — Tyler + ⊕workspace-overseer
+
+**Event:** state-transition
+
+**Summary:** AUTO_REVIEWED → MERGED → CLOSED
+
+**Details:**
+- Tyler approved merge ("go ahead and merge and continue")
+- Merged via squash to Quantum/main, commit on main retains 9b9870e parent context
+- CI "test" workflow ran on commit 5a1c65b after empty-commit re-trigger; PASSED
+- PR #12 closed/merged at 2026-05-01T02:24:29Z
+
+**Test runtime observation (forwarded to FR-20260430-quantum-skip-slow-tests):**
+- CI runtime 524.81s (8m45s) — dominated by `test_lih_chemical_accuracy` (~520s)
+- Already marked `@pytest.mark.slow` but not deselected by default in pytest.ini
+- Risk: scaling drag on every Quantum PR; tracking via separate chore FR
+
+**Next:** registry update, cycle timer close.
