@@ -10,17 +10,17 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ❤Music
-- **State:** REVIEW_REQUESTED
+- **State:** DONE
 - **Branch:** feature/❤music/import-originals-lyrics
 - **Worktree:** F:\worktrees\FR-20260502-import-originals-lyrics\heartmusic
-- **PRs:** [Music#25](https://github.com/tylerdrakemusic/Music/pull/25) (draft)
-- **Cycle timer:** 60938f97-9352-4758-b786-e2b3a200db3e
+- **PRs:** [Music#25](https://github.com/tylerdrakemusic/Music/pull/25) (merged) · [-Workspace#83](https://github.com/tylerdrakemusic/-Workspace/pull/83) (merged)
+- **Cycle timer:** 60938f97-9352-4758-b786-e2b3a200db3e (closed — 4,580,331 ms ≈ 1h 16m 20s)
 - **Opened:** 2026-05-02
 - **Last updated:** 2026-05-02
-- **Merged at:** —
-- **Signed off at:** —
-- **Closed:** —
-- **Final state:** —
+- **Merged at:** 2026-05-02
+- **Signed off at:** 2026-05-02
+- **Closed:** 2026-05-02
+- **Final state:** DONE
 
 ### Acceptance Criteria
 1. New import capability ingests `.txt` lyric files from `f:\❤Music\lyrics\` into the ❤Music catalog as **originals** lyrics, attributed to Tyler James Drake, with title derived from filename.
@@ -112,6 +112,9 @@ Payload:
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
 - **Perf runs:** 60938f97-9352-4758-b786-e2b3a200db3e — FR cycle timer (intake → merge)
+- **Reviewer comment (Music#25, REQUEST_CHANGES):** https://github.com/tylerdrakemusic/Music/pull/25#issuecomment-4364280709
+- **Reviewer comment (-Workspace#83, APPROVE):** https://github.com/tylerdrakemusic/-Workspace/pull/83#issuecomment-4364280671
+- **Reviewer comment (Music#25, APPROVE — re-review):** https://github.com/tylerdrakemusic/Music/pull/25#issuecomment-4364286893
 
 ---
 
@@ -150,3 +153,79 @@ Payload:
 - Agent file extension at `f:\⊕Workspace\.github\agents\❤music-catalog.agent.md` is staged as a working-copy change in ⊕Workspace; needs a separate ⊕Workspace commit (not part of Music PR#25).
 
 **Next:** awaiting `⊕workspace-reviewer` review on PR#25 before merge.
+
+### 2026-05-02T18:10:00Z — ⊕workspace-reviewer
+
+**Event:** review
+
+**Summary:** Full review battery run on Music#25 + -Workspace#83 → REQUEST_CHANGES on Music#25, APPROVE on -Workspace#83 (posted as PR comments — GitHub blocks self-reviews).
+
+**Details:**
+- Gates: 6/7 passed on Music#25. **HARD BLOCK on Tests gate**: GitHub Actions `test` job (run 25256654043) failed because `tools/import_originals_lyrics.py` and `tests/test_import_originals_lyrics.py` import `docx` (python-docx) and patch `pypdf.PdfReader`, but neither package is in `requirements.txt`. Workflow only installs `requirements.txt` + `pytest`.
+- Local verification on the `F:\worktrees\FR-20260502-import-originals-lyrics\heartmusic` checkout: `pytest tests/test_import_originals_lyrics.py` → 30/30 pass; full suite → 97 passed, 21 skipped, 2 pre-existing failed (`test_guitar_trainer_db.py::test_migration_*` — unchanged on `main`, not introduced by this PR).
+- Security: ❤Music public repo guards satisfied. No secrets/DB/PDFs/lyrics-content in the diff. `*.db` + `src/data/*.db` confirmed gitignored. SQL fully parameterized; no path traversal exposure (paths bounded to configured `originals/` and `covers/` dirs); no subprocess/eval.
+- Scope: AC1–AC7 all satisfied by code; AC1 expansion to DOCX/PDF was Tyler-approved per the orchestrator entry.
+- Diagrams: no architecture change required; new tool fits inside existing `Catalog` subgraph in `music-architecture.mmd`.
+- Required fix on Music#25: add `python-docx>=1.1` and `pypdf>=4.0` to `requirements.txt` and re-push to make CI green.
+- -Workspace#83: documentation-only (ledger transition + `❤music-catalog.agent.md` capability section). Approved.
+
+**Next:** awaiting fix on Music#25 (requirements.txt bump) → CI re-run → re-review → Tyler's final approval per feature-request-flow gateway.
+
+### 2026-05-02T16:50:00Z — ❤music-orchestrator
+
+**Event:** ci-fix
+
+**Summary:** Reviewer REQUEST_CHANGES resolved — added missing CI deps; Music#25 CI now green.
+
+**Details:**
+- Appended `python-docx>=1.1` and `pypdf>=4.0` to `requirements.txt` (with FR-tagged comment).
+- Commit: `b4f8de2` — `fix(FR-20260502): add python-docx + pypdf to requirements`
+- Pushed to `feature/❤music/import-originals-lyrics`.
+- GitHub Actions `test` run: https://github.com/tylerdrakemusic/Music/actions/runs/25256860933 → **success** (16s).
+
+**Next:** request re-review from ⊕workspace-reviewer, then Tyler's final approval.
+
+### 2026-05-02T17:05:00Z — ⊕workspace-reviewer
+
+**Event:** state-transition
+
+**Summary:** Re-review after CI fix → APPROVE (7/7 gates) → AUTO_REVIEWED.
+
+**Details:**
+- Re-ran full review battery against fix commit `b4f8de2`.
+- Scope check: commit modifies only `requirements.txt` (+3 lines, no other files). No scope creep introduced by the fix.
+- Tests gate: GitHub Actions `test` run [25256860933](https://github.com/tylerdrakemusic/Music/actions/runs/25256860933) is green (success in 16s). Was the only outstanding gate from the prior REQUEST_CHANGES review.
+- All other gates unchanged from prior review (Security, Alignment, Architecture Diagrams, Proof, Demo, Scope) — re-confirmed pass.
+- Verdict flipped REQUEST_CHANGES → APPROVE. Posted as PR comment (GitHub blocks self-reviews on Tyler's own PRs); see Artifacts.
+- Registry state: BRANCHED → AUTO_REVIEWED.
+
+**Next:** Tyler is the only remaining gateway. On his `approve`, ⊕workspace-ci marks PR ready-for-review, merges per feature-request-flow, and closes the FR.
+
+### 2026-05-02T18:30:00Z — ⊕workspace-intake
+
+**Event:** state-transition
+
+**Summary:** Both PRs merged by Tyler → MERGED
+
+**Details:**
+- [tylerdrakemusic/Music#25](https://github.com/tylerdrakemusic/Music/pull/25) merged (implementation: import tool + tests + requirements bump).
+- [tylerdrakemusic/-Workspace#83](https://github.com/tylerdrakemusic/-Workspace/pull/83) merged (agent capability + ledger).
+- Live verification: `lyrics` table 19 → 39 rows; 20 originals rows attributed to Tyler James Drake; 3 People PDFs (`People.pdf`, `People Bass.pdf`, `People Tab.pdf`) relocated `originals/` → `covers/`; re-running `--apply` is a confirmed no-op (idempotent).
+
+**Next:** transition to DONE, close cycle timer, archive registry row.
+
+### 2026-05-02T18:31:00Z — ⊕workspace-intake
+
+**Event:** state-transition
+
+**Summary:** FR closed → DONE
+
+**Details:**
+- Cycle timer `60938f97-9352-4758-b786-e2b3a200db3e` closed via `perf_cli.py end` → **4,580,331 ms ≈ 1h 16m 20s** (intake → merge → close).
+- Registry row moved from Active → Archive.
+- Worktree `F:\worktrees\FR-20260502-import-originals-lyrics\heartmusic` and local feature branch cleanup delegated to `⊕workspace-ci`.
+
+**Informational follow-up (not a blocker):**
+- 6 lyric files in `f:\❤Music\lyrics\` did not match an existing `tracks` row and were skipped on `--apply`: **Fly**, **My Bond**, **NFT**, **Reflection**, **Whole**, **A Second Flight**. These are candidates for a future FR to create the corresponding `tracks` rows so the lyrics can be imported on a subsequent run.
+
+**Next:** none — FR complete.
