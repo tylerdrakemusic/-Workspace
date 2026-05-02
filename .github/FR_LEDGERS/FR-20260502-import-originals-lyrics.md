@@ -10,7 +10,7 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ❤Music
-- **State:** BRANCHED
+- **State:** REVIEW_REQUESTED
 - **Branch:** feature/❤music/import-originals-lyrics
 - **Worktree:** F:\worktrees\FR-20260502-import-originals-lyrics\heartmusic
 - **PRs:** [Music#25](https://github.com/tylerdrakemusic/Music/pull/25) (draft)
@@ -39,13 +39,13 @@
 
 | #   | Deliverable                                                              | Owner               | Status      | Proof | Updated |
 | --- | ------------------------------------------------------------------------ | ------------------- | ----------- | ----- | ------- |
-| AC1 | Import tool ingests `❤Music/lyrics/*.txt` as originals                   | ❤music-orchestrator | not-started | —     | —       |
-| AC2 | `--dry-run` / `--apply` modes                                            | ❤music-orchestrator | not-started | —     | —       |
-| AC3 | People*.pdf moved to `catalog/sheet_music/covers/` during `--apply`      | ❤music-orchestrator | not-started | —     | —       |
-| AC4 | PDF move logged + idempotent                                             | ❤music-orchestrator | not-started | —     | —       |
-| AC5 | Lyric import idempotent (no duplicate rows)                              | ❤music-orchestrator | not-started | —     | —       |
-| AC6 | Pytest coverage for dry-run, apply, idempotency, PDF move                | ❤music-orchestrator | not-started | —     | —       |
-| AC7 | Audit/summary output lists imported, skipped, and moved files            | ❤music-orchestrator | not-started | —     | —       |
+| AC1 | Import tool ingests `❤Music/lyrics/*.txt` + originals DOCX/PDF           | ❤music-orchestrator | done        | commit `82aa233` | 2026-05-02 |
+| AC2 | `--dry-run` / `--apply` modes                                            | ❤music-orchestrator | done        | commit `82aa233` | 2026-05-02 |
+| AC3 | People*.pdf moved to `catalog/sheet_music/covers/` during `--apply`      | ❤music-orchestrator | done        | commit `82aa233` | 2026-05-02 |
+| AC4 | PDF move logged + idempotent                                             | ❤music-orchestrator | done        | commit `82aa233` | 2026-05-02 |
+| AC5 | Lyric import idempotent (no duplicate rows)                              | ❤music-orchestrator | done        | commit `82aa233` | 2026-05-02 |
+| AC6 | Pytest coverage for dry-run, apply, idempotency, PDF move                | ❤music-orchestrator | done        | 30 tests pass    | 2026-05-02 |
+| AC7 | Audit/summary output lists imported, skipped, and moved files            | ❤music-orchestrator | done        | render_summary() | 2026-05-02 |
 
 ### Tyler's Original Request
 > Import the lyrics in `f:\❤Music\lyrics\` as originals lyrics into the ❤Music catalog. Also move `People*.pdf` files from `F:\❤Music\catalog\sheet_music\originals\` to `F:\❤Music\catalog\sheet_music\covers\` (creating that directory if needed) — folded into this FR. The import capability should perform the move as part of `--apply`, log the move, and not import them as originals lyrics.
@@ -129,3 +129,24 @@ Payload:
 - Registry row flipped from `BRANCHED (pending CI)` → `BRANCHED` and PR URL recorded.
 
 **Next:** ❤music-orchestrator picks up the worktree to implement AC1–AC7.
+
+### 2026-05-02T17:40:00Z — ❤music-orchestrator
+
+**Event:** state-transition
+
+**Summary:** Implementation complete; tests green; pushed to PR#25 → REVIEW_REQUESTED
+
+**Details:**
+- Added `tools/import_originals_lyrics.py` (~470 LOC) and `tests/test_import_originals_lyrics.py` (30 tests, all pass).
+- Scope expanded per Tyler's request: imports DOCX + PDF from `catalog/sheet_music/originals/` AND `.txt` from `lyrics/` (originally only `.txt`).
+- Live demo against `f:\❤Music\src\data\heartmusic.db`:
+  - Dry-run: 20 to import, 3 People-PDF skips, 3 People moves planned.
+  - `--apply`: inserted 20 lyrics rows (8 docx, 2 pdf, 10 txt — 6 of which were unmatched and saved with `track_id = NULL`); moved 3 People*.pdf → covers/.
+  - Re-run `--apply`: inserted 0 rows; all 3 moves SKIP `already_at_dst`.
+  - Final DB state: `lyrics` has 39 total rows (19 prior + 20 new originals).
+- Full project pytest: 97 passed, 23 skipped — no regressions.
+- Verified `heartmusic.db` is gitignored at both `*.db` and `src/data/*.db`.
+- Commit `82aa233` pushed to `origin/feature/❤music/import-originals-lyrics` (PR#25).
+- Agent file extension at `f:\⊕Workspace\.github\agents\❤music-catalog.agent.md` is staged as a working-copy change in ⊕Workspace; needs a separate ⊕Workspace commit (not part of Music PR#25).
+
+**Next:** awaiting `⊕workspace-reviewer` review on PR#25 before merge.
