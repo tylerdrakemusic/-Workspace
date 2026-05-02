@@ -10,9 +10,10 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ❤Music
-- **State:** BRANCHED (pending CI)
-- **Branch:** feature/❤music/import-originals-lyrics (pending creation by ⊕workspace-ci)
-- **PRs:** pending
+- **State:** BRANCHED
+- **Branch:** feature/❤music/import-originals-lyrics
+- **Worktree:** F:\worktrees\FR-20260502-import-originals-lyrics\heartmusic
+- **PRs:** [Music#25](https://github.com/tylerdrakemusic/Music/pull/25) (draft)
 - **Cycle timer:** 60938f97-9352-4758-b786-e2b3a200db3e
 - **Opened:** 2026-05-02
 - **Last updated:** 2026-05-02
@@ -111,3 +112,20 @@ Payload:
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
 - **Perf runs:** 60938f97-9352-4758-b786-e2b3a200db3e — FR cycle timer (intake → merge)
+
+---
+
+### 2026-05-02T15:55:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Branch + worktree + draft PR created → BRANCHED
+
+**Details:**
+- Branch `feature/❤music/import-originals-lyrics` created from `tylerdrakemusic/Music@main` (`60a57c4`) and pushed to origin.
+- Worktree provisioned at `F:\worktrees\FR-20260502-import-originals-lyrics\heartmusic`.
+- Empty commit `6d6c591` opened the branch ahead of `main` so a draft PR could be filed.
+- Draft PR opened: [tylerdrakemusic/Music#25](https://github.com/tylerdrakemusic/Music/pull/25).
+- Registry row flipped from `BRANCHED (pending CI)` → `BRANCHED` and PR URL recorded.
+
+**Next:** ❤music-orchestrator picks up the worktree to implement AC1–AC7.
