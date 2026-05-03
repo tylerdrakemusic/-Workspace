@@ -10,16 +10,16 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ❤Music (primary), ⊕Workspace (portal nav entry)
-- **State:** BRANCHED
+- **State:** MERGED
 - **Branch:** feature/❤music/mic-config-template (❤Music), feature/⊕workspace/studio-portal-panel (⊕Workspace)
-- **PRs:** https://github.com/tylerdrakemusic/Music/pull/26 (❤Music, draft), https://github.com/tylerdrakemusic/-Workspace/pull/86 (⊕Workspace, draft)
-- **Cycle timer:** cd1c40b1-c242-4d26-b971-e7d0cbda2c00
+- **PRs:** https://github.com/tylerdrakemusic/Music/pull/26 (❤Music, merged 74ee6b1), https://github.com/tylerdrakemusic/-Workspace/pull/86 (⊕Workspace, merged cf94b99)
+- **Cycle timer:** cd1c40b1-c242-4d26-b971-e7d0cbda2c00 (closed, 11,813,659ms ≈ 3.28h)
 - **Opened:** 2026-05-03
 - **Last updated:** 2026-05-03
-- **Merged at:** —
+- **Merged at:** 2026-05-03
 - **Signed off at:** —
 - **Closed:** —
-- **Final state:** —
+- **Final state:** MERGED
 
 ### Acceptance Criteria
 1. `❤Music/studio/mic_config_template.html` — 16-row × 3-col table (Mic 1–16 prefilled; Wall + STUD i/o blank).
@@ -52,7 +52,7 @@
 | AC3 | Hyperthreat header (logo + title)                            | ❤music-orchestrator | not-started | —     | —       |
 | AC4 | Duplex page-2 repeat                                         | ❤music-orchestrator | not-started | —     | —       |
 | AC5 | Print CSS (chrome strip + inverted logo via `@media print`)  | ❤music-orchestrator | not-started | —     | —       |
-| AC6 | "Studio" portal panel in `⊕Workspace/reports/portal.html`    | ⊕workspace-ci       | not-started | —     | —       |
+| AC6 | "Studio" portal panel in `⊕Workspace/reports/portal.html`    | ⊕workspace-doer     | done        | commit `71cc3b9` (PR #86) | 2026-05-03 |
 | AC7 | Parameterized channel count (single loop/constant)           | ❤music-orchestrator | not-started | —     | —       |
 
 ### Tyler's Original Request
@@ -103,12 +103,89 @@
 
 ---
 
+### 2026-05-03 — ❤music-orchestrator
+
+**Event:** implementation (AC1–5, AC7 complete on ❤Music side)
+
+**Summary:** Implemented `studio/mic_config_template.html`, the print-logo generator, and the Brand asset placeholder README in worktree `f:\worktrees\❤music-mic-config-template`. Pushed to feature branch; updated draft PR #26 description.
+
+**Details:**
+- Files created:
+  - `❤Music/studio/mic_config_template.html` — single-file standalone HTML, inline CSS, JS-rendered rows
+  - `❤Music/tools/gen_print_logo.py` — Pillow script (invert + flatten transparency to white) for B&W print variant
+  - `❤Music/Brand/hyperthreat/README.md` — instructions for saving source PNG and regenerating print variant
+- AC mapping:
+  - AC1 ✓ — single file, no external deps
+  - AC2 ✓ — 16×3 table; Mic col right-aligned + bold; Wall/STUD i/o ~0.35in tall; rows rendered via JS loop with `const CHANNEL_COUNT = 16; const SHEET_COUNT = 2;`
+  - AC3 partial — header logo + title implemented; HTML references `Brand/hyperthreat/hyperthreat-logo.png` with TODO comment per spec; **source PNG not yet saved by Tyler**, so print variant generation skipped (Pillow script ran, exited 1 with informative error as designed)
+  - AC4 ✓ — `@page { size: letter; margin: 0.5in; }`, table sized to fit 16 rows + header on one page
+  - AC5 ✓ — same template rendered twice with `page-break-before: always;` between sheets for duplex
+  - AC7 ✓ — clean B&W aesthetic; solid black borders; subtle even-row striping; no portal chrome
+  - AC6 — out of scope for this orchestrator (separate ⊕Workspace workstream)
+- `@media print` swaps logo via paired `<img class="screen-only">` / `<img class="print-only">` elements
+- Verified in browser: both sheets render, all 16 numbered rows present, columns align, single-page Letter layout. Logo slot empty pending PNG.
+- Commit: `8035b46` on `feature/❤music/mic-config-template` (pushed)
+
+**Open items requiring Tyler:**
+1. Save Hyperthreat silver-gradient PNG to `❤Music/Brand/hyperthreat/hyperthreat-logo.png` (transparent background preferred).
+2. Run `C:\G\python.exe tools\gen_print_logo.py` from worktree root to generate `hyperthreat-logo-print.png`.
+
+**Next:** ⊕Workspace-side workstream to register the "Studio" portal panel (AC6) on `feature/⊕workspace/studio-portal-panel`. After Tyler saves the logo, re-verify print preview, mark this branch ready for review, then merge.
+
+---
+
+### 2026-05-03 — ⊕workspace-doer
+
+**Event:** implementation (AC6 complete)
+
+**Summary:** Registered Studio panel in `⊕Workspace/reports/portal.html` on `feature/⊕workspace/studio-portal-panel`. Pushed commit `71cc3b9`; updated draft PR #86 description.
+
+**Details:**
+- File modified: `reports/portal.html` (+26/−16 lines)
+- New nav-item `data-idx="5"` in the ❤Music nav cluster (after TJD Radio idx=4, before AI-Manifest idx=6):
+  - Icon: 🎙 (`U+1F399`, distinct from the 🎙️ `U+1F399 U+FE0F` used by AI-Manifest's Executive Audio Brief)
+  - Title: "Studio" · Project: ❤Music · Badge: Static
+  - Designed as the top-level Studio panel; future studio tools register as siblings.
+- New `<div class="dash-pane" id="pane-5">` iframe → `file:///f:/%E2%9D%A4Music/studio/mic_config_template.html` (matches existing ❤Music static_html iframe convention).
+- Renumbered subsequent nav-items + panes `5..12` → `6..13`; footer count `13` → `14`. No JS hardcoded indices needed updating.
+- Did NOT touch ❤Music files per AC scoping.
+
+**Cross-PR ordering:** ❤Music PR #26 must merge before ⊕Workspace PR #86 so the iframe target exists.
+
+**Generator caveat (follow-up flag):** `reports/portal.html` is the output of `tools/dashboard_portal.py` driven by per-project `dashboard.json` specs. Direct edit will be overwritten on the next `--regen`. Recommend a follow-up to register the Studio entry in `❤Music/dashboard.json` so regeneration preserves it. AC6 wording explicitly scopes the change to portal.html and forbids touching ❤Music files, so this is deferred.
+
+**Next:** Wait for Tyler's logo save + ❤Music PR #26 to be ready, then merge in order: #26 first, then #86.
+
+---
+
+### 2026-05-03 — ⊕workspace-ci
+
+**Event:** state-transition (BRANCHED → MERGED)
+
+**Summary:** Tyler approved merge after visual verification (3 physical test prints inspected). Both PRs rebased, secret-scanned, pushed, and merged in correct order (Music first, then Workspace). Worktrees removed, remote branches auto-deleted, cycle timer closed.
+
+**Details:**
+- Pre-merge rebase: both feature branches rebased onto latest `origin/main` cleanly (no conflicts).
+- Pre-push security gate: secret scan clean on both diffs; only expected brand PNGs (~16KB and ~23KB).
+- ❤Music PR #26 marked ready, CI `test` ✓ green, **squash-merged** as `74ee6b1` on `tylerdrakemusic/Music@main`.
+- ⊕Workspace PR #86 marked ready, CI `test` ✓ green, **squash-merged** as `cf94b99` on `tylerdrakemusic/-Workspace@main`.
+- Remote branches auto-deleted by GitHub on squash.
+- Worktrees removed: `f:\worktrees\❤music-mic-config-template`, `f:\worktrees\⊕workspace-studio-portal-panel`.
+- Local feature branches deleted; both repos pulled clean on `main` (Music HEAD `74ee6b1`, Workspace HEAD `cf94b99`).
+- Remote-tracking refs pruned in both repos.
+- Cycle timer `cd1c40b1` closed: 11,813,659ms (~3.28h) — `ok`.
+
+**Next:** Closeout PR with ledger + registry updates → soak period → Tyler signoff → ARCHIVED.
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
-- **Perf runs:** cd1c40b1-c242-4d26-b971-e7d0cbda2c00 — fr-cycle-FR-20260503-mic-config-template (intake → close)
-- **Proof artifacts:** —
-- **PRs:** https://github.com/tylerdrakemusic/Music/pull/26 (❤Music, draft), https://github.com/tylerdrakemusic/-Workspace/pull/86 (⊕Workspace, draft)
-- **Commits:** dd182e8 (❤Music scaffold), bd54325 (⊕Workspace scaffold)
+- **Perf runs:** cd1c40b1-c242-4d26-b971-e7d0cbda2c00 — fr-cycle-FR-20260503-mic-config-template (intake → close, 3.28h)
+- **Proof artifacts:** Tyler printed 3 physical test copies, visual inspection passed (2026-05-03)
+- **PRs:** https://github.com/tylerdrakemusic/Music/pull/26 (❤Music, merged 74ee6b1), https://github.com/tylerdrakemusic/-Workspace/pull/86 (⊕Workspace, merged cf94b99)
+- **Commits:** dd182e8 (❤Music scaffold), bd54325 (⊕Workspace scaffold), 8035b46 (❤Music AC1–5, AC7 implementation), 71cc3b9 (⊕Workspace AC6 — Studio portal panel), 86d1892 (❤Music brand logo PNGs), a4e1f03 (❤Music Instrument column + row contrast)
+- **Merge commits:** 74ee6b1 (Music squash), cf94b99 (-Workspace squash)
 - **Reports / dashboards:** —
