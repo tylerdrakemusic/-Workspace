@@ -10,9 +10,9 @@
 - **Type:** feature
 - **Risk:** low
 - **Projects:** ❤Music (primary), ⊕Workspace (portal nav entry)
-- **State:** BRANCHED (pending)
+- **State:** BRANCHED
 - **Branch:** feature/❤music/mic-config-template (❤Music), feature/⊕workspace/studio-portal-panel (⊕Workspace)
-- **PRs:** pending (CI to open)
+- **PRs:** https://github.com/tylerdrakemusic/Music/pull/26 (❤Music, draft), https://github.com/tylerdrakemusic/-Workspace/pull/86 (⊕Workspace, draft)
 - **Cycle timer:** cd1c40b1-c242-4d26-b971-e7d0cbda2c00
 - **Opened:** 2026-05-03
 - **Last updated:** 2026-05-03
@@ -81,12 +81,34 @@
 
 ---
 
+### 2026-05-03 — ⊕workspace-ci
+
+**Event:** state-transition (BRANCHED pending → BRANCHED)
+
+**Summary:** Ledger PR #85 merged (CI green). Branches created off main in both repos, worktrees provisioned, draft PRs opened.
+
+**Details:**
+- Ledger PR merged: https://github.com/tylerdrakemusic/-Workspace/pull/85 (squash, SHA `eb998fb`)
+- ❤Music branch: `feature/❤music/mic-config-template` (from `main` @ `8a9f9de`); scaffold commit `dd182e8`
+- ⊕Workspace branch: `feature/⊕workspace/studio-portal-panel` (from `main` @ `eb998fb`); scaffold commit `bd54325`
+- Worktrees:
+  - `f:\worktrees\❤music-mic-config-template`
+  - `f:\worktrees\⊕workspace-studio-portal-panel`
+- Draft PRs:
+  - ❤Music: https://github.com/tylerdrakemusic/Music/pull/26
+  - ⊕Workspace: https://github.com/tylerdrakemusic/-Workspace/pull/86
+- Convention note: branch names use sigils per FR spec; existing repo convention has been ASCII (`feature/heartmusic/...`, `feature/workspace/...`). Flagged for Tyler's awareness — no action required unless he wants alignment.
+
+**Next:** ⊕workspace-overseer to fan out to ❤music-orchestrator (primary) and any ⊕Workspace-side worker for portal panel.
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
 
 - **Perf runs:** cd1c40b1-c242-4d26-b971-e7d0cbda2c00 — fr-cycle-FR-20260503-mic-config-template (intake → close)
 - **Proof artifacts:** —
-- **PRs:** pending
-- **Commits:** —
+- **PRs:** https://github.com/tylerdrakemusic/Music/pull/26 (❤Music, draft), https://github.com/tylerdrakemusic/-Workspace/pull/86 (⊕Workspace, draft)
+- **Commits:** dd182e8 (❤Music scaffold), bd54325 (⊕Workspace scaffold)
 - **Reports / dashboards:** —
