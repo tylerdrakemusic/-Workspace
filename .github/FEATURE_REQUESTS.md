@@ -40,6 +40,8 @@ state machine, gateway definitions, and naming rules.
 | FR-20260503-studio-equipment-panel | Studio Equipment Panel — equipment CRUD + mic config print button | feature | ❤Music, ⊕Workspace | MERGED → CLOSED | feature/heart-music/studio-equipment-panel, feature/workspace/studio-equipment-panel | [Music#28](https://github.com/tylerdrakemusic/Music/pull/28), [-Workspace#89](https://github.com/tylerdrakemusic/-Workspace/pull/89) | ❤music-orchestrator | 2026-05-03 | 2026-05-03 |
 | FR-20260503-studio-panel-enhancements | Studio Panel Enhancements — new gear, context favicons, tab order, HyperThreat categories | feature | ❤Music | MERGED → CLOSED | [feature/heartmusic/studio-panel-enhancements](https://github.com/tylerdrakemusic/Music/tree/feature/heartmusic/studio-panel-enhancements) | [Music#29](https://github.com/tylerdrakemusic/Music/pull/29) | ⊕workspace-overseer | 2026-05-03 | 2026-05-03 |
 | FR-20260503-studio-panel-category-ci | Studio panel category normalization + CI server auto-restart on merge | fix + chore | ❤Music, ⊕Workspace | TRIAGED | — | — | ⊕workspace-intake | 2026-05-03 | 2026-05-03 |
+| FR-20260503-lily-prompt-externalization | Lily Portrait: Externalize Positive Prompt + Modal UI Editor + DB Sync | feature | 👁AI-Manifest | AUTO_REVIEWED | feature/manifest/lily-prompt-externalization | [AI-Manifest#18](https://github.com/tylerdrakemusic/AI-Manifest/pull/18) | 👁ai-manifest-orchestrator | 2026-05-03 | 2026-05-04 |
+| FR-20260503-nova-biomarker-portrait | ∞Life Nova Biomarker Portrait System — AI persona portrait panel mirroring Lily architecture | feature | ∞Life | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-03 | 2026-05-03 |
 
 
 
