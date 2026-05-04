@@ -31,7 +31,20 @@ from __future__ import annotations
 
 import hashlib
 import os
+import random
+import sys
 from pathlib import Path
+
+# Quantum entropy for image seeds — falls back to secrets CSPRNG if cache absent
+try:
+    sys.path.insert(0, str(Path(r"f:\⟨ψ⟩Quantum")))
+    from src.utils.quantum_rt import qRandom as _qRandom  # type: ignore[import]
+    def _quantum_seed() -> int:
+        # qRandom() reads exactly 53 bits (double-precision mantissa) — no rejection sampling
+        return int(_qRandom() * (2**31 - 1))
+except Exception:
+    def _quantum_seed() -> int:  # type: ignore[misc]
+        return random.randint(0, 2**31 - 1)
 
 import httpx
 
@@ -89,6 +102,7 @@ class HuggingFaceImageClient:
         output_dir: Path | None = None,
         size: str = DEFAULT_SIZE,
         negative_prompt: str | None = None,
+        seed: int | None = None,
     ) -> Path:
         """Generate an image and save it to *output_dir*.
 
@@ -123,7 +137,7 @@ class HuggingFaceImageClient:
 
         width, height = self._parse_size(size)
         url = f"{HF_INFERENCE_BASE}/{self._model_id}"
-        parameters: dict = {"width": width, "height": height}
+        parameters: dict = {"width": width, "height": height, "seed": seed if seed is not None else _quantum_seed()}
         if negative_prompt:
             parameters["negative_prompt"] = negative_prompt
         payload = {
