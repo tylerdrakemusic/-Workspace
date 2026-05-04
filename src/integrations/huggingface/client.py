@@ -16,24 +16,41 @@ Usage (from any workspace project)::
 
 Notes
 -----
-- Default model: ``stabilityai/stable-diffusion-xl-base-1.0``
-  SDXL can cold-start in 30-90 s; timeout is set to 120 s.
+- Default model: ``black-forest-labs/FLUX.1-schnell`` via the HuggingFace router.
+  Fast (~5 s); no cold-start penalty.
+- API base changed from ``api-inference.huggingface.co/models`` to
+  ``router.huggingface.co/hf-inference/models`` (the old path returns 404).
 - ``size`` is parsed from ``"WxH"`` string to ``{"width": W, "height": H}``
   as expected by the HuggingFace Inference payload.
-- Model ID is constructor-injectable for easy swap to lighter models.
+- Model ID is constructor-injectable for easy swap to other models.
+- ``negative_prompt`` is accepted by ``generate_image`` and forwarded in
+  ``parameters`` when the model supports it.
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+import random
+import sys
 from pathlib import Path
+
+# Quantum entropy for image seeds — falls back to secrets CSPRNG if cache absent
+try:
+    sys.path.insert(0, str(Path(r"f:\⟨ψ⟩Quantum")))
+    from src.utils.quantum_rt import qRandom as _qRandom  # type: ignore[import]
+    def _quantum_seed() -> int:
+        # qRandom() reads exactly 53 bits (double-precision mantissa) — no rejection sampling
+        return int(_qRandom() * (2**31 - 1))
+except Exception:
+    def _quantum_seed() -> int:  # type: ignore[misc]
+        return random.randint(0, 2**31 - 1)
 
 import httpx
 
-DEFAULT_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-HF_INFERENCE_BASE = "https://api-inference.huggingface.co/models"
-REQUEST_TIMEOUT = 120.0  # SDXL cold-starts can take 60-90 s
+DEFAULT_MODEL_ID = "black-forest-labs/FLUX.1-schnell"
+HF_INFERENCE_BASE = "https://router.huggingface.co/hf-inference/models"
+REQUEST_TIMEOUT = 60.0  # FLUX.1-schnell typically completes in 5-15 s
 DEFAULT_SIZE = "1024x1024"
 
 
@@ -84,6 +101,8 @@ class HuggingFaceImageClient:
         *,
         output_dir: Path | None = None,
         size: str = DEFAULT_SIZE,
+        negative_prompt: str | None = None,
+        seed: int | None = None,
     ) -> Path:
         """Generate an image and save it to *output_dir*.
 
@@ -97,6 +116,9 @@ class HuggingFaceImageClient:
         size:
             Image dimensions as ``"WxH"`` string, e.g. ``"1024x1024"``.
             Parsed to ``{"width": W, "height": H}`` for the HF payload.
+        negative_prompt:
+            Optional negative prompt forwarded in ``parameters.negative_prompt``.
+            Ignored if ``None``.
 
         Returns
         -------
@@ -115,12 +137,12 @@ class HuggingFaceImageClient:
 
         width, height = self._parse_size(size)
         url = f"{HF_INFERENCE_BASE}/{self._model_id}"
+        parameters: dict = {"width": width, "height": height, "seed": seed if seed is not None else _quantum_seed()}
+        if negative_prompt:
+            parameters["negative_prompt"] = negative_prompt
         payload = {
             "inputs": prompt,
-            "parameters": {
-                "width": width,
-                "height": height,
-            },
+            "parameters": parameters,
         }
 
         try:
