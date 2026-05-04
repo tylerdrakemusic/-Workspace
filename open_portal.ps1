@@ -75,43 +75,41 @@ if ($existingGt) {
 # ── 5. Start Executive Audio Brief server (port 8200) ─────────────────────────
 $BriefScript = "f:\👁AI-Manifest\tools\executive_audio_brief.py"
 $BriefPort   = 8200
-$existingBrief = Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue
-if ($existingBrief) {
-    Write-Host "✔ Executive Brief server already running on :$BriefPort" -ForegroundColor Green
+Write-Host "▶ Restarting Executive Brief server on :$BriefPort ..." -ForegroundColor Cyan
+Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 400
+Start-Process -FilePath $Python `
+    -ArgumentList "`"$BriefScript`"", "--serve", "--port", $BriefPort, "--text-only" `
+    -WorkingDirectory "f:\👁AI-Manifest" `
+    -WindowStyle Hidden
+Start-Sleep -Milliseconds 1500
+$checkBrief = Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue
+if ($checkBrief) {
+    Write-Host "✔ Executive Brief server started" -ForegroundColor Green
 } else {
-    Write-Host "▶ Starting Executive Brief server on :$BriefPort ..." -ForegroundColor Cyan
-    Start-Process -FilePath $Python `
-        -ArgumentList "`"$BriefScript`"", "--serve", "--port", $BriefPort, "--text-only" `
-        -WorkingDirectory "f:\👁AI-Manifest" `
-        -WindowStyle Hidden
-    Start-Sleep -Milliseconds 1500
-    $checkBrief = Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue
-    if ($checkBrief) {
-        Write-Host "✔ Executive Brief server started" -ForegroundColor Green
-    } else {
-        Write-Host "⚠ Executive Brief server may still be starting (check port $BriefPort)" -ForegroundColor Yellow
-    }
+    Write-Host "⚠ Executive Brief server may still be starting (check port $BriefPort)" -ForegroundColor Yellow
 }
 
 # ── 6. Start ∞Life Biomarker Dashboard server (port 8300) ────────────────────
 $BioScript = "f:\∞Life\src\dashboard\gen_biomarker_dashboard.py"
 $BioPort   = 8300
-$existingBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
-if ($existingBio) {
-    Write-Host "✔ Biomarker Dashboard server already running on :$BioPort" -ForegroundColor Green
+Write-Host "▶ Restarting Biomarker Dashboard server on :$BioPort ..." -ForegroundColor Cyan
+Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 400
+Start-Process -FilePath $Python `
+    -ArgumentList "`"$BioScript`"", "--serve", "--port", $BioPort `
+    -WorkingDirectory "f:\∞Life" `
+    -WindowStyle Hidden
+Start-Sleep -Milliseconds 1500
+$checkBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
+if ($checkBio) {
+    Write-Host "✔ Biomarker Dashboard server started" -ForegroundColor Green
 } else {
-    Write-Host "▶ Starting Biomarker Dashboard server on :$BioPort ..." -ForegroundColor Cyan
-    Start-Process -FilePath $Python `
-        -ArgumentList "`"$BioScript`"", "--serve", "--port", $BioPort `
-        -WorkingDirectory "f:\∞Life" `
-        -WindowStyle Hidden
-    Start-Sleep -Milliseconds 1500
-    $checkBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
-    if ($checkBio) {
-        Write-Host "✔ Biomarker Dashboard server started" -ForegroundColor Green
-    } else {
-        Write-Host "⚠ Biomarker Dashboard server may still be starting (check port $BioPort)" -ForegroundColor Yellow
-    }
+    Write-Host "⚠ Biomarker Dashboard server may still be starting (check port $BioPort)" -ForegroundColor Yellow
 }
 
 # ── 7. Serve Portal via HTTP (required for live iframe panels) ───────────────
