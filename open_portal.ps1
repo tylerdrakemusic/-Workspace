@@ -115,24 +115,24 @@ if ($checkBio) {
 # ── 7. Serve Portal via HTTP (required for live iframe panels) ───────────────
 # Browsers block http:// iframes in file:// pages (mixed content policy).
 # Serving via HTTP on :8080 lets all live panels load correctly.
+# Always restart so static files (portal.html, SVGs) reflect latest on disk.
 $PortalPort    = 8080
 $PortalDir     = "f:\⊕Workspace\reports"
 $PortalUrl     = "http://localhost:$PortalPort/portal.html"
-$existingPortal = Get-NetTCPConnection -LocalPort $PortalPort -State Listen -ErrorAction SilentlyContinue
-if ($existingPortal) {
-    Write-Host "✔ Portal HTTP server already running on :$PortalPort" -ForegroundColor Green
+Write-Host "▶ Restarting Portal HTTP server on :$PortalPort ..." -ForegroundColor Cyan
+Get-NetTCPConnection -LocalPort $PortalPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 400
+Start-Process -FilePath $Python `
+    -ArgumentList "-m", "http.server", $PortalPort, "--directory", "`"$PortalDir`"" `
+    -WindowStyle Hidden
+Start-Sleep -Milliseconds 800
+$checkPortal = Get-NetTCPConnection -LocalPort $PortalPort -State Listen -ErrorAction SilentlyContinue
+if ($checkPortal) {
+    Write-Host "✔ Portal HTTP server started" -ForegroundColor Green
 } else {
-    Write-Host "▶ Starting Portal HTTP server on :$PortalPort ..." -ForegroundColor Cyan
-    Start-Process -FilePath $Python `
-        -ArgumentList "-m", "http.server", $PortalPort, "--directory", "`"$PortalDir`"" `
-        -WindowStyle Hidden
-    Start-Sleep -Milliseconds 800
-    $checkPortal = Get-NetTCPConnection -LocalPort $PortalPort -State Listen -ErrorAction SilentlyContinue
-    if ($checkPortal) {
-        Write-Host "✔ Portal HTTP server started" -ForegroundColor Green
-    } else {
-        Write-Host "⚠ Portal HTTP server may still be starting (check port $PortalPort)" -ForegroundColor Yellow
-    }
+    Write-Host "⚠ Portal HTTP server may still be starting (check port $PortalPort)" -ForegroundColor Yellow
 }
 
 # ── 8. Create / refresh desktop shortcut with portal icon ────────────────────
