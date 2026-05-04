@@ -24,7 +24,7 @@
                     },
                     {
                         "name":  "Studio Equipment",
-                        "port":  5060,
+                        "port":  5065,
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_studio_panel.ps1",
                         "enabled":  true
