@@ -117,6 +117,45 @@ Discover available agents by scanning `f:\.github\agents\❤music-*.agent.md`. R
 
 ---
 
+## Flask App / Portal Registration (MANDATORY for every new Flask app)
+
+When any ❤Music agent creates a new Flask app (any `src/**/*.py` served on a localhost port), ALL FOUR of the following steps are **required** before the work is considered done. Missing any step means the server won't auto-start when Tyler opens the portal.
+
+### Checklist
+1. **`❤Music/dashboard.json`** — add an entry with `"type": "flask_app"`, `"cli"`, `"url"`, `"port"`, and `"priority"`.
+2. **`⊕Workspace/tools/start_<name>.ps1`** — create a PowerShell launcher script:
+   ```powershell
+   $env:PYTHONPATH = "f:\❤Music\src"
+   & "C:\G\python.exe" "f:\❤Music\src\<path>\<app>.py" --port <PORT>
+   ```
+3. **`⊕Workspace/tools/portal_servers.json`** — add an entry:
+   ```json
+   {
+     "name": "<Display Name>",
+     "port": <PORT>,
+     "project": "❤Music",
+     "cmd": "powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_<name>.ps1",
+     "enabled": true
+   }
+   ```
+4. **`⊕Workspace/reports/portal.html`** — add the port to the `SERVERS` JS array near the bottom of the file:
+   ```js
+   const SERVERS = [...existing..., {"port": <PORT>, "name": "<Display Name>"}];
+   ```
+
+Steps 2–4 are in the **⊕Workspace** repo and must be committed on the corresponding `feature/workspace/...` branch. Coordinate with `⊕workspace-doer` if you don't have write access to that repo's branch.
+
+**The Flask app itself must accept a `--port` CLI argument:**
+```python
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--port", type=int, default=<PORT>)
+args = parser.parse_args()
+app.run(host="0.0.0.0", port=args.port)
+```
+
+---
+
 ## Core Operating Rules
 
 1. **DO NOT move or delete external source files** (Masters, Rockstar, Roughs on E:/F:/G: drives)

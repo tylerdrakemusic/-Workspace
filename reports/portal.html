@@ -420,7 +420,7 @@
             <span class="nav-title">Studio</span>
             <span class="nav-project">❤Music</span>
           </div>
-          <span class="nav-badge static">Static</span>
+          <span class="nav-badge live">Live</span>
         </div>
 
         <div class="nav-item" data-idx="6" onclick="switchDash(6, this)">
@@ -499,6 +499,8 @@
       <div class="server-row"><span class="server-dot" id="dot-5050"></span><span class="server-name">Music Dashboard :5050</span><button class="server-launch" onclick="openServer(5050)" title="Open">&nearr;</button></div>
       <div class="server-row"><span class="server-dot" id="dot-8100"></span><span class="server-name">TJD Radio :8100</span><button class="server-launch" onclick="openServer(8100)" title="Open">&nearr;</button></div>
       <div class="server-row"><span class="server-dot" id="dot-5055"></span><span class="server-name">Guitar Trainer :5055</span><button class="server-launch" onclick="openServer(5055)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-5065"></span><span class="server-name">Studio Equipment :5065</span><button class="server-launch" onclick="openServer(5065)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-8200"></span><span class="server-name">Executive Brief :8200</span><button class="server-launch" onclick="openServer(8200)" title="Open">&nearr;</button></div>
       <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#9889; Start all servers</button></div>
     </div>
     <div class="sidebar-footer">
@@ -512,7 +514,7 @@
 <div class="dash-pane" id="pane-2" style="display:none"><iframe src="file:///f:/%E2%9D%A4Music/reports/band_management_panel.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-3" style="display:none"><iframe src="http://localhost:5055" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-4" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-5" style="display:none"><iframe src="file:///f:/%E2%9D%A4Music/studio/mic_config_template.html" frameborder="0"></iframe></div>
+<div class="dash-pane" id="pane-5" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5065" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5065" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://127.0.0.1:8200" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://127.0.0.1:8200" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-7" style="display:none"><iframe src="file:///f:/%E2%9F%A8%CF%88%E2%9F%A9Quantum/reports/benchmark_dashboard.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-8" style="display:none"><iframe src="fr_dashboard.html" frameborder="0"></iframe></div>
@@ -681,7 +683,7 @@
         pollServers();
       }, 9000);
     }
-    const SERVERS = [{"port": 5050, "name": "Music Dashboard"}, {"port": 8100, "name": "TJD Radio"}, {"port": 5055, "name": "Guitar Trainer"}];
+    const SERVERS = [{"port": 5050, "name": "Music Dashboard"}, {"port": 8100, "name": "TJD Radio"}, {"port": 5055, "name": "Guitar Trainer"}, {"port": 5065, "name": "Studio Equipment"}, {"port": 8200, "name": "Executive Audio Brief"}];
     async function checkServer(port, dotId) {
       const dot = document.getElementById(dotId);
       if (!dot) return;
