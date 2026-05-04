@@ -3,7 +3,7 @@
   "model": "dall-e-3",
   "size": "1024x1024",
   "quality": "hd",
-  "generated_at": "2026-04-29",
+  "generated_at": "2026-05-04",
   "icon_png": "src/data/portal_icon.png",
   "icon_ico": "src/data/portal_icon.ico",
   "cooldown_days": 3
