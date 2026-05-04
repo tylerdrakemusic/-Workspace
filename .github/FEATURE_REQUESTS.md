@@ -43,7 +43,7 @@ state machine, gateway definitions, and naming rules.
 | FR-20260503-lily-prompt-externalization | Lily Portrait: Externalize Positive Prompt + Modal UI Editor + DB Sync | feature | 👁AI-Manifest | AUTO_REVIEWED | feature/manifest/lily-prompt-externalization | [AI-Manifest#18](https://github.com/tylerdrakemusic/AI-Manifest/pull/18) | 👁ai-manifest-orchestrator | 2026-05-03 | 2026-05-04 |
 | FR-20260503-nova-biomarker-portrait | ∞Life Nova Biomarker Portrait System — AI persona portrait panel mirroring Lily architecture | feature | ∞Life | MERGED | feature/life/nova-biomarker-portrait | [Life#9](https://github.com/tylerdrakemusic/Life/pull/9) (merged) | ⊕workspace-ci | 2026-05-03 | 2026-05-03 |
 | FR-20260503-lily-edit-btn-overlay | Lily edit-prompt button — portrait overlay top-right, matching Nova bio-panel | fix/UX | 👁AI-Manifest | MERGED → CLOSED | feature/ai-manifest/lily-edit-btn-overlay | [AI-Manifest#19](https://github.com/tylerdrakemusic/AI-Manifest/pull/19) (merged) | ⊕workspace-overseer | 2026-05-03 | 2026-05-03 |
-| FR-20260504-bulk-score-existing-todos | Bulk-score existing todos | feature | 👁AI-Manifest | BRANCHED | feature/manifest/bulk-score-existing-todos | [AI-Manifest#22](https://github.com/tylerdrakemusic/AI-Manifest/pull/22) | ⊕workspace-intake | 2026-05-04 | 2026-05-04 |
+| FR-20260504-bulk-score-existing-todos | Bulk-score existing todos | feature | 👁AI-Manifest | IN_PROGRESS | feature/manifest/bulk-score-existing-todos | [AI-Manifest#22](https://github.com/tylerdrakemusic/AI-Manifest/pull/22) | 👁ai-manifest-orchestrator | 2026-05-04 | 2026-05-04 |
 
 
 
