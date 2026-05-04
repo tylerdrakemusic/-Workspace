@@ -37,6 +37,7 @@ state machine, gateway definitions, and naming rules.
 | FR-20260428-gig-inventory-checklist | Gig Inventory Checklist Tab in Band Management Panel | feature | ❤Music | CLOSED | feature/heartmusic/gig-inventory-checklist | [Music#20](https://github.com/tylerdrakemusic/Music/pull/20) (merged) | ❤music-orchestrator | 2026-04-28 | 2026-04-28 |
 | FR-20260426-portal-icon-design | Portal Icon Design — AI-generated icon for portal.html favicon and desktop shortcut | feature | ⊕Workspace | MERGED → CLOSED | feature/workspace/portal-icon-design | https://github.com/tylerdrakemusic/-Workspace/pull/58 | ⊕workspace-ci | 2026-04-26 | 2026-04-27 |
 | FR-20260426-chord-sheets-from-templates | Generate Chord Sheet DOCX Files from All Song Templates | chore | ❤Music | MERGED → CLOSED | chore/heartmusic/sheet-music-from-templates | https://github.com/tylerdrakemusic/Music/pull/15 | ⊕workspace-ci | 2026-04-26 | 2026-04-26 |
+| FR-20260503-studio-equipment-panel | Studio Equipment Panel — equipment CRUD + mic config print button | feature | ❤Music, ⊕Workspace | BRANCHED | feature/heart-music/studio-equipment-panel, feature/workspace/studio-equipment-panel | [#28](https://github.com/tylerdrakemusic/Music/pull/28) [#89](https://github.com/tylerdrakemusic/-Workspace/pull/89) | ⊕workspace-ci | 2026-05-03 | 2026-05-03 |
 
 
 
