@@ -93,7 +93,28 @@ if ($existingBrief) {
     }
 }
 
-# ── 6. Serve Portal via HTTP (required for live iframe panels) ───────────────
+# ── 6. Start ∞Life Biomarker Dashboard server (port 8300) ────────────────────
+$BioScript = "f:\∞Life\src\dashboard\gen_biomarker_dashboard.py"
+$BioPort   = 8300
+$existingBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
+if ($existingBio) {
+    Write-Host "✔ Biomarker Dashboard server already running on :$BioPort" -ForegroundColor Green
+} else {
+    Write-Host "▶ Starting Biomarker Dashboard server on :$BioPort ..." -ForegroundColor Cyan
+    Start-Process -FilePath $Python `
+        -ArgumentList "`"$BioScript`"", "--serve", "--port", $BioPort `
+        -WorkingDirectory "f:\∞Life" `
+        -WindowStyle Hidden
+    Start-Sleep -Milliseconds 1500
+    $checkBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
+    if ($checkBio) {
+        Write-Host "✔ Biomarker Dashboard server started" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ Biomarker Dashboard server may still be starting (check port $BioPort)" -ForegroundColor Yellow
+    }
+}
+
+# ── 7. Serve Portal via HTTP (required for live iframe panels) ───────────────
 # Browsers block http:// iframes in file:// pages (mixed content policy).
 # Serving via HTTP on :8080 lets all live panels load correctly.
 $PortalPort    = 8080
@@ -116,7 +137,7 @@ if ($existingPortal) {
     }
 }
 
-# ── 7. Create / refresh desktop shortcut with portal icon ────────────────────
+# ── 8. Create / refresh desktop shortcut with portal icon ────────────────────
 # WScript.Shell has three Unicode bugs we work around:
 #   1. Shortcut filename  → create ASCII temp name, rename via Move-Item
 #   2. IconLocation path  → stage ICO to %LOCALAPPDATA%\WorkspacePortal\ (ASCII)
