@@ -6,12 +6,14 @@
 | **Title** | Bulk-score existing todos |
 | **Type** | feature |
 | **Projects** | 👁AI-Manifest |
-| **State** | TRIAGED |
-| **Owner** | ⊕workspace-intake |
+| **State** | MERGED → CLOSED |
+| **Owner** | ⊕workspace-ci |
 | **Opened** | 2026-05-04 |
-| **Branches** | TBD |
-| **PRs** | TBD |
+| **Branches** | feature/manifest/bulk-score-existing-todos |
+| **PRs** | [AI-Manifest#22](https://github.com/tylerdrakemusic/AI-Manifest/pull/22) (squash a5501c94) |
 | **Cycle timer** | 68bb320e-fb58-4d31-8abe-81768fad0baf |
+| **Merged at** | 2026-05-04T23:37:46Z |
+| **Closed** | 2026-05-04 |
 
 ## Motivation
 
@@ -66,6 +68,7 @@ Medium — operation can rewrite many priorities at once.
 |------|-------|------|
 | 2026-05-04 | OPEN | Filed by Tyler via intake prompt |
 | 2026-05-04 | TRIAGED | Scope confirmed by Tyler |
+| 2026-05-04 | MERGED → CLOSED | PR #22 squash-merged; cycle timer closed by ⊕workspace-ci |
 
 ## Event Log
 
@@ -82,7 +85,24 @@ Medium — operation can rewrite many priorities at once.
 
 **Next:** awaiting Tyler: approve scope for branch creation
 
+### 2026-05-04T23:38:30Z — ⊕workspace-ci
+
+**Event:** merge-closeout
+
+**Summary:** PR #22 merged and FR archived as MERGED → CLOSED.
+
+**Details:**
+- PR: https://github.com/tylerdrakemusic/AI-Manifest/pull/22
+- Merge method: squash
+- Merge SHA: `a5501c9496030a23ae39aaab821453f5b0320760`
+- Merged at: 2026-05-04T23:37:46Z
+- Cycle timer closed via `perf_cli end 68bb320e-fb58-4d31-8abe-81768fad0baf --status ok`
+
+**Next:** none
+
 ## Artifacts
 
 - **Perf runs:** `4bd43d31-aa27-46e0-b141-aede795c38b6` — intake session
 - **FR cycle timer:** `68bb320e-fb58-4d31-8abe-81768fad0baf`
+- **PRs:** https://github.com/tylerdrakemusic/AI-Manifest/pull/22
+- **Commits:** `a5501c9496030a23ae39aaab821453f5b0320760` — feat: bulk-score existing todos (FR-20260504)
