@@ -109,7 +109,68 @@ Step 4: Present summary to Tyler
    # Open PR; merge after green CI
    ```
 
-### 6. Ledger Commit Protocol
+### 6. Post-Merge Server Auto-Restart
+
+After merging a feature branch to `main` in any project, check whether the
+merge touched source files for a registered Flask server and, if so, restart
+it automatically so Tyler sees the updated code immediately.
+
+**Trigger:** any merge to `main` where `git diff --name-only <base>..<head>`
+includes files whose path overlaps with a registered server's working
+directory or source path.
+
+**Steps:**
+
+1. Read `f:\⊕Workspace\tools\portal_servers.json` — collect all entries.
+   Each entry has at minimum: `port`, `cli`, and optionally `cwd` or `source_dir`.
+   Infer `cwd` from the `cli` path if not explicit (e.g. `f:\❤Music\src\studio\studio_panel.py` → cwd `f:\❤Music`).
+
+2. Get the list of files changed in the merge:
+   ```powershell
+   git -C <project_root> diff --name-only HEAD~1 HEAD
+   ```
+
+3. For each registered server, check if any changed file falls under its
+   inferred `cwd`. If yes → the server needs a restart.
+
+4. For each server that needs restart:
+   a. Find the running process:
+      ```powershell
+      Get-Process python -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like "*<script_name>*" }
+      ```
+   b. Kill it: `Stop-Process -Id <pid> -Force`
+   c. Restart using the registered `cli`:
+      ```powershell
+      $env:HEARTMUSIC_DB_KEY = [System.Environment]::GetEnvironmentVariable("HEARTMUSIC_DB_KEY","User")
+      # (or whichever project key applies)
+      Start-Process "C:\G\python.exe" -ArgumentList "<args>" -WorkingDirectory "<cwd>" -WindowStyle Hidden
+      ```
+   d. Health-check — poll `http://localhost:<port>/` until HTTP 200 or
+      timeout (5 seconds, 500ms intervals):
+      ```powershell
+      $ok = $false
+      for ($i = 0; $i -lt 10; $i++) {
+          Start-Sleep -Milliseconds 500
+          try { $r = Invoke-WebRequest -Uri "http://localhost:<port>/" -UseBasicParsing -TimeoutSec 2
+                if ($r.StatusCode -eq 200) { $ok = $true; break } } catch {}
+      }
+      if (-not $ok) { Write-Warning "Server on port <port> did not respond after restart" }
+      ```
+   e. Report: `✅ Restarted <server_name> (port <port>) — health check OK` or
+      `⚠️ Restarted <server_name> (port <port>) — health check TIMED OUT`
+
+5. If no registered server is affected → skip silently (no output clutter).
+
+**Key rules:**
+- Only restart servers explicitly registered in `portal_servers.json`.
+- Never kill a process on a port that isn't registered — scope is strict.
+- If the server process is not found (already stopped), skip the kill step
+  and go straight to restart.
+- This step runs **after** the merge and **before** ledger closeout so Tyler
+  can see the update while the closeout PR is still open.
+
+### 7. Ledger Commit Protocol
 
 After merging a feature PR, immediately open a **ledger-state PR** targeting the ⊕Workspace `main` branch. This PR is **fire-and-forget** — do not await it before proceeding with other work.
 
@@ -147,7 +208,7 @@ After merging a feature PR, immediately open a **ledger-state PR** targeting the
 - Never include source code, test files, or config changes in a ledger-only PR. If the diff would touch anything beyond the three paths above, open a separate code PR first.
 - These PRs use `--squash` to keep main history clean.
 
-### 7. Reconcile FR Cycle Timers (safety net)
+### 8. Reconcile FR Cycle Timers (safety net)
 
 Invoked on-demand (`@⊕workspace-ci reconcile-fr-timers`) or scheduled. Catches
 FRs where Tyler merged on GitHub.com without the CI agent doing the merge.
