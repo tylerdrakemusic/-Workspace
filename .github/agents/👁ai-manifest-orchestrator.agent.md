@@ -71,6 +71,23 @@ All values in **Windows System Environment Variables** — never in `.env` file 
 | `GOOGLE_API_KEY` | Google APIs |
 | `OPENAPI_TOKEN` | OpenAI |
 
+## Flask App / Portal Registration (MANDATORY)
+
+When implementing or updating any Flask app for 👁AI-Manifest, you MUST wire all four auto-start components or the app will never appear in the portal:
+
+1. **`f:\👁AI-Manifest\dashboard.json`** — add an entry with `"type": "flask_app"`, `"port": <n>`, `"url": "http://127.0.0.1:<n>"`, `"cli": "C:\\G\\python.exe tools/<app>.py --serve --port <n>"`
+2. **`f:\⊕Workspace\tools\start_<appname>.ps1`** — create PowerShell launcher:
+   ```powershell
+   $env:PYTHONPATH = "f:\👁AI-Manifest\src"
+   & "C:\G\python.exe" "f:\👁AI-Manifest\tools\<app>.py" --serve --port <n>
+   ```
+3. **`f:\⊕Workspace\tools\portal_servers.json`** — add entry with `name`, `port`, `project: "👁AI-Manifest"`, `cmd` pointing to the `.ps1` above, `enabled: true`
+4. **`f:\⊕Workspace\reports\portal.html`** — two updates:
+   - Add `{"port": <n>, "name": "<App Name>"}` to the `SERVERS` JS array (line ~684)
+   - Add a `<div class="server-row">` status-dot row in the sidebar servers section
+
+**Current Flask app:** Executive Audio Brief Portal → port 8200, `tools/executive_audio_brief.py --serve --port 8200`
+
 ## Project Rules
 - API keys from system env vars — NEVER hardcode
 - DB keys from system env vars — never from `.env` file values
