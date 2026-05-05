@@ -486,58 +486,85 @@ def _inline_html_content(inline_id: str) -> str:
 
 
 def _content_frames(manifest: dict) -> str:
-    """Generate content panes — iframes for static/flask, info cards for console."""
-    panes = []
-    for i, dash in enumerate(manifest["dashboards"]):
-        display = "block" if i == 0 else "none"
-        if dash["type"] in ("static_html", "living_html"):
-            out = dash.get("output_abs", "")
-            if out and Path(out).exists():
-                # Use relative path for files in the same reports/ directory so the
-                # portal works when served via HTTP (file:// iframes are blocked by
-                # browsers when the parent page is on http://).
-                out_path = Path(out)
-                if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
-                    iframe_src = out_path.name
-                else:
-                    iframe_src = out_path.as_uri()
-                panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                             f'<iframe src="{iframe_src}" frameborder="0"></iframe></div>')
-            else:
-                panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                             f'<div class="placeholder">Dashboard not yet generated.<br>'
-                             f'<code>{_esc(dash.get("cli", ""))}</code></div></div>')
-        elif dash["type"] == "flask_app":
-            url = dash.get("url", "http://localhost:5050")
-            cli = _esc(dash.get("cli", ""))
-            # Guitar Trainer renders best as a bare iframe — the live-dash chrome
-            # (header bar + Open in Browser link) crowds the practice UI.
-            # See FR-20260425-guitar-trainer-panel-startup.
-            if dash.get("id") == "guitar-trainer":
-                panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                             f'<iframe src="{_esc(url)}" frameborder="0"></iframe></div>')
-            else:
-                panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                             f'<div class="live-dash">'
-                             f'<div class="live-header">'
-                             f'<span class="live-dot"></span> Live Dashboard'
-                             f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-                             f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" '
-                             f'onerror="this.style.display=\'none\'"></iframe>'
-                             f'</div></div>')
-        elif dash["type"] == "inline_html":
-            inline_id = dash.get("inline_id", "")
-            panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">' +
-                         _inline_html_content(inline_id) + '</div>')
-        elif dash["type"] == "console":
-            cli = _esc(dash.get("cli", ""))
-            panes.append(f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-                         f'<div class="console-dash">'
-                         f'<div class="console-header">Terminal Dashboard</div>'
-                         f'<div class="console-info">Run in terminal:</div>'
-                         f'<code class="console-cmd">{cli}</code>'
-                         f'</div></div>')
-    return "\n".join(panes)
+  """Generate content panes — iframes for static/flask, info cards for console."""
+  panes = []
+  for i, dash in enumerate(manifest["dashboards"]):
+    display = "block" if i == 0 else "none"
+
+    if dash.get("id") == "biomarker-html":
+      live_url = _esc(dash.get("url", "http://127.0.0.1:8300"))
+      panes.append(
+        f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+        f'<div class="live-dash">'
+        f'<div class="live-header">'
+        f'<span class="live-dot"></span> Live Dashboard'
+        f'<a href="{live_url}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
+        f'<iframe src="{live_url}" frameborder="0" class="live-frame" '
+        f'onerror="this.style.display=\'none\'"></iframe>'
+        f'</div></div>'
+      )
+      continue
+
+    if dash["type"] in ("static_html", "living_html"):
+      out = dash.get("output_abs", "")
+      if out and Path(out).exists():
+        # Use relative path for files in the same reports/ directory so the
+        # portal works when served via HTTP (file:// iframes are blocked by
+        # browsers when the parent page is on http://).
+        out_path = Path(out)
+        if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
+          iframe_src = out_path.name
+        else:
+          iframe_src = out_path.as_uri()
+        panes.append(
+          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+          f'<iframe src="{iframe_src}" frameborder="0"></iframe></div>'
+        )
+      else:
+        panes.append(
+          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+          f'<div class="placeholder">Dashboard not yet generated.<br>'
+          f'<code>{_esc(dash.get("cli", ""))}</code></div></div>'
+        )
+    elif dash["type"] == "flask_app":
+      url = dash.get("url", "http://localhost:5050")
+      cli = _esc(dash.get("cli", ""))
+      # Guitar Trainer renders best as a bare iframe — the live-dash chrome
+      # (header bar + Open in Browser link) crowds the practice UI.
+      # See FR-20260425-guitar-trainer-panel-startup.
+      if dash.get("id") == "guitar-trainer":
+        panes.append(
+          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+          f'<iframe src="{_esc(url)}" frameborder="0"></iframe></div>'
+        )
+      else:
+        panes.append(
+          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+          f'<div class="live-dash">'
+          f'<div class="live-header">'
+          f'<span class="live-dot"></span> Live Dashboard'
+          f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
+          f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" '
+          f'onerror="this.style.display=\'none\'"></iframe>'
+          f'</div></div>'
+        )
+    elif dash["type"] == "inline_html":
+      inline_id = dash.get("inline_id", "")
+      panes.append(
+        f'<div class="dash-pane" id="pane-{i}" style="display:{display}">' +
+        _inline_html_content(inline_id) + '</div>'
+      )
+    elif dash["type"] == "console":
+      cli = _esc(dash.get("cli", ""))
+      panes.append(
+        f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+        f'<div class="console-dash">'
+        f'<div class="console-header">Terminal Dashboard</div>'
+        f'<div class="console-info">Run in terminal:</div>'
+        f'<code class="console-cmd">{cli}</code>'
+        f'</div></div>'
+      )
+  return "\n".join(panes)
 
 
 def _stats_bar(manifest: dict) -> str:
