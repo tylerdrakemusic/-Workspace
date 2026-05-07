@@ -10,9 +10,9 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ∞Life
-- **State:** TRIAGED
-- **Branch:** pending
-- **PRs:** pending
+- **State:** BRANCHED
+- **Branch:** feature/life/fr-20260506-trainerize-workout-sync
+- **PRs:** https://github.com/tylerdrakemusic/Life/pull/14
 - **Cycle timer:** 5ddf64db-e798-4dff-a77a-20ee1cd233d8
 - **Opened:** 2026-05-06
 - **Last updated:** 2026-05-06
@@ -76,6 +76,15 @@
 
 **Next:** awaiting Tyler: approve scope → then ⊕workspace-ci to branch
 
+### 2026-05-06T00:00:00Z — ⊕workspace-ci
+**Event:** state-transition
+**Summary:** Feature branch + worktree created, draft PR opened → BRANCHED
+**Details:**
+- Branch: feature/life/fr-20260506-trainerize-workout-sync
+- Worktree: f:\worktrees\life-fr-20260506-trainerize-workout-sync
+- PR: https://github.com/tylerdrakemusic/Life/pull/14
+**Next:** ∞life-orchestrator — implementation
+
 ---
 
 ## Artifacts
@@ -83,6 +92,6 @@
 - **Perf runs:** 5ddf64db-e798-4dff-a77a-20ee1cd233d8 — FR cycle timer (intake open)
 - **Perf runs:** 33930c30-7e6f-4e90-a9b5-48ec19de49f5 — overseer Phase A intake run
 - **Proof artifacts:** ac9ad1989755 — Phase A interview answers collected
-- **PRs:** pending
+- **PRs:** https://github.com/tylerdrakemusic/Life/pull/14
 - **Commits:** pending
 - **Reports / dashboards:** —

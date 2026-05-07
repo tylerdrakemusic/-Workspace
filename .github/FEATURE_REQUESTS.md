@@ -30,7 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260506-trainerize-workout-sync | Trainerize Workout Sync for ∞Life (Auth + Workout Import) | feature | ∞Life | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-06 | 2026-05-06 |
+| FR-20260506-trainerize-workout-sync | Trainerize Workout Sync for ∞Life (Auth + Workout Import) | feature | ∞Life | BRANCHED | feature/life/fr-20260506-trainerize-workout-sync | https://github.com/tylerdrakemusic/Life/pull/14 | ⊕workspace-ci | 2026-05-06 | 2026-05-06 |
 | FR-20260505-mfp-nutrition-sync-fix | Fix MFP Nutrition Trend Live Sync (Auth Repair + Daily Auto-Refresh) | fix | ∞Life | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-05 | 2026-05-05 |
 | FR-20260505-distribution-platform-comparison | Distribution Platform Comparison — DistroKid vs TuneCore vs CD Baby | chore | ❤Music | AUTO_REVIEWED | chore/music/fr-20260505-distribution-platform-comparison | [Music#32](https://github.com/tylerdrakemusic/Music/pull/32) (draft) | ⊕workspace-reviewer | 2026-05-05 | 2026-05-05 |
 | FR-20260430-grill-me-intake | Integrate grill-me skill into intake Phase A | feature | ⊕Workspace | MERGED → CLOSED | chore/ledger-FR-20260430-grill-me-intake-open | [-Workspace#72](https://github.com/tylerdrakemusic/-Workspace/pull/72) (merged) | ⊕workspace-intake | 2026-04-30 | 2026-04-30 |
