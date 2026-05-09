@@ -100,11 +100,14 @@ Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyCont
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
 Start-Sleep -Milliseconds 400
+# Set PYTHONPATH so the hidden process can import ∞Life utils modules
+$env:PYTHONPATH = "f:\∞Life\src"
+$env:INFINITELIFE_DB_KEY = [System.Environment]::GetEnvironmentVariable("INFINITELIFE_DB_KEY","User")
 Start-Process -FilePath $Python `
     -ArgumentList "`"$BioScript`"", "--serve", "--port", $BioPort `
     -WorkingDirectory "f:\∞Life" `
     -WindowStyle Hidden
-Start-Sleep -Milliseconds 1500
+Start-Sleep -Seconds 4
 $checkBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
 if ($checkBio) {
     Write-Host "✔ Biomarker Dashboard server started" -ForegroundColor Green
