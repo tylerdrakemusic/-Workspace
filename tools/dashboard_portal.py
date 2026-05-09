@@ -499,7 +499,7 @@ def _content_frames(manifest: dict) -> str:
         f'<div class="live-header">'
         f'<span class="live-dot"></span> Live Dashboard'
         f'<a href="{live_url}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-        f'<iframe src="{live_url}" frameborder="0" class="live-frame" '
+        f'<iframe src="{live_url}" frameborder="0" class="live-frame" allow="autoplay" '
         f'onerror="this.style.display=\'none\'"></iframe>'
         f'</div></div>'
       )
@@ -535,7 +535,7 @@ def _content_frames(manifest: dict) -> str:
       if dash.get("id") == "guitar-trainer":
         panes.append(
           f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<iframe src="{_esc(url)}" frameborder="0"></iframe></div>'
+          f'<iframe src="{_esc(url)}" frameborder="0" allow="autoplay"></iframe></div>'
         )
       else:
         panes.append(
@@ -544,7 +544,7 @@ def _content_frames(manifest: dict) -> str:
           f'<div class="live-header">'
           f'<span class="live-dot"></span> Live Dashboard'
           f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-          f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" '
+          f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" allow="autoplay" '
           f'onerror="this.style.display=\'none\'"></iframe>'
           f'</div></div>'
         )
