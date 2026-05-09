@@ -46,3 +46,19 @@ erDiagram
         real weight_kg
         real duration_sec
     }
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)

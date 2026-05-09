@@ -78,13 +78,14 @@
 <body>
 <header>
   <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">19 diagrams · 19 rendered · generated 2026-04-25 22:26:24</span>
+  <span class="meta">19 diagrams · 19 rendered · generated 2026-05-08 21:00:30</span>
   <span class="badge">mermaid.js</span>
 </header>
 <main>
 <h2 class="proj-header">⊕ Workspace</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Agent Topology<button class="zoom-btn" data-svg="diagrams/workspace-agent-topology.svg" data-title="Agent Topology" data-w="1019" data-h="1342" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-agent-topology.svg" data-title="Agent Topology" data-w="1019" data-h="1342"><object type="image/svg+xml" data="diagrams/workspace-agent-topology.svg"><a href="diagrams/workspace-agent-topology.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Agent Topology<button class="zoom-btn" data-svg="diagrams/workspace-agent-topology.svg" data-title="Agent Topology" data-w="1019" data-h="1342" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-agent-topology.svg" data-title="Agent Topology" data-w="1019" data-h="1342"><object type="image/svg+xml" data="diagrams/workspace-agent-topology.svg"><a href="diagrams/workspace-agent-topology.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     Tyler([Tyler]) --&gt; Overseer[⊕ overseer]
     Overseer --&gt; Intake[⊕ intake]
     Overseer --&gt; CI[⊕ ci]
@@ -95,66 +96,73 @@
     Overseer --&gt; Hygiene[⊕ hygiene]
     Overseer --&gt; ArchReviewer[⊕ architecture-reviewer]
     Overseer --&gt; ArchBeautifier[⊕ architecture-beautifier]
-
     ArchReviewer -.-&gt;|delegates STALE/MISSING| ArchBeautifier
-
     Overseer --&gt; LifeOrch[∞ orchestrator]
     Overseer --&gt; MusicOrch[❤ orchestrator]
     Overseer --&gt; QuantumOrch[⟨ψ⟩ orchestrator]
     Overseer --&gt; ManifestOrch[👁 orchestrator]
-
     LifeOrch --&gt; LifeAgents[∞ research&lt;br/&gt;brainstorm&lt;br/&gt;budget&lt;br/&gt;data-analytics&lt;br/&gt;risk]
     MusicOrch --&gt; MusicAgents[❤ catalog&lt;br/&gt;performance&lt;br/&gt;production&lt;br/&gt;signatures]
     QuantumOrch --&gt; QResearch[⟨ψ⟩ research]
-
-    classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef ws fill:#2a4e3a,stroke:#4aff9e,color:#fff
     class Overseer,LifeOrch,MusicOrch,QuantumOrch,ManifestOrch orch
     class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene,ArchReviewer,ArchBeautifier ws
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/workspace-architecture.svg" data-title="Architecture" data-w="1662" data-h="568" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-architecture.svg" data-title="Architecture" data-w="1662" data-h="568"><object type="image/svg+xml" data="diagrams/workspace-architecture.svg"><a href="diagrams/workspace-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/workspace-architecture.svg" data-title="Architecture" data-w="1662" data-h="568" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-architecture.svg" data-title="Architecture" data-w="1662" data-h="568"><object type="image/svg+xml" data="diagrams/workspace-architecture.svg"><a href="diagrams/workspace-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
     subgraph Workspace[&quot;⊕ Workspace&quot;]
         Portal[reports/portal.html&lt;br/&gt;Unified Dashboard Portal]
         Registry[dashboard_registry.py&lt;br/&gt;Spec Discovery]
         FRBoard[Feature Request Ledger&lt;br/&gt;FEATURE_REQUESTS.md]
     end
-
     subgraph Life[&quot;∞ Life&quot;]
         LifeDB[(infinitelife.db&lt;br/&gt;SQLCipher)]
         LifeApp[Health &amp; Longevity&lt;br/&gt;Tracking]
     end
-
     subgraph Music[&quot;❤ Music&quot;]
         MusicDB[(heartmusic.db&lt;br/&gt;SQLCipher)]
         MusicApp[Catalog · Setlist&lt;br/&gt;Guitar Trainer]
     end
-
     subgraph Quantum[&quot;⟨ψ⟩ Quantum&quot;]
         QDB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
         QApp[Shor · QRNG&lt;br/&gt;IBM Quantum]
     end
-
     subgraph Manifest[&quot;👁 AI-Manifest&quot;]
         MAPI[ElevenLabs · OpenAI&lt;br/&gt;Voice &amp; Briefs]
     end
-
     Portal --&gt; Registry
     Registry -.scans.-&gt; Life
     Registry -.scans.-&gt; Music
     Registry -.scans.-&gt; Quantum
     Registry -.scans.-&gt; Manifest
     Registry -.scans.-&gt; Workspace
-
     Life --&gt; LifeDB
     Music --&gt; MusicDB
     Quantum --&gt; QDB
-
-    classDef workspace fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef project fill:#2a2a3e,stroke:#888,color:#fff
     class Workspace workspace
     class Life,Music,Quantum,Manifest project
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Architecture Detail<button class="zoom-btn" data-svg="diagrams/workspace-architecture-detail.svg" data-title="Architecture Detail" data-w="2204" data-h="750" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-architecture-detail.svg" data-title="Architecture Detail" data-w="2204" data-h="750"><object type="image/svg+xml" data="diagrams/workspace-architecture-detail.svg"><a href="diagrams/workspace-architecture-detail.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture Detail<button class="zoom-btn" data-svg="diagrams/workspace-architecture-detail.svg" data-title="Architecture Detail" data-w="2204" data-h="774" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-architecture-detail.svg" data-title="Architecture Detail" data-w="2204" data-h="774"><object type="image/svg+xml" data="diagrams/workspace-architecture-detail.svg"><a href="diagrams/workspace-architecture-detail.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
     subgraph Tools[&quot;tools/&quot;]
         Portal[dashboard_portal.py]
         Registry[dashboard_registry.py]
@@ -164,34 +172,38 @@
         Sec[security_dashboard.py]
         Ops[agent_ops_monitor.py]
     end
-
     subgraph Src[&quot;src/&quot;]
         Utils[utils/&lt;br/&gt;perf_cli · proof_cli&lt;br/&gt;init_db · key_loader]
-        Integrations[integrations/&lt;br/&gt;elevenlabs · mermaid]
+        Integrations[integrations/&lt;br/&gt;elevenlabs · mermaid&lt;br/&gt;dalle3 · huggingface]
         Config[config/&lt;br/&gt;repo_visibility]
         Data[(data/&lt;br/&gt;workspace.db)]
     end
-
     subgraph Reports[&quot;reports/&quot;]
         PortalHtml[portal.html]
         Dashes[*_dashboard.html]
     end
-
     Portal --&gt; Registry
     Registry --&gt; PortalHtml
     Bench --&gt; Dashes
     Diagrams --&gt; Dashes
     FR --&gt; Dashes
     Utils --&gt; Data
-
-    classDef tool fill:#2a2a3e,stroke:#888,color:#fff
-    classDef src fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef out fill:#2a4e3a,stroke:#4aff9e,color:#fff
     class Tools tool
     class Src src
     class Reports out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/workspace-db-schema.svg" data-title="Db Schema" data-w="596" data-h="844" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-db-schema.svg" data-title="Db Schema" data-w="596" data-h="844"><object type="image/svg+xml" data="diagrams/workspace-db-schema.svg"><a href="diagrams/workspace-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/workspace-db-schema.svg" data-title="Db Schema" data-w="596" data-h="844" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-db-schema.svg" data-title="Db Schema" data-w="596" data-h="844"><object type="image/svg+xml" data="diagrams/workspace-db-schema.svg"><a href="diagrams/workspace-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
     PERF_RUNS ||--o{ PERF_PROOFS : has
     PERF_RUNS {
         text run_id PK
@@ -219,9 +231,9 @@
         text type
         text generator
         text output
-    }
-</pre></details></div>
-<div class="card"><div class="card-title">Fr Flow<button class="zoom-btn" data-svg="diagrams/workspace-fr-flow.svg" data-title="Fr Flow" data-w="621" data-h="1282" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-fr-flow.svg" data-title="Fr Flow" data-w="621" data-h="1282"><object type="image/svg+xml" data="diagrams/workspace-fr-flow.svg"><a href="diagrams/workspace-fr-flow.svg">View SVG</a></object></div><details><summary>source</summary><pre>stateDiagram-v2
+    }</pre></details></div>
+<div class="card"><div class="card-title">Fr Flow<button class="zoom-btn" data-svg="diagrams/workspace-fr-flow.svg" data-title="Fr Flow" data-w="621" data-h="1282" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-fr-flow.svg" data-title="Fr Flow" data-w="621" data-h="1282"><object type="image/svg+xml" data="diagrams/workspace-fr-flow.svg"><a href="diagrams/workspace-fr-flow.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+stateDiagram-v2
     [*] --&gt; TRIAGED: Tyler opens FR
     TRIAGED --&gt; BRANCHED: Tyler approves scope
     BRANCHED --&gt; IN_PROGRESS: implementation begins
@@ -235,13 +247,12 @@
     SOAKING --&gt; SIGNED_OFF: signoff verified
     SIGNED_OFF --&gt; [*]
 
-    AUTO_REVIEWED --&gt; IN_PROGRESS: changes requested
-</pre></details></div>
-<div class="card"><div class="card-title">Integrations<button class="zoom-btn" data-svg="diagrams/workspace-integrations.svg" data-title="Integrations" data-w="1141" data-h="929" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-integrations.svg" data-title="Integrations" data-w="1141" data-h="929"><object type="image/svg+xml" data="diagrams/workspace-integrations.svg"><a href="diagrams/workspace-integrations.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+    AUTO_REVIEWED --&gt; IN_PROGRESS: changes requested</pre></details></div>
+<div class="card"><div class="card-title">Integrations<button class="zoom-btn" data-svg="diagrams/workspace-integrations.svg" data-title="Integrations" data-w="1672" data-h="1279" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-integrations.svg" data-title="Integrations" data-w="1672" data-h="1279"><object type="image/svg+xml" data="diagrams/workspace-integrations.svg"><a href="diagrams/workspace-integrations.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     %% Cross-project integration points across the ⊕Workspace
     %% Updated when new src/integrations/ modules or cross-project wiring is added.
     %% Maintained by ⊕workspace-architecture-beautifier (FR-20260425-architecture-review-agents)
-
     %% External services
     GitHub[(GitHub)]:::ext
     IBMQ[(IBM Quantum)]:::ext
@@ -252,45 +263,45 @@
     MFP[(MyFitnessPal)]:::ext
     TZ[(TrainingZones)]:::ext
     Mermaid[(mermaid.ink)]:::ext
-
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
     Music[❤ Music]:::orch
     Quantum[⟨ψ⟩ Quantum]:::orch
     Manifest[👁 AI-Manifest]:::orch
-
     %% Databases
     WSDB[(workspace.db)]:::db
     LifeDB[(infinitelife.db)]:::db
     MusicDB[(heartmusic.db)]:::db
     QDB[(quantumpsi.db)]:::db
-
     %% Workspace → external
     Workspace --&gt;|mcp_github| GitHub
     Workspace --&gt;|diagrams render| Mermaid
+    Workspace --&gt;|dalle3 image gen| OpenAI
+    Workspace --&gt;|huggingface inference| HF
     Workspace --&gt; WSDB
-
     %% ∞Life → external + DB
     Life --&gt;|nutrition sync| MFP
     Life --&gt;|workout sync| TZ
     Life --&gt;|llm research| OpenAI
     Life --&gt; LifeDB
-
     %% ❤Music → external + DB
     Music --&gt;|catalog import| Suno
     Music --&gt; MusicDB
-
     %% ⟨ψ⟩Quantum → external + DB
     Quantum --&gt;|qiskit jobs| IBMQ
     Quantum --&gt;|model hub| HF
     Quantum --&gt; QDB
-
     %% 👁AI-Manifest → external
     Manifest --&gt;|tts synthesis| ElevenLabs
     Manifest --&gt;|llm orchestration| OpenAI
     Manifest --&gt;|model hub| HF
-
+    ManifestTodoDB[(manifest_todos.db)]:::db
+    Manifest --&gt; ManifestTodoDB
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Life
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Music
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Quantum
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Workspace
     %% Cross-project integrations (the workspace&#x27;s connective tissue)
     Quantum -.-&gt;|QRNG entropy| Workspace
     Workspace -.-&gt;|gen-qee passwords| Life
@@ -299,54 +310,85 @@
     Workspace -.-&gt;|gen-qee passwords| Manifest
     Manifest -.-&gt;|executive briefs| Life
     Music -.-&gt;|signature generation| Quantum
+    Workspace -.-&gt;|dalle3 + hf image clients| Manifest
 
-    classDef tyler  fill:#3a1a52,stroke:#9e4aff,color:#fff
-    classDef orch   fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef ws     fill:#2a4e3a,stroke:#4aff9e,color:#fff
-    classDef ext    fill:#4e2a2a,stroke:#ff4a4a,color:#fff
-    classDef db     fill:#4e4a2a,stroke:#ffe14a,color:#fff
+
+
+    subgraph Legend[&quot; Legend &quot;]
+        direction LR
+    L_ws([⊕ Workspace]):::ws
+    L_db[(DB)]:::db
+    L_ext{{Ext}}:::ext
+    end
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" data-w="425" data-h="918" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" data-w="425" data-h="918"><object type="image/svg+xml" data="diagrams/workspace-tech-stack.svg"><a href="diagrams/workspace-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" data-w="425" data-h="918" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/workspace-tech-stack.svg" data-title="Tech Stack" data-w="425" data-h="918"><object type="image/svg+xml" data="diagrams/workspace-tech-stack.svg"><a href="diagrams/workspace-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     Python[Python 3.11&lt;br/&gt;C:\\G\\python.exe] --&gt; SQLCipher[sqlcipher3&lt;br/&gt;encrypted SQLite]
     Python --&gt; Pytest[pytest]
     Python --&gt; Flask[Flask&lt;br/&gt;portal servers]
     Python --&gt; Playwright[playwright&lt;br/&gt;portal checks]
     Python --&gt; Dotenv[python-dotenv]
-
     Node[Node.js] --&gt; Mmdc[mermaid-cli&lt;br/&gt;mmdc]
-
     PowerShell[PowerShell 7] --&gt; LaunchScripts[open_portal.ps1&lt;br/&gt;start_*.ps1]
-
     GitHub[GitHub Actions] --&gt; CI_Tests[test workflow]
-
-    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef tool fill:#2a2a3e,stroke:#888,color:#fff
     class Python,Node,PowerShell lang
     class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests tool
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
 </div>
 <h2 class="proj-header">∞ Life</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/life-architecture.svg" data-title="Architecture" data-w="735" data-h="762" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-architecture.svg" data-title="Architecture" data-w="735" data-h="762"><object type="image/svg+xml" data="diagrams/life-architecture.svg"><a href="diagrams/life-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
-    Tyler([Tyler]) --&gt; Inputs[MyFitnessPal · TrainingZones&lt;br/&gt;Bloodwork · Genomics · Journal]
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/life-architecture.svg" data-title="Architecture" data-w="1129" data-h="890" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-architecture.svg" data-title="Architecture" data-w="1129" data-h="890"><object type="image/svg+xml" data="diagrams/life-architecture.svg"><a href="diagrams/life-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Inputs[MyFitnessPal · Trainerize&lt;br/&gt;Bloodwork · Genomics · Journal]
     Inputs --&gt; ETL[src/etl/&lt;br/&gt;importers + sync]
-    ETL --&gt; DB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+    ETL --&gt; Sync[src/sync/&lt;br/&gt;trainerize_sync.py&lt;br/&gt;fetch_upcoming_workouts]
+    Sync --&gt; DB[(infinitelife.db&lt;br/&gt;SQLCipher)]
     DB --&gt; Analytics[src/analytics/&lt;br/&gt;longevity · risk · trends]
     Analytics --&gt; Reports[reports/&lt;br/&gt;longevity dashboard]
+    DB --&gt; Dashboard[src/dashboard/&lt;br/&gt;gen_upcoming_workouts_dashboard.py]
+    Dashboard --&gt; Output[tmp/biomarker_dashboard.html&lt;br/&gt;upcoming workouts panel]
     DB --&gt; Protocols[Protocols &amp; Experiments]
     DB --&gt; Budget[Budget Ledger]
-
-    classDef io fill:#2a4e3a,stroke:#4aff9e,color:#fff
-    classDef core fill:#1a3a52,stroke:#4a9eff,color:#fff
     class Inputs,Reports io
     class ETL,DB,Analytics,Protocols,Budget core
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/life-db-schema.svg" data-title="Db Schema" data-w="1461" data-h="587" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-db-schema.svg" data-title="Db Schema" data-w="1461" data-h="587"><object type="image/svg+xml" data="diagrams/life-db-schema.svg"><a href="diagrams/life-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/life-db-schema.svg" data-title="Db Schema" data-w="1976" data-h="1015" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-db-schema.svg" data-title="Db Schema" data-w="1976" data-h="1015"><object type="image/svg+xml" data="diagrams/life-db-schema.svg"><a href="diagrams/life-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
     BIOMARKERS ||--o{ MEASUREMENTS : tracks
     PROTOCOLS ||--o{ PROTOCOL_RUNS : executes
     BUDGET ||--o{ BUDGET_ENTRIES : contains
     NUTRITION ||--o{ MEALS : logs
-    TRAINING ||--o{ WORKOUTS : records
+    WORKOUT_SESSIONS ||--o{ WORKOUT_EXERCISES : contains
 
     BIOMARKERS {
         text marker PK
@@ -370,60 +412,106 @@
         text category PK
         real monthly_target
     }
-</pre></details></div>
-<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/life-tech-stack.svg" data-title="Tech Stack" data-w="385" data-h="534" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-tech-stack.svg" data-title="Tech Stack" data-w="385" data-h="534"><object type="image/svg+xml" data="diagrams/life-tech-stack.svg"><a href="diagrams/life-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+    WORKOUT_SESSIONS {
+        integer id PK
+        text date
+        text source
+        text title
+        real duration_min
+        real calories
+    }
+    WORKOUT_EXERCISES {
+        integer id PK
+        integer session_id FK
+        text date
+        text exercise_name
+        integer sets
+        integer reps
+        real weight_kg
+        real duration_sec
+    }
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)</pre></details></div>
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/life-tech-stack.svg" data-title="Tech Stack" data-w="418" data-h="662" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/life-tech-stack.svg" data-title="Tech Stack" data-w="418" data-h="662"><object type="image/svg+xml" data="diagrams/life-tech-stack.svg"><a href="diagrams/life-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
     Python --&gt; Pandas[pandas · numpy]
-    Python --&gt; Requests[requests&lt;br/&gt;MFP · TZ APIs]
+    Python --&gt; Requests[requests&lt;br/&gt;MFP · Trainerize API]
+    Python --&gt; Playwright[playwright&lt;br/&gt;headless auth]
     Python --&gt; Pytest[pytest]
     Python --&gt; Matplotlib[matplotlib&lt;br/&gt;plotly]
-
-    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
     class Python lang
     class SQLCipher,Pandas,Requests,Pytest,Matplotlib lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
 </div>
 <h2 class="proj-header">❤ Music</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/music-architecture.svg" data-title="Architecture" data-w="1036" data-h="978" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-architecture.svg" data-title="Architecture" data-w="1036" data-h="978"><object type="image/svg+xml" data="diagrams/music-architecture.svg"><a href="diagrams/music-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/music-architecture.svg" data-title="Architecture" data-w="1036" data-h="978" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-architecture.svg" data-title="Architecture" data-w="1036" data-h="978"><object type="image/svg+xml" data="diagrams/music-architecture.svg"><a href="diagrams/music-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
     subgraph Inputs
         Suno[Suno releases]
         Audius[Audius catalog]
         SheetMusic[Sheet Music PDFs]
         Setlists[Band setlists]
     end
-
     subgraph Catalog[&quot;catalog/&quot;]
         Export[export_catalog.py]
         Songs[(songs · setlists&lt;br/&gt;sheet_music · audio)]
     end
-
     subgraph Trainer[&quot;Guitar Trainer&quot;]
         TrainerApp[Flask app:5055]
         TrainerDB[(exercises&lt;br/&gt;cards)]
     end
-
     subgraph Reports[&quot;reports/&quot;]
         Portal[portal.html]
         Dash[band-mgmt dashboard]
     end
-
     Inputs --&gt; Catalog
     Catalog --&gt; Songs
     Songs --&gt; Export
     Export --&gt; Portal
     Export --&gt; Dash
     TrainerApp --&gt; TrainerDB
-
     Songs -.shared db.-&gt; TrainerDB
-
-    classDef io fill:#2a4e3a,stroke:#4aff9e,color:#fff
-    classDef core fill:#1a3a52,stroke:#4a9eff,color:#fff
     class Inputs,Reports io
     class Catalog,Trainer core
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/music-db-schema.svg" data-title="Db Schema" data-w="1326" data-h="902" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-db-schema.svg" data-title="Db Schema" data-w="1326" data-h="902"><object type="image/svg+xml" data="diagrams/music-db-schema.svg"><a href="diagrams/music-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/music-db-schema.svg" data-title="Db Schema" data-w="1674" data-h="902" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-db-schema.svg" data-title="Db Schema" data-w="1674" data-h="902"><object type="image/svg+xml" data="diagrams/music-db-schema.svg"><a href="diagrams/music-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
     SONGS ||--o{ SETLIST_SONGS : appears_in
     SETLISTS ||--o{ SETLIST_SONGS : contains
     SONGS ||--o{ SHEET_MUSIC : has
@@ -461,59 +549,75 @@
         text difficulty
         text category
     }
-</pre></details></div>
-<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" data-w="411" data-h="686" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" data-w="411" data-h="686"><object type="image/svg+xml" data="diagrams/music-tech-stack.svg"><a href="diagrams/music-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+    GIG_INVENTORY {
+        int id PK
+        string item
+        string category
+        int sort_order
+    }</pre></details></div>
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" data-w="411" data-h="686" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" data-w="411" data-h="686"><object type="image/svg+xml" data="diagrams/music-tech-stack.svg"><a href="diagrams/music-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
     Python --&gt; Flask[Flask&lt;br/&gt;:5050 · :5055]
     Python --&gt; Librosa[librosa&lt;br/&gt;BPM detection]
     Python --&gt; Mutagen[mutagen&lt;br/&gt;audio tags]
     Python --&gt; Pytest[pytest]
-
     Web[HTML · CSS · JS] --&gt; Tone[Tone.js&lt;br/&gt;Strudel]
-
-    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
     class Python,Web lang
     class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
 </div>
 <h2 class="proj-header">⟨ψ⟩ Quantum</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/quantum-architecture.svg" data-title="Architecture" data-w="915" data-h="830" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-architecture.svg" data-title="Architecture" data-w="915" data-h="830"><object type="image/svg+xml" data="diagrams/quantum-architecture.svg"><a href="diagrams/quantum-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/quantum-architecture.svg" data-title="Architecture" data-w="915" data-h="830" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-architecture.svg" data-title="Architecture" data-w="915" data-h="830"><object type="image/svg+xml" data="diagrams/quantum-architecture.svg"><a href="diagrams/quantum-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
     subgraph Algorithms[&quot;src/algorithms/&quot;]
         Shor[Shor&#x27;s Algorithm]
         QRNG[Quantum RNG]
         QAOA[QAOA]
         VQE[VQE]
     end
-
     subgraph Backends
         IBM[IBM Quantum&lt;br/&gt;QISKIT_TOKEN]
         Sim[Aer Simulator&lt;br/&gt;local]
     end
-
     subgraph Storage
         DB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
         Bench[benchmarks table]
     end
-
     subgraph Outputs
         Reports[reports/&lt;br/&gt;benchmark dashboard]
     end
-
     Algorithms --&gt; IBM
     Algorithms --&gt; Sim
     Algorithms --&gt; Bench
     Bench --&gt; Reports
-
-    classDef alg fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef back fill:#2a2a3e,stroke:#888,color:#fff
-    classDef store fill:#2a4e3a,stroke:#4aff9e,color:#fff
     class Algorithms alg
     class Backends back
     class Storage,Outputs store
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/quantum-db-schema.svg" data-title="Db Schema" data-w="676" data-h="801" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-db-schema.svg" data-title="Db Schema" data-w="676" data-h="801"><object type="image/svg+xml" data="diagrams/quantum-db-schema.svg"><a href="diagrams/quantum-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/quantum-db-schema.svg" data-title="Db Schema" data-w="676" data-h="801" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-db-schema.svg" data-title="Db Schema" data-w="676" data-h="801"><object type="image/svg+xml" data="diagrams/quantum-db-schema.svg"><a href="diagrams/quantum-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
     BENCHMARKS ||--o{ CIRCUIT_RUNS : contains
     BENCHMARKS {
         integer id PK
@@ -538,42 +642,92 @@
         integer bytes_generated
         text source
         text timestamp
-    }
-</pre></details></div>
-<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/quantum-tech-stack.svg" data-title="Tech Stack" data-w="663" data-h="406" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-tech-stack.svg" data-title="Tech Stack" data-w="663" data-h="406"><object type="image/svg+xml" data="diagrams/quantum-tech-stack.svg"><a href="diagrams/quantum-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+    }</pre></details></div>
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/quantum-tech-stack.svg" data-title="Tech Stack" data-w="663" data-h="406" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/quantum-tech-stack.svg" data-title="Tech Stack" data-w="663" data-h="406"><object type="image/svg+xml" data="diagrams/quantum-tech-stack.svg"><a href="diagrams/quantum-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     Python[Python 3.11] --&gt; Qiskit[qiskit · qiskit-aer&lt;br/&gt;qiskit-ibm-runtime]
     Python --&gt; Numpy[numpy · scipy]
     Python --&gt; SQLCipher[sqlcipher3]
     Python --&gt; Pytest[pytest]
-
     HF[Hugging Face&lt;br/&gt;HF_TOKEN] -.optional.-&gt; Python
-
-    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
     class Python lang
     class Qiskit,Numpy,SQLCipher,Pytest,HF lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
 </div>
 <h2 class="proj-header">👁 AI-Manifest</h2>
 <div class="grid">
-<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/manifest-architecture.svg" data-title="Architecture" data-w="501" data-h="662" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-architecture.svg" data-title="Architecture" data-w="501" data-h="662"><object type="image/svg+xml" data="diagrams/manifest-architecture.svg"><a href="diagrams/manifest-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph TB
+<div class="card"><div class="card-title">Architecture<button class="zoom-btn" data-svg="diagrams/manifest-architecture.svg" data-title="Architecture" data-w="1851" data-h="1086" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-architecture.svg" data-title="Architecture" data-w="1851" data-h="1086"><object type="image/svg+xml" data="diagrams/manifest-architecture.svg"><a href="diagrams/manifest-architecture.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
     Triggers[Cron · CLI · Manual] --&gt; Tools[tools/&lt;br/&gt;executive_audio_brief.py]
     Tools --&gt; Briefs[brief generators]
+    Tools --&gt; LilyPortrait[src/utils/&lt;br/&gt;lily_portrait.py]
     Briefs --&gt; OpenAI[OpenAI&lt;br/&gt;OPENAPI_TOKEN]
     Briefs --&gt; ElevenLabs[ElevenLabs&lt;br/&gt;ELEVENLABS_API_KEY]
+    LilyPortrait --&gt;|1st try| DallE3[DallE3Client&lt;br/&gt;⊕Workspace integration]
+    LilyPortrait --&gt;|2nd try| HFImage[HuggingFaceImageClient&lt;br/&gt;⊕Workspace integration]
+    LilyPortrait --&gt;|fallback| SVGFallback[SVG silhouette]
+    DallE3 --&gt;|importlib cross-project| WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    HFImage --&gt;|importlib cross-project| WSIntegrations
+    DallE3 --&gt; ImagesOut[output/images/*.png]
+    HFImage --&gt; ImagesOut
+    SVGFallback --&gt; ImagesOut
+    ImagesOut --&gt; Portal[output/&lt;br/&gt;executive_brief_portal.html]
     OpenAI --&gt; TextOut[output/briefs/*.md]
     ElevenLabs --&gt; AudioOut[output/tts/*.mp3]
-    TextOut --&gt; Portal[output/&lt;br/&gt;executive_brief_portal.html]
+    TextOut --&gt; Portal
     AudioOut --&gt; Portal
-
-    classDef trig fill:#2a4e3a,stroke:#4aff9e,color:#fff
-    classDef api fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef out fill:#2a2a3e,stroke:#888,color:#fff
+    %% PR#12 – todos DB
+    TodosUtil[src/utils/&lt;br/&gt;todos_db.py]
+    TodosDB[(src/data/&lt;br/&gt;manifest_todos.db)]
+    MigrateScript[tools/&lt;br/&gt;migrate_todos.py]
+    AllProjects([∞Life · ❤Music · ⟨ψ⟩Quantum&lt;br/&gt;· 👁Manifest · ⊕Workspace])
+    TodoDoneAPI[POST /api/todo/done]
+    Tools --&gt; TodosUtil
+    TodosUtil --&gt; TodosDB
+    MigrateScript -.-&gt;|reads TODO_*.md| AllProjects
+    MigrateScript --&gt;|inserts| TodosDB
+    Tools --&gt;|auto_migrate on startup| MigrateScript
+    Tools --&gt;|gather_project_status| TodosDB
+    Portal --- TodoDoneAPI
+    TodoDoneAPI --&gt;|mark_done| TodosDB
+    class TodosDB db
+    class TodosUtil,MigrateScript util
+    class AllProjects ws
+    class TodoDoneAPI manifest
     class Triggers trig
-    class OpenAI,ElevenLabs api
-    class TextOut,AudioOut,Portal out
+    class OpenAI,ElevenLabs,DallE3,HFImage api
+    class TextOut,AudioOut,Portal,ImagesOut out
+    class WSIntegrations ws
+    class LilyPortrait util
+    class SVGFallback fallback
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef api      fill:#2a1a3a,stroke:#9e7aff,color:#e8d0f8
+classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
 </pre></details></div>
-<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/manifest-db-schema.svg" data-title="Db Schema" data-w="564" data-h="630" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-db-schema.svg" data-title="Db Schema" data-w="564" data-h="630"><object type="image/svg+xml" data="diagrams/manifest-db-schema.svg"><a href="diagrams/manifest-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>erDiagram
+<div class="card"><div class="card-title">Db Schema<button class="zoom-btn" data-svg="diagrams/manifest-db-schema.svg" data-title="Db Schema" data-w="1020" data-h="716" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-db-schema.svg" data-title="Db Schema" data-w="1020" data-h="716"><object type="image/svg+xml" data="diagrams/manifest-db-schema.svg"><a href="diagrams/manifest-db-schema.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
     BRIEFS ||--o{ BRIEF_AUDIO : has
     BRIEFS {
         text brief_id PK
@@ -594,22 +748,40 @@
         text label
         text provider
     }
-</pre></details></div>
-<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/manifest-tech-stack.svg" data-title="Tech Stack" data-w="409" data-h="590" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-tech-stack.svg" data-title="Tech Stack" data-w="409" data-h="590"><object type="image/svg+xml" data="diagrams/manifest-tech-stack.svg"><a href="diagrams/manifest-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>graph LR
+    TODOS {
+        integer id PK
+        text project
+        text source &quot;AI|TYLER&quot;
+        text text
+        integer done
+        text created_at
+        text closed_at
+    }</pre></details></div>
+<div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/manifest-tech-stack.svg" data-title="Tech Stack" data-w="650" data-h="694" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/manifest-tech-stack.svg" data-title="Tech Stack" data-w="650" data-h="694"><object type="image/svg+xml" data="diagrams/manifest-tech-stack.svg"><a href="diagrams/manifest-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
     Python[Python 3.11] --&gt; Requests[requests · httpx]
     Python --&gt; Pytest[pytest]
     Python --&gt; Dotenv[python-dotenv]
-
+    Python --&gt; SQLite[SQLite 3]
+    SQLite --&gt; TodosDB[manifest_todos.db]
+    class SQLite lib
+    class TodosDB db
     OpenAI[OpenAI API] --&gt; GPT[GPT models]
     ElevenLabs[ElevenLabs API] --&gt; TTS[Voice synthesis]
     HF[Hugging Face] --&gt; Models[hosted models]
-
-    classDef lang fill:#1a3a52,stroke:#4a9eff,color:#fff
-    classDef api fill:#2a4e3a,stroke:#4aff9e,color:#fff
-    classDef lib fill:#2a2a3e,stroke:#888,color:#fff
     class Python lang
     class OpenAI,ElevenLabs,HF api
     class Requests,Pytest,Dotenv,GPT,TTS,Models lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
 </div>
 
