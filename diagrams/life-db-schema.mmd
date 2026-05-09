@@ -4,7 +4,7 @@ erDiagram
     PROTOCOLS ||--o{ PROTOCOL_RUNS : executes
     BUDGET ||--o{ BUDGET_ENTRIES : contains
     NUTRITION ||--o{ MEALS : logs
-    TRAINING ||--o{ WORKOUTS : records
+    WORKOUT_SESSIONS ||--o{ WORKOUT_EXERCISES : contains
 
     BIOMARKERS {
         text marker PK
@@ -28,3 +28,37 @@ erDiagram
         text category PK
         real monthly_target
     }
+    WORKOUT_SESSIONS {
+        integer id PK
+        text date
+        text source
+        text title
+        real duration_min
+        real calories
+    }
+    WORKOUT_EXERCISES {
+        integer id PK
+        integer session_id FK
+        text date
+        text exercise_name
+        integer sets
+        integer reps
+        real weight_kg
+        real duration_sec
+    }
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)

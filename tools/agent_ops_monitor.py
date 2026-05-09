@@ -1307,6 +1307,12 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
       const statusEl = document.getElementById('refresh-status');
       let backoff = 30000;
       async function poll() {{
+        if (window.location.protocol === 'file:') {{
+          // Static-file mode — skip fetch to avoid CORS errors; rely on meta-refresh.
+          if (statusEl) statusEl.textContent = 'auto-refresh every 30s (static)';
+          setTimeout(poll, 60000);
+          return;
+        }}
         try {{
           const resp = await fetch('/api/health', {{cache: 'no-store'}});
           if (!resp.ok) throw new Error('status ' + resp.status);

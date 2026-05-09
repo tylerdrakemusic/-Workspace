@@ -288,7 +288,7 @@ def build_index(results: dict[str, dict]) -> str:
 
 <script type="module">
   import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({{ startOnLoad: false, theme: "default", securityLevel: "loose" }});
+  mermaid.initialize({{ startOnLoad: false, theme: "default", securityLevel: "loose", flowchart: {{ useMaxWidth: false }}, sequence: {{ useMaxWidth: false }} }});
 
   const ta = document.getElementById("mmd-input");
   const preview = document.getElementById("preview");

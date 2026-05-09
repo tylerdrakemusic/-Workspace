@@ -10,14 +10,14 @@
 - **Type:** feature
 - **Risk:** low (replaces a single dashboard panel, not the portal)
 - **Projects:** ⊕Workspace
-- **State:** MERGED
+- **State:** SIGNED_OFF
 - **Branch:** feature/workspace/mermaid-diagrams-integration (deleted, merged via PR #37)
 - **PRs:** #35 (draft, superseded), #37 (merged @ bccbb71)
 - **Cycle timer:** 5252e153-6c3e-4305-953b-1e4901fa84f6 (closed, 3,622,298ms)
 - **Opened:** 2026-04-25
-- **Last updated:** 2026-04-26
+- **Last updated:** 2026-05-09
 - **Merged at:** 2026-04-26 (PR #37 merge commit bccbb71)
-- **Signed off at:** 2026-04-26
+- **Signed off at:** 2026-05-09T21:54:40Z
 - **Closed:** —
 - **Final state:** —
 
@@ -162,6 +162,19 @@
 **Next:** none — FR closed out
 
 ---
+
+### 2026-05-09T21:54:40Z — tyler (via fr_signoff.py)
+
+**Event:** state-transition
+
+**Summary:** Tyler signed off after soak → SIGNED_OFF
+
+**Details:**
+- Previous state: MERGED
+- Signed off at: 2026-05-09T21:54:40Z
+
+**Next:** FR drops off the active board; ledger retained for audit.
+
 
 ## Artifacts
 
