@@ -112,6 +112,26 @@ if ($checkBio) {
     Write-Host "⚠ Biomarker Dashboard server may still be starting (check port $BioPort)" -ForegroundColor Yellow
 }
 
+# ── 6b. Start ❤Music Studio Panel server (port 5065) ─────────────────────────
+$StudioScript = "f:\⊕Workspace\tools\start_studio_panel.ps1"
+$StudioPort   = 5065
+$existingStudio = Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue
+if ($existingStudio) {
+    Write-Host "✔ Studio Panel server already running on :$StudioPort" -ForegroundColor Green
+} else {
+    Write-Host "▶ Starting Studio Panel server on :$StudioPort ..." -ForegroundColor Cyan
+    Start-Process -FilePath "powershell.exe" `
+        -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", "`"$StudioScript`"" `
+        -WindowStyle Hidden
+    Start-Sleep -Milliseconds 1500
+    $checkStudio = Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue
+    if ($checkStudio) {
+        Write-Host "✔ Studio Panel server started" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ Studio Panel server may still be starting (check port $StudioPort)" -ForegroundColor Yellow
+    }
+}
+
 # ── 7. Serve Portal via HTTP (required for live iframe panels) ───────────────
 # Browsers block http:// iframes in file:// pages (mixed content policy).
 # Serving via HTTP on :8080 lets all live panels load correctly.
