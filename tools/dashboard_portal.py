@@ -614,6 +614,7 @@ def _render_server_sidebar(servers: list[dict]) -> str:
 
 def render_portal(manifest: dict) -> str:
     """Render the unified portal HTML."""
+    import base64
     import json as _json
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nav = _nav_items(manifest)
@@ -625,11 +626,28 @@ def render_portal(manifest: dict) -> str:
     health_snapshot = collect_portal_health(manifest)
     health_card = _render_health_card(health_snapshot)
 
+    # Load icon config for favicon + sigil tooltip
+    _icon_config_path = Path(__file__).parent.parent / "src" / "data" / "portal_icon_config.json"
+    _icon_prompt = ""
+    _favicon_b64 = "AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    if _icon_config_path.is_file():
+        try:
+            _cfg = _json.loads(_icon_config_path.read_text(encoding="utf-8"))
+            _icon_prompt = _cfg.get("prompt", "").replace('"', "&quot;").replace("\\", "").strip()
+            _ico_rel = _cfg.get("icon_ico", "")
+            _ico_path = Path(__file__).parent.parent / _ico_rel if _ico_rel else None
+            if _ico_path and _ico_path.is_file():
+                _favicon_b64 = base64.b64encode(_ico_path.read_bytes()).decode("ascii")
+        except Exception:
+            pass
+    _prompt_attr = f' data-icon-prompt="{_icon_prompt}"' if _icon_prompt else ""
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>⊕ Dashboard Portal</title>
+<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,{_favicon_b64}">
 <style>
   :root {{
     --bg: #0a0d12;
@@ -908,7 +926,7 @@ def render_portal(manifest: dict) -> str:
 <body>
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1><span class="sigil">⊕</span> Dashboard Portal</h1>
+      <h1><span class="sigil"{_prompt_attr}>⊕</span> Dashboard Portal</h1>
       <div class="subtitle">Spec-driven discovery across all projects</div>
     </div>
     {health_card}
