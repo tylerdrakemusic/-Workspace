@@ -98,6 +98,7 @@ Trainer sets workouts days/weeks ahead in Trainerize. Need weekly plan visibilit
 - **Architecture review:** 2026-05-08 — BLOCKED; diagram updates required for `diagrams/life-architecture.mmd` and `diagrams/life-db-schema.mmd`
 - **Perf runs:** c426c0dd-5dd6-4c01-98d4-07510d5c4d81 — ⊕workspace-architecture-beautifier render pass
 - **Diagram render:** `reports/diagrams/life-architecture.svg`, `reports/diagrams/life-db-schema.svg`, `reports/diagrams_dashboard.html`
+- **Commit SHA:** 10e163f — diagram + render output commit
 
 ### 2026-05-08T03:00:00Z — ⊕workspace-architecture-beautifier
 
