@@ -343,14 +343,14 @@
     <div class="health-card clickable" onclick="switchDashById(9)">
       <div class="health-card-top">
         <span class="health-card-title">🔬 Agent Ops Health</span>
-        <span class="health-fresh fresh" title="Dashboard mtime">Generated 1m ago</span>
+        <span class="health-fresh fresh" title="Dashboard mtime">Generated 45s ago</span>
       </div>
       <div class="health-score-row">
-        <div class="health-pct good">92<span class="pct-sym">%</span></div>
+        <div class="health-pct excellent">100<span class="pct-sym">%</span></div>
         <div class="health-meta">
-          <div class="health-label good">Good</div>
-          <div class="health-gaps">22 gaps
-            <span class="gap-breakdown">(1z · 11o · 10u)</span>
+          <div class="health-label excellent">Excellent</div>
+          <div class="health-gaps">13 gaps
+            <span class="gap-breakdown">(0z · 0o · 13u)</span>
           </div>
         </div>
       </div>
@@ -358,9 +358,9 @@
     </div>
     
     <div class="stats-bar">
-      <div class="stat-chip"><span class="stat-num">15</span> Dashboards</div>
+      <div class="stat-chip"><span class="stat-num">14</span> Dashboards</div>
       <div class="stat-chip"><span class="stat-num">5</span> Projects</div>
-      <div class="stat-chip"><span class="stat-num">7</span> Static</div>
+      <div class="stat-chip"><span class="stat-num">6</span> Static</div>
       <div class="stat-chip"><span class="stat-num">6</span> Live</div>
       <div class="stat-chip"><span class="stat-num">0</span> Console</div>
       <div class="stat-chip"><span class="stat-num">8</span> Categories</div>
@@ -373,7 +373,7 @@
             <span class="nav-title">Biomarker Dashboard</span>
             <span class="nav-project">∞Life</span>
           </div>
-          <span class="nav-badge static">Static</span>
+          <span class="nav-badge live">Live</span>
         </div>
 
         <div class="nav-item" data-idx="1" onclick="switchDash(1, this)">
@@ -415,7 +415,7 @@
         <div class="nav-item" data-idx="5" onclick="switchDash(5, this)">
           <span class="nav-icon">🎛</span>
           <div class="nav-text">
-            <span class="nav-title">Studio Equipment</span>
+            <span class="nav-title">❤ Studio</span>
             <span class="nav-project">❤Music</span>
           </div>
           <span class="nav-badge live">Live</span>
@@ -492,15 +492,6 @@
           </div>
           <span class="nav-badge static">Static</span>
         </div>
-
-        <div class="nav-item" data-idx="14" onclick="switchDash(14, this)">
-          <span class="nav-icon">🎙</span>
-          <div class="nav-text">
-            <span class="nav-title">Studio Equipment Panel</span>
-            <span class="nav-project">⊕Workspace</span>
-          </div>
-          <span class="nav-badge live">Live</span>
-        </div>
     </div>
     <div class="server-status" id="server-status-block">
       <div class="server-row"><span class="server-dot" id="dot-5050"></span><span class="server-name">Music Dashboard :5050</span><button class="server-launch" onclick="openServer(5050)" title="Open">&nearr;</button></div>
@@ -511,12 +502,12 @@
       <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#9889; Start all servers</button></div>
     </div>
     <div class="sidebar-footer">
-      Generated 2026-05-05 16:50:46 &middot; 15 dashboards<br>
+      Generated 2026-05-09 15:54:41 &middot; 14 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
   <main class="main-content">
-    <div class="dash-pane" id="pane-0" style="display:block"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://127.0.0.1:8300" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://127.0.0.1:8300" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
+    <div class="dash-pane" id="pane-0" style="display:block"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8300" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8300" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-1" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5050" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5050" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-2" style="display:none"><iframe src="file:///f:/%E2%9D%A4Music/reports/band_management_panel.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-3" style="display:none"><iframe src="http://localhost:5055" frameborder="0"></iframe></div>
@@ -647,7 +638,6 @@
 </script>
 </div>
 <div class="dash-pane" id="pane-13" style="display:none"><iframe src="diagrams_dashboard.html" frameborder="0"></iframe></div>
-<div class="dash-pane" id="pane-14" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5060" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5060" frameborder="0" class="live-frame" onerror="this.style.display='none'"></iframe></div></div>
   </main>
   <script>
     function switchDash(idx, el) {

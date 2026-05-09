@@ -30,6 +30,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260509-portal-hygiene-sprint | ⊕Workspace Portal Hygiene Sprint — desktop launcher, studio dedup, biomarker live server, Agent Ops sync, console errors | fix + chore | ⊕Workspace, ❤Music, ∞Life | TRIAGED | fix/workspace/fr-20260509-portal-hygiene-sprint | pending | ⊕workspace-overseer | 2026-05-09 | 2026-05-09 |
+| FR-20260506-master-sync-logging | Add execution-layer logging to nightly master sync | chore | ∞Life | BRANCHED | chore/life/fr-20260506-master-sync-logging | pending | ⊕workspace-overseer | 2026-05-06 | 2026-05-06 |
 | FR-20260506-trainerize-workout-sync | Trainerize Workout Sync for ∞Life (Auth + Workout Import) | feature | ∞Life | REVIEW_REQUESTED | feature/life/fr-20260506-trainerize-workout-sync | [Life#14](https://github.com/tylerdrakemusic/Life/pull/14) | ⊕workspace-overseer | 2026-05-06 | 2026-05-06 |
 | FR-20260505-mfp-nutrition-sync-fix | Fix MFP Nutrition Trend Live Sync (Auth Repair + Daily Auto-Refresh) | fix | ∞Life | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-05 | 2026-05-05 |
 | FR-20260505-distribution-platform-comparison | Distribution Platform Comparison — DistroKid vs TuneCore vs CD Baby | chore | ❤Music | AUTO_REVIEWED | chore/music/fr-20260505-distribution-platform-comparison | [Music#32](https://github.com/tylerdrakemusic/Music/pull/32) (draft) | ⊕workspace-reviewer | 2026-05-05 | 2026-05-05 |
