@@ -10,13 +10,13 @@
 - **Type:** feature + data-ingest
 - **Risk:** medium (health data — private repo ∞Life only; no public repo exposure)
 - **Projects:** ∞Life
-- **State:** IN_REVIEW
+- **State:** MERGED
 - **Branch:** feature/life/fr-20260510-trudiagnostic-ingest
 - **PRs:** [Life#21](https://github.com/tylerdrakemusic/Life/pull/21) (draft)
 - **Cycle timer:** cbea2a25-a943-4c4d-b400-0c1b3ae4e2d2
 - **Opened:** 2026-05-10
-- **Last updated:** 2026-05-10T17:00:00Z (implementation complete; state → IN_REVIEW)
-- **Merged at:** —
+- **Last updated:** 2026-05-10T18:00:00Z (merged; state → MERGED)
+- **Merged at:** 2026-05-10 (squash merge df83e6a → main, Life#21)
 - **Signed off at:** —
 - **Closed:** —
 - **Final state:** —
@@ -111,3 +111,4 @@
 | 2026-05-10 | ⊕workspace-intake | FR opened and triaged. Tyler confirmed draft. Pending CI branch creation. |
 | 2026-05-10 | ⊕workspace-ci | Branch created and draft PR opened. State → BRANCHED. |
 | 2026-05-10 | ∞life-orchestrator | Fresh S3 URLs provided. Both HTML reports archived locally (AC1). Playwright verified both reports live: TruAge (180KB) + Advanced TruAge (428KB). All 7 ACs now complete. |
+| 2026-05-10 | ∞life-orchestrator | Playwright validated epigenetic panel in dashboard: 4 clock cards, 8 organ rows, 2 actionable biomarkers. Tyler approved merge. PR #21 squash-merged → main (df83e6a). State → MERGED. |
