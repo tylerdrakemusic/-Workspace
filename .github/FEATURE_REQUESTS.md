@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260510-trudiagnostic-ingest | TruDiagnostic TruAge Ingest — April 2026 (OMICm Age, SYMPHONYAge, DunedinPACE, Telomere) + Reusable Importer | feature + data-ingest | ∞Life | BRANCHED | feature/life/fr-20260510-trudiagnostic-ingest | [Life#21](https://github.com/tylerdrakemusic/Life/pull/21) (draft) | ∞life-orchestrator | 2026-05-10 | 2026-05-10 |
 | FR-20260510-self-hosted-radio-poc | Self-hosted radio POC — Icecast 2 + Liquidsoap on WSL2, streaming Tyler catalog (Phase alpha per IP_STRATEGY.md Section 7) | feature | ❤Music | IN_PROGRESS | feature/music/fr-20260510-self-hosted-radio-poc | pending | ❤music-orchestrator | 2026-05-10 | 2026-05-10 |
 | FR-20260509-studio-portal-autostart | Studio Panel auto-start fix — kill+restart pattern, polling health check, stderr capture | fix | ⊕Workspace | MERGED → CLOSED | fix/workspace/fr-20260509-studio-portal-autostart | [-Workspace#122](https://github.com/tylerdrakemusic/-Workspace/pull/122) (merged 91f97a9) | ⊕workspace-overseer | 2026-05-09 | 2026-05-09 |
 | FR-20260509-studio-wiring-decision | Commit Studio Wiring Decision: Crown XLS 1002 + Mackie Big Knob Passive | chore | ❤Music | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-09 | 2026-05-09 |
