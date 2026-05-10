@@ -39,8 +39,8 @@
 
 | #   | Deliverable | Owner | Status | Proof | Updated |
 | --- | ----------- | ----- | ------ | ----- | ------- |
-| AC1 | WSL2 Icecast + Liquidsoap stream baseline | ❤music-orchestrator | done | commit `aabb5f3` + generated configs | 2026-05-10 |
-| AC2 | Metadata + browser playback validation | ❤music-orchestrator | done | commit `aabb5f3` + player + verify script | 2026-05-10 |
+| AC1 | WSL2 Icecast + Liquidsoap stream baseline | ❤music-orchestrator | verified | commits `aabb5f3`, `7d87723` + live WSL proof | 2026-05-10 |
+| AC2 | Metadata + browser playback validation | ❤music-orchestrator | verified | live verify + Windows audible playback | 2026-05-10 |
 | AC3 | Ops scripts and runbook docs | ❤music-orchestrator | done | commit `aabb5f3` | 2026-05-10 |
 | AC4 | 2-hour stability proof run | ❤music-orchestrator | in-progress | pending live WSL run evidence | 2026-05-10 |
 
@@ -116,6 +116,23 @@
 
 ---
 
+### 2026-05-10T10:05:00Z — ❤music-orchestrator
+
+**Event:** artifact
+
+**Summary:** Live WSL proof completed; stream verified from WSL and audible on Windows host.
+
+**Details:**
+- Installed and repaired Ubuntu WSL runtime dependencies for Icecast2, Liquidsoap, and ffmpeg
+- Fixed Liquidsoap compatibility issues for Ubuntu 22.04 package version by generating WSL-safe paths, wrapping the playlist with `mksafe`, and allowing root execution in this automation path
+- Verification command output: `listeners=0`, `title=Tyler James Drake - Master 4 Fly Away`, `Phase alpha verification passed`
+- Windows host checks passed: `http://localhost:8000/status-json.xsl` returned HTTP 200 and stream bytes were readable from `http://localhost:8000/stream`
+- Tyler confirmed audible playback locally from Windows host
+
+**Next:** ❤music-orchestrator: run 2-hour stability monitor for AC4, then move FR to REVIEW_REQUESTED.
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
@@ -127,6 +144,10 @@
 - **Branches:** feature/music/fr-20260510-self-hosted-radio-poc — created for FR implementation
 - **Reports / dashboards:** ❤Music/docs/protocols/IP_STRATEGY.md (Section 7)
 - **Commits:** `aabb5f3` — feat(radio): add Phase alpha WSL Icecast + Liquidsoap POC assets
+- **Commits:** `7d87723` — fix(radio): make phase alpha artifacts WSL-safe
 - **Tests:** `C:\G\python.exe -m pytest f:\❤Music\tests\test_radio_phase_alpha_poc.py` — 5 passed
+- **Tests:** `C:\G\python.exe -m pytest f:\❤Music\tests\test_radio_phase_alpha_poc.py` — 6 passed after WSL-safe path fix
 - **Generated artifacts:** `f:\❤Music\output\radio_phase_alpha\tyler_catalog_phase_alpha.liqlist`, `f:\❤Music\output\radio_phase_alpha\tjd_radio_phase_alpha.liq`, `f:\❤Music\output\radio_phase_alpha\icecast_phase_alpha.xml`
 - **Runbook:** `f:\❤Music\docs\protocols\self-hosted-radio-phase-alpha-runbook.md`
+- **Live proof:** `bash tools/radio_phase_alpha_wsl_verify.sh` → `listeners=0`, `title=Tyler James Drake - Master 4 Fly Away`, `Phase alpha verification passed`
+- **Host proof:** Windows host `http://localhost:8000/status-json.xsl` returned `200`; Windows host stream fetch read audio bytes from `http://localhost:8000/stream`
