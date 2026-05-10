@@ -30,7 +30,9 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260509-studio-portal-autostart | Studio Panel auto-start fix — kill+restart pattern, polling health check, stderr capture | fix | ⊕Workspace | BRANCHED | fix/workspace/fr-20260509-studio-portal-autostart | pending | ⊕workspace-overseer | 2026-05-09 | 2026-05-09 |
 | FR-20260509-studio-wiring-decision | Commit Studio Wiring Decision: Crown XLS 1002 + Mackie Big Knob Passive | chore | ❤Music | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-09 | 2026-05-09 |
+| FR-20260509-studio-wiring-decision | Studio Wiring Decision — Crown XLS 1002 + Mackie Big Knob Passive (lock + commit) | chore | ❤Music | BRANCHED | chore/music/fr-20260509-studio-wiring-decision | [Music#38](https://github.com/tylerdrakemusic/Music/pull/38) (draft) | ⊕workspace-overseer | 2026-05-09 | 2026-05-09 |
 | FR-20260509-jbl2600-inventory-wiring | JBL 2600 Speaker Inventory + Interface Wiring Research | chore + research | ❤Music | OPEN | — | — | ⊕workspace-intake | 2026-05-09 | 2026-05-09 |
 | FR-20260509-portal-hygiene-sprint | ⊕Workspace Portal Hygiene Sprint — desktop launcher, studio dedup, biomarker live server, Agent Ops sync, console errors | fix + chore | ⊕Workspace, ❤Music, ∞Life | MERGED | fix/workspace/fr-20260509-portal-hygiene-sprint | #113, #20, #35 | ⊕workspace-overseer | 2026-05-09 | 2026-05-09 |
 | FR-20260506-master-sync-logging | Add execution-layer logging to nightly master sync | chore | ∞Life | BRANCHED | chore/life/fr-20260506-master-sync-logging | pending | ⊕workspace-overseer | 2026-05-06 | 2026-05-06 |
