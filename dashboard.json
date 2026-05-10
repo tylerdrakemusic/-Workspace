@@ -71,16 +71,6 @@
       "category": "performance",
       "icon": "📐",
       "priority": 55
-    },
-    {
-      "id": "studio-equipment-panel",
-      "title": "Studio Equipment Panel",
-      "description": "Live studio equipment management — mic configs, gear inventory, and signal chain for ❤Music studio sessions",
-      "type": "flask_app",
-      "url": "http://localhost:5060",
-      "category": "music",
-      "icon": "🎙",
-      "priority": 56
     }
   ]
 }

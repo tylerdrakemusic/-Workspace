@@ -1,4 +1,4 @@
-# ∞Life Portal Launcher
+﻿# ∞Life Portal Launcher
 # Regenerates the Biomarker Dashboard, starts the ∞Life HTTP server on port 9999,
 # then opens the workspace portal. Double-click from desktop — no manual steps.
 
@@ -100,16 +100,66 @@ Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyCont
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
 Start-Sleep -Milliseconds 400
+# Set PYTHONPATH so the hidden process can import ∞Life utils modules
+$env:PYTHONPATH = "f:\∞Life\src"
+$env:INFINITELIFE_DB_KEY = [System.Environment]::GetEnvironmentVariable("INFINITELIFE_DB_KEY","User")
 Start-Process -FilePath $Python `
     -ArgumentList "`"$BioScript`"", "--serve", "--port", $BioPort `
     -WorkingDirectory "f:\∞Life" `
     -WindowStyle Hidden
-Start-Sleep -Milliseconds 1500
+Start-Sleep -Seconds 4
 $checkBio = Get-NetTCPConnection -LocalPort $BioPort -State Listen -ErrorAction SilentlyContinue
 if ($checkBio) {
     Write-Host "✔ Biomarker Dashboard server started" -ForegroundColor Green
 } else {
     Write-Host "⚠ Biomarker Dashboard server may still be starting (check port $BioPort)" -ForegroundColor Yellow
+}
+
+# ── 6b. Start ❤Music Studio Panel server (port 5065) ─────────────────────────
+$StudioScript  = "f:\⊕Workspace\tools\start_studio_panel.ps1"
+$StudioPort    = 5065
+$StudioLogFile = "f:\⊕Workspace\logs\studio_panel.log"
+Write-Host "▶ Restarting Studio Panel server on :$StudioPort ..." -ForegroundColor Cyan
+Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 400
+# Start with log capture so startup errors are visible (logs\studio_panel.log)
+Start-Process -FilePath "powershell.exe" `
+    -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$StudioScript`"" `
+    -RedirectStandardOutput $StudioLogFile `
+    -RedirectStandardError  "$StudioLogFile.err" `
+    -WindowStyle Hidden
+# Poll up to 10 s (20 × 500 ms) instead of a fixed 1500 ms sleep
+$studioReady = $false
+for ($i = 0; $i -lt 20; $i++) {
+    Start-Sleep -Milliseconds 500
+    $checkStudio = Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue
+    if ($checkStudio) { $studioReady = $true; break }
+}
+if ($studioReady) {
+    Write-Host "✔ Studio Panel server started" -ForegroundColor Green
+} else {
+    Write-Host "✘ Studio Panel failed to start on :$StudioPort — check $StudioLogFile.err" -ForegroundColor Red
+}
+
+# ── 6c. Start TJD Radio server (port 8100) ───────────────────────────────────
+$RadioScript = "f:\⊕Workspace\tools\start_tjd_radio.ps1"
+$RadioPort   = 8100
+Write-Host "▶ Restarting TJD Radio server on :$RadioPort ..." -ForegroundColor Cyan
+Get-NetTCPConnection -LocalPort $RadioPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 400
+Start-Process -FilePath "powershell.exe" `
+    -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", "`"$RadioScript`"" `
+    -WindowStyle Hidden
+Start-Sleep -Milliseconds 1500
+$checkRadio = Get-NetTCPConnection -LocalPort $RadioPort -State Listen -ErrorAction SilentlyContinue
+if ($checkRadio) {
+    Write-Host "✔ TJD Radio server started" -ForegroundColor Green
+} else {
+    Write-Host "⚠ TJD Radio server may still be starting (check port $RadioPort)" -ForegroundColor Yellow
 }
 
 # ── 7. Serve Portal via HTTP (required for live iframe panels) ───────────────
@@ -152,8 +202,9 @@ $FinalLnk   = Join-Path $Desktop "⊕ Workspace Portal.lnk"
 try {
     if (-not (Test-Path $StagingDir)) { New-Item -ItemType Directory -Path $StagingDir -Force | Out-Null }
     Copy-Item -Path $SrcIco -Destination $StagedIco -Force
-    # UTF-8 BOM so PowerShell 5.1 reads the ⊕ path in the script correctly
-    [System.IO.File]::WriteAllText($StagedPs1, "Start-Process `"$PortalHtml`"`n",
+    # UTF-8 BOM so PowerShell 5.1 reads the ⊕ path in the script correctly.
+    # Call the full open_portal.ps1 so all servers start on desktop launch.
+    [System.IO.File]::WriteAllText($StagedPs1, "& `"f:\⊕Workspace\open_portal.ps1`"`n",
         [System.Text.UTF8Encoding]::new($true))
     if (Test-Path $TmpLnk)  { Remove-Item $TmpLnk  -Force }
     if (Test-Path $FinalLnk){ Remove-Item $FinalLnk -Force }
@@ -176,6 +227,17 @@ try {
     Write-Host "⚠ Could not create desktop shortcut: $_" -ForegroundColor Yellow
 }
 
-# ── 8. Open Portal ────────────────────────────────────────────────────────────
+# ── 8. Auto-regen FR dashboard + Agent Ops (always fresh on portal launch) ──────────
+$FrDashScript     = "f:\⊕Workspace\tools\fr_dashboard.py"
+$AgentOpsScript   = "f:\⊕Workspace\tools\agent_ops_monitor.py"
+Write-Host "▶ Regenerating Feature Requests dashboard ..." -ForegroundColor Cyan
+& $Python $FrDashScript 2>$null
+Write-Host "✔ FR dashboard refreshed" -ForegroundColor Green
+
+Write-Host "▶ Regenerating Agent Ops dashboard ..." -ForegroundColor Cyan
+& $Python $AgentOpsScript --fix --no-open 2>$null
+Write-Host "✔ Agent Ops dashboard refreshed" -ForegroundColor Green
+
+# ── 9. Open Portal ──────────────────────────────────────────────────────────────────────────
 Write-Host "▶ Opening portal at $PortalUrl ..." -ForegroundColor Cyan
 Start-Process $PortalUrl

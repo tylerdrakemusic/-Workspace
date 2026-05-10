@@ -1,10 +1,13 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph TB
-    Tyler([Tyler]) --> Inputs[MyFitnessPal · TrainingZones<br/>Bloodwork · Genomics · Journal]
+    Tyler([Tyler]) --> Inputs[MyFitnessPal · Trainerize<br/>Bloodwork · Genomics · Journal]
     Inputs --> ETL[src/etl/<br/>importers + sync]
-    ETL --> DB[(infinitelife.db<br/>SQLCipher)]
+    ETL --> Sync[src/sync/<br/>trainerize_sync.py<br/>fetch_upcoming_workouts]
+    Sync --> DB[(infinitelife.db<br/>SQLCipher)]
     DB --> Analytics[src/analytics/<br/>longevity · risk · trends]
     Analytics --> Reports[reports/<br/>longevity dashboard]
+    DB --> Dashboard[src/dashboard/<br/>gen_upcoming_workouts_dashboard.py]
+    Dashboard --> Output[tmp/biomarker_dashboard.html<br/>upcoming workouts panel]
     DB --> Protocols[Protocols & Experiments]
     DB --> Budget[Budget Ledger]
     class Inputs,Reports io
