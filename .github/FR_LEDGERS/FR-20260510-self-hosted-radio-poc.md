@@ -10,8 +10,8 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ❤Music
-- **State:** TRIAGED
-- **Branch:** pending
+- **State:** BRANCHED
+- **Branch:** feature/music/fr-20260510-self-hosted-radio-poc
 - **PRs:** pending
 - **Cycle timer:** 1e74e259-ec6e-45c8-8369-225fed989ebe
 - **Opened:** 2026-05-10
@@ -71,6 +71,21 @@
 
 ---
 
+### 2026-05-10T00:10:00Z — ⊕workspace-ci
+
+**Event:** state-transition
+
+**Summary:** Scope approved; FR moved to BRANCHED and implementation branch created.
+
+**Details:**
+- Created branch in ❤Music: `feature/music/fr-20260510-self-hosted-radio-poc`
+- PR remains pending until implementation kickoff
+- Handoff target: ❤music-orchestrator
+
+**Next:** ❤music-orchestrator: begin implementation (IN_PROGRESS) on phase alpha AC1-AC4.
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
@@ -79,4 +94,5 @@
 - **Proof artifacts:** pending
 - **PRs:** pending
 - **Commits:** pending
+- **Branches:** feature/music/fr-20260510-self-hosted-radio-poc — created for FR implementation
 - **Reports / dashboards:** ❤Music/docs/protocols/IP_STRATEGY.md (Section 7)
