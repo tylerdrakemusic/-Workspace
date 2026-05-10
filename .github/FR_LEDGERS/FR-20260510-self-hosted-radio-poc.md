@@ -10,7 +10,7 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ❤Music
-- **State:** BRANCHED
+- **State:** IN_PROGRESS
 - **Branch:** feature/music/fr-20260510-self-hosted-radio-poc
 - **PRs:** pending
 - **Cycle timer:** 1e74e259-ec6e-45c8-8369-225fed989ebe
@@ -83,6 +83,20 @@
 - Handoff target: ❤music-orchestrator
 
 **Next:** ❤music-orchestrator: begin implementation (IN_PROGRESS) on phase alpha AC1-AC4.
+
+---
+
+### 2026-05-10T00:20:00Z — ❤music-orchestrator
+
+**Event:** state-transition
+
+**Summary:** Implementation started in ❤Music on branch `feature/music/fr-20260510-self-hosted-radio-poc`.
+
+**Details:**
+- Entered IN_PROGRESS for phase alpha delivery (WSL2 Icecast2 + Liquidsoap POC)
+- Planned deliverables: setup/start/stop/verify scripts, generated playlist/config artifacts, web player page, and runbook
+
+**Next:** ❤music-orchestrator: deliver AC1-AC4 and move to REVIEW_REQUESTED with proof artifacts.
 
 ---
 
