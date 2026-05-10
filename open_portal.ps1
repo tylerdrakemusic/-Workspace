@@ -1,4 +1,4 @@
-# ∞Life Portal Launcher
+﻿# ∞Life Portal Launcher
 # Regenerates the Biomarker Dashboard, starts the ∞Life HTTP server on port 9999,
 # then opens the workspace portal. Double-click from desktop — no manual steps.
 
@@ -204,7 +204,7 @@ try {
     Copy-Item -Path $SrcIco -Destination $StagedIco -Force
     # UTF-8 BOM so PowerShell 5.1 reads the ⊕ path in the script correctly.
     # Call the full open_portal.ps1 so all servers start on desktop launch.
-    [System.IO.File]::WriteAllText($StagedPs1, "& `"f:\\\u2295Workspace\\open_portal.ps1`"`n",
+    [System.IO.File]::WriteAllText($StagedPs1, "& `"f:\⊕Workspace\open_portal.ps1`"`n",
         [System.Text.UTF8Encoding]::new($true))
     if (Test-Path $TmpLnk)  { Remove-Item $TmpLnk  -Force }
     if (Test-Path $FinalLnk){ Remove-Item $FinalLnk -Force }
@@ -228,14 +228,14 @@ try {
 }
 
 # ── 8. Auto-regen FR dashboard + Agent Ops (always fresh on portal launch) ──────────
-$FrDashScript     = "f:\\\u2295Workspace\\tools\\fr_dashboard.py"
-$AgentOpsScript   = "f:\\\u2295Workspace\\tools\\agent_ops_monitor.py"
+$FrDashScript     = "f:\⊕Workspace\tools\fr_dashboard.py"
+$AgentOpsScript   = "f:\⊕Workspace\tools\agent_ops_monitor.py"
 Write-Host "▶ Regenerating Feature Requests dashboard ..." -ForegroundColor Cyan
-& $Python $FrDashScript 2>\$null
+& $Python $FrDashScript 2>$null
 Write-Host "✔ FR dashboard refreshed" -ForegroundColor Green
 
 Write-Host "▶ Regenerating Agent Ops dashboard ..." -ForegroundColor Cyan
-& $Python $AgentOpsScript --fix --no-open 2>\$null
+& $Python $AgentOpsScript --fix --no-open 2>$null
 Write-Host "✔ Agent Ops dashboard refreshed" -ForegroundColor Green
 
 # ── 9. Open Portal ──────────────────────────────────────────────────────────────────────────
