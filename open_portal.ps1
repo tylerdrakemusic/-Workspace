@@ -116,23 +116,31 @@ if ($checkBio) {
 }
 
 # ── 6b. Start ❤Music Studio Panel server (port 5065) ─────────────────────────
-$StudioScript = "f:\⊕Workspace\tools\start_studio_panel.ps1"
-$StudioPort   = 5065
-$existingStudio = Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue
-if ($existingStudio) {
-    Write-Host "✔ Studio Panel server already running on :$StudioPort" -ForegroundColor Green
-} else {
-    Write-Host "▶ Starting Studio Panel server on :$StudioPort ..." -ForegroundColor Cyan
-    Start-Process -FilePath "powershell.exe" `
-        -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", "`"$StudioScript`"" `
-        -WindowStyle Hidden
-    Start-Sleep -Milliseconds 1500
+$StudioScript  = "f:\⊕Workspace\tools\start_studio_panel.ps1"
+$StudioPort    = 5065
+$StudioLogFile = "f:\⊕Workspace\logs\studio_panel.log"
+Write-Host "▶ Restarting Studio Panel server on :$StudioPort ..." -ForegroundColor Cyan
+Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+Start-Sleep -Milliseconds 400
+# Start with log capture so startup errors are visible (logs\studio_panel.log)
+Start-Process -FilePath "powershell.exe" `
+    -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$StudioScript`"" `
+    -RedirectStandardOutput $StudioLogFile `
+    -RedirectStandardError  "$StudioLogFile.err" `
+    -WindowStyle Hidden
+# Poll up to 10 s (20 × 500 ms) instead of a fixed 1500 ms sleep
+$studioReady = $false
+for ($i = 0; $i -lt 20; $i++) {
+    Start-Sleep -Milliseconds 500
     $checkStudio = Get-NetTCPConnection -LocalPort $StudioPort -State Listen -ErrorAction SilentlyContinue
-    if ($checkStudio) {
-        Write-Host "✔ Studio Panel server started" -ForegroundColor Green
-    } else {
-        Write-Host "⚠ Studio Panel server may still be starting (check port $StudioPort)" -ForegroundColor Yellow
-    }
+    if ($checkStudio) { $studioReady = $true; break }
+}
+if ($studioReady) {
+    Write-Host "✔ Studio Panel server started" -ForegroundColor Green
+} else {
+    Write-Host "✘ Studio Panel failed to start on :$StudioPort — check $StudioLogFile.err" -ForegroundColor Red
 }
 
 # ── 6c. Start TJD Radio server (port 8100) ───────────────────────────────────
