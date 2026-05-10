@@ -133,6 +133,22 @@
 
 ---
 
+### 2026-05-10T10:15:00Z — ❤music-orchestrator
+
+**Event:** artifact
+
+**Summary:** AC4 stability monitor started against the live stream.
+
+**Details:**
+- Added reusable WSL stability monitor workflow (`tools/radio_phase_alpha_wsl_stability.sh`)
+- Validated the monitor with a 1-sample run, then launched the full 120-sample / 2-hour burn-in
+- Active log file: `f:\❤Music\output\radio_phase_alpha\stability_monitor_20260510T101255.log`
+- Latest observed sample at kickoff: `listeners=2`, `title=Tyler James Drake - Marigold Lower Vox Master`
+
+**Next:** ❤music-orchestrator: wait for burn-in completion, verify no service crash, then move to REVIEW_REQUESTED.
+
+---
+
 ## Artifacts
 
 <!-- APPEND-ONLY. Links to concrete evidence. -->
@@ -145,9 +161,11 @@
 - **Reports / dashboards:** ❤Music/docs/protocols/IP_STRATEGY.md (Section 7)
 - **Commits:** `aabb5f3` — feat(radio): add Phase alpha WSL Icecast + Liquidsoap POC assets
 - **Commits:** `7d87723` — fix(radio): make phase alpha artifacts WSL-safe
+- **Commits:** `9f6ff00` — chore(radio): add phase alpha stability monitor workflow
 - **Tests:** `C:\G\python.exe -m pytest f:\❤Music\tests\test_radio_phase_alpha_poc.py` — 5 passed
 - **Tests:** `C:\G\python.exe -m pytest f:\❤Music\tests\test_radio_phase_alpha_poc.py` — 6 passed after WSL-safe path fix
 - **Generated artifacts:** `f:\❤Music\output\radio_phase_alpha\tyler_catalog_phase_alpha.liqlist`, `f:\❤Music\output\radio_phase_alpha\tjd_radio_phase_alpha.liq`, `f:\❤Music\output\radio_phase_alpha\icecast_phase_alpha.xml`
 - **Runbook:** `f:\❤Music\docs\protocols\self-hosted-radio-phase-alpha-runbook.md`
 - **Live proof:** `bash tools/radio_phase_alpha_wsl_verify.sh` → `listeners=0`, `title=Tyler James Drake - Master 4 Fly Away`, `Phase alpha verification passed`
 - **Host proof:** Windows host `http://localhost:8000/status-json.xsl` returned `200`; Windows host stream fetch read audio bytes from `http://localhost:8000/stream`
+- **Stability proof (in progress):** `f:\❤Music\output\radio_phase_alpha\stability_monitor_20260510T101255.log`
