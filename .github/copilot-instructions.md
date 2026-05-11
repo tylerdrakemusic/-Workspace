@@ -58,6 +58,7 @@ setup, and per-sigil pitfalls. Auto-attached by VS Code when relevant.
 - **⊕workspace-reviewer** — Automated PR review (alignment + security + tests + proof). Produces the structured review Tyler reads before approving merge.
 - **⊕workspace-doer** — Batch file writer for identical scaffolding across projects. Subagent only.
 - **⊕workspace-alignment** — Audits cross-project consistency after changes. Subagent only.
+- **⊕workspace-discovery** — Epic/story TODO opportunity scanner. Mines project context, proposes approval-gated candidates, and writes approved SCAN-labeled items into the shared todo DB.
 - **⊕workspace-ci** — Git operations, auto-commit, test-before-commit workflows, branch/worktree/PR lifecycle, merges.
 - **⊕workspace-security** — Agent file integrity checks, OWASP Top 10 vulnerability scans, secret exposure scanning, prompt injection detection. Run before any multi-project write workflow.
 - **⊕workspace-bench-analyzer** — Benchmark analysis across quantum and agent perf data. Discrepancy detection, trend analysis, dashboard generation.
