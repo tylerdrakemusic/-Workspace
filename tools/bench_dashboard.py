@@ -19,7 +19,7 @@ import os
 import sys
 import time
 import webbrowser
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -95,88 +95,6 @@ def load_quantum_benchmarks() -> list[dict]:
             "timestamp": r["timestamp"] or "",
         })
     return result
-
-
-def load_quantum_policy_events(limit: int = 20) -> list[dict]:
-    """Load latest benchmark/cache execution policy events from quantumpsi.db."""
-    conn = _sqlcipher_conn(QUANTUM_DB, "QUANTUM_DB_KEY")
-    if conn is None:
-        return []
-    try:
-        exists = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='policy_events'"
-        ).fetchone()
-        if not exists:
-            conn.close()
-            return []
-        rows = conn.execute(
-            "SELECT event_time, policy_id, event_type, status, source, detail, next_run_at "
-            "FROM policy_events "
-            "WHERE policy_id='shors_monthly_benchmark' "
-            "ORDER BY id DESC LIMIT ?",
-            (limit,),
-        ).fetchall()
-    except Exception:
-        conn.close()
-        return []
-    conn.close()
-
-    result = []
-    for r in rows:
-        result.append(
-            {
-                "event_time": r["event_time"] or "",
-                "policy_id": r["policy_id"] or "",
-                "event_type": r["event_type"] or "",
-                "status": r["status"] or "",
-                "source": r["source"] or "",
-                "detail": r["detail"] or "",
-                "next_run_at": r["next_run_at"] or "",
-            }
-        )
-    return result
-
-
-def load_quantum_schedule_policy() -> dict:
-    """Load canonical monthly schedule policy from quantum config file."""
-    config_path = QUANTUM_ROOT / "src" / "config" / "execution_policy.json"
-    try:
-        import json
-
-        with open(config_path, encoding="utf-8") as fh:
-            data = json.load(fh)
-        schedule = data.get("schedules", {}).get("shors_monthly_benchmark", {})
-        cap = int(data.get("qpu_caps_seconds", {}).get("shors_monthly_benchmark", 300))
-        day = int(schedule.get("day_of_month", 1))
-        hour = int(schedule.get("hour", 2))
-        minute = int(schedule.get("minute", 0))
-        return {
-            "day": day,
-            "hour": hour,
-            "minute": minute,
-            "qpu_cap_seconds": cap,
-            "task_name": schedule.get("task_name", "ShorsMonthlyBench"),
-        }
-    except Exception:
-        return {
-            "day": 1,
-            "hour": 2,
-            "minute": 0,
-            "qpu_cap_seconds": 300,
-            "task_name": "ShorsMonthlyBench",
-        }
-
-
-def _next_monthly_run_iso(day: int, hour: int, minute: int) -> str:
-    """Compute next monthly run timestamp in UTC."""
-    now = datetime.now(timezone.utc)
-    candidate = datetime(now.year, now.month, day, hour, minute, tzinfo=timezone.utc)
-    if candidate <= now:
-        if now.month == 12:
-            candidate = datetime(now.year + 1, 1, day, hour, minute, tzinfo=timezone.utc)
-        else:
-            candidate = datetime(now.year, now.month + 1, day, hour, minute, tzinfo=timezone.utc)
-    return candidate.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def load_agent_perf() -> list[dict]:
@@ -286,80 +204,6 @@ def _classify_backend(backend: str) -> str:
     return "hardware"
 
 
-def _policy_badge(status: str) -> str:
-    low = status.lower()
-    if low in ("succeeded", "started"):
-        return '<span class="badge success">{}</span>'.format(_esc(low.upper()))
-    if low in ("failed", "deferred", "manual_override"):
-        return '<span class="badge fail">{}</span>'.format(_esc(low.upper()))
-    if low in ("skipped",):
-        return '<span class="badge partial">{}</span>'.format(_esc(low.upper()))
-    return '<span class="badge partial">UNKNOWN</span>'
-
-
-def _quantum_policy_panel(events: list[dict], policy: dict) -> str:
-    next_run = events[0].get("next_run_at", "") if events else ""
-    if not next_run:
-        next_run = _next_monthly_run_iso(policy["day"], policy["hour"], policy["minute"])
-
-    latest = events[0] if events else {
-        "status": "unknown",
-        "event_type": "none",
-        "event_time": "no events",
-        "detail": "No execution-policy events found yet.",
-    }
-
-    alert_text = "Operational"
-    alert_class = "badge success"
-    if latest["status"].lower() in ("failed", "deferred", "manual_override"):
-        alert_text = "Attention Needed"
-        alert_class = "badge fail"
-    elif latest["status"].lower() in ("skipped", "unknown"):
-        alert_text = "Check Policy"
-        alert_class = "badge partial"
-
-    rows = []
-    for event in events[:6]:
-        rows.append(
-            "<tr>"
-            f"<td class='ts'>{_esc(event['event_time'])}</td>"
-            f"<td>{_esc(event['event_type'])}</td>"
-            f"<td>{_policy_badge(event['status'])}</td>"
-            f"<td class='detail-cell'>{_esc(event['detail'])}</td>"
-            "</tr>"
-        )
-    events_table = (
-        "<table class='policy-table'><thead><tr><th>Event Time</th><th>Event</th><th>Status</th><th>Detail</th></tr></thead><tbody>"
-        + ("".join(rows) if rows else "<tr><td colspan='4' class='empty'>No events yet.</td></tr>")
-        + "</tbody></table>"
-    )
-
-    return f"""
-    <div class="summary-grid summary-grid-3">
-      <div class="card policy-card">
-        <h3>Benchmark Policy Health</h3>
-        <div class="stat">{_policy_badge(latest['status'])}</div>
-        <div class="label">Latest Status</div>
-        <div class="label">{_esc(latest['event_type'])} @ {_esc(latest['event_time'])}</div>
-      </div>
-      <div class="card policy-card">
-        <h3>Next Scheduled Run (UTC)</h3>
-        <div class="stat" style="font-size:1.2rem">{_esc(next_run)}</div>
-        <div class="label">Task { _esc(policy['task_name']) }</div>
-        <div class="label">Day {policy['day']} @ {policy['hour']:02d}:{policy['minute']:02d}</div>
-      </div>
-      <div class="card policy-card">
-        <h3>Alert</h3>
-        <div class="stat"><span class="{alert_class}">{alert_text}</span></div>
-        <div class="label">Shown near next-run context</div>
-        <div class="label">QPU cap: {policy['qpu_cap_seconds']}s</div>
-      </div>
-    </div>
-    <h2 class="policy-heading">Execution Policy Events</h2>
-    {events_table}
-    """
-
-
 # ── Quantum tab builders ──────────────────────────────────────
 
 def _quantum_summary(hw_rows: list[dict], sim_rows: list[dict]) -> str:
@@ -423,15 +267,13 @@ def _quantum_table(rows: list[dict], section_class: str) -> str:
     return "\n".join(lines)
 
 
-def build_quantum_tab(rows: list[dict], policy_events: list[dict], schedule_policy: dict) -> str:
+def build_quantum_tab(rows: list[dict]) -> str:
     hw = [r for r in rows if _classify_backend(r.get("backend", "")) == "hardware"]
     sim = [r for r in rows if _classify_backend(r.get("backend", "")) == "simulator"]
-    policy_panel = _quantum_policy_panel(policy_events, schedule_policy)
     summary = _quantum_summary(hw, sim)
     hw_table = _quantum_table(hw, "hw-table")
     sim_table = _quantum_table(sim, "sim-table")
     return f"""
-    {policy_panel}
     {summary}
     <h2 class="hw-heading">IBM Quantum Hardware</h2>
     {hw_table}
@@ -536,14 +378,9 @@ def build_agent_tab(runs: list[dict]) -> str:
 
 # ── Full HTML render ──────────────────────────────────────────
 
-def render_html(
-    quantum_rows: list[dict],
-    agent_runs: list[dict],
-    policy_events: list[dict],
-    schedule_policy: dict,
-) -> str:
+def render_html(quantum_rows: list[dict], agent_runs: list[dict]) -> str:
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    quantum_tab = build_quantum_tab(quantum_rows, policy_events, schedule_policy)
+    quantum_tab = build_quantum_tab(quantum_rows)
     agent_tab = build_agent_tab(agent_runs)
 
     q_count = len(quantum_rows)
@@ -653,8 +490,6 @@ def render_html(
   .sim-card h3 {{ color: var(--sim-accent); }}
   .agent-card {{ border-top: 3px solid var(--agent-accent); }}
   .agent-card h3 {{ color: var(--agent-accent); }}
-  .policy-card {{ border-top: 3px solid var(--quantum-accent); }}
-  .policy-card h3 {{ color: var(--quantum-accent); }}
   .stat {{ font-size: 2rem; font-weight: 700; line-height: 1.2; }}
   .label {{
     color: var(--muted); font-size: 0.8rem;
@@ -671,7 +506,6 @@ def render_html(
   h2.hw-heading {{ color: var(--hw-accent); border-color: var(--hw-accent); }}
   h2.sim-heading {{ color: var(--sim-accent); border-color: var(--sim-accent); }}
   h2.agent-heading {{ color: var(--agent-accent); border-color: var(--agent-accent); }}
-  h2.policy-heading {{ color: var(--quantum-accent); border-color: var(--quantum-accent); }}
 
   /* ── Tables ── */
   table {{
@@ -797,8 +631,7 @@ def render_html(
   </div>
 
   <div id="tab-quantum" class="tab-panel active">
-    {quantum_tab}
-    {'' if quantum_rows else '<div class="no-data">No quantum benchmark rows yet.<br>Execution policy schedule and event panel is still shown above.</div>'}
+    {quantum_tab if quantum_rows else '<div class="no-data">No quantum benchmark data.<br>Set <code>QUANTUM_DB_KEY</code> env var and ensure <code>quantumpsi.db</code> exists.</div>'}
   </div>
 
   <div id="tab-agent" class="tab-panel">
@@ -885,16 +718,13 @@ def render_html(
 
 def main(open_browser: bool = True) -> None:
     quantum_rows = load_quantum_benchmarks()
-    policy_events = load_quantum_policy_events()
-    schedule_policy = load_quantum_schedule_policy()
     agent_runs = load_agent_perf()
 
     print(f"  Quantum benchmarks: {len(quantum_rows)} rows")
-    print(f"  Quantum policy events: {len(policy_events)} rows")
     print(f"  Agent perf runs:    {len(agent_runs)} runs")
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    html_content = render_html(quantum_rows, agent_runs, policy_events, schedule_policy)
+    html_content = render_html(quantum_rows, agent_runs)
     OUT_PATH.write_text(html_content, encoding="utf-8")
     print(f"Dashboard written to {OUT_PATH.as_posix()}")
 
