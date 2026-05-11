@@ -50,6 +50,14 @@ make his final approval decision.
 - Diagrams that must stay in sync live in `f:\⊕Workspace\diagrams\*.mmd`.
   See `⊕workspace-architecture-reviewer.agent.md` for the detection heuristics.
 
+### Gate 3.6: Worktree Path Audit (HARD BLOCK)
+- Scan the full PR diff for any file path that contains `.worktrees/`.
+- If ANY `.worktrees/` path appears in the diff → **REQUEST_CHANGES** with the
+  message: "`.worktrees/` paths must never be committed. Ensure `.worktrees/` is
+  in `.gitignore` and the pre-commit hook is installed."
+- This check exists because `.worktrees/` is workspace-local storage that must
+  never leak into the repository history (FR-20260511-worktree-local-migration).
+
 ### Gate 4: Tests
 - All existing tests pass (`pytest` in each touched project)
 - New tests added for new behavior (or explicit "no test needed" rationale)
@@ -73,6 +81,7 @@ make his final approval decision.
 - Any failing test → `REQUEST_CHANGES`
 - Scope drift or missing acceptance criteria → `REQUEST_CHANGES`
 - Missing proof or demo → `REQUEST_CHANGES`
+- `.worktrees/` path in diff → `REQUEST_CHANGES` (hard block)
 - Minor nits only (style, comments, non-blocking) → `COMMENT` with suggestions,
   Tyler decides
 
@@ -101,6 +110,7 @@ Post ONE top-level review per PR with the full structured report.
 | Security | ✅ / ⚠️ / ❌ | ... |
 | Alignment | ✅ / ⚠️ / ❌ | ... |
 | Architecture Diagrams | ✅ / ⚠️ / ❌ | ... |
+| Worktree Path Audit | ✅ / ⚠️ / ❌ | ... |
 | Tests | ✅ / ⚠️ / ❌ | ... |
 | Proof-in-the-pudding | ✅ / ⚠️ / ❌ | ... |
 | Demo | ✅ / ⚠️ / ❌ | ... |
@@ -150,7 +160,7 @@ After posting the review:
 
 **PR:** <URL>
 **Decision:** <APPROVE | REQUEST_CHANGES | COMMENT>
-**Gates:** <X/7 passed>
+**Gates:** <X/8 passed>
 
 **Posted to GitHub:** yes | no (reason)
 **Registry:** transitioned to <new state>

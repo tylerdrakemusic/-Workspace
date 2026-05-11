@@ -57,11 +57,67 @@ Step 4: Present summary to Tyler
 ### 4. Branch + Worktree Management
 - Default rule: **one code-changing agent session = one branch = one worktree = one draft PR**
 - Create isolated branches with `git switch -c <branch-name>` (or equivalent)
-- Create dedicated worktrees with `git worktree add <path> <branch-name>` whenever multiple agent sessions are active
+
+#### Worktree location (FR-20260511-worktree-local-migration)
+Worktrees are **workspace-local** — placed under `.worktrees/` inside the repo
+root rather than an external `f:\⊕Workspace-worktrees\` folder. This collapses
+IDE approval dialogs from N-per-session to one **when all worktrees are created
+in a single batch terminal session (see Batch worktree add SOP below)**.
+
+```
+f:\⊕Workspace\.worktrees\{branch-slug}\
+```
+
+Examples:
+```
+f:\⊕Workspace\.worktrees\feature-FR-20260511-my-fr\
+f:\⊕Workspace\.worktrees\fix-FR-20260511-my-fix\
+```
+
+`.worktrees/` is gitignored and VS Code-excluded — worktree contents are never
+committed. The pre-commit hook at `.github/hooks/scripts/pre-commit-worktree-guard.sh`
+blocks any accidental staging of `.worktrees/` paths.
+
+**Install the hook once per fresh clone:**
+```powershell
+Copy-Item .github\hooks\scripts\pre-commit-worktree-guard.sh .git\hooks\pre-commit
+# Unix/macOS: chmod +x .git/hooks/pre-commit
+```
+
+#### Batch worktree add SOP (single terminal session)
+When spinning up multiple concurrent FRs, batch ALL `git worktree add` calls
+into **one terminal session** (one IDE approval gate instead of N):
+
+```powershell
+# Example: create 3 worktrees in one session
+cd f:\⊕Workspace
+git worktree add .worktrees\feature-FR-20260511-fr-a feature/FR-20260511-fr-a
+git worktree add .worktrees\fix-FR-20260511-fr-b    fix/FR-20260511-fr-b
+git worktree add .worktrees\chore-FR-20260511-fr-c  chore/FR-20260511-fr-c
+```
+
+List active worktrees: `git worktree list`
+
+Remove a worktree after its PR is merged:
+```powershell
+git worktree remove .worktrees\feature-FR-20260511-fr-a
+git branch -d feature/FR-20260511-fr-a
+```
+
+#### Deprecated external worktrees
+Legacy paths like `f:\⊕Workspace-worktrees\` are **deprecated**.
+Do not create new worktrees there. If any exist, migrate them:
+```powershell
+# Prune stale worktree registrations first
+git worktree prune
+# Then recreate at the new local path if the branch is still active
+git worktree add .worktrees\<branch-slug> <branch-name>
+```
+
 - Recommended branch names:
-  - `feature/<project>/<slug>`
-  - `fix/<project>/<slug>`
-  - `chore/<project>/<slug>`
+  - `feature/<fr-id>` or `feature/<project>/<slug>`
+  - `fix/<fr-id>` or `fix/<project>/<slug>`
+  - `chore/<fr-id>` or `chore/<project>/<slug>`
   - Optional suffix `/<agent-or-model>` for session traceability
 - Never let two agents share a writable checkout
 - Open a draft PR early so the branch becomes the handoff/tracking surface for CLI and chat agents

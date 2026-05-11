@@ -83,3 +83,8 @@ src/data/portal_icon.ico
 # generated dump artifacts
 reports/all_diagrams_dump.txt
 
+# Workspace-local git worktrees (FR-20260511-worktree-local-migration)
+# Worktrees live at .worktrees/{branch-slug}/ — gitignored and IDE-excluded.
+# Pre-commit hook blocks any accidental staging of these paths.
+.worktrees/
+
