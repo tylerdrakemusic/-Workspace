@@ -95,3 +95,6 @@
 - **Perf runs:** 4fbd2632-8d7a-4364-ae27-078cd71b92af — intake triage run for FR open
 - **Perf runs:** 7b24cdd8-4d24-4192-942a-51b126fbb5bd — implementation run
 - **References:** reports/portal.html, tools/dashboard_portal.py, diagrams/music-icecast-primary-architecture.mmd
+- **Proof artifacts:** e02550e57ed4 — favicon fallback implementation file change
+- **Proof artifacts:** a72399188c2f — diagrams fallback + live editor removal implementation file change
+- **Proof artifacts:** 95d64d1b944a — diagrams generator fallback command output evidence
