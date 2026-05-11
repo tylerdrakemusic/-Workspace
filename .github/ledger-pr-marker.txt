@@ -1,0 +1,5 @@
+Ledger-only PR marker for Phase B BRANCHED state transition
+FR-20260511-workspace-local-worktree-strategy
+Branch: feature/workspace/fr-20260511-workspace-local-worktree-strategy
+Worktree: f:\⊕Workspace\.worktrees\workspace-local-worktree-strategy\
+PR: [-Workspace#132](https://github.com/tylerdrakemusic/-Workspace/pull/132)
