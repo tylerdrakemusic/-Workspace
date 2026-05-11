@@ -37,12 +37,12 @@
 
 | #   | Deliverable | Owner | Status | Proof | Updated |
 | --- | ----------- | ----- | ------ | ----- | ------- |
-| AC1 | Reliable custom portal favicon rendering | ⊕workspace-overseer | not-started | — | — |
-| AC2 | Favicon cache-bust + SVG fallback | ⊕workspace-overseer | not-started | — | — |
-| AC3 | ICO integrity verification in generator path | ⊕workspace-overseer | not-started | — | — |
-| AC4 | Mermaid backend failure handled gracefully | ⊕workspace-overseer | not-started | — | — |
-| AC5 | Inline SVG architecture fallback wired | ⊕workspace-overseer | not-started | — | — |
-| AC6 | Live editor removed from architecture UX | ⊕workspace-overseer | not-started | — | — |
+| AC1 | Reliable custom portal favicon rendering | ⊕workspace-overseer | done | reports/portal.html favicon stack + status meta | 2026-05-10 |
+| AC2 | Favicon cache-bust + SVG fallback | ⊕workspace-overseer | verified | reports/portal.html line checks (svg + versioned ico + alternate data ico) | 2026-05-10 |
+| AC3 | ICO integrity verification in generator path | ⊕workspace-overseer | done | tools/regen_portal_icon.py `_build_ico` header validation | 2026-05-10 |
+| AC4 | Mermaid backend failure handled gracefully | ⊕workspace-overseer | verified | tools/diagrams_dashboard.py fallback flow + run output fallback count | 2026-05-10 |
+| AC5 | Inline SVG architecture fallback wired | ⊕workspace-overseer | verified | reports/diagrams/music-icecast-primary-architecture.svg generated as fallback | 2026-05-10 |
+| AC6 | Live editor removed from architecture UX | ⊕workspace-overseer | verified | reports/diagrams_dashboard.html has no "Live Editor" block | 2026-05-10 |
 
 ### Tyler's Original Request
 > portal icon still not fixed, I see the brave icon; all mermaid backends failed; live editor on architectural panel not needed.
@@ -72,7 +72,26 @@
 
 ---
 
+### 2026-05-11T00:57:00Z — ⊕workspace-overseer
+
+**Event:** artifact
+
+**Summary:** Implemented favicon resilience and Mermaid fallback behavior on FR branch.
+
+**Details:**
+- Implemented favicon stack in portal generator with SVG primary icon, versioned ICO cache-bust URL, and data-ICO fallback (`tools/dashboard_portal.py`).
+- Added icon integrity protection in regeneration flow (`tools/regen_portal_icon.py`) by validating ICO header after write and injecting the new favicon stack.
+- Reworked diagrams generation fallback path (`tools/diagrams_dashboard.py`) to emit inline-SVG fallback artifacts when all Mermaid backends fail.
+- Removed the live editor block from generated diagrams dashboard output.
+- Validation run: `C:\G\python.exe tools/diagrams_dashboard.py --no-open` → rendered `20/20` with fallback used for `music-icecast-primary-architecture`.
+- Validation search confirmed favicon tags + portal icon status meta in `reports/portal.html` and fallback marker in `reports/diagrams_dashboard.html`.
+
+**Next:** awaiting ⊕workspace-ci: open/update PR for this branch and advance state flow.
+
+---
+
 ## Artifacts
 
 - **Perf runs:** 4fbd2632-8d7a-4364-ae27-078cd71b92af — intake triage run for FR open
+- **Perf runs:** 7b24cdd8-4d24-4192-942a-51b126fbb5bd — implementation run
 - **References:** reports/portal.html, tools/dashboard_portal.py, diagrams/music-icecast-primary-architecture.mmd

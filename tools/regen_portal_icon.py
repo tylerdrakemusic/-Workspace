@@ -28,6 +28,7 @@ import json
 import os
 import shutil
 import sys
+import urllib.parse
 from datetime import date
 from pathlib import Path
 
@@ -163,6 +164,10 @@ def _build_ico(png_path: Path) -> Path:
 
     img = Image.open(png_path).convert("RGBA")
     img.save(ICON_ICO, format="ICO", sizes=ICO_SIZES)
+    raw = ICON_ICO.read_bytes()
+    # ICO header: reserved=0, type=1, count>=1
+    if not (len(raw) >= 6 and raw[0:4] == b"\x00\x00\x01\x00" and int.from_bytes(raw[4:6], "little") >= 1):
+        raise RuntimeError(f"Generated ICO appears invalid: {ICON_ICO}")
     print(f"\u2714 ICO saved \u2192 {ICON_ICO} ({ICON_ICO.stat().st_size:,} bytes)")
     return ICON_ICO
 
@@ -189,10 +194,23 @@ def _update_sigil_tooltip(html: str, prompt: str) -> str:
 
 def _inject_favicon(ico_path: Path, prompt: str) -> None:
     ico_b64 = base64.b64encode(ico_path.read_bytes()).decode("ascii")
-    favicon_tag = (
-        f'<link rel="icon" type="image/x-icon" '
-        f'href="data:image/x-icon;base64,{ico_b64}">'
+    icon_version = f"{ico_path.stat().st_mtime_ns:x}-{ico_path.stat().st_size:x}"
+    favicon_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+        '<rect width="64" height="64" rx="14" fill="#0f1318"/>'
+        '<circle cx="32" cy="32" r="20" fill="none" stroke="#8bd5ff" stroke-width="4"/>'
+        '<text x="32" y="39" text-anchor="middle" font-size="28" '
+        'font-family="Segoe UI, sans-serif" fill="#8bd5ff">⊕</text>'
+        '</svg>'
     )
+    favicon_svg_href = "data:image/svg+xml;utf8," + urllib.parse.quote(favicon_svg, safe="")
+    favicon_ico_href = f"/src/data/portal_icon.ico?v={icon_version}"
+    favicon_tags = "\n".join([
+        f'<link rel="icon" type="image/svg+xml" href="{favicon_svg_href}">',
+        f'<link rel="icon" type="image/x-icon" href="{favicon_ico_href}">',
+        f'<link rel="alternate icon" type="image/x-icon" href="data:image/x-icon;base64,{ico_b64}">',
+        f'<meta name="portal-icon-status" content="ok">',
+    ])
     prompt_meta = f'<meta name="portal-icon-prompt" content="{_escape_attr(prompt)}">'
 
     html = PORTAL_HTML.read_text(encoding="utf-8")
@@ -203,7 +221,7 @@ def _inject_favicon(ico_path: Path, prompt: str) -> None:
     if anchor not in html:
         print("\u26a0  Could not find charset anchor in portal.html \u2014 favicon NOT injected.")
         return
-    html = html.replace(anchor, f"{anchor}\n{favicon_tag}\n{prompt_meta}", 1)
+    html = html.replace(anchor, f"{anchor}\n{favicon_tags}\n{prompt_meta}", 1)
     html = _update_sigil_tooltip(html, prompt)
     PORTAL_HTML.write_text(html, encoding="utf-8")
     print(f"\u2714 Favicon re-injected \u2192 {PORTAL_HTML.name}")

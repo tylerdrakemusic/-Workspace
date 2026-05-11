@@ -78,7 +78,7 @@
 <body>
 <header>
   <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">20 diagrams · 19 rendered · generated 2026-05-10 18:18:21</span>
+  <span class="meta">20 diagrams · 20 rendered · 1 fallback · generated 2026-05-10 18:54:17</span>
   <span class="badge">mermaid.js</span>
 </header>
 <main>
@@ -555,7 +555,7 @@ erDiagram
         string category
         int sort_order
     }</pre></details></div>
-<div class="card error"><div class="card-title">Icecast Primary Architecture ⚠️</div><pre class="err">All mermaid backends failed: cli: mmdc not on PATH | http: HTTP 400: Bad Request</pre><details><summary>source</summary><pre>flowchart LR
+<div class="card"><div class="card-title">Icecast Primary Architecture<span class="fallback-pill" title="Rendered from fallback inline SVG">fallback</span><button class="zoom-btn" data-svg="diagrams/music-icecast-primary-architecture.svg" data-title="Icecast Primary Architecture" data-w="1200" data-h="760" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-icecast-primary-architecture.svg" data-title="Icecast Primary Architecture" data-w="1200" data-h="760"><object type="image/svg+xml" data="diagrams/music-icecast-primary-architecture.svg"><a href="diagrams/music-icecast-primary-architecture.svg">View SVG</a></object></div><details><summary>fallback details</summary><pre class="err">All mermaid backends failed: cli: mmdc not on PATH | http: HTTP 400: Bad Request</pre></details><details><summary>source</summary><pre>flowchart LR
   subgraph UX[Local User Experience]
     PANEL[TJD Local Panel :8100]
     BROWSER[Browser Audio Player]
@@ -830,24 +830,6 @@ classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
 </pre></details></div>
 </div>
-
-<section class="editor-section">
-  <h2 class="proj-header">Live Editor</h2>
-  <p class="muted">Edit mermaid source on the left — preview renders client-side via mermaid.js. No server round-trip.</p>
-  <div class="editor-grid">
-    <div>
-      <textarea id="mmd-input" spellcheck="false">graph LR
-    A[Edit me] --&gt; B(Live preview)
-    B --&gt; C{Mermaid}
-    C --&gt;|svg| D[mermaid.ink]
-</textarea>
-    </div>
-    <div>
-      <div id="preview-status">Initializing…</div>
-      <div id="preview"></div>
-    </div>
-  </div>
-</section>
 </main>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
@@ -865,40 +847,6 @@ classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
     <div class="lb-content" id="lb-content"></div>
   </div>
 </div>
-
-<script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose", flowchart: { useMaxWidth: false }, sequence: { useMaxWidth: false } });
-
-  const ta = document.getElementById("mmd-input");
-  const preview = document.getElementById("preview");
-  const status = document.getElementById("preview-status");
-  let timer = null;
-  let renderId = 0;
-
-  async function renderPreview() {
-    const id = ++renderId;
-    const src = ta.value;
-    status.textContent = "Rendering…";
-    try {
-      const { svg } = await mermaid.render("preview-svg-" + id, src);
-      if (id !== renderId) return;
-      preview.innerHTML = svg;
-      status.textContent = "OK · " + new Date().toLocaleTimeString();
-    } catch (err) {
-      if (id !== renderId) return;
-      preview.innerHTML = "<pre style='color:#c00;white-space:pre-wrap'>" +
-                         String(err.message || err) + "</pre>";
-      status.textContent = "Error";
-    }
-  }
-
-  ta.addEventListener("input", () => {
-    clearTimeout(timer);
-    timer = setTimeout(renderPreview, 350);
-  });
-  renderPreview();
-</script>
 
 <script>
   // Lightbox: click thumb or zoom button → fullscreen pan/zoom view.

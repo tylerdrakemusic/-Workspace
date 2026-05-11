@@ -3,8 +3,7 @@
 
 Scans `diagrams/*.mmd`, renders each to `reports/diagrams/*.svg` via the
 mermaid integration (local mmdc CLI preferred, mermaid.ink HTTP fallback),
-and writes a `reports/diagrams_dashboard.html` index with a built-in
-live editor.
+and writes a `reports/diagrams_dashboard.html` index.
 
 Usage:
     C:\\G\\python.exe tools/diagrams_dashboard.py              # render + open
@@ -48,6 +47,33 @@ def discover_diagrams() -> list[Path]:
     return sorted(DIAGRAMS_DIR.glob("*.mmd"))
 
 
+def _fallback_svg_bytes(title: str, source: str, error: str) -> bytes:
+  """Build a minimal inline SVG fallback card when Mermaid rendering fails."""
+  safe_title = html.escape(title)
+  safe_error = html.escape(error)
+  source_lines = [html.escape(line) for line in source.splitlines()[:18]]
+  source_block = "\n".join(source_lines) if source_lines else "(empty diagram source)"
+  svg = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">'
+    '<rect width="100%" height="100%" fill="#ffffff" />'
+    '<rect x="24" y="24" width="1152" height="712" rx="12" fill="#fff8f8" stroke="#f5c2c7" />'
+    f'<text x="48" y="72" font-size="28" font-family="Segoe UI, sans-serif" fill="#842029">'
+    f'Fallback Preview: {safe_title}</text>'
+    '<text x="48" y="112" font-size="18" font-family="Segoe UI, sans-serif" fill="#842029">'
+    'Mermaid backend unavailable; showing source snapshot.</text>'
+    f'<text x="48" y="148" font-size="14" font-family="Consolas, monospace" fill="#5c0011">'
+    f'Error: {safe_error}</text>'
+    '<foreignObject x="48" y="176" width="1104" height="536">'
+    '<div xmlns="http://www.w3.org/1999/xhtml" '
+    'style="font-family:Consolas,monospace;font-size:14px;color:#111;white-space:pre-wrap;line-height:1.4;">'
+    f'{source_block}'
+    '</div>'
+    '</foreignObject>'
+    '</svg>'
+  )
+  return svg.encode("utf-8")
+
+
 def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
     """Render each .mmd to SVG. Returns {stem: {ok, path|error, source}}."""
     SVG_OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -68,11 +94,15 @@ def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
                 "mmd_path": mmd_path,
             }
         except MermaidRenderError as exc:
+            fallback_path = SVG_OUT_DIR / f"{stem}.svg"
+            fallback_svg = _fallback_svg_bytes(stem, source, str(exc))
+            fallback_path.write_bytes(fallback_svg)
             results[stem] = {
-                "ok": False,
-                "error": str(exc),
+                "ok": True,
+                "path": fallback_path,
                 "source": source,
                 "mmd_path": mmd_path,
+                "fallback_error": str(exc),
             }
     return results
 
@@ -120,6 +150,7 @@ def build_index(results: dict[str, dict]) -> str:
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     total = len(results)
     ok_count = sum(1 for r in results.values() if r["ok"])
+    fallback_count = sum(1 for r in results.values() if r.get("fallback_error"))
 
     cards = []
     for proj in PROJECT_ORDER:
@@ -133,9 +164,21 @@ def build_index(results: dict[str, dict]) -> str:
             if info["ok"]:
                 rel = info["path"].relative_to(REPORTS_DIR).as_posix()
                 w, h = _svg_dims(info["path"])
+                fallback_note = ""
+                fallback_details = ""
+                if info.get("fallback_error"):
+                    fallback_note = (
+                        '<span class="fallback-pill" title="Rendered from fallback inline SVG">fallback</span>'
+                    )
+                    fallback_details = (
+                        '<details><summary>fallback details</summary><pre class="err">'
+                        + html.escape(info["fallback_error"])
+                        + "</pre></details>"
+                    )
                 cards.append(
                     f'<div class="card">'
                     f'<div class="card-title">{html.escape(title)}'
+                    f'{fallback_note}'
                     f'<button class="zoom-btn" data-svg="{html.escape(rel)}" '
                     f'data-title="{html.escape(title)}" '
                     f'data-w="{w:.0f}" data-h="{h:.0f}" title="Zoom">⛶</button>'
@@ -145,6 +188,7 @@ def build_index(results: dict[str, dict]) -> str:
                     f'data-w="{w:.0f}" data-h="{h:.0f}">'
                     f'<object type="image/svg+xml" data="{html.escape(rel)}">'
                     f'<a href="{html.escape(rel)}">View SVG</a></object></div>'
+                    f'{fallback_details}'
                     f'<details><summary>source</summary>'
                     f'<pre>{html.escape(info["source"])}</pre></details>'
                     f'</div>'
@@ -161,13 +205,6 @@ def build_index(results: dict[str, dict]) -> str:
         cards.append('</div>')
 
     body = "\n".join(cards) if cards else '<p class="muted">No diagrams found in <code>diagrams/</code>.</p>'
-
-    sample_mmd = (
-        "graph LR\n"
-        "    A[Edit me] --> B(Live preview)\n"
-        "    B --> C{Mermaid}\n"
-        "    C -->|svg| D[mermaid.ink]\n"
-    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -249,25 +286,11 @@ def build_index(results: dict[str, dict]) -> str:
 <body>
 <header>
   <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">{total} diagrams · {ok_count} rendered · generated {generated}</span>
+  <span class="meta">{total} diagrams · {ok_count} rendered · {fallback_count} fallback · generated {generated}</span>
   <span class="badge">mermaid.js</span>
 </header>
 <main>
 {body}
-
-<section class="editor-section">
-  <h2 class="proj-header">Live Editor</h2>
-  <p class="muted">Edit mermaid source on the left — preview renders client-side via mermaid.js. No server round-trip.</p>
-  <div class="editor-grid">
-    <div>
-      <textarea id="mmd-input" spellcheck="false">{html.escape(sample_mmd)}</textarea>
-    </div>
-    <div>
-      <div id="preview-status">Initializing…</div>
-      <div id="preview"></div>
-    </div>
-  </div>
-</section>
 </main>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
@@ -285,40 +308,6 @@ def build_index(results: dict[str, dict]) -> str:
     <div class="lb-content" id="lb-content"></div>
   </div>
 </div>
-
-<script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({{ startOnLoad: false, theme: "default", securityLevel: "loose", flowchart: {{ useMaxWidth: false }}, sequence: {{ useMaxWidth: false }} }});
-
-  const ta = document.getElementById("mmd-input");
-  const preview = document.getElementById("preview");
-  const status = document.getElementById("preview-status");
-  let timer = null;
-  let renderId = 0;
-
-  async function renderPreview() {{
-    const id = ++renderId;
-    const src = ta.value;
-    status.textContent = "Rendering…";
-    try {{
-      const {{ svg }} = await mermaid.render("preview-svg-" + id, src);
-      if (id !== renderId) return;
-      preview.innerHTML = svg;
-      status.textContent = "OK · " + new Date().toLocaleTimeString();
-    }} catch (err) {{
-      if (id !== renderId) return;
-      preview.innerHTML = "<pre style='color:#c00;white-space:pre-wrap'>" +
-                         String(err.message || err) + "</pre>";
-      status.textContent = "Error";
-    }}
-  }}
-
-  ta.addEventListener("input", () => {{
-    clearTimeout(timer);
-    timer = setTimeout(renderPreview, 350);
-  }});
-  renderPreview();
-</script>
 
 <script>
   // Lightbox: click thumb or zoom button → fullscreen pan/zoom view.
@@ -482,10 +471,13 @@ def main() -> int:
         print(f"[diagrams] Backend: {backend}")
         results = render_all(client)
         ok = sum(1 for r in results.values() if r["ok"])
+        fallback = sum(1 for r in results.values() if r.get("fallback_error"))
         print(f"[diagrams] Rendered {ok}/{len(results)} diagrams")
+        if fallback:
+            print(f"[diagrams] Fallback used for {fallback} diagram(s)")
         for stem, info in results.items():
-            if not info["ok"]:
-                print(f"  [FAIL] {stem}: {info['error']}", file=sys.stderr)
+            if info.get("fallback_error"):
+                print(f"  [FALLBACK] {stem}: {info['fallback_error']}", file=sys.stderr)
 
     INDEX_PATH.write_text(build_index(results), encoding="utf-8")
     print(f"[diagrams] Wrote {INDEX_PATH}")

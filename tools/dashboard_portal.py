@@ -616,6 +616,7 @@ def render_portal(manifest: dict) -> str:
     """Render the unified portal HTML."""
     import base64
     import json as _json
+    import urllib.parse
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nav = _nav_items(manifest)
     frames = _content_frames(manifest)
@@ -630,16 +631,49 @@ def render_portal(manifest: dict) -> str:
     _icon_config_path = Path(__file__).parent.parent / "src" / "data" / "portal_icon_config.json"
     _icon_prompt = ""
     _favicon_b64 = "AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    _favicon_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+        '<rect width="64" height="64" rx="14" fill="#0f1318"/>'
+        '<circle cx="32" cy="32" r="20" fill="none" stroke="#8bd5ff" stroke-width="4"/>'
+        '<text x="32" y="39" text-anchor="middle" font-size="28" '
+        'font-family="Segoe UI, sans-serif" fill="#8bd5ff">⊕</text>'
+        '</svg>'
+    )
+    _icon_version = "default"
+    _icon_status = "fallback"
+    _icon_ico_href = f"data:image/x-icon;base64,{_favicon_b64}"
+
+    def _is_valid_ico(raw: bytes) -> bool:
+        # ICO header: reserved=0, type=1, count>=1
+        return len(raw) >= 6 and raw[0:4] == b"\x00\x00\x01\x00" and int.from_bytes(raw[4:6], "little") >= 1
+
     if _icon_config_path.is_file():
         try:
             _cfg = _json.loads(_icon_config_path.read_text(encoding="utf-8"))
             _icon_prompt = _cfg.get("prompt", "").replace('"', "&quot;").replace("\\", "").strip()
             _ico_rel = _cfg.get("icon_ico", "")
+            _png_rel = _cfg.get("icon_png", "")
             _ico_path = Path(__file__).parent.parent / _ico_rel if _ico_rel else None
+            _png_path = Path(__file__).parent.parent / _png_rel if _png_rel else None
+
+            if _png_path and _png_path.is_file():
+                _icon_version = f"{_png_path.stat().st_mtime_ns:x}-{_png_path.stat().st_size:x}"
+
             if _ico_path and _ico_path.is_file():
-                _favicon_b64 = base64.b64encode(_ico_path.read_bytes()).decode("ascii")
+                _ico_bytes = _ico_path.read_bytes()
+                if _is_valid_ico(_ico_bytes):
+                    _favicon_b64 = base64.b64encode(_ico_bytes).decode("ascii")
+                    _icon_version = f"{_ico_path.stat().st_mtime_ns:x}-{_ico_path.stat().st_size:x}"
+                    _icon_status = "ok"
+                    _ico_web_rel = _ico_rel.replace("\\", "/").lstrip("/")
+                    # Cache-bust browser favicon caching with a versioned file URL.
+                    _icon_ico_href = f"/{_ico_web_rel}?v={_icon_version}"
+                else:
+                    _icon_status = "invalid-ico-fallback"
         except Exception:
-            pass
+            _icon_status = "config-error-fallback"
+
+    _favicon_svg_href = "data:image/svg+xml;utf8," + urllib.parse.quote(_favicon_svg, safe="")
     _prompt_attr = f' data-icon-prompt="{_icon_prompt}"' if _icon_prompt else ""
 
     return f"""<!DOCTYPE html>
@@ -647,7 +681,10 @@ def render_portal(manifest: dict) -> str:
 <head>
 <meta charset="utf-8">
 <title>⊕ Dashboard Portal</title>
-<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,{_favicon_b64}">
+  <link rel="icon" type="image/svg+xml" href="{_favicon_svg_href}">
+  <link rel="icon" type="image/x-icon" href="{_icon_ico_href}">
+  <link rel="alternate icon" type="image/x-icon" href="data:image/x-icon;base64,{_favicon_b64}">
+  <meta name="portal-icon-status" content="{_icon_status}">
 <style>
   :root {{
     --bg: #0a0d12;
