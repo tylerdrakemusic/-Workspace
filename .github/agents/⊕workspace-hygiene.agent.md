@@ -85,6 +85,60 @@ For each project, apply `hygiene-base.instructions.md` sweep checklist to these 
 - `f:\⊕Workspace\reports\` — stale report HTMLs (> 30 days with no regen)
 - `f:\⊕Workspace\proof\` — old proof artifacts (> 60 days)
 - `f:\⊕Workspace\tokens\` — never delete token files; flag only if expired based on name
+- `f:\⊕Workspace\.worktrees\` — stale worktrees (see Phase 1b below)
+
+---
+
+### Phase 1b — Stale Worktree Cleanup (⊕Workspace)
+
+Run weekly. Detects and removes worktrees whose branches have already been
+merged or deleted, keeping `.worktrees/` tidy and IDE-friendly.
+
+**Steps:**
+
+1. **Prune stale registrations** (worktrees whose backing directory is gone):
+   ```powershell
+   cd f:\⊕Workspace
+   git worktree prune --verbose
+   ```
+
+2. **List remaining worktrees** and check each for staleness:
+   ```powershell
+   git worktree list --porcelain
+   ```
+   For each worktree (excluding `HEAD` / the main checkout):
+   - Retrieve the branch name from the `branch` field.
+   - Check if the branch has been merged into `main`:
+     ```powershell
+     git branch --merged main | Select-String "<branch-name>"
+     ```
+   - Check the last commit date:
+     ```powershell
+     git -C <worktree-path> log -1 --format="%ci"
+     ```
+
+3. **Auto-remove if ALL of the following are true:**
+   - The branch is merged into `main`, OR the branch no longer exists on origin.
+   - The last commit in the worktree is > 7 days old.
+   ```powershell
+   git worktree remove f:\⊕Workspace\.worktrees\<branch-slug>
+   ```
+
+4. **Flag (do not auto-remove) if:**
+   - Branch is not merged but last commit is > 30 days old → add to
+     "Action required from Tyler" section as a stale worktree candidate.
+
+5. **Report** stale worktrees removed and candidates flagged in the Phase 4
+   hygiene report.
+
+**Key rules:**
+- NEVER remove a worktree whose branch has uncommitted changes
+  (`git -C <path> status --short` returns output).
+- NEVER remove the main worktree (the primary checkout at `f:\⊕Workspace`).
+- ALWAYS run `git worktree prune` before any explicit `git worktree remove`.
+- External worktrees at legacy paths like `f:\⊕Workspace-worktrees\` are
+  deprecated — flag their existence in the report and recommend migration to
+  `f:\⊕Workspace\.worktrees\<branch-slug>\`.
 
 ---
 
@@ -179,6 +233,11 @@ Projects swept: 5
 TODO items archived: N
 Temp files removed: N
 Research files flagged: N
+Worktrees (.worktrees/):
+  Stale registrations pruned: N
+  Auto-removed (merged + > 7d): N
+  Flagged stale candidates: N
+  Legacy external worktrees found: N (recommend migration to .worktrees/)
 Agent files audited: N
   Self-regen blocks added: N
   Stale paths fixed: N
@@ -216,6 +275,7 @@ This agent can be scoped:
 | `hygiene ∞Life` | Single project only |
 | `hygiene agents` | Phase 2 (agent infrastructure) only |
 | `hygiene agents --fix-regen` | Add missing self-regen blocks to all agents |
+| `hygiene worktrees` | Phase 1b (stale worktree cleanup) only |
 | `hygiene post-merge <FR-ID>` | Post-Merge Artifact Cleanup only (invoked by `⊕workspace-ci`) |
 
 ---
