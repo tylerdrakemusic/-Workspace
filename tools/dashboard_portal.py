@@ -665,9 +665,8 @@ def render_portal(manifest: dict) -> str:
                     _favicon_b64 = base64.b64encode(_ico_bytes).decode("ascii")
                     _icon_version = f"{_ico_path.stat().st_mtime_ns:x}-{_ico_path.stat().st_size:x}"
                     _icon_status = "ok"
-                    _ico_web_rel = _ico_rel.replace("\\", "/").lstrip("/")
-                    # Cache-bust browser favicon caching with a versioned file URL.
-                    _icon_ico_href = f"/{_ico_web_rel}?v={_icon_version}"
+                    # Use report-root relative path because portal is served from reports/.
+                    _icon_ico_href = f"portal_icon.ico?v={_icon_version}"
                 else:
                     _icon_status = "invalid-ico-fallback"
         except Exception:
@@ -1117,6 +1116,21 @@ def main() -> None:
     PORTAL_OUT.parent.mkdir(parents=True, exist_ok=True)
     html_content = render_portal(manifest)
     PORTAL_OUT.write_text(html_content, encoding="utf-8")
+
+    # Publish favicon assets into reports/ so local HTTP servers can resolve them.
+    icon_cfg = PROJECT_ROOT / "src" / "data" / "portal_icon_config.json"
+    try:
+      import json as _json
+      cfg = _json.loads(icon_cfg.read_text(encoding="utf-8")) if icon_cfg.is_file() else {}
+      ico_rel = cfg.get("icon_ico", "")
+      if ico_rel:
+        ico_src = PROJECT_ROOT / ico_rel
+        if ico_src.is_file():
+          (PORTAL_OUT.parent / "portal_icon.ico").write_bytes(ico_src.read_bytes())
+          (PORTAL_OUT.parent / "favicon.ico").write_bytes(ico_src.read_bytes())
+    except Exception:
+      pass
+
     print(f"  Portal written to {PORTAL_OUT}")
 
     if not args.no_open:

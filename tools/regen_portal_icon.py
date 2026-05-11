@@ -204,7 +204,7 @@ def _inject_favicon(ico_path: Path, prompt: str) -> None:
         '</svg>'
     )
     favicon_svg_href = "data:image/svg+xml;utf8," + urllib.parse.quote(favicon_svg, safe="")
-    favicon_ico_href = f"/src/data/portal_icon.ico?v={icon_version}"
+    favicon_ico_href = f"portal_icon.ico?v={icon_version}"
     favicon_tags = "\n".join([
         f'<link rel="icon" type="image/svg+xml" href="{favicon_svg_href}">',
         f'<link rel="icon" type="image/x-icon" href="{favicon_ico_href}">',
@@ -224,6 +224,10 @@ def _inject_favicon(ico_path: Path, prompt: str) -> None:
     html = html.replace(anchor, f"{anchor}\n{favicon_tags}\n{prompt_meta}", 1)
     html = _update_sigil_tooltip(html, prompt)
     PORTAL_HTML.write_text(html, encoding="utf-8")
+    # Keep icon assets next to portal.html so local static servers resolve them.
+    portal_dir = PORTAL_HTML.parent
+    shutil.copy2(ico_path, portal_dir / "portal_icon.ico")
+    shutil.copy2(ico_path, portal_dir / "favicon.ico")
     print(f"\u2714 Favicon re-injected \u2192 {PORTAL_HTML.name}")
 
 

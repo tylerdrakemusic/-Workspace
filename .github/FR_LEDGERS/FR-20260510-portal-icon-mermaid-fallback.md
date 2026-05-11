@@ -90,6 +90,23 @@
 
 ---
 
+### 2026-05-11T01:00:00Z — ⊕workspace-overseer
+
+**Event:** finding + artifact
+
+**Summary:** Confirmed and fixed remaining favicon runtime path bug.
+
+**Details:**
+- User reported icon still showing Brave default.
+- Root cause confirmed: portal emitted `href="/src/data/portal_icon.ico?..."`, but local portal server returned `404` for `/src/data/*`.
+- Updated portal generation/injection paths to report-root `portal_icon.ico?v=...`.
+- Published icon assets into `reports/portal_icon.ico` and `reports/favicon.ico` during generation/injection.
+- Validation: browser runtime now resolves the icon URL with `status=200` at `http://localhost:8080/portal_icon.ico?...`.
+
+**Next:** awaiting ⊕workspace-ci: update PR with runtime favicon fix commit.
+
+---
+
 ## Artifacts
 
 - **Perf runs:** 4fbd2632-8d7a-4364-ae27-078cd71b92af — intake triage run for FR open
