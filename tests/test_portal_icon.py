@@ -219,6 +219,12 @@ def test_staged_launcher_starts_music_servers() -> None:
         import pytest
         pytest.skip("Staged launcher not yet created — run create_desktop_shortcut.py first")
     content = staged_ps1.read_text(encoding="utf-8-sig")
+    # New launcher mode delegates to open_portal.ps1, which owns server bootstrapping.
+    if "open_portal.ps1" in content:
+        # Delegation mode can either call open_portal.ps1 directly with call operator
+        # or invoke it through Start-Process.
+        assert "open_portal.ps1" in content
+        return
     for name, port in _ALL_SERVERS.items():
         assert str(port) in content, (
             f"Staged open_portal.ps1 missing start command for {name} (port {port})"

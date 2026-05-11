@@ -3,8 +3,8 @@
 Covers:
 - discover_diagrams: scans diagrams/ folder for .mmd files
 - render_all: writes SVGs, returns results dict (mocked client)
-- build_index: produces HTML with cards, live editor, project grouping
-- error rendering: failed diagrams produce error cards
+- build_index: produces HTML with cards and project grouping
+- fallback rendering: failed diagrams produce fallback SVG + metadata
 """
 from __future__ import annotations
 
@@ -75,11 +75,13 @@ def test_render_all_handles_errors(diagrams_workspace):
     fake_client.render.side_effect = MermaidRenderError("backend down")
 
     results = dd.render_all(client=fake_client)
-    assert results["workspace-broken"]["ok"] is False
-    assert "backend down" in results["workspace-broken"]["error"]
+    assert results["workspace-broken"]["ok"] is True
+    assert results["workspace-broken"]["path"].exists()
+    assert "fallback_error" in results["workspace-broken"]
+    assert "backend down" in results["workspace-broken"]["fallback_error"]
 
 
-def test_build_index_has_live_editor(diagrams_workspace):
+def test_build_index_excludes_live_editor(diagrams_workspace):
     _write_mmd(diagrams_workspace, "workspace-architecture")
     fake_client = MagicMock()
     fake_client.render.return_value = b"<svg/>"
@@ -88,10 +90,10 @@ def test_build_index_has_live_editor(diagrams_workspace):
 
     assert "<!DOCTYPE html>" in html_str
     assert "Diagrams Dashboard" in html_str
-    # Live editor section
-    assert 'id="mmd-input"' in html_str
-    assert 'id="preview"' in html_str
-    assert "mermaid.esm.min.mjs" in html_str
+    assert "Live Editor" not in html_str
+    assert 'id="mmd-input"' not in html_str
+    assert 'id="preview"' not in html_str
+    assert "mermaid.esm.min.mjs" not in html_str
     # Project grouping
     assert "⊕ Workspace" in html_str
 
@@ -113,13 +115,14 @@ def test_build_index_groups_by_project(diagrams_workspace):
         assert label in html_str
 
 
-def test_build_index_renders_error_card(diagrams_workspace):
+def test_build_index_renders_fallback_details(diagrams_workspace):
     _write_mmd(diagrams_workspace, "workspace-broken")
     fake_client = MagicMock()
     fake_client.render.side_effect = MermaidRenderError("nope")
     results = dd.render_all(client=fake_client)
     html_str = dd.build_index(results)
-    assert "card error" in html_str
+    assert "fallback details" in html_str
+    assert "fallback-pill" in html_str
     assert "nope" in html_str
 
 

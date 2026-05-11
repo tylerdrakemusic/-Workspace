@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260510-portal-icon-mermaid-fallback | Portal icon fallback + Mermaid architecture fallback cleanup | fix | ⊕Workspace | TRIAGED | pending | pending | ⊕workspace-intake | 2026-05-10 | 2026-05-10 |
 | FR-20260510-tjd-radio-icecast-primary | Replace local TJD radio with Icecast default, Muzic primary + Tyler-owned fallback | feature + migration | ❤Music | REVIEW_REQUESTED | feature/music/fr-20260510-tjd-radio-icecast-primary | pending | ❤music-orchestrator | 2026-05-10 | 2026-05-10 |
 | FR-20260510-trudiagnostic-ingest | TruDiagnostic TruAge Ingest — April 2026 (OMICm Age, SYMPHONYAge, DunedinPACE, Telomere) + Reusable Importer | feature + data-ingest | ∞Life | BRANCHED | feature/life/fr-20260510-trudiagnostic-ingest | [Life#21](https://github.com/tylerdrakemusic/Life/pull/21) (draft) | ∞life-orchestrator | 2026-05-10 | 2026-05-10 |
 | FR-20260510-self-hosted-radio-poc | Self-hosted radio POC — Icecast 2 + Liquidsoap on WSL2, streaming Tyler catalog (Phase alpha per IP_STRATEGY.md Section 7) | feature | ❤Music | IN_PROGRESS | feature/music/fr-20260510-self-hosted-radio-poc | pending | ❤music-orchestrator | 2026-05-10 | 2026-05-10 |
