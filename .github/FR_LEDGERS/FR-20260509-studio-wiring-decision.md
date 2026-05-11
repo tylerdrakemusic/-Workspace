@@ -73,6 +73,6 @@
 
 - **Perf runs:** 76287917-144d-458a-9a78-81093ef08698 — fr-cycle-FR-20260509-studio-wiring-decision
 - **Proof artifacts:** —
-- **PRs:** pending
-- **Commits:** pending
+- **PRs:** [-Workspace#121](https://github.com/tylerdrakemusic/-Workspace/pull/121) (ledger/registry metadata — pending CI merge)
+- **Commits:** a6d6aa0 — ⊕ workspace: ledger — FR-20260509-studio-wiring-decision → TRIAGED
 - **Reports / dashboards:** —
