@@ -78,7 +78,7 @@
 <body>
 <header>
   <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">19 diagrams · 19 rendered · generated 2026-05-09 15:53:43</span>
+  <span class="meta">20 diagrams · 19 rendered · generated 2026-05-10 18:18:21</span>
   <span class="badge">mermaid.js</span>
 </header>
 <main>
@@ -555,6 +555,52 @@ erDiagram
         string category
         int sort_order
     }</pre></details></div>
+<div class="card error"><div class="card-title">Icecast Primary Architecture ⚠️</div><pre class="err">All mermaid backends failed: cli: mmdc not on PATH | http: HTTP 400: Bad Request</pre><details><summary>source</summary><pre>flowchart LR
+  subgraph UX[Local User Experience]
+    PANEL[TJD Local Panel :8100]
+    BROWSER[Browser Audio Player]
+  end
+
+  subgraph MUSIC[❤Music Runtime]
+    API[/api/now_playing]
+    STREAM[/stream]
+    SEL[Source Selector]
+    FALLBACK[Legacy Flask Broadcaster --backend local]
+  end
+
+  subgraph ICECAST[Icecast Runtime WSL]
+    MOUNT[(Icecast /stream)]
+    STATUS[(status-json.xsl)]
+    LIQ[Liquidsoap]
+  end
+
+  subgraph CATALOG[Catalog Policy]
+    MUZIC[G:/Muzic Primary]
+    TYLER[catalog/masters + catalog/ep Fallback]
+  end
+
+  PANEL --&gt; API
+  PANEL --&gt; STREAM
+  BROWSER --&gt; STREAM
+
+  API --&gt; STATUS
+  STREAM --&gt; MOUNT
+
+  LIQ --&gt; MOUNT
+  LIQ --&gt; SEL
+  SEL --&gt; MUZIC
+  SEL --&gt; TYLER
+
+  PANEL -. explicit fallback path only .-&gt; FALLBACK
+
+  classDef default fill:#d9f7e8,stroke:#1f7a4c,stroke-width:2px
+  classDef infra fill:#e7f0ff,stroke:#1e4fa1,stroke-width:2px
+  classDef fallback fill:#fff3d6,stroke:#a16a00,stroke-width:2px
+
+  class API,STREAM,SEL default
+  class MOUNT,STATUS,LIQ infra
+  class FALLBACK fallback
+</pre></details></div>
 <div class="card"><div class="card-title">Tech Stack<button class="zoom-btn" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" data-w="411" data-h="686" title="Zoom">⛶</button></div><div class="svg-wrap" data-svg="diagrams/music-tech-stack.svg" data-title="Tech Stack" data-w="411" data-h="686"><object type="image/svg+xml" data="diagrams/music-tech-stack.svg"><a href="diagrams/music-tech-stack.svg">View SVG</a></object></div><details><summary>source</summary><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
 graph LR
     Python[Python 3.11] --&gt; SQLCipher[sqlcipher3]
