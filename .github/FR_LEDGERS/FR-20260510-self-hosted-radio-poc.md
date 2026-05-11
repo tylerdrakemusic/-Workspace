@@ -10,7 +10,7 @@
 - **Type:** feature
 - **Risk:** medium
 - **Projects:** ❤Music
-- **State:** IN_PROGRESS
+- **State:** REVIEW_REQUESTED
 - **Branch:** feature/music/fr-20260510-self-hosted-radio-poc
 - **PRs:** pending
 - **Cycle timer:** 1e74e259-ec6e-45c8-8369-225fed989ebe
@@ -42,7 +42,7 @@
 | AC1 | WSL2 Icecast + Liquidsoap stream baseline | ❤music-orchestrator | verified | commits `aabb5f3`, `7d87723` + live WSL proof | 2026-05-10 |
 | AC2 | Metadata + browser playback validation | ❤music-orchestrator | verified | live verify + Windows audible playback | 2026-05-10 |
 | AC3 | Ops scripts and runbook docs | ❤music-orchestrator | done | commit `aabb5f3` | 2026-05-10 |
-| AC4 | 2-hour stability proof run | ❤music-orchestrator | in-progress | pending live WSL run evidence | 2026-05-10 |
+| AC4 | 2-hour stability proof run | ❤music-orchestrator | verified | monitor log `stability_monitor_20260510T101255.log` + commits `7d87723`, `9f6ff00` | 2026-05-10 |
 
 ### Tyler's Original Request
 > with interview, can we look at this todo from the exec panel: Self-hosted radio POC — Icecast 2 + Liquidsoap on Windows/WSL, streaming Tyler's catalog (Phase alpha per IP_STRATEGY.md Section 7)
@@ -146,6 +146,29 @@
 - Latest observed sample at kickoff: `listeners=2`, `title=Tyler James Drake - Marigold Lower Vox Master`
 
 **Next:** ❤music-orchestrator: wait for burn-in completion, verify no service crash, then move to REVIEW_REQUESTED.
+
+---
+
+### 2026-05-10T12:12:00Z — ❤music-orchestrator
+
+**Event:** state-transition + artifact-verification
+
+**Summary:** AC4 stability monitor completed successfully; all acceptance criteria verified. FR transitioning to REVIEW_REQUESTED.
+
+**Details:**
+- Stability monitor completed full 120-sample / 2-hour burn-in (10:12:55 through 12:12:01 UTC-6)
+- Log artifact: `f:\❤Music\output\radio_phase_alpha\stability_monitor_20260510T101255.log`
+- Service health post-burn: Icecast2 and Liquidsoap both alive and running, zero crashes detected
+- Final verification passed: stream responding with metadata, current now-playing = "Tyler James Drake - Master What I do", listeners=1
+- User audible confirmation during burn-in: 3+ song transitions independently verified via player + metadata + logs
+
+**AC Verification Summary:**
+- AC1 (WSL stream baseline): ✅ verified — commits `aabb5f3`, `7d87723`
+- AC2 (metadata + playback): ✅ verified — live validation + Windows audible confirmation
+- AC3 (ops scripts): ✅ verified — commit `aabb5f3` + updated runbook
+- AC4 (2-hour stability): ✅ verified — 120 samples, zero crashes, monitor log at stable_monitor_20260510T101255.log
+
+**Next:** Awaiting Tyler: review phase alpha proof and provide sign-off for merge (REVIEW_COMPLETE → READY_TO_MERGE).
 
 ---
 
