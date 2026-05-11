@@ -115,3 +115,6 @@
 - **Proof artifacts:** e02550e57ed4 — favicon fallback implementation file change
 - **Proof artifacts:** a72399188c2f — diagrams fallback + live editor removal implementation file change
 - **Proof artifacts:** 95d64d1b944a — diagrams generator fallback command output evidence
+- **Perf runs:** 3706ba11-6bc7-4be3-8353-52e2e9b75cb2 — runtime favicon path remediation run
+- **Proof artifacts:** a4f46535a839 — report-root favicon path implementation evidence
+- **Proof artifacts:** 40d928c9837f — browser runtime favicon URL HTTP 200 evidence
