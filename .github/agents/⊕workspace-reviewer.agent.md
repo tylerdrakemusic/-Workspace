@@ -40,7 +40,19 @@ make his final approval decision.
 - Test harness consistency
 - Naming conventions
 
-### Gate 3.5: Architecture Diagrams (HARD BLOCK)
+### Gate 3.5: Worktree Path Audit
+
+Verify no `.worktrees/` paths appear in the merged diff:
+```powershell
+git diff --name-only origin/main HEAD | grep -v '\.worktrees/'
+# If grep finds .worktrees/ in actual file changes (not just metadata), FAIL the review
+# Exception: updates to .gitignore or agent docs mentioning .worktrees/ are OK
+```
+
+If any `.worktrees/` paths found in source/artifact commits → REQUEST_CHANGES with message:  
+"Pre-merge audit failed: .worktrees/ contents detected in diff. These are gitignored and must not be committed."
+
+### Gate 3.6: Architecture Diagrams (HARD BLOCK)
 - Verify the FR's ARCHITECTURE_REVIEW state produced a PASS or PASS_WITH_UPDATES
   result from `⊕workspace-architecture-reviewer`. Read the latest impact report
   from the FR ledger.
@@ -100,6 +112,7 @@ Post ONE top-level review per PR with the full structured report.
 | Scope conformance | ✅ / ⚠️ / ❌ | ... |
 | Security | ✅ / ⚠️ / ❌ | ... |
 | Alignment | ✅ / ⚠️ / ❌ | ... |
+| Worktree Path Audit | ✅ / ⚠️ / ❌ | ... |
 | Architecture Diagrams | ✅ / ⚠️ / ❌ | ... |
 | Tests | ✅ / ⚠️ / ❌ | ... |
 | Proof-in-the-pudding | ✅ / ⚠️ / ❌ | ... |

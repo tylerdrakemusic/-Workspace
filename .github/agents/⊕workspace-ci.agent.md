@@ -68,6 +68,21 @@ Step 4: Present summary to Tyler
 - List branches: `git branch -a`
 - Report stale branches or worktrees (no commits in 30+ days)
 
+#### Batch Worktree Creation (New)
+
+When multiple concurrent FRs require worktrees, batch them into a **single terminal command** to minimize approval gates:
+
+**Pattern:**
+```powershell
+# Create 3 worktrees in one chained command (ONE approval gate instead of 3)
+git -C f:\⊕Workspace worktree add ".worktrees\fr-slug-1" "feature/workspace/fr-slug-1"; \
+git -C f:\⊕Workspace worktree add ".worktrees\fr-slug-2" "feature/workspace/fr-slug-2"; \
+git -C f:\⊕Workspace worktree add ".worktrees\fr-slug-3" "feature/workspace/fr-slug-3"
+```
+
+**Scope note:** All worktrees created under `.worktrees/` (workspace-local).  
+**Cleanup:** Use `⊕workspace-hygiene` weekly to remove stale worktrees (>30 days no commits).
+
 ### 5. Merge + Conflict Resolution
 1. Fetch the latest default branch and rebase the session branch before review or merge
 2. If two PRs overlap, designate one as the base PR, rebase the follower branch, and resolve conflicts in the follower branch only

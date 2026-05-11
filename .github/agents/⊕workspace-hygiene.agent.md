@@ -85,6 +85,22 @@ For each project, apply `hygiene-base.instructions.md` sweep checklist to these 
 - `f:\⊕Workspace\reports\` — stale report HTMLs (> 30 days with no regen)
 - `f:\⊕Workspace\proof\` — old proof artifacts (> 60 days)
 - `f:\⊕Workspace\tokens\` — never delete token files; flag only if expired based on name
+- `.worktrees/` — stale worktrees (see Phase 2 Stale Worktree Cleanup below)
+
+---
+
+### Phase 1b — Stale Worktree Cleanup
+
+**Trigger:** Weekly (part of hygiene sprint)
+
+**Logic:**
+1. List all worktrees: `git -C f:\⊕Workspace worktree list`
+2. For each worktree, get last commit date: `git -C <worktree-path> log -1 --format=%ci`
+3. If last commit is >30 days old → mark for removal
+4. Remove: `git -C f:\⊕Workspace worktree remove <path>`
+5. Record: Each removal as a `file_deleted` proof artifact
+
+**Exception:** Don't remove worktrees for active FRs (check FR registry state; only remove MERGED/CLOSED FRs).
 
 ---
 

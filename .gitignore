@@ -83,3 +83,7 @@ src/data/portal_icon.ico
 # generated dump artifacts
 reports/all_diagrams_dump.txt
 
+# Git worktrees — workspace-local isolation
+.worktrees/
+.worktrees/**/*
+
