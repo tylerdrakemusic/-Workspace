@@ -143,7 +143,6 @@ _MUSIC_SERVERS = {
 _ALL_SERVERS = {
     **_MUSIC_SERVERS,
     "FR server":              7474,
-    "Executive Audio Brief":  8200,
 }
 
 _MUSIC_SCRIPTS = {
@@ -207,10 +206,9 @@ def test_portal_html_has_fr_and_brief_servers() -> None:
 
 
 def test_staged_launcher_starts_music_servers() -> None:
-    """The staged open_portal.ps1 launcher must contain start commands for all servers.
+    """The staged open_portal.ps1 launcher must either start services directly or delegate.
 
-    This is a structural check — we verify the launcher was written correctly
-    without actually starting servers in the test environment.
+    This is a structural check — we verify launcher wiring without executing servers.
     Skips gracefully if the staged file doesn't exist yet (first run before shortcut creation).
     """
     import os
@@ -219,14 +217,15 @@ def test_staged_launcher_starts_music_servers() -> None:
         import pytest
         pytest.skip("Staged launcher not yet created — run create_desktop_shortcut.py first")
     content = staged_ps1.read_text(encoding="utf-8-sig")
-    # New launcher mode delegates to open_portal.ps1, which owns server bootstrapping.
-    if "open_portal.ps1" in content:
-        # Delegation mode can either call open_portal.ps1 directly with call operator
-        # or invoke it through Start-Process.
-        assert "open_portal.ps1" in content
-        return
-    for name, port in _ALL_SERVERS.items():
-        assert str(port) in content, (
-            f"Staged open_portal.ps1 missing start command for {name} (port {port})"
-        )
-    assert "Start-Process" in content, "Staged open_portal.ps1 missing Start-Process call"
+    # Accept either direct-start staged launchers or a thin delegate to root open_portal.ps1.
+    delegates_to_root_launcher = "open_portal.ps1" in content and "f:\\⊕Workspace\\open_portal.ps1" in content
+    if not delegates_to_root_launcher:
+        for name, port in _ALL_SERVERS.items():
+            assert str(port) in content, (
+                f"Staged open_portal.ps1 missing start command for {name} (port {port})"
+            )
+        assert "Start-Process" in content, "Staged open_portal.ps1 missing Start-Process call"
+
+    assert "http://localhost:8200" not in content and "http://127.0.0.1:8200" not in content, (
+        "Staged open_portal.ps1 should not auto-open standalone Executive Audio Brief URL (:8200)"
+    )

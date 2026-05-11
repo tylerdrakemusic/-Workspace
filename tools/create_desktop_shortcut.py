@@ -45,10 +45,6 @@ _music_server_lines = [
     'if (-not $fr) {',
     '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\⊕Workspace\\src\\utils\\fr_server.py" -WindowStyle Hidden',
     '}',
-    '$aibrief = Get-NetTCPConnection -LocalPort 8200 -ErrorAction SilentlyContinue',
-    'if (-not $aibrief) {',
-    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\👁AI-Manifest\\tools\\executive_audio_brief.py","--serve","--port","8200" -WindowStyle Hidden',
-    '}',
     f'Start-Process "{portal_url}"',
 ]
 staged_ps1.write_text("\n".join(_music_server_lines) + "\n", encoding="utf-8-sig")

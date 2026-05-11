@@ -80,9 +80,10 @@ Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyCo
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
 Start-Sleep -Milliseconds 400
+# Bootstrap: disable webbrowser.open() to prevent auto-opening brief panel in separate tab
+$BriefNoOpenCmd = "import runpy,sys,webbrowser;webbrowser.open=lambda *a,**k: False;sys.argv=[r'f:\\👁AI-Manifest\\tools\\executive_audio_brief.py','--serve','--port','$BriefPort','--text-only'];runpy.run_path(r'f:\\👁AI-Manifest\\tools\\executive_audio_brief.py',run_name='__main__')"
 Start-Process -FilePath $Python `
-    -ArgumentList "`"$BriefScript`"", "--serve", "--port", $BriefPort, "--text-only" `
-    -WorkingDirectory "f:\👁AI-Manifest" `
+    -ArgumentList "-c", $BriefNoOpenCmd `
     -WindowStyle Hidden
 Start-Sleep -Milliseconds 1500
 $checkBrief = Get-NetTCPConnection -LocalPort $BriefPort -State Listen -ErrorAction SilentlyContinue
