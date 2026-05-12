@@ -7,14 +7,46 @@ $TOOLS_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CONFIG    = Join-Path $TOOLS_DIR "portal_servers.json"
 $BRAVE     = "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 $PORTAL    = $TOOLS_DIR.Replace("tools","reports") + "\portal.html"
+$PORTAL_MIN_REGEN_AGE_SECONDS = 30
+
+# Always refresh portal + static mirrors on protocol launch so file:// opens
+# pick up the latest Quantum/Band Management outputs.
+$PORTAL_GEN = Join-Path $TOOLS_DIR "dashboard_portal.py"
+if (Test-Path $PORTAL_GEN) {
+    $shouldRegen = $true
+    if (Test-Path $PORTAL) {
+        $age = (Get-Date) - (Get-Item $PORTAL).LastWriteTime
+        if ($age.TotalSeconds -lt $PORTAL_MIN_REGEN_AGE_SECONDS) {
+            $shouldRegen = $false
+        }
+    }
+    if ($shouldRegen) {
+    $prevPyUtf8 = $env:PYTHONUTF8
+    $prevPyIo = $env:PYTHONIOENCODING
+    $env:PYTHONUTF8 = "1"
+    $env:PYTHONIOENCODING = "utf-8"
+    try {
+        Start-Process -FilePath "C:\G\python.exe" -ArgumentList @($PORTAL_GEN, "--regen", "--no-open") -WindowStyle Hidden
+    }
+    finally {
+        $env:PYTHONUTF8 = $prevPyUtf8
+        $env:PYTHONIOENCODING = $prevPyIo
+    }
+    Write-Host "  Portal mirrors refreshing in background." -ForegroundColor DarkGray
+    }
+}
 
 if (-not (Test-Path $CONFIG)) { Write-Host "ERROR: Config not found: $CONFIG" -ForegroundColor Red; exit 1 }
 $cfg = Get-Content $CONFIG -Raw | ConvertFrom-Json
 $servers = $cfg.servers | Where-Object { $_.enabled -eq $true }
 
+$listeningPorts = @{}
+Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    $listeningPorts[[int]$_.LocalPort] = $true
+}
+
 function Start-Server { param($s)
-    $inUse = Get-NetTCPConnection -LocalPort $s.port -State Listen -ErrorAction SilentlyContinue
-    if ($inUse) { Write-Host "  [$($s.name)] :$($s.port) already listening - skipping" -ForegroundColor Cyan; return }
+    if ($listeningPorts.ContainsKey([int]$s.port)) { Write-Host "  [$($s.name)] :$($s.port) already listening - skipping" -ForegroundColor Cyan; return }
     Write-Host "  [$($s.name)] Starting on port $($s.port)..." -ForegroundColor Yellow
     $parts = $s.cmd -split ' ', 2
     $commandTail = if ($parts.Count -gt 1) { $parts[1] } else { "" }
@@ -38,6 +70,16 @@ function Wait-PortListening {
 Write-Host "Portal Launcher ($($servers.Count) services)" -ForegroundColor Magenta
 foreach ($s in $servers) { Start-Server $s }
 
+$portalUri = "file:///" + ($PORTAL -replace "\\", "/")
+if (-not $NoOpen) {
+    if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
+    Write-Host "  Portal opened." -ForegroundColor Green
+} else {
+    Write-Host "  Skipping browser open (invoked via protocol handler)." -ForegroundColor DarkGray
+    Write-Host "  Returning immediately; services continue warming in background." -ForegroundColor DarkGray
+    exit 0
+}
+
 $delay = [Math]::Max(3, $servers.Count * 2)
 Write-Host "  Waiting ${delay}s for servers to bind..." -ForegroundColor DarkGray
 Start-Sleep -Seconds $delay
@@ -50,14 +92,6 @@ foreach ($s in $servers) {
         Write-Host "  [$($s.name)] :$($s.port) failed to start" -ForegroundColor Red
         $failed += $s
     }
-}
-
-$portalUri = "file:///" + ($PORTAL -replace "\\", "/")
-if (-not $NoOpen) {
-    if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
-    Write-Host "  Portal opened." -ForegroundColor Green
-} else {
-    Write-Host "  Skipping browser open (invoked via protocol handler)." -ForegroundColor DarkGray
 }
 
 if ($failed.Count -gt 0) {

@@ -8,4 +8,6 @@ $projectRoot = $project.FullName
 $env:PYTHONPATH = Join-Path $projectRoot "src"
 $toolPath = Join-Path $projectRoot "tools\executive_audio_brief.py"
 
-& "C:\G\python.exe" $toolPath --serve --port 8200
+# Prevent the brief server from auto-opening a separate browser tab.
+$briefNoOpenCmd = "import runpy,sys,webbrowser;webbrowser.open=lambda *a,**k: False;sys.argv=[r'" + $toolPath + "','--serve','--port','8200'];runpy.run_path(r'" + $toolPath + "',run_name='__main__')"
+& "C:\G\python.exe" -c $briefNoOpenCmd
