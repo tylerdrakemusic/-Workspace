@@ -30,7 +30,7 @@
                         "enabled":  true
                     },
                     {
-                        "name":  "Executive Audio Brief",
+                        "name":  "Executive",
                         "port":  8200,
                         "project":  "👁AI-Manifest",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_executive_brief.ps1",

@@ -17,8 +17,22 @@ function Start-Server { param($s)
     if ($inUse) { Write-Host "  [$($s.name)] :$($s.port) already listening - skipping" -ForegroundColor Cyan; return }
     Write-Host "  [$($s.name)] Starting on port $($s.port)..." -ForegroundColor Yellow
     $parts = $s.cmd -split ' ', 2
-    $args = if ($parts.Count -gt 1) { $parts[1] } else { "" }
-    Start-Process -FilePath $parts[0] -ArgumentList $args -WindowStyle Hidden
+    $commandTail = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+    Start-Process -FilePath $parts[0] -ArgumentList $commandTail -WindowStyle Hidden
+}
+
+function Wait-PortListening {
+    param(
+        [int]$Port,
+        [int]$TimeoutSeconds = 20
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $listening = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+        if ($listening) { return $true }
+        Start-Sleep -Milliseconds 500
+    }
+    return $false
 }
 
 Write-Host "Portal Launcher ($($servers.Count) services)" -ForegroundColor Magenta
@@ -28,10 +42,25 @@ $delay = [Math]::Max(3, $servers.Count * 2)
 Write-Host "  Waiting ${delay}s for servers to bind..." -ForegroundColor DarkGray
 Start-Sleep -Seconds $delay
 
+$failed = @()
+foreach ($s in $servers) {
+    if (Wait-PortListening -Port ([int]$s.port) -TimeoutSeconds 20) {
+        Write-Host "  [$($s.name)] :$($s.port) listening" -ForegroundColor Green
+    } else {
+        Write-Host "  [$($s.name)] :$($s.port) failed to start" -ForegroundColor Red
+        $failed += $s
+    }
+}
+
 $portalUri = "file:///" + ($PORTAL -replace "\\", "/")
 if (-not $NoOpen) {
     if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
     Write-Host "  Portal opened." -ForegroundColor Green
 } else {
     Write-Host "  Skipping browser open (invoked via protocol handler)." -ForegroundColor DarkGray
+}
+
+if ($failed.Count -gt 0) {
+    Write-Host "  Some services failed to bind. Check launcher scripts for listed ports." -ForegroundColor Red
+    exit 1
 }
