@@ -16,6 +16,8 @@ Usage:
 import argparse
 import html as html_mod
 import os
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -485,6 +487,17 @@ def _inline_html_content(inline_id: str) -> str:
     return _INLINE_CONTENT.get(inline_id, '<div class="placeholder">No inline content registered.</div>')
 
 
+def _mirror_static_report(source: Path, dash_id: str, idx: int) -> str:
+  """Mirror external static dashboards into reports/ for HTTP-safe iframe embeds."""
+  slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", dash_id or f"dash-{idx}").strip("-")
+  if not slug:
+    slug = f"dash-{idx}"
+  target = PORTAL_OUT.parent / f"portal_{slug}.html"
+  if source.resolve() != target.resolve():
+    shutil.copy2(source, target)
+  return target.name
+
+
 def _content_frames(manifest: dict) -> str:
   """Generate content panes — iframes for static/flask, info cards for console."""
   panes = []
@@ -508,14 +521,14 @@ def _content_frames(manifest: dict) -> str:
     if dash["type"] in ("static_html", "living_html"):
       out = dash.get("output_abs", "")
       if out and Path(out).exists():
-        # Use relative path for files in the same reports/ directory so the
-        # portal works when served via HTTP (file:// iframes are blocked by
-        # browsers when the parent page is on http://).
         out_path = Path(out)
         if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
           iframe_src = out_path.name
         else:
-          iframe_src = out_path.as_uri()
+          try:
+            iframe_src = _mirror_static_report(out_path, str(dash.get("id", "")), i)
+          except Exception:
+            iframe_src = out_path.as_uri()
         panes.append(
           f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
           f'<iframe src="{iframe_src}" frameborder="0"></iframe></div>'
@@ -963,7 +976,6 @@ def render_portal(manifest: dict) -> str:
   <aside class="sidebar">
     <div class="sidebar-header">
       <h1><span class="sigil"{_prompt_attr}>⊕</span> Dashboard Portal</h1>
-      <div class="subtitle">Spec-driven discovery across all projects</div>
     </div>
     {health_card}
     {stats}
@@ -1004,16 +1016,19 @@ def render_portal(manifest: dict) -> str:
     }})();
 
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
-    function launchServers() {{
-      const btn = document.getElementById('launch-btn');
-      if (btn) {{ btn.textContent = 'Launching…'; btn.disabled = true; }}
-      // Use a hidden anchor click to invoke portal:// without navigating away
+    function invokePortalLaunch() {{
       const a = document.createElement('a');
       a.href = 'portal://launch';
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    }}
+    function launchServers() {{
+      const btn = document.getElementById('launch-btn');
+      if (btn) {{ btn.textContent = 'Launching…'; btn.disabled = true; }}
+      // Use a hidden anchor click to invoke portal:// without navigating away
+      invokePortalLaunch();
       // Re-poll for server status after 4s and 9s
       setTimeout(() => {{ pollServers(); }}, 4000);
       setTimeout(() => {{
@@ -1046,7 +1061,24 @@ def render_portal(manifest: dict) -> str:
       }}
       const block = document.getElementById('server-status-block');
       if (block) block.style.display = 'block';
-      // Requires a user gesture to invoke portal://, so we show the pulsed button if none are up.
+      // If opened directly as file:// (double-click), auto-launch services once.
+      if (!anyUp && window.location.protocol === 'file:') {{
+        try {{
+          const key = 'portal_last_auto_launch_ms';
+          const now = Date.now();
+          const last = parseInt(localStorage.getItem(key) || '0', 10);
+          // Retry launch on each open, but avoid tight loops during one session.
+          if (!last || (now - last) > 30000) {{
+            localStorage.setItem(key, String(now));
+            invokePortalLaunch();
+            setTimeout(() => {{ pollServers(); }}, 4000);
+            setTimeout(() => {{ pollServers(); }}, 9000);
+          }}
+        }} catch {{
+          invokePortalLaunch();
+        }}
+      }}
+      // Under http:// hosting, browser gesture restrictions usually require button click.
       if (!anyUp) {{
         const btn = document.getElementById('launch-btn');
         if (btn) {{

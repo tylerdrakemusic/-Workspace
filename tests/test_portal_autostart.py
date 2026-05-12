@@ -181,7 +181,7 @@ def test_launch_servers_no_window_location(portal_text: str) -> None:
 
 
 def test_launch_servers_uses_hidden_anchor(portal_text: str) -> None:
-    """launchServers() must create a hidden anchor element to invoke portal://."""
+    """launchServers() must invoke portal:// via a hidden anchor (directly or via helper)."""
     fn_match = re.search(
         r"function launchServers\(\)\s*\{(.*?)\n    \}",
         portal_text,
@@ -189,12 +189,27 @@ def test_launch_servers_uses_hidden_anchor(portal_text: str) -> None:
     )
     assert fn_match, "launchServers() not found in portal.html"
     body = fn_match.group(1)
-    assert "createElement('a')" in body, (
-        "launchServers() does not create an <a> element for protocol invocation"
+    # The anchor creation may be in a helper (invokePortalLaunch) called by launchServers.
+    uses_anchor_directly = "createElement('a')" in body
+    uses_helper = "invokePortalLaunch" in body
+    assert uses_anchor_directly or uses_helper, (
+        "launchServers() must either create an <a> element or call invokePortalLaunch()"
     )
-    assert "portal://launch" in body, (
-        "launchServers() does not reference portal://launch"
-    )
+    # Either the body or the helper must reference portal://launch.
+    if uses_helper:
+        helper_match = re.search(
+            r"function invokePortalLaunch\(\)\s*\{(.*?)\n    \}",
+            portal_text,
+            re.DOTALL,
+        )
+        assert helper_match, "invokePortalLaunch() not found in portal.html"
+        assert "portal://launch" in helper_match.group(1), (
+            "invokePortalLaunch() does not reference portal://launch"
+        )
+    else:
+        assert "portal://launch" in body, (
+            "launchServers() does not reference portal://launch"
+        )
 
 
 def test_launch_servers_polls_twice(portal_text: str) -> None:
