@@ -1037,45 +1037,55 @@ def render_portal(manifest: dict) -> str:
       }}, 9000);
     }}
     const SERVERS = {server_js_list};
+    async function probe(url, timeoutMs) {{
+      try {{
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+        await fetch(url, {{ mode: 'no-cors', cache: 'no-store', signal: ctrl.signal }});
+        clearTimeout(tid);
+        return true;
+      }} catch {{
+        return false;
+      }}
+    }}
     async function checkServer(port, dotId) {{
       const dot = document.getElementById(dotId);
       if (!dot) return;
-      try {{
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 1500);
-        await fetch('http://localhost:' + port, {{ mode: 'no-cors', signal: ctrl.signal }});
-        clearTimeout(tid);
-        dot.classList.add('up'); dot.classList.remove('down');
-      }} catch {{ dot.classList.add('down'); dot.classList.remove('up'); }}
+      const up = await probe('http://127.0.0.1:' + port + '/', 5000) || await probe('http://localhost:' + port + '/', 5000);
+      if (up) {{
+        dot.classList.add('up');
+        dot.classList.remove('down');
+      }} else {{
+        dot.classList.add('down');
+        dot.classList.remove('up');
+      }}
     }}
     function pollServers() {{ SERVERS.forEach(s => checkServer(s.port, 'dot-' + s.port)); }}
     async function autoLaunch() {{
-      let anyUp = false;
-      for (const s of SERVERS) {{
-        try {{
-          const ctrl = new AbortController();
-          setTimeout(() => ctrl.abort(), 800);
-          await fetch('http://localhost:' + s.port, {{ mode: 'no-cors', signal: ctrl.signal }});
-          anyUp = true;
-        }} catch {{}}
-      }}
       const block = document.getElementById('server-status-block');
       if (block) block.style.display = 'block';
-      // If opened directly as file:// (double-click), auto-launch services once.
-      if (!anyUp && window.location.protocol === 'file:') {{
+      // If opened directly as file:// (double-click), auto-launch once per tab-open.
+      // launch_portal.ps1 now regenerates mirrors each invocation.
+      if (window.location.protocol === 'file:') {{
         try {{
-          const key = 'portal_last_auto_launch_ms';
-          const now = Date.now();
-          const last = parseInt(localStorage.getItem(key) || '0', 10);
-          // Retry launch on each open, but avoid tight loops during one session.
-          if (!last || (now - last) > 30000) {{
-            localStorage.setItem(key, String(now));
+          const key = 'portal_autolaunch_once';
+          if (!sessionStorage.getItem(key)) {{
+            sessionStorage.setItem(key, '1');
             invokePortalLaunch();
             setTimeout(() => {{ pollServers(); }}, 4000);
             setTimeout(() => {{ pollServers(); }}, 9000);
+            setTimeout(() => {{ pollServers(); }}, 15000);
           }}
         }} catch {{
           invokePortalLaunch();
+        }}
+        return;
+      }}
+      let anyUp = false;
+      for (const s of SERVERS) {{
+        if (await probe('http://127.0.0.1:' + s.port + '/', 2000) || await probe('http://localhost:' + s.port + '/', 2000)) {{
+          anyUp = true;
+          break;
         }}
       }}
       // Under http:// hosting, browser gesture restrictions usually require button click.

@@ -245,34 +245,17 @@ def _refresh_shortcut(ico_path: Path) -> None:
     staging.mkdir(parents=True, exist_ok=True)
     staged_ico = staging / "portal_icon.ico"
     staged_ps1 = staging / "open_portal.ps1"
+    staged_vbs = staging / "open_portal.vbs"
     shutil.copy2(ico_path, staged_ico)
-    # BOM (utf-8-sig) required so PowerShell 5.1 reads the ⊕/❤ paths correctly.
-    # Also starts the three ❤Music servers if they aren't already listening.
-    launcher_lines = [
-        # Music Dashboard :5050
-        '$music = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue',
-        'if (-not $music) {',
-        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\analysis\\music_dashboard.py","--port","5050" -WindowStyle Hidden',
-        '}',
-        # TJD Radio :8100
-        '$radio = Get-NetTCPConnection -LocalPort 8100 -ErrorAction SilentlyContinue',
-        'if (-not $radio) {',
-        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\radio\\tjd_radio.py","--port","8100" -WindowStyle Hidden',
-        '}',
-        # Guitar Trainer :5055
-        '$guitar = Get-NetTCPConnection -LocalPort 5055 -ErrorAction SilentlyContinue',
-        'if (-not $guitar) {',
-        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\training\\musician_training_ui.py","--port","5055" -WindowStyle Hidden',
-        '}',
-        # FR server :7474
-        '$fr = Get-NetTCPConnection -LocalPort 7474 -ErrorAction SilentlyContinue',
-        'if (-not $fr) {',
-        '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\⊕Workspace\\src\\utils\\fr_server.py" -WindowStyle Hidden',
-        '}',
-        # Open the portal
-        f'Start-Process "{WORKSPACE_ROOT / "reports" / "portal.html"}"',
-    ]
-    staged_ps1.write_text("\n".join(launcher_lines) + "\n", encoding="utf-8-sig")
+    # BOM (utf-8-sig) required so PowerShell 5.1 reads the ⊕ path correctly.
+    staged_ps1.write_text('& "f:\\⊕Workspace\\tools\\launch_portal.ps1"\n', encoding="utf-8-sig")
+    vbs_cmd = f'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{staged_ps1}"'
+    vbs_cmd_escaped = vbs_cmd.replace('"', '""')
+    staged_vbs.write_text(
+        'Set WshShell = CreateObject("WScript.Shell")\n'
+        f'WshShell.Run "{vbs_cmd_escaped}", 0, False\n',
+        encoding="ascii",
+    )
     for lnk in (tmp_lnk, final_lnk):
         if lnk.exists():
             lnk.unlink()
@@ -281,11 +264,11 @@ def _refresh_shortcut(ico_path: Path) -> None:
         import subprocess
         import win32com.client  # type: ignore[import]
 
-        powershell = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+        wscript = r"C:\Windows\System32\wscript.exe"
         shell = win32com.client.Dispatch("WScript.Shell")
         sc = shell.CreateShortcut(str(tmp_lnk))
-        sc.TargetPath       = powershell
-        sc.Arguments        = f'-WindowStyle Hidden -NonInteractive -File "{staged_ps1}"'
+        sc.TargetPath       = wscript
+        sc.Arguments        = f'"{staged_vbs}"'
         sc.WindowStyle      = 7
         sc.WorkingDirectory = str(WORKSPACE_ROOT / "reports")
         sc.IconLocation     = f"{staged_ico},0"

@@ -2,6 +2,22 @@
 # Regenerates the Biomarker Dashboard, starts the ∞Life HTTP server on port 9999,
 # then opens the workspace portal. Double-click from desktop — no manual steps.
 
+param([switch]$NoOpen)
+
+# Legacy compatibility wrapper:
+# Route all desktop launches through the maintained config-driven launcher so
+# portal:// protocol launches and desktop shortcut launches behave identically.
+$launcher = Join-Path $PSScriptRoot "tools\launch_portal.ps1"
+if (-not (Test-Path $launcher)) {
+    Write-Error "Missing launcher: $launcher"
+    exit 1
+}
+
+$launcherArgs = @{}
+if ($NoOpen) { $launcherArgs["NoOpen"] = $true }
+& $launcher @launcherArgs
+exit $LASTEXITCODE
+
 $ErrorActionPreference = "SilentlyContinue"
 $Python      = "C:\G\python.exe"
 $DashScript  = "f:\∞Life\src\dashboard\gen_biomarker_dashboard.py"

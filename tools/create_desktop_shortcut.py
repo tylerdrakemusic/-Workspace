@@ -25,29 +25,18 @@ staging    = Path(os.environ["LOCALAPPDATA"]) / "WorkspacePortal"
 staging.mkdir(parents=True, exist_ok=True)
 staged_ico = staging / "portal_icon.ico"
 staged_ps1 = staging / "open_portal.ps1"
+staged_vbs = staging / "open_portal.vbs"
 shutil.copy2(src_ico, staged_ico)
-# UTF-8 BOM so PowerShell 5.1 reads the ⊕/❤ paths correctly.
-# Starts the three ❤Music servers if not already listening, then opens the portal.
-_music_server_lines = [
-    '$music = Get-NetTCPConnection -LocalPort 5050 -ErrorAction SilentlyContinue',
-    'if (-not $music) {',
-    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\analysis\\music_dashboard.py","--port","5050" -WindowStyle Hidden',
-    '}',
-    '$radio = Get-NetTCPConnection -LocalPort 8100 -ErrorAction SilentlyContinue',
-    'if (-not $radio) {',
-    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\radio\\tjd_radio.py","--port","8100" -WindowStyle Hidden',
-    '}',
-    '$guitar = Get-NetTCPConnection -LocalPort 5055 -ErrorAction SilentlyContinue',
-    'if (-not $guitar) {',
-    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\❤Music\\src\\training\\musician_training_ui.py","--port","5055" -WindowStyle Hidden',
-    '}',
-    '$fr = Get-NetTCPConnection -LocalPort 7474 -ErrorAction SilentlyContinue',
-    'if (-not $fr) {',
-    '    Start-Process "C:\\G\\python.exe" -ArgumentList "f:\\⊕Workspace\\src\\utils\\fr_server.py" -WindowStyle Hidden',
-    '}',
-    f'Start-Process "{portal_url}"',
-]
-staged_ps1.write_text("\n".join(_music_server_lines) + "\n", encoding="utf-8-sig")
+# UTF-8 BOM so PowerShell 5.1 reads the ⊕ path correctly.
+staged_ps1.write_text('& "f:\\⊕Workspace\\tools\\launch_portal.ps1"\n', encoding="utf-8-sig")
+# Use wscript to prevent any visible PowerShell console flash.
+vbs_cmd = f'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{staged_ps1}"'
+vbs_cmd_escaped = vbs_cmd.replace('"', '""')
+staged_vbs.write_text(
+    'Set WshShell = CreateObject("WScript.Shell")\n'
+    f'WshShell.Run "{vbs_cmd_escaped}", 0, False\n',
+    encoding="ascii",
+)
 
 # ── remove stale shortcuts ────────────────────────────────────────────────────
 for p in (tmp_lnk, final_lnk):
@@ -55,11 +44,11 @@ for p in (tmp_lnk, final_lnk):
         p.unlink()
 
 # ── create shortcut with ASCII-safe temp name ─────────────────────────────────
-powershell = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+wscript = r"C:\Windows\System32\wscript.exe"
 shell = win32com.client.Dispatch("WScript.Shell")
 sc = shell.CreateShortcut(str(tmp_lnk))
-sc.TargetPath       = powershell
-sc.Arguments        = f'-WindowStyle Hidden -NonInteractive -File "{staged_ps1}"'
+sc.TargetPath       = wscript
+sc.Arguments        = f'"{staged_vbs}"'
 sc.WindowStyle      = 7
 sc.WorkingDirectory = str(workspace / "reports")
 sc.IconLocation     = f"{staged_ico},0"
