@@ -72,6 +72,15 @@ foreach ($s in $servers) { Start-Server $s }
 
 $portalUri = "file:///" + ($PORTAL -replace "\\", "/")
 if (-not $NoOpen) {
+    # Wait for Executive service (:8200) before opening portal — prevents iframe
+    # connection-refused on first load (host-mismatch / sequencing fix FR-20260512).
+    $execPort = 8200
+    $execReady = Wait-PortListening -Port $execPort -TimeoutSeconds 15
+    if ($execReady) {
+        Write-Host "  [Executive] :$execPort ready." -ForegroundColor Green
+    } else {
+        Write-Host "  [Executive] :$execPort not ready after 15s — portal will show retry prompt." -ForegroundColor Yellow
+    }
     if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
     Write-Host "  Portal opened." -ForegroundColor Green
 } else {

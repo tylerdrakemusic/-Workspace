@@ -505,7 +505,7 @@ def _content_frames(manifest: dict) -> str:
     display = "block" if i == 0 else "none"
 
     if dash.get("id") == "biomarker-html":
-      live_url = _esc(dash.get("url", "http://127.0.0.1:8300"))
+      live_url = _esc(dash.get("url", "http://localhost:8300"))
       panes.append(
         f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
         f'<div class="live-dash">'
