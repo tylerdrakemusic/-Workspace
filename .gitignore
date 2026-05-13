@@ -55,6 +55,7 @@ logs/
 
 # Temp / cache
 *.download
+tmp/
 
 # Environment & secrets
 .env
