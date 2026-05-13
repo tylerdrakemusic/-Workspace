@@ -1,0 +1,26 @@
+{
+  "server": "sqlite-mcp",
+  "version": "1.0.0",
+  "default_mode": "read_only",
+  "write_policy": {
+    "requires_explicit_confirmation": true,
+    "allowed_databases": [
+      "workspace",
+      "heartmusic",
+      "quantum"
+    ],
+    "blocked_databases": [
+      "infinitelife"
+    ],
+    "blocked_operations": [
+      "DROP",
+      "TRUNCATE",
+      "ALTER"
+    ]
+  },
+  "notes": [
+    "Use read_query for all SELECT operations.",
+    "Never modify infinitelife database through MCP.",
+    "Use write_query only when explicitly requested by user."
+  ]
+}

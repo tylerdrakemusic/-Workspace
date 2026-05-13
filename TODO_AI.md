@@ -9,9 +9,9 @@
 MCP (Model Context Protocol) servers extend agent capabilities inside VS Code Copilot.
 These need analysis before install — let them soak.
 
-- [x] **Audit: inventory all currently active MCP servers** — Playwright MCP (`@playwright/mcp`) + GitHub MCP (`api.githubcopilot.com/mcp`) confirmed wired in `C:\Users\tyler\AppData\Roaming\Code\User\mcp.json`. Both active. (2026-04-24)
+- [x] **Audit: inventory all currently active MCP servers** — Playwright MCP (`@playwright/mcp`) + GitHub MCP (`api.githubcopilot.com/mcp`) + SQLite MCP confirmed active baseline in workspace tooling. (updated 2026-05-12)
 
-- [ ] **Research: identify gold-standard MCP servers for this workspace** — candidate list to evaluate:
+- [x] **Research: identify gold-standard MCP servers for this workspace** — complete. Registry published in `f:\⊕Workspace\MCP_REGISTRY.md` with weighted rubric, top-3 recommendations, and repo-visibility guardrails. (2026-05-12)
   - **Playwright MCP** (`@playwright/mcp`) — browser automation: headless print, web scraping, Spotify/DistroKid UI automation, screenshot capture for ❤Music 1-pagers
   - **Filesystem MCP** — structured file reads/writes across all project roots with path sandboxing
   - **SQLite MCP** — direct DB introspection for `heartmusic.db`, `infinitelife.db`, `agent_perf.db` without needing Python scripts
@@ -22,7 +22,7 @@ These need analysis before install — let them soak.
 
 - [x] **Decision: install Playwright MCP** — DONE. `@playwright/mcp@latest` wired in user-level `mcp.json`. FR-20260422-playwright-mcp-setup REVIEW_REQUESTED. (2026-04-24)
 
-- [ ] **Decision: install SQLite MCP** — direct DB queries from agent context without Python subprocess round-trips. Evaluate read-only vs. read-write mode for safety.
+- [x] **Decision: install SQLite MCP** — DONE. SQLite MCP is active and policy hardening is now documented in `src/config/mcp_sqlite_policy.json` (read-only-by-default + explicit write gates). (2026-05-12)
 
 - [x] **Decision: install GitHub MCP** — DONE. GitHub MCP (`api.githubcopilot.com/mcp`, type: http) wired in user-level `mcp.json`. Agents use it actively. (2026-04-24)
 
