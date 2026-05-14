@@ -75,13 +75,35 @@ f:\⊕Workspace\.worktrees\fix-FR-20260511-my-fix\
 ```
 
 `.worktrees/` is gitignored and VS Code-excluded — worktree contents are never
-committed. The pre-commit hook at `.github/hooks/scripts/pre-commit-worktree-guard.sh`
-blocks any accidental staging of `.worktrees/` paths.
+committed. The unified pre-commit hook at `.github/hooks/scripts/pre-commit`
+blocks worktree staging, scans for secrets, audits ∞Life health data, and
+runs smoke tests before every commit.
 
-**Install the hook once per fresh clone:**
+**Hook management uses `core.hooksPath` — no copying needed.**
+All 5 repos point to `.github/hooks/scripts/` as their hook directory.
+
+**Fresh clone / first-time setup:**
 ```powershell
-Copy-Item .github\hooks\scripts\pre-commit-worktree-guard.sh .git\hooks\pre-commit
-# Unix/macOS: chmod +x .git/hooks/pre-commit
+pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1
+```
+
+**Verify hook path for a repo:**
+```powershell
+git -C f:\<repo> config core.hooksPath
+# Expected: f:/.github/hooks/scripts
+```
+
+**CI agent startup check (run at the start of any commit workflow):**
+```powershell
+$repos = @("f:\⊕Workspace","f:\∞Life","f:\❤Music","f:\⟨ψ⟩Quantum","f:\👁AI-Manifest")
+foreach ($r in $repos) {
+    $hp = git -C $r config core.hooksPath 2>$null
+    if ($hp -ne "f:/.github/hooks/scripts") {
+        Write-Warning "$r is missing core.hooksPath — running install-hooks.ps1"
+        pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1
+        break
+    }
+}
 ```
 
 #### Batch worktree add SOP (single terminal session)
