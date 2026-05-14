@@ -346,7 +346,7 @@
     <div class="health-card clickable" onclick="switchDashById(9)">
       <div class="health-card-top">
         <span class="health-card-title">🔬 Agent Ops Health</span>
-        <span class="health-fresh fresh" title="Dashboard mtime">Generated 1m ago</span>
+        <span class="health-fresh fresh" title="Dashboard mtime">Generated 19s ago</span>
       </div>
       <div class="health-score-row">
         <div class="health-pct excellent">100<span class="pct-sym">%</span></div>
@@ -502,10 +502,11 @@
       <div class="server-row"><span class="server-dot" id="dot-5055"></span><span class="server-name">Guitar Trainer :5055</span><button class="server-launch" onclick="openServer(5055)" title="Open">&nearr;</button></div>
       <div class="server-row"><span class="server-dot" id="dot-5065"></span><span class="server-name">Studio Equipment :5065</span><button class="server-launch" onclick="openServer(5065)" title="Open">&nearr;</button></div>
       <div class="server-row"><span class="server-dot" id="dot-8200"></span><span class="server-name">Executive :8200</span><button class="server-launch" onclick="openServer(8200)" title="Open">&nearr;</button></div>
+      <div class="server-row"><span class="server-dot" id="dot-8765"></span><span class="server-name">Band Management :8765</span><button class="server-launch" onclick="openServer(8765)" title="Open">&nearr;</button></div>
       <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#9889; Start all servers</button></div>
     </div>
     <div class="sidebar-footer">
-      Generated 2026-05-12 19:45:44 &middot; 14 dashboards<br>
+      Generated 2026-05-13 21:24:27 &middot; 14 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
@@ -516,7 +517,7 @@
 <div class="dash-pane" id="pane-3" style="display:none"><iframe src="http://localhost:5055" frameborder="0" allow="autoplay"></iframe></div>
 <div class="dash-pane" id="pane-4" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8100" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8100" frameborder="0" class="live-frame" allow="autoplay" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-5" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:5065" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:5065" frameborder="0" class="live-frame" allow="autoplay" onerror="this.style.display='none'"></iframe></div></div>
-<div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8200" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe id="exec-frame" src="http://localhost:8200" frameborder="0" class="live-frame" allow="autoplay" onerror="this.style.display='none';document.getElementById('exec-retry-msg').style.display='block'"></iframe><div id="exec-retry-msg" style="display:none;padding:1.2rem;color:#aaa;font-size:0.9rem;">Executive service not ready on :8200. <a href="http://localhost:8200" target="_blank" style="color:#7eb8f7;">Open directly ↗</a> &nbsp;|&nbsp; <a href="#" onclick="document.getElementById('exec-frame').src='http://localhost:8200';document.getElementById('exec-retry-msg').style.display='none';return false;" style="color:#7eb8f7;">Retry</a></div></div></div>
+<div class="dash-pane" id="pane-6" style="display:none"><div class="live-dash"><div class="live-header"><span class="live-dot"></span> Live Dashboard<a href="http://localhost:8200" target="_blank" class="open-btn">Open in Browser ↗</a></div><iframe src="http://localhost:8200" frameborder="0" class="live-frame" allow="autoplay" onerror="this.style.display='none'"></iframe></div></div>
 <div class="dash-pane" id="pane-7" style="display:none"><iframe src="portal_quantum-benchmarks.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-8" style="display:none"><iframe src="fr_dashboard.html" frameborder="0"></iframe></div>
 <div class="dash-pane" id="pane-9" style="display:none"><iframe src="agent_ops_dashboard.html" frameborder="0"></iframe></div>
@@ -687,7 +688,7 @@
         pollServers();
       }, 9000);
     }
-    const SERVERS = [{"port": 5050, "name": "Music Dashboard"}, {"port": 8100, "name": "TJD Radio"}, {"port": 5055, "name": "Guitar Trainer"}, {"port": 5065, "name": "Studio Equipment"}, {"port": 8200, "name": "Executive"}];
+    const SERVERS = [{"port": 5050, "name": "Music Dashboard"}, {"port": 8100, "name": "TJD Radio"}, {"port": 5055, "name": "Guitar Trainer"}, {"port": 5065, "name": "Studio Equipment"}, {"port": 8200, "name": "Executive"}, {"port": 8765, "name": "Band Management"}];
     async function probe(url, timeoutMs) {
       try {
         const ctrl = new AbortController();
