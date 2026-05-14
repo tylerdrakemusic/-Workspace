@@ -10,16 +10,16 @@
 - **Type:** feature (observability/UI)
 - **Risk:** low
 - **Projects:** ⟨ψ⟩Quantum
-- **State:** BRANCHED
+- **State:** MERGED
 - **Branch:** feature/quantum/fr-20260513-quantum-entropy-sync-panel
 - **PRs:** [#18](https://github.com/tylerdrakemusic/Quantum/pull/18)
 - **Cycle timer:** f8a1c3e5-b7d9-4f21-9a83-c62e10475d8b
 - **Opened:** 2026-05-13
 - **Last updated:** 2026-05-13
-- **Merged at:** —
+- **Merged at:** 2026-05-13 (4569ff1)
 - **Signed off at:** —
 - **Closed:** —
-- **Final state:** —
+- **Final state:** MERGED
 
 ### Acceptance Criteria
 
@@ -87,3 +87,4 @@
 |------|-------|-------|
 | 2026-05-13 | FR opened, triage complete → TRIAGED. Tyler confirmed scope including VQE amendment. | ⊕workspace-intake |
 | 2026-05-13 | Branch created, draft PR opened → BRANCHED | ⊕workspace-ci |
+| 2026-05-13 | Tyler approved → squash-merged Quantum#18 → MERGED (4569ff1) | ⊕workspace-ci |
