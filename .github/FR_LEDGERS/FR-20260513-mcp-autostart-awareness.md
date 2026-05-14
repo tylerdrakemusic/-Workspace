@@ -10,13 +10,13 @@
 - **Type:** chore
 - **Risk:** medium
 - **Projects:** ⊕Workspace (primary), ∞life-orchestrator, ❤music-orchestrator, ⟨ψ⟩quantum-orchestrator, 👁ai-manifest-orchestrator
-- **State:** BRANCHED
+- **State:** MERGED
 - **Branch:** chore/workspace/fr-20260513-mcp-autostart-awareness
-- **PRs:** [-Workspace#143](https://github.com/tylerdrakemusic/-Workspace/pull/143) (draft)
+- **PRs:** [-Workspace#143](https://github.com/tylerdrakemusic/-Workspace/pull/143) (squash 6d340bbc)
 - **Cycle timer:** 65c276af-6bc2-46e1-96db-ccc19f79e871
 - **Opened:** 2026-05-13
-- **Last updated:** 2026-05-13
-- **Merged at:** —
+- **Last updated:** 2026-05-13 (MERGED)
+- **Merged at:** 2026-05-13
 - **Signed off at:** —
 - **Closed:** —
 - **Final state:** —
@@ -81,3 +81,44 @@
 - Draft PR opened on tylerdrakemusic/-Workspace
 - Registry updated: TRIAGED → BRANCHED
 - Ledger created with full triage context; BRANCHED state recorded
+
+---
+
+### 2026-05-13T00:00:00Z — Tyler
+
+**Event:** approval
+
+**Summary:** Tyler approved PR#143 for merge
+
+**Details:**
+- Approval given via chat: "Tyler has approved PR#143 on tylerdrakemusic/-Workspace for FR-20260513-mcp-autostart-awareness"
+- CI check `test` confirmed green (completed/success) before merge
+
+---
+
+### 2026-05-13T00:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition → MERGED
+
+**Summary:** PR#143 squash-merged to main; FR now live on main
+
+**Details:**
+- Merge method: squash
+- Merge SHA: `6d340bbc58a95a1d2b3bed33d04c370b995d3428`
+- Commit title: `chore: MCP server auto-start awareness (FR-20260513-mcp-autostart-awareness) (#143)`
+- PR marked ready-for-review (was draft) then merged
+- Registry updated: BRANCHED → MERGED
+- Ledger updated: State → MERGED, Merged at → 2026-05-13
+
+---
+
+### 2026-05-13T00:00:00Z — ⊕workspace-ci
+
+**Event:** state-transition → SOAKING
+
+**Summary:** FR is now live on main — awaiting Tyler's post-merge signoff
+
+**Details:**
+- All deliverables shipped: `mcp.json` autoStart flags, VS Code startup task, `mcp_status.json` writer, MCP pre-flight blocks in all 5 orchestrator agent files
+- FR is now SOAKING: Tyler should use the workspace normally for a session or two and confirm MCP servers auto-start reliably on workspace open
+- To complete signoff: tell `@⊕workspace-ci` "sign off FR-20260513-mcp-autostart-awareness" — this will transition the state to SIGNED_OFF → ARCHIVED and close the cycle timer
