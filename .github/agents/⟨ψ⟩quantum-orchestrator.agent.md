@@ -10,7 +10,11 @@ description: "Top-level coordinator for the âŸ¨ÏˆâŸ©Quantum project. Dec
 
 You are the top-level coordinator for the âŸ¨ÏˆâŸ©Quantum project. Understand the request, decompose into subtasks, delegate to specialist agents, and synthesize results.
 
-**Context bootstrap:** follow `âŸ¨ÏˆâŸ©quantum-base.instructions.md` â€” read AGENT_STARTUP.md + PROJECT_PROFILE.json first.
+**Context bootstrap:** follow `⟨ψ⟩quantum-base.instructions.md` — read AGENT_STARTUP.md + PROJECT_PROFILE.json first.
+
+**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. For each server with `status: error`, warn:
+> ⚠️ MCP server `<name>` is down — falling back to built-in tools (`grep_search`, `file_search`, `read_file`). Start it in the VS Code MCP panel if full capability is needed.
+If the file is absent, skip silently.
 
 ## Agent Discovery
 **Do not hardcode agent names.** Discover dynamically by scanning `f:\.github\agents\âŸ¨ÏˆâŸ©quantum-*.agent.md`. Read each agent's `description` frontmatter for capabilities.

@@ -30,5 +30,35 @@
 		"search.exclude": {
 			"**/.worktrees": true
 		}
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "MCP: Check & write server status",
+				"type": "shell",
+				"command": "C:\\G\\python.exe",
+				"args": [
+					"${workspaceFolder:⊕Workspace}\\src\\utils\\mcp_status.py"
+				],
+				"options": {
+					"env": {
+						"PYTHONUTF8": "1"
+					}
+				},
+				"presentation": {
+					"echo": true,
+					"reveal": "silent",
+					"focus": false,
+					"panel": "shared",
+					"showReuseMessage": false,
+					"clear": false
+				},
+				"runOptions": {
+					"runOn": "folderOpen"
+				},
+				"problemMatcher": []
+			}
+		]
 	}
 }

@@ -81,12 +81,15 @@ minimize approval gates.
 - `test_pass` â€” for passing test suites
 
 ## Context Bootstrap
-1. **Start perf run** (see above â€” this is step zero)
-2. Read `f:\.github\copilot-instructions.md` for workspace conventions
-3. Read `f:\SYSTEM_SPECS.md` for hardware constraints, Python path, parallelism capacity, and security posture
-4. Discover all orchestrator agents: scan `f:\.github\agents\*-orchestrator.agent.md`
-5. Discover all workspace agents: scan `f:\.github\agents\âŠ•workspace-*.agent.md`
-6. Read each project's `AGENT_STARTUP.md` for project-specific context as needed
+1. **Start perf run** (see above — this is step zero)
+2. **MCP pre-flight** — read `f:\⊕Workspace\src\config\mcp_status.json` (written at workspace open by the VS Code startup task). For each server whose `status` is `error`, emit a warning:
+   > ⚠️ MCP server `<name>` is down — falling back to built-in tools (`grep_search`, `file_search`, `read_file`). Start it manually via VS Code MCP panel if full capability is needed.
+   If the file doesn't exist yet, skip silently (first-open race condition).
+3. Read `f:\.github\copilot-instructions.md` for workspace conventions
+4. Read `f:\SYSTEM_SPECS.md` for hardware constraints, Python path, parallelism capacity, and security posture
+5. Discover all orchestrator agents: scan `f:\.github\agents\*-orchestrator.agent.md`
+6. Discover all workspace agents: scan `f:\.github\agents\⊕workspace-*.agent.md`
+7. Read each project's `AGENT_STARTUP.md` for project-specific context as needed
 
 ## Agent & Project Discovery
 

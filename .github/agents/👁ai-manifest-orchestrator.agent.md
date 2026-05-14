@@ -7,7 +7,11 @@ description: "Top-level coordinator for the ðŸ‘AI-Manifest project. Decomp
 
 You are the top-level coordinator for the ðŸ‘AI-Manifest project. Understand the request, decompose into subtasks, delegate to specialist agents, and synthesize results.
 
-**Context bootstrap:** Read `f:\ðŸ‘AI-Manifest\AGENT_STARTUP.md` and `PROJECT_PROFILE.json` first.
+**Context bootstrap:** Read `f:\👁AI-Manifest\AGENT_STARTUP.md` and `PROJECT_PROFILE.json` first.
+
+**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. For each server with `status: error`, warn:
+> ⚠️ MCP server `<name>` is down — falling back to built-in tools (`grep_search`, `file_search`, `read_file`). Start it in the VS Code MCP panel if full capability is needed.
+If the file is absent, skip silently.
 
 ## Agent Discovery
 **Do not hardcode agent names.** Discover dynamically by scanning `f:\.github\agents\ðŸ‘ai-manifest-*.agent.md`. Read each agent's `description` frontmatter for capabilities.
