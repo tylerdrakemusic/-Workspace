@@ -12,7 +12,7 @@
 - **Projects:** ⊕Workspace (primary), ∞life-orchestrator, ❤music-orchestrator, ⟨ψ⟩quantum-orchestrator, 👁ai-manifest-orchestrator
 - **State:** BRANCHED
 - **Branch:** chore/workspace/fr-20260513-mcp-autostart-awareness
-- **PRs:** pending (draft opening)
+- **PRs:** [-Workspace#143](https://github.com/tylerdrakemusic/-Workspace/pull/143) (draft)
 - **Cycle timer:** 65c276af-6bc2-46e1-96db-ccc19f79e871
 - **Opened:** 2026-05-13
 - **Last updated:** 2026-05-13
