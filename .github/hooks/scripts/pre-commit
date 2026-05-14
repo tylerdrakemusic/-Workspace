@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# pre-commit — unified workspace pre-commit hook
+# FR-20260513-hooks-setup
+#
+# Runs via core.hooksPath (no copying needed):
+#   git config core.hooksPath f:/.github/hooks/scripts   (Windows)
+#   git config core.hooksPath /f/.github/hooks/scripts   (Git bash on Windows)
+#
+# Checks: worktree guard | secret scan | ∞Life health data audit | smoke tests
+
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Detect Python executable
+if [ -f "C:/G/python.exe" ]; then
+    PYTHON="C:/G/python.exe"
+elif command -v python3 &>/dev/null 2>&1; then
+    PYTHON="python3"
+else
+    PYTHON="python"
+fi
+
+# ── 1. Worktree guard ────────────────────────────────────────────────────────
+BLOCKED=$(git diff --cached --name-only | grep -E "^\.worktrees/" || true)
+if [[ -n "$BLOCKED" ]]; then
+    echo ""
+    echo "❌ pre-commit [worktree-guard]: .worktrees/ paths must never be committed."
+    echo "   Blocked files:"
+    echo "$BLOCKED" | sed 's/^/     /'
+    echo "   Run: git restore --staged <file>  to unstage."
+    echo ""
+    exit 1
+fi
+
+# ── 2. Secret scan ──────────────────────────────────────────────────────────
+"$PYTHON" "$HOOK_DIR/secret_scan.py" || exit 1
+
+# ── 3. ∞Life health data audit (∞Life repo only) ────────────────────────────
+REPO_NAME="$(basename "$REPO_ROOT")"
+if [[ "$REPO_NAME" == *"Life"* ]] || [[ "$REPO_ROOT" == *"∞Life"* ]] || [[ "$REPO_ROOT" == *"\xe2\x88\x9eLife"* ]]; then
+    "$PYTHON" "$HOOK_DIR/health_data_audit.py" || exit 1
+fi
+
+# ── 4. Smoke tests ──────────────────────────────────────────────────────────
+"$PYTHON" "$HOOK_DIR/smoke_test_gate.py" || exit 1
+
+echo "✅ pre-commit checks passed."
+exit 0
