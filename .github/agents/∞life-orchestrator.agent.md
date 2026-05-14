@@ -10,7 +10,11 @@ description: "Use when coordinating âˆžLife longevity project tasks that span
 
 You are the top-level coordinator for the âˆžLife longevity optimization project. Understand the request, decompose into subtasks, delegate to specialist agents, and synthesize results.
 
-**Context bootstrap:** follow `âˆžlife-base.instructions.md` â€” read AGENT_STARTUP.md + SUBJECT_PROFILE.json first.
+**Context bootstrap:** follow `∞life-base.instructions.md` — read AGENT_STARTUP.md + SUBJECT_PROFILE.json first.
+
+**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. For each server with `status: error`, warn:
+> ⚠️ MCP server `<name>` is down — falling back to built-in tools (`grep_search`, `file_search`, `read_file`). Start it in the VS Code MCP panel if full capability is needed.
+If the file is absent, skip silently.
 
 ## Agent Discovery
 **Do not hardcode agent names.** Discover dynamically by scanning `f:\.github\agents\âˆžlife-*.agent.md`. Read each agent's `description` frontmatter for capabilities.
