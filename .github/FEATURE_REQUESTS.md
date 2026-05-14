@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260513-mcp-autostart-awareness | MCP Server Auto-Start Awareness | chore | ⊕Workspace + all 5 orchestrators | BRANCHED | chore/workspace/fr-20260513-mcp-autostart-awareness | pending | ⊕workspace-ci | 2026-05-13 | 2026-05-13 |
 | FR-20260513-hooks-setup | Better hooks setup for all workspace repos | chore | All 5 projects | MERGED | `6370177` | [#139](https://github.com/tylerdrakemusic/-Workspace/pull/139) | ⊕workspace-ci | 2026-05-13 | 2026-05-13 |
 | FR-20260513-quantum-entropy-sync-panel | ⟨ψ⟩Quantum Benchmark Dashboard — Quantum Entropy Cache Fill + VQE Sync Status Panel | feature | ⟨ψ⟩Quantum | MERGED | feature/quantum/fr-20260513-quantum-entropy-sync-panel | [#18](https://github.com/tylerdrakemusic/Quantum/pull/18) (merged 4569ff1) | ⟨ψ⟩quantum-orchestrator | 2026-05-13 | 2026-05-13 |
 | FR-20260512-workspace-mcp-registry | Gold-Standard MCP Registry: evaluate and document 5-10 production MCP servers | chore + research | ?Workspace | REVIEW_REQUESTED | chore/workspace/fr-20260512-workspace-mcp-registry | [?Workspace draft-create](https://github.com/tylerdrakemusic/-Workspace/pull/new/chore/workspace/fr-20260512-workspace-mcp-registry) | ?workspace-reviewer | 2026-05-12 | 2026-05-12 |
