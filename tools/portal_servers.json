@@ -35,6 +35,13 @@
                         "project":  "👁AI-Manifest",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_executive_brief.ps1",
                         "enabled":  true
+                    },
+                    {
+                        "name":  "Band Management",
+                        "port":  8765,
+                        "project":  "❤Music",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_band_mgmt.ps1",
+                        "enabled":  true
                     }
                 ]
 }
