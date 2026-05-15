@@ -89,11 +89,21 @@ _FP_PATTERNS = [
     re.compile(r'Image\.eval\s*\('),
     # Test fixtures with fake keys
     re.compile(r'api_key\s*=\s*["\']test-key'),
+    # Explicit fake keys passed as method args in tests (e.g. api_key="sk-explicit")
+    re.compile(r'api_key\s*=\s*["\'][a-zA-Z0-9]+-explicit'),
     # String matching/docs referencing http://
     re.compile(r'startswith\s*\(\s*["\']http://'),
     re.compile(r'["\']URL must start with'),
     # random_token = "fallback" (not a real secret)
     re.compile(r'random_token\s*=\s*["\']fallback'),
+    # eval/exec/shell=True inside re.compile() string literals (scan pattern definitions)
+    re.compile(r're\.compile\s*\('),
+    # localhost and 127.0.0.1 http URLs are intentional (local services)
+    re.compile(r'http://(?:localhost|127\.0\.0\.1)'),
+    # http:// inside test parametrize/fixture strings for local test servers
+    re.compile(r'["\']http://(?:localhost|127\.0\.0\.1|0\.0\.0\.0)'),
+    # SCAN_PATTERNS list itself — pattern strings flagged by their own rules
+    re.compile(r'SCAN_PATTERNS'),
 ]
 
 
@@ -108,9 +118,16 @@ def run_owasp_scan() -> list[dict]:
         if not root.exists():
             continue
         for pyfile in root.rglob("*.py"):
-            # Skip test files, clones, __pycache__
+            # Skip venvs, worktrees, clones, __pycache__
             rel = str(pyfile)
-            if "__pycache__" in rel or "pyClones" in rel:
+            if (
+                "__pycache__" in rel
+                or "pyClones" in rel
+                or "\.venv\\" in rel
+                or "/.venv/" in rel
+                or "\.worktrees\\" in rel
+                or "/.worktrees/" in rel
+            ):
                 continue
             try:
                 lines = pyfile.read_text(encoding="utf-8", errors="replace").splitlines()

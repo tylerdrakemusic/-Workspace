@@ -60,7 +60,7 @@ def _sqlcipher_conn(db_path: Path, env_key: str):
         return None
     conn = sqlcipher3.connect(str(db_path))
     safe_key = key.replace("'", "''")
-    conn.execute(f"PRAGMA key='{safe_key}'")
+    conn.execute(f"PRAGMA key='{safe_key}'")  # nosec B608 — quote-escaped env-var key, no user input
     conn.execute("PRAGMA cipher_page_size=4096")
     conn.execute("PRAGMA kdf_iter=256000")
     conn.execute("PRAGMA cipher_hmac_algorithm=HMAC_SHA512")
