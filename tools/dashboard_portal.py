@@ -504,20 +504,6 @@ def _content_frames(manifest: dict) -> str:
   for i, dash in enumerate(manifest["dashboards"]):
     display = "block" if i == 0 else "none"
 
-    if dash.get("id") == "biomarker-html":
-      live_url = _esc(dash.get("url", "http://localhost:8300"))
-      panes.append(
-        f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-        f'<div class="live-dash">'
-        f'<div class="live-header">'
-        f'<span class="live-dot"></span> Live Dashboard'
-        f'<a href="{live_url}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-        f'<iframe src="{live_url}" frameborder="0" class="live-frame" allow="autoplay" '
-        f'onerror="this.style.display=\'none\'"></iframe>'
-        f'</div></div>'
-      )
-      continue
-
     if dash["type"] in ("static_html", "living_html"):
       out = dash.get("output_abs", "")
       if out and Path(out).exists():
