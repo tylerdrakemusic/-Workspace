@@ -1,4 +1,5 @@
 """Shared pytest fixtures for ⊕Workspace tests."""
+import os
 import sqlite3
 import sys
 import time
@@ -10,6 +11,15 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "utils"))
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip playwright-marked tests unless PLAYWRIGHT_ENABLED=1 is set."""
+    if os.getenv("PLAYWRIGHT_ENABLED") != "1":
+        skip = pytest.mark.skip(reason="Set PLAYWRIGHT_ENABLED=1 to run Playwright tests")
+        for item in items:
+            if item.get_closest_marker("playwright"):
+                item.add_marker(skip)
 
 
 # Schema mirrors src/utils/init_db.py (SQLCipher stripped — plain sqlite for tests).

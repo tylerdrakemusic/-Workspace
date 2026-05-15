@@ -51,7 +51,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → ARCHITECTURE_REVIEW → REVIEW
 | `BRANCHED` | Isolated branch + worktree + draft PR created per repo | ⊕workspace-ci |
 | `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
 | `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
-| `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. | project orchestrator |
+| `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Before transitioning here, if the diff touches any `*.html` output file the orchestrator MUST run `pytest -m playwright` locally and record a proof artifact via `proof_cli.py`. Missing Playwright proof triggers a Gate 7 hard block in `⊕workspace-reviewer`. | project orchestrator |
 | `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof). Required `test` status check must be green before merge can be attempted. | ⊕workspace-reviewer |
 | `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
 | `CHANGES_REQUESTED` | Auto-review or Tyler requested fixes | ⊕workspace-reviewer / Tyler |

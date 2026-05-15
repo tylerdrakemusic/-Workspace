@@ -74,6 +74,19 @@ make his final approval decision.
   implementer must have demonstrated it. Verify the demo artifact exists
   (screenshot, generated file, DB query result, CLI output log).
 
+### Gate 7: UI Validation (HARD BLOCK when HTML files in diff)
+- Inspect the PR diff: if any file matching `*.html` or `output/**` is modified
+  or created, a Playwright validation proof artifact MUST exist for this FR.
+- Acceptable proof: a `command_output` or `test_pass` proof artifact from
+  `pytest -m playwright` recorded by the implementation agent via `proof_cli.py`.
+- If the diff touches HTML and no `playwright` proof artifact exists →
+  **REQUEST_CHANGES**: "Gate 7 failed — UI changes detected but no Playwright
+  validation proof recorded. Run `pytest -m playwright` locally and record proof
+  before requesting review."
+- If the diff does NOT touch HTML output files → Gate 7 is `N/A` (auto-pass).
+- Playwright tests live in `<project>/tests/test_*_playwright.py` and require
+  `PLAYWRIGHT_ENABLED=1` set locally (default off in CI to avoid Chromium install).
+
 ## Decision Logic
 
 - All gates pass → `APPROVE` with a summary comment
@@ -81,6 +94,7 @@ make his final approval decision.
 - Any failing test → `REQUEST_CHANGES`
 - Scope drift or missing acceptance criteria → `REQUEST_CHANGES`
 - Missing proof or demo → `REQUEST_CHANGES`
+- HTML files in diff with no Playwright proof → `REQUEST_CHANGES` (Gate 7 hard block)
 - `.worktrees/` path in diff → `REQUEST_CHANGES` (hard block)
 - Minor nits only (style, comments, non-blocking) → `COMMENT` with suggestions,
   Tyler decides
@@ -114,6 +128,7 @@ Post ONE top-level review per PR with the full structured report.
 | Tests | ✅ / ⚠️ / ❌ | ... |
 | Proof-in-the-pudding | ✅ / ⚠️ / ❌ | ... |
 | Demo | ✅ / ⚠️ / ❌ | ... |
+| UI Validation (Playwright) | ✅ / ⚠️ / ❌ / N/A | ... |
 
 ## Acceptance Criteria Check
 1. <criterion> — ✅ satisfied by <evidence>
