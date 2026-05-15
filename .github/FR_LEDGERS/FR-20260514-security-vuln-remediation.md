@@ -2,7 +2,7 @@
 
 **Title:** Security Vulnerability Dashboard — Scanner Exclusion Fix + Full Remediation Sprint (1505 → 0 open)
 **Type:** `security-fix + chore`
-**State:** `BRANCHED`
+**State:** `MERGED`
 **Opened:** 2026-05-14
 **Updated:** 2026-05-14
 **Owner:** ⊕workspace-overseer → route to ⊕workspace-ci
@@ -118,3 +118,4 @@ All 5: ⊕Workspace, ∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest
 | 2026-05-14 | OPEN | Tyler filed via ⊕workspace-intake |
 | 2026-05-14 | TRIAGED | Scope confirmed by Tyler; 1505 findings analyzed; 73 real, 1432 FP |
 | 2026-05-14 | BRANCHED | All 5 fix branches created and pushed; draft PRs opened by ⊕workspace-ci |
+| 2026-05-14 | MERGED | Tyler approved; all 5 PRs merged (squash): -Workspace#151→8835864, Life#29→7f1425d, Music#49→ad327f8, Quantum#21→39c6c5c, AI-Manifest#31→86c9b98 |
