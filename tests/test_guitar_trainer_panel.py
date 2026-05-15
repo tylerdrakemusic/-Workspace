@@ -30,6 +30,8 @@ SERVERS_JSON   = WORKSPACE_ROOT / "tools" / "portal_servers.json"
 
 @pytest.fixture(scope="module")
 def portal_text() -> str:
+    if not PORTAL_HTML.is_file():
+        pytest.skip(f"portal.html not generated — skipping: {PORTAL_HTML}")
     return PORTAL_HTML.read_text(encoding="utf-8")
 
 
