@@ -94,15 +94,15 @@ VALID_DBS = list(DB_REGISTRY.keys())
 
 def _apply_pragmas(conn: sqlcipher3.Connection, pragmas: dict) -> None:
     for pragma, val in pragmas.items():
-        conn.execute(f"PRAGMA {pragma}={val}")
+        conn.execute(f"PRAGMA {pragma}={val}")  # nosec B608 — pragma names/values from hardcoded config dict
 
 
 def _try_key(conn: sqlcipher3.Connection, key: str, hex_mode: bool, pragmas: dict) -> bool:
     """Apply key + pragmas and probe sqlite_master. Returns True on success."""
     if hex_mode:
-        conn.execute(f"PRAGMA key=\"x'{key.encode().hex()}'\"")
+        conn.execute(f"PRAGMA key=\"x'{key.encode().hex()}'\"")  # nosec B608 — hex-encoded env-var key
     else:
-        conn.execute(f"PRAGMA key='{key.replace(chr(39), chr(39)*2)}'")
+        conn.execute(f"PRAGMA key='{key.replace(chr(39), chr(39)*2)}'")  # nosec B608 — quote-escaped env-var key
     _apply_pragmas(conn, pragmas)
     try:
         conn.execute("SELECT name FROM sqlite_master LIMIT 1").fetchone()
@@ -183,7 +183,7 @@ def list_tables(db: str) -> str:
         for row in tables:
             tname = row[0]
             try:
-                count = conn.execute(f"SELECT COUNT(*) FROM [{tname}]").fetchone()[0]
+                count = conn.execute(f"SELECT COUNT(*) FROM [{tname}]").fetchone()[0]  # nosec B608 — tname from sqlite_master (trusted)
             except Exception:
                 count = "?"
             lines.append(f"  {tname} ({count} rows)")
@@ -205,7 +205,7 @@ def describe_table(db: str, table: str) -> str:
         return "Error: invalid table name."
     conn = _open_db(db)
     try:
-        rows = conn.execute(f"PRAGMA table_info([{table}])").fetchall()
+        rows = conn.execute(f"PRAGMA table_info([{table}])").fetchall()  # nosec B608 — table validated by ^[A-Za-z0-9_]+$ allowlist
         if not rows:
             return f"[{db}.{table}] Table not found or has no columns."
         lines = [f"[{db}.{table}] Schema:"]
