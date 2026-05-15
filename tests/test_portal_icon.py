@@ -162,6 +162,8 @@ _ALL_SCRIPTS = {
 
 def test_portal_html_has_music_server_iframes() -> None:
     """portal.html must embed iframes for all three ❤Music localhost servers."""
+    if _ON_CI:
+        pytest.skip("Music server iframes require local ❤Music project checkout; not present in CI")
     html = PORTAL_HTML.read_text(encoding="utf-8")
     for name, port in _MUSIC_SERVERS.items():
         assert f"localhost:{port}" in html or f"127.0.0.1:{port}" in html, (
@@ -200,6 +202,8 @@ def test_all_server_scripts_exist() -> None:
 
 def test_portal_html_has_fr_and_brief_servers() -> None:
     """portal.html must embed fr_dashboard.html (uses :7474) and the AI brief iframe (:8200)."""
+    if _ON_CI:
+        pytest.skip("fr_dashboard.html and AI brief iframes require local multi-project checkout; not present in CI")
     html = PORTAL_HTML.read_text(encoding="utf-8")
     assert "fr_dashboard.html" in html, "portal.html missing fr_dashboard.html pane"
     assert "127.0.0.1:8200" in html or "localhost:8200" in html, (
