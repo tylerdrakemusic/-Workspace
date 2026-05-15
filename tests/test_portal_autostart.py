@@ -33,6 +33,8 @@ REGISTER_PROTOCOL_PS = WORKSPACE_ROOT / "tools" / "register_portal_protocol.ps1"
 
 @pytest.fixture(scope="module")
 def portal_text() -> str:
+    if not PORTAL_HTML.is_file():
+        pytest.skip(f"portal.html not generated — skipping: {PORTAL_HTML}")
     return PORTAL_HTML.read_text(encoding="utf-8")
 
 

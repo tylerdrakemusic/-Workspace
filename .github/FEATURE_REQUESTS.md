@@ -30,6 +30,7 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
+| FR-20260513-rhyme-grouper-ui | Lyrics vault SQLite migration + CRUD UI with phonetic grouping | feature | ❤Music | MERGED | feature/music/fr-20260513-rhyme-grouper-ui | [Music#46](https://github.com/tylerdrakemusic/Music/pull/46) (merged de70286) | ❤music-orchestrator | 2026-05-13 | 2026-05-13 |
 | FR-20260513-mcp-autostart-awareness | MCP Server Auto-Start Awareness | chore | ⊕Workspace + all 5 orchestrators | BRANCHED | chore/workspace/fr-20260513-mcp-autostart-awareness | [-Workspace#143](https://github.com/tylerdrakemusic/-Workspace/pull/143) (draft) | ⊕workspace-ci | 2026-05-13 | 2026-05-13 |
 | FR-20260513-hooks-setup | Better hooks setup for all workspace repos | chore | All 5 projects | MERGED | `6370177` | [#139](https://github.com/tylerdrakemusic/-Workspace/pull/139) | ⊕workspace-ci | 2026-05-13 | 2026-05-13 |
 | FR-20260513-quantum-entropy-sync-panel | ⟨ψ⟩Quantum Benchmark Dashboard — Quantum Entropy Cache Fill + VQE Sync Status Panel | feature | ⟨ψ⟩Quantum | MERGED | feature/quantum/fr-20260513-quantum-entropy-sync-panel | [#18](https://github.com/tylerdrakemusic/Quantum/pull/18) (merged 4569ff1) | ⟨ψ⟩quantum-orchestrator | 2026-05-13 | 2026-05-13 |

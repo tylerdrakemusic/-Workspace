@@ -81,8 +81,16 @@ fr_dashboard_*.png
 src/data/portal_icon.png
 src/data/portal_icon.ico
 
+# Runtime state — regenerated on workspace open; not committed
+src/config/mcp_status.json
+
+# Loose images at workspace root (generated/playwright artifacts)
+*.png
+
 # generated dump artifacts
 reports/all_diagrams_dump.txt
+reports/*.html
+reports/diagrams/*.svg
 
 # Workspace-local git worktrees (FR-20260511-worktree-local-migration)
 # Worktrees live at .worktrees/{branch-slug}/ — gitignored and IDE-excluded.

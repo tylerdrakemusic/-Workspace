@@ -18,7 +18,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-WORKSPACE_ROOT = Path("f:/")
+# Derive workspace root dynamically: this file is tools/dashboard_registry.py
+# inside one of the project repos; its parent.parent.parent is the root that
+# contains all sibling project directories.
+WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Known project roots — discovered dynamically via AGENT_STARTUP.md presence
 REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
