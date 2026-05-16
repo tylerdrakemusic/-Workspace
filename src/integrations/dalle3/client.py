@@ -1,4 +1,4 @@
-"""DALL-E 3 image generation client.
+"""OpenAI image generation client (gpt-image-1).
 
 Self-contained: reads OPENAPI_TOKEN from environment.
 No dependency on any per-project config.
@@ -7,17 +7,21 @@ Usage (from any workspace project)::
 
     import sys
     from pathlib import Path
-    sys.path.insert(0, str(Path(r"f:\\⊕Workspace")))
+    sys.path.insert(0, str(Path(r"f:\\\\⊕Workspace")))
     from src.integrations.dalle3 import DallE3Client
 
     client = DallE3Client()
     path = client.generate_image("a professional portrait", size="1024x1024")
     print(path)  # f:\\...\\output\\images\\<sha256>.png
+
 Notes
 -----
-- ``response_format`` is no longer passed in the request payload — the parameter
-  was removed from the OpenAI images API.  The client handles both ``b64_json``
-  (current default) and ``url`` (legacy) response shapes automatically."""
+- The ``dall-e-3`` model was removed from the OpenAI API.  This client now
+  defaults to ``gpt-image-1`` which is the current standard image model.
+- ``response_format`` is no longer passed in the request payload — the
+  parameter was removed.  The client handles both ``b64_json`` (current
+  default) and ``url`` (legacy) response shapes automatically.
+"""
 
 from __future__ import annotations
 
@@ -32,7 +36,7 @@ import httpx
 DALLE3_URL = "https://api.openai.com/v1/images/generations"
 DEFAULT_SIZE: Literal["1024x1024", "1024x1792", "1792x1024"] = "1024x1024"
 DEFAULT_QUALITY: Literal["standard", "hd"] = "standard"
-DEFAULT_MODEL = "dall-e-3"
+DEFAULT_MODEL = "gpt-image-1"
 REQUEST_TIMEOUT = 60.0  # seconds
 
 
@@ -41,7 +45,7 @@ class DallE3Error(RuntimeError):
 
 
 class DallE3Client:
-    """Thin wrapper around the OpenAI DALL-E 3 images/generations endpoint.
+    """Thin wrapper around the OpenAI images/generations endpoint.
 
     API key resolution order:
     1. ``api_key`` constructor argument
@@ -84,12 +88,12 @@ class DallE3Client:
             Directory to save the image. Created if absent.
             Defaults to ``<cwd>/output/images/``.
         size:
-            Image dimensions. DALL-E 3 supports ``1024x1024``,
+            Image dimensions. ``1024x1024``,
             ``1024x1792``, and ``1792x1024``.
         quality:
             ``"standard"`` or ``"hd"`` (costs 2× tokens).
         model:
-            Model to use. Defaults to ``"dall-e-3"``.
+            Model to use. Defaults to ``"gpt-image-1"``.
 
         Returns
         -------
@@ -110,8 +114,8 @@ class DallE3Client:
             "n": 1,
             "size": size,
             "quality": quality,
-            # response_format is intentionally omitted — the parameter was removed
-            # from the OpenAI images API.  We handle both b64_json and url below.
+            # response_format intentionally omitted — parameter was removed from the API.
+            # We handle both b64_json (current default) and url (legacy) below.
         }
 
         try:
@@ -133,7 +137,6 @@ class DallE3Client:
                 f"Unexpected DALL-E 3 response shape: {data}"
             ) from exc
 
-        # Handle b64_json (current API default) and url (legacy) transparently.
         if "b64_json" in item:
             content = base64.b64decode(item["b64_json"])
             return self._save_image(content, prompt, save_dir)
@@ -147,17 +150,14 @@ class DallE3Client:
     # ------------------------------------------------------------------
 
     def _save_image(self, content: bytes, prompt: str, save_dir: Path) -> Path:
-        """Save *content* to *save_dir* using a content-addressed filename."""
+        """Save *content* bytes to *save_dir* using a content-addressed filename."""
         digest = hashlib.sha256(prompt.encode() + content[:64]).hexdigest()[:16]
         out_path = save_dir / f"{digest}.png"
         out_path.write_bytes(content)
         return out_path
 
     def _download_image(self, url: str, save_dir: Path, prompt: str) -> Path:
-        """Download *url* and save to *save_dir* using a content-addressed filename.
-
-        Used when the API returns a URL instead of inline b64_json bytes.
-        """
+        """Download image from *url* (legacy API url response) and save to *save_dir*."""
         try:
             with httpx.Client(timeout=REQUEST_TIMEOUT) as client:
                 resp = client.get(url)

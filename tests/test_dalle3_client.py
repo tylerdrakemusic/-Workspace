@@ -31,10 +31,10 @@ def _mock_generate_response(image_url: str) -> MagicMock:
 
 def _mock_b64json_response(content: bytes = b"\x89PNG\r\n\x1a\n" + b"x" * 100) -> MagicMock:
     """Mock API response using b64_json format (current API default)."""
-    import base64
+    import base64 as _b64
     mock_resp = MagicMock()
     mock_resp.status_code = 200
-    mock_resp.json.return_value = {"data": [{"b64_json": base64.b64encode(content).decode()}]}
+    mock_resp.json.return_value = {"data": [{"b64_json": _b64.b64encode(content).decode()}]}
     return mock_resp
 
 
@@ -71,7 +71,7 @@ def test_client_reads_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
 # ---------------------------------------------------------------------------
 
 def test_generate_image_b64json_returns_path(client: DallE3Client, tmp_path: Path) -> None:
-    """b64_json response (current API default) — no secondary download needed."""
+    """b64_json response (current API default) — no secondary download."""
     fake_png = b"\x89PNG\r\n\x1a\n" + b"z" * 200
     gen_resp = _mock_b64json_response(fake_png)
 
@@ -85,14 +85,12 @@ def test_generate_image_b64json_returns_path(client: DallE3Client, tmp_path: Pat
     assert result.suffix == ".png"
     assert result.exists()
     assert result.read_bytes() == fake_png
-    # No GET call should have been made (b64 path avoids download)
-    mock_http.get.assert_not_called()
+    mock_http.get.assert_not_called()  # No download for b64 path
 
 
 def test_generate_image_url_returns_path(client: DallE3Client, tmp_path: Path) -> None:
     """url response (legacy format) — image downloaded from URL."""
     fake_png = b"\x89PNG\r\n\x1a\n" + b"z" * 200
-
     gen_resp = _mock_generate_response("https://example.com/image.png")
     dl_resp = _mock_download_response(fake_png)
 
@@ -110,7 +108,7 @@ def test_generate_image_url_returns_path(client: DallE3Client, tmp_path: Path) -
 
 
 def test_generate_image_returns_path(client: DallE3Client, tmp_path: Path) -> None:
-    """Alias kept for backwards compatibility — same as url path test."""
+    """Alias test kept for backwards compatibility — url path."""
     fake_png = b"\x89PNG\r\n\x1a\n" + b"z" * 200
 
     gen_resp = _mock_generate_response("https://example.com/image.png")
