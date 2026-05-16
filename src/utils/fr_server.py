@@ -499,7 +499,7 @@ _JS = r"""
   const overlay = document.createElement('div');
   overlay.className = 'drawer-overlay';
   overlay.id = 'drawer-overlay';
-  overlay.onclick = closeLedgerDrawer;
+  overlay.onclick = () => window.closeLedgerDrawer();
 
   document.body.appendChild(overlay);
   document.body.appendChild(drawer);
