@@ -30,7 +30,8 @@ state machine, gateway definitions, and naming rules.
 
 | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
 |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-| FR-20260516-dead-open-in-browser | Remove dead "Open in Browser ↗" button from Live Dashboard header | bugfix | ⊕Workspace | TRIAGED | — | — | ⊕workspace-intake | 2026-05-16 | 2026-05-16 |
+| FR-20260516-portrait-gen-api-failure | Portrait generation broken — fix DALL-E `response_format` removed + migrate Nova to DALL-E 3 | bugfix | ⊕Workspace, ∞Life, ❤Music, 👁AI-Manifest | BRANCHED | fix/workspace/fr-20260516-portrait-gen-api-failure | pending | ⊕workspace-overseer | 2026-05-16 | 2026-05-16 |
+| FR-20260516-dead-open-in-browser | Remove dead "Open in Browser ↗" button from Live Dashboard header | bugfix | ⊕Workspace | BRANCHED | fix/workspace/fr-20260516-dead-open-in-browser | https://github.com/tylerdrakemusic/-Workspace/pull/154 | ⊕workspace-intake | 2026-05-16 | 2026-05-16 |
 | FR-20260515-artist-links-pill | Artist Links pill tab in ❤Music Dashboard | feature | ❤Music | MERGED | — | [Music#51](https://github.com/tylerdrakemusic/Music/pull/51) | ⊕workspace-ci | 2026-05-15 | 2026-05-16 |
 | FR-20260515-quantum-cache-widget | Add quantum bitstring cache fullness widget to benchmark dashboard | feature | ⟨ψ⟩Quantum | MERGED | feature/quantum/fr-20260515-quantum-cache-widget | [Quantum#22](https://github.com/tylerdrakemusic/Quantum/pull/22) | ⟨ψ⟩quantum-orchestrator | 2026-05-15 | 2026-05-16 |
 | FR-20260515-artist-links-pill-music-dashboard ✅ | Artist Links Pill Panel — ❤Music dashboard showing all platform profiles from `linkTyler.json` | feature | ❤Music | BRANCHED | feature/music/fr-20260515-artist-links-pill-music-dashboard | [Music#50](https://github.com/tylerdrakemusic/Music/pull/50) (draft) | ⊕workspace-ci | 2026-05-15 | 2026-05-15 |

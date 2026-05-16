@@ -1,8 +1,10 @@
-# FR-20260516-dead-open-in-browser
+﻿# FR-20260516-dead-open-in-browser
 
 **Title:** Remove dead "Open in Browser Γåù" button from Live Dashboard header  
 **Type:** bugfix  
-**State:** TRIAGED ΓåÆ IN_PROGRESS  
+**State:** BRANCHED
+**Branch:** `fix/workspace/fr-20260516-dead-open-in-browser`
+**PR:** https://github.com/tylerdrakemusic/-Workspace/pull/154  
 **Projects:** ΓèòWorkspace  
 **Opened:** 2026-05-16  
 **Owner:** Γèòworkspace-intake  
@@ -38,3 +40,9 @@ Regenerate the portal HTML.
 - [ ] Live Dashboard header shows only `ΓùÅ Live Dashboard` label ΓÇö no link/button
 - [ ] Portal regenerates cleanly with no errors
 - [ ] Guitar Trainer pane (already exempt) unaffected
+
+## Event Log
+
+| Timestamp | Agent | Event |
+|-----------|-------|-------|
+| 2026-05-16 | ⊕workspace-ci | Branch `fix/workspace/fr-20260516-dead-open-in-browser` created from `main`; commit `4999da6`; draft PR #154 opened |
