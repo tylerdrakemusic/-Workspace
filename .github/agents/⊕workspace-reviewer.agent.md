@@ -15,12 +15,16 @@ make his final approval decision.
 ## Context Bootstrap
 
 1. Read `f:\.github\instructions\feature-request-flow.instructions.md`
-2. Read the FR row from `f:\.github\FEATURE_REQUESTS.md`
-3. **Read the full FR ledger** at `f:\.github\FR_LEDGERS\<FR-ID>.md` —
-   this contains every prior agent's actions, decisions, findings, and
-   artifacts for this FR. Use it to verify claimed work against actual work.
-4. Read the PR diff via `mcp_github` tools (per repo)
-5. Start perf run
+2. Retrieve the FR record:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>
+   ```
+   This returns the FR metadata, acceptance criteria, event history, and all
+   prior agent actions, decisions, findings, and artifacts. Use it to verify
+   claimed work against actual work.
+3. Read the PR diff via `mcp_github` tools (per repo)
+4. Start perf run
 
 ## Review Battery (run in order, chain proof artifacts)
 
@@ -155,9 +159,13 @@ After posting the review:
 - Transition FR state to `AUTO_REVIEWED` (if decision is APPROVE or COMMENT)
   or back to `IN_PROGRESS` → `CHANGES_REQUESTED` (if REQUEST_CHANGES)
 - Record the review timestamp and decision in the registry
-- **Append an Event Log entry** to the FR ledger with the full review summary
-  (decision, gate results, required changes) and add the GitHub review URL
-  to the ledger's Artifacts section
+- **Record a review event** in the FR database:
+  ```powershell
+  $env:PYTHONUTF8="1"
+  C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-reviewer decision "<APPROVE|REQUEST_CHANGES|COMMENT>: <gate summary>"
+  C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> <new-state>
+  C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> url "GitHub Review" --path "<review-URL>"
+  ```
 
 ## Constraints
 

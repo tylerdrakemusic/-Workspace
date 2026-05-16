@@ -160,8 +160,8 @@ Tyler → ⊕workspace-intake → [Tyler approves scope] → ⊕workspace-ci (br
 **Tyler's three gateways:** open FR, approve scope, approve merge. Everything
 between those gates is agent-to-agent.
 
-**Registry:** `f:\.github\FEATURE_REQUESTS.md` is the live board of active and
-archived FRs. Read it before starting any implementation routing.
+**Registry:** `fr_ledgers.db` — query via `fr_cli.py list [--active]` before starting any
+implementation routing to detect conflicts with in-flight FRs.
 
 ## Workflow Patterns
 
