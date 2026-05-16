@@ -13,10 +13,15 @@ Usage (from any workspace project)::
     client = DallE3Client()
     path = client.generate_image("a professional portrait", size="1024x1024")
     print(path)  # f:\\...\\output\\images\\<sha256>.png
-"""
+Notes
+-----
+- ``response_format`` is no longer passed in the request payload — the parameter
+  was removed from the OpenAI images API.  The client handles both ``b64_json``
+  (current default) and ``url`` (legacy) response shapes automatically."""
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import os
 from pathlib import Path
@@ -105,7 +110,8 @@ class DallE3Client:
             "n": 1,
             "size": size,
             "quality": quality,
-            "response_format": "url",
+            # response_format is intentionally omitted — the parameter was removed
+            # from the OpenAI images API.  We handle both b64_json and url below.
         }
 
         try:
@@ -121,20 +127,37 @@ class DallE3Client:
 
         data = resp.json()
         try:
-            image_url: str = data["data"][0]["url"]
+            item: dict = data["data"][0]
         except (KeyError, IndexError) as exc:
             raise DallE3Error(
                 f"Unexpected DALL-E 3 response shape: {data}"
             ) from exc
 
-        return self._download_image(image_url, save_dir, prompt)
+        # Handle b64_json (current API default) and url (legacy) transparently.
+        if "b64_json" in item:
+            content = base64.b64decode(item["b64_json"])
+            return self._save_image(content, prompt, save_dir)
+        elif "url" in item:
+            return self._download_image(item["url"], save_dir, prompt)
+        else:
+            raise DallE3Error(f"Unexpected DALL-E 3 response item shape: {item}")
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _save_image(self, content: bytes, prompt: str, save_dir: Path) -> Path:
+        """Save *content* to *save_dir* using a content-addressed filename."""
+        digest = hashlib.sha256(prompt.encode() + content[:64]).hexdigest()[:16]
+        out_path = save_dir / f"{digest}.png"
+        out_path.write_bytes(content)
+        return out_path
+
     def _download_image(self, url: str, save_dir: Path, prompt: str) -> Path:
-        """Download *url* and save to *save_dir* using a content-addressed filename."""
+        """Download *url* and save to *save_dir* using a content-addressed filename.
+
+        Used when the API returns a URL instead of inline b64_json bytes.
+        """
         try:
             with httpx.Client(timeout=REQUEST_TIMEOUT) as client:
                 resp = client.get(url)
@@ -146,9 +169,4 @@ class DallE3Client:
                 f"Image download failed {resp.status_code}: {url}"
             )
 
-        content = resp.content
-        # Content-addressed filename: sha256 of prompt + raw bytes for stability
-        digest = hashlib.sha256(prompt.encode() + content[:64]).hexdigest()[:16]
-        out_path = save_dir / f"{digest}.png"
-        out_path.write_bytes(content)
-        return out_path
+        return self._save_image(resp.content, prompt, save_dir)

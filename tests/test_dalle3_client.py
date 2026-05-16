@@ -29,6 +29,15 @@ def _mock_generate_response(image_url: str) -> MagicMock:
     return mock_resp
 
 
+def _mock_b64json_response(content: bytes = b"\x89PNG\r\n\x1a\n" + b"x" * 100) -> MagicMock:
+    """Mock API response using b64_json format (current API default)."""
+    import base64
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"data": [{"b64_json": base64.b64encode(content).decode()}]}
+    return mock_resp
+
+
 def _mock_download_response(content: bytes = b"\x89PNG\r\n\x1a\n" + b"x" * 100) -> MagicMock:
     mock_resp = MagicMock()
     mock_resp.status_code = 200
@@ -61,7 +70,47 @@ def test_client_reads_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
 # generate_image — happy path
 # ---------------------------------------------------------------------------
 
+def test_generate_image_b64json_returns_path(client: DallE3Client, tmp_path: Path) -> None:
+    """b64_json response (current API default) — no secondary download needed."""
+    fake_png = b"\x89PNG\r\n\x1a\n" + b"z" * 200
+    gen_resp = _mock_b64json_response(fake_png)
+
+    with patch("src.integrations.dalle3.client.httpx.Client") as mock_cls:
+        mock_http = mock_cls.return_value.__enter__.return_value
+        mock_http.post.return_value = gen_resp
+
+        result = client.generate_image("a test portrait", output_dir=tmp_path)
+
+    assert isinstance(result, Path)
+    assert result.suffix == ".png"
+    assert result.exists()
+    assert result.read_bytes() == fake_png
+    # No GET call should have been made (b64 path avoids download)
+    mock_http.get.assert_not_called()
+
+
+def test_generate_image_url_returns_path(client: DallE3Client, tmp_path: Path) -> None:
+    """url response (legacy format) — image downloaded from URL."""
+    fake_png = b"\x89PNG\r\n\x1a\n" + b"z" * 200
+
+    gen_resp = _mock_generate_response("https://example.com/image.png")
+    dl_resp = _mock_download_response(fake_png)
+
+    with patch("src.integrations.dalle3.client.httpx.Client") as mock_cls:
+        mock_http = mock_cls.return_value.__enter__.return_value
+        mock_http.post.return_value = gen_resp
+        mock_http.get.return_value = dl_resp
+
+        result = client.generate_image("a test portrait", output_dir=tmp_path)
+
+    assert isinstance(result, Path)
+    assert result.suffix == ".png"
+    assert result.exists()
+    assert result.read_bytes() == fake_png
+
+
 def test_generate_image_returns_path(client: DallE3Client, tmp_path: Path) -> None:
+    """Alias kept for backwards compatibility — same as url path test."""
     fake_png = b"\x89PNG\r\n\x1a\n" + b"z" * 200
 
     gen_resp = _mock_generate_response("https://example.com/image.png")
@@ -82,13 +131,11 @@ def test_generate_image_returns_path(client: DallE3Client, tmp_path: Path) -> No
 
 def test_generate_image_creates_output_dir(client: DallE3Client, tmp_path: Path) -> None:
     new_dir = tmp_path / "nested" / "output"
-    gen_resp = _mock_generate_response("https://example.com/img.png")
-    dl_resp = _mock_download_response()
+    gen_resp = _mock_b64json_response()
 
     with patch("src.integrations.dalle3.client.httpx.Client") as mock_cls:
         mock_http = mock_cls.return_value.__enter__.return_value
         mock_http.post.return_value = gen_resp
-        mock_http.get.return_value = dl_resp
         client.generate_image("portrait", output_dir=new_dir)
 
     assert new_dir.exists()
@@ -97,19 +144,16 @@ def test_generate_image_creates_output_dir(client: DallE3Client, tmp_path: Path)
 def test_generate_image_content_addressed(client: DallE3Client, tmp_path: Path) -> None:
     """Same prompt + same first bytes → same filename."""
     content = b"\x89PNG\r\n\x1a\n" + b"a" * 100
-    gen_resp = _mock_generate_response("https://example.com/img.png")
-    dl_resp = _mock_download_response(content)
+    gen_resp = _mock_b64json_response(content)
 
     with patch("src.integrations.dalle3.client.httpx.Client") as mock_cls:
         mock_http = mock_cls.return_value.__enter__.return_value
         mock_http.post.return_value = gen_resp
-        mock_http.get.return_value = dl_resp
         path1 = client.generate_image("same prompt", output_dir=tmp_path)
 
     with patch("src.integrations.dalle3.client.httpx.Client") as mock_cls:
         mock_http = mock_cls.return_value.__enter__.return_value
         mock_http.post.return_value = gen_resp
-        mock_http.get.return_value = dl_resp
         path2 = client.generate_image("same prompt", output_dir=tmp_path)
 
     assert path1.name == path2.name
@@ -140,6 +184,19 @@ def test_malformed_response_raises(client: DallE3Client, tmp_path: Path) -> None
         mock_http = mock_cls.return_value.__enter__.return_value
         mock_http.post.return_value = bad_resp
         with pytest.raises(DallE3Error, match="response shape"):
+            client.generate_image("test", output_dir=tmp_path)
+
+
+def test_unknown_item_shape_raises(client: DallE3Client, tmp_path: Path) -> None:
+    """Item dict has neither url nor b64_json — should raise DallE3Error."""
+    bad_resp = MagicMock()
+    bad_resp.status_code = 200
+    bad_resp.json.return_value = {"data": [{"revised_prompt": "something"}]}
+
+    with patch("src.integrations.dalle3.client.httpx.Client") as mock_cls:
+        mock_http = mock_cls.return_value.__enter__.return_value
+        mock_http.post.return_value = bad_resp
+        with pytest.raises(DallE3Error, match="item shape"):
             client.generate_image("test", output_dir=tmp_path)
 
 
