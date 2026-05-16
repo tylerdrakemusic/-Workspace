@@ -156,7 +156,7 @@ fr_cli.py get <FR-ID>
 
 **Details:**
 - Branch `chore/workspace/fr-20260516-fr-ledger-db-migration` created from `origin/main` (c137b84) and pushed to `tylerdrakemusic/-Workspace`
-- Draft PR opened: pending (PR URL will be updated on next commit)
+- Draft PR opened: [-Workspace#157](https://github.com/tylerdrakemusic/-Workspace/pull/157)
 - Ledger + registry updated to BRANCHED state on the feature branch
 - No implementation commits yet — branch is the handoff/tracking surface for implementation agents
 
