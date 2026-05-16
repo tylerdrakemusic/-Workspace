@@ -3,9 +3,10 @@ FR Server — Live Feature Request Ledger Panel
 ==============================================
 Lightweight HTTP server (stdlib only) that:
   - Serves fr_dashboard.html at /
-  - Exposes GET /api/frs  → JSON list of parsed FRs
-  - Exposes POST /signoff → approves a GitHub PR via GITHUB_TOKEN
-  - Watches FEATURE_REQUESTS.md + FR_LEDGERS/ and regenerates the dashboard HTML on change
+  - Exposes GET /api/frs           → JSON list of FRs from fr_ledgers.db
+  - Exposes GET /api/ledger/<FR-ID> → JSON list of events for one FR
+  - Exposes POST /signoff           → approves a GitHub PR via GITHUB_TOKEN
+  - Polls fr_ledgers.db for changes and regenerates the dashboard HTML
 
 Usage:
     C:\\G\\python.exe f:\\⊕Workspace\\src\\utils\\fr_server.py [--port 7474]
@@ -32,14 +33,17 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from init_fr_db import get_connection as _get_fr_conn, init_db as _init_fr_db
+    _DB_AVAILABLE = True
+except Exception:
+    _DB_AVAILABLE = False
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent  # f:\⊕Workspace
-GITHUB_ROOT = WORKSPACE_ROOT / ".github"
-REGISTRY_FILE = GITHUB_ROOT / "FEATURE_REQUESTS.md"
-LEDGERS_DIR = GITHUB_ROOT / "FR_LEDGERS"
 DASHBOARD_HTML = WORKSPACE_ROOT / "reports" / "fr_dashboard.html"
-TEMPLATES_DIR = Path(__file__).resolve().parent  # same dir for template snippets
 
 # ── GitHub defaults ────────────────────────────────────────────────────────────
 
@@ -57,12 +61,11 @@ SIGNOFF_ELIGIBLE_STATES = {"REVIEW_REQUESTED", "AUTO_REVIEWED", "TYLER_APPROVED"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FR Parsing
+# DB Query helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _extract_pr_number(pr_field: str) -> int | None:
-    """Return the first PR number found in a markdown PR field, or None."""
-    # Matches [#23] or #23 patterns
+    """Return the first PR number found in a PR field string, or None."""
     m = re.search(r"#(\d+)", pr_field)
     if m:
         return int(m.group(1))
@@ -70,81 +73,90 @@ def _extract_pr_number(pr_field: str) -> int | None:
 
 
 def _state_class(state: str) -> str:
-    """Map FR state to CSS class name."""
     mapping = {
-        "MERGED": "state-done",
-        "CLOSED": "state-muted",
-        "SIGNED_OFF": "state-done",
-        "DONE": "state-done",
-        "SOAKING": "state-soak",
-        "REVIEW_REQUESTED": "state-info",
-        "AUTO_REVIEWED": "state-info",
-        "TYLER_APPROVED": "state-ok",
-        "IN_PROGRESS": "state-warn",
-        "BRANCHED": "state-warn",
-        "TRIAGED": "state-warn",
-        "OPEN": "state-warn",
-        "CHANGES_REQUESTED": "state-danger",
+        "MERGED": "state-done", "CLOSED": "state-muted", "SIGNED_OFF": "state-done",
+        "DONE": "state-done", "SOAKING": "state-soak", "REVIEW_REQUESTED": "state-info",
+        "AUTO_REVIEWED": "state-info", "TYLER_APPROVED": "state-ok",
+        "IN_PROGRESS": "state-warn", "BRANCHED": "state-warn", "TRIAGED": "state-warn",
+        "OPEN": "state-warn", "CHANGES_REQUESTED": "state-danger",
     }
     return mapping.get(state.upper(), "state-muted")
 
 
-def parse_feature_requests(registry_path: Path) -> list[dict[str, Any]]:
-    """
-    Parse FEATURE_REQUESTS.md and return a list of FR dicts.
-
-    Each dict has keys: id, title, type, projects, state, branch, prs, pr_number,
-    owner, opened, updated, is_active, signoff_eligible, state_class.
-    """
-    if not registry_path.exists():
+def query_feature_requests_from_db() -> list[dict[str, Any]]:
+    """Read all FRs from fr_ledgers.db and return a list of FR dicts."""
+    if not _DB_AVAILABLE:
         return []
-
-    text = registry_path.read_text(encoding="utf-8")
-    frs: list[dict[str, Any]] = []
-
-    # Find all markdown table rows (skip header / separator lines)
-    row_re = re.compile(
-        r"^\|\s*(?P<id>FR-[\w-]+)\s*\|"
-        r"\s*(?P<title>[^|]*?)\s*\|"
-        r"\s*(?P<type>[^|]*?)\s*\|"
-        r"\s*(?P<projects>[^|]*?)\s*\|"
-        r"\s*(?P<state>[^|]*?)\s*\|"
-        r"\s*(?P<branch>[^|]*?)\s*\|"
-        r"\s*(?P<prs>[^|]*?)\s*\|"
-        r"\s*(?P<owner>[^|]*?)\s*\|"
-        r"\s*(?P<opened>[^|]*?)\s*\|"
-        r"\s*(?P<updated>[^|]*?)\s*\|",
-        re.MULTILINE,
-    )
-
-    for m in row_re.finditer(text):
-        state = m.group("state").strip()
-        prs_raw = m.group("prs").strip()
-        pr_num = _extract_pr_number(prs_raw)
-        is_active = state.upper() in ACTIVE_STATES
-        signoff_eligible = (
-            state.upper() in SIGNOFF_ELIGIBLE_STATES and pr_num is not None
-        )
-        frs.append(
-            {
-                "id": m.group("id").strip(),
-                "title": m.group("title").strip(),
-                "type": m.group("type").strip(),
-                "projects": m.group("projects").strip(),
+    try:
+        _init_fr_db()
+        conn = _get_fr_conn()
+    except Exception as exc:
+        print(f"[fr-server] DB unavailable: {exc}", file=sys.stderr)
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT id, title, type, projects, state, branch, prs, owner, opened_at, updated_at "
+            "FROM feature_requests ORDER BY opened_at DESC"
+        ).fetchall()
+        frs = []
+        for r in rows:
+            state = (r["state"] or "").strip()
+            prs_raw = (r["prs"] or "").strip()
+            pr_num = _extract_pr_number(prs_raw)
+            is_active = state.upper() in ACTIVE_STATES
+            signoff_eligible = state.upper() in SIGNOFF_ELIGIBLE_STATES and pr_num is not None
+            frs.append({
+                "id": r["id"],
+                "title": r["title"] or "",
+                "type": r["type"] or "",
+                "projects": r["projects"] or "",
                 "state": state,
-                "branch": m.group("branch").strip(),
+                "branch": r["branch"] or "",
                 "prs": prs_raw,
                 "pr_number": pr_num,
-                "owner": m.group("owner").strip(),
-                "opened": m.group("opened").strip(),
-                "updated": m.group("updated").strip(),
+                "owner": r["owner"] or "",
+                "opened": (r["opened_at"] or "")[:10],
+                "updated": (r["updated_at"] or "")[:10],
                 "is_active": is_active,
                 "signoff_eligible": signoff_eligible,
                 "state_class": _state_class(state),
-            }
-        )
+            })
+        return frs
+    finally:
+        conn.close()
 
-    return frs
+
+def query_ledger_events(fr_id: str) -> list[dict[str, Any]]:
+    """Return the event log for a single FR, ordered by timestamp."""
+    if not _DB_AVAILABLE:
+        return []
+    try:
+        conn = _get_fr_conn()
+    except Exception as exc:
+        print(f"[fr-server] DB unavailable: {exc}", file=sys.stderr)
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT ts, agent, event_type, summary, details, next_action "
+            "FROM fr_events WHERE fr_id=? ORDER BY ts",
+            (fr_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def query_db_max_updated() -> str:
+    """Return the max updated_at timestamp across all FRs (used to detect DB changes)."""
+    if not _DB_AVAILABLE:
+        return ""
+    try:
+        conn = _get_fr_conn()
+        row = conn.execute("SELECT MAX(updated_at) FROM feature_requests").fetchone()
+        conn.close()
+        return (row[0] or "") if row else ""
+    except Exception:
+        return ""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -275,6 +287,44 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
   background: var(--surface); padding: 0.1rem 0.35rem;
   border-radius: 3px; color: #a5f3fc;
 }
+/* ── Ledger Drawer ─────────────────────────────────────────────── */
+.drawer-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 900;
+}
+.drawer-overlay.open { display: block; }
+.ledger-drawer {
+  position: fixed; top: 0; right: -480px; width: 460px; max-width: 95vw;
+  height: 100vh; background: var(--surface); border-left: 1px solid var(--border);
+  z-index: 901; transition: right .22s ease; overflow-y: auto; padding: 1.2rem 1.1rem;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+}
+.ledger-drawer.open { right: 0; }
+.drawer-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1rem;
+}
+.drawer-title { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.drawer-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 1.2rem; line-height: 1; padding: 0.2rem 0.4rem;
+}
+.drawer-close:hover { color: var(--text); }
+.event-entry {
+  border-left: 2px solid var(--accent); padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem; font-size: 0.75rem; background: var(--surface-2);
+  border-radius: 0 6px 6px 0;
+}
+.event-ts { color: var(--muted); font-size: 0.65rem; margin-bottom: 0.2rem; }
+.event-type { font-weight: 700; color: var(--accent); margin-bottom: 0.15rem; }
+.event-summary { color: var(--text); }
+.event-details { color: var(--muted); margin-top: 0.3rem; white-space: pre-wrap; word-break: break-word; }
+.ledger-btn {
+  background: none; border: none; color: var(--accent);
+  cursor: pointer; font-size: 0.72rem; padding: 0; text-decoration: none;
+}
+.ledger-btn:hover { text-decoration: underline; }
+.drawer-empty { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 2rem 0; }
 """
 
 _JS = r"""
@@ -332,7 +382,7 @@ _JS = r"""
           <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">${escHtml(fr.updated)}</span></div>
         </div>
         ${approveBtn}
-        <div class="fr-foot"><a href="../.github/FR_LEDGERS/${escHtml(fr.id)}.md" target="_blank" rel="noopener">ledger →</a></div>
+        <div class="fr-foot"><button class="ledger-btn" onclick="openLedgerDrawer('${escHtml(fr.id)}')">ledger →</button></div>
       </div>`;
   }
 
@@ -434,6 +484,59 @@ _JS = r"""
   // Initial load + polling
   fetchFRs();
   setInterval(fetchFRs, 3000);
+
+  // ── Ledger Drawer ────────────────────────────────────────────────
+  const drawer = document.createElement('div');
+  drawer.className = 'ledger-drawer';
+  drawer.id = 'ledger-drawer';
+  drawer.innerHTML = `
+    <div class="drawer-header">
+      <div class="drawer-title" id="drawer-title">Ledger</div>
+      <button class="drawer-close" onclick="closeLedgerDrawer()" aria-label="Close">✕</button>
+    </div>
+    <div id="drawer-body"><div class="drawer-empty">Loading…</div></div>`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'drawer-overlay';
+  overlay.id = 'drawer-overlay';
+  overlay.onclick = closeLedgerDrawer;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(drawer);
+
+  window.openLedgerDrawer = async function(frId) {
+    document.getElementById('drawer-title').textContent = frId;
+    document.getElementById('drawer-body').innerHTML = '<div class="drawer-empty">Loading…</div>';
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    try {
+      const r = await fetch(API + '/api/ledger/' + encodeURIComponent(frId), {cache: 'no-store'});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const events = data.events || [];
+      if (!events.length) {
+        document.getElementById('drawer-body').innerHTML = '<div class="drawer-empty">No events recorded yet.</div>';
+        return;
+      }
+      document.getElementById('drawer-body').innerHTML = events.map(ev => `
+        <div class="event-entry">
+          <div class="event-ts">${escHtml(ev.ts || '')}</div>
+          <div class="event-type">${escHtml(ev.event_type || '')}
+            <span style="font-weight:400;color:var(--muted)"> — ${escHtml(ev.agent || '')}</span>
+          </div>
+          <div class="event-summary">${escHtml(ev.summary || '')}</div>
+          ${ev.details ? `<div class="event-details">${escHtml(ev.details)}</div>` : ''}
+        </div>`).join('');
+    } catch (e) {
+      document.getElementById('drawer-body').innerHTML =
+        `<div class="drawer-empty">Failed to load: ${escHtml(String(e))}</div>`;
+    }
+  };
+
+  window.closeLedgerDrawer = function() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+  };
 })();
 """
 
@@ -490,16 +593,16 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
         <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">{_html_escape(fr["updated"])}</span></div>
       </div>
       {approve_btn}
-      <div class="fr-foot"><a href="../.github/FR_LEDGERS/{_html_escape(fr["id"])}.md" target="_blank" rel="noopener">ledger →</a></div>
+      <div class="fr-foot"><button class="ledger-btn" onclick="openLedgerDrawer('{_html_escape(fr['id'])}')" >ledger →</button></div>
     </div>"""
 
     active_html = "\n".join(card(f) for f in active) if active else '<div class="empty">No active FRs.</div>'
     archived_html = "\n".join(card(f) for f in archived) if archived else '<div class="empty">No archived FRs.</div>'
 
     stale_banner = (
-        '<div class="banner banner-warn" id="stale-banner">⚠ Registry file unavailable — showing last known data.</div>'
+        '<div class="banner banner-warn" id="stale-banner">⚠ fr_ledgers.db unavailable — showing last known data.</div>'
         if stale else
-        '<div class="banner banner-warn" id="stale-banner" style="display:none">⚠ Registry file unavailable — showing last known data.</div>'
+        '<div class="banner banner-warn" id="stale-banner" style="display:none">⚠ fr_ledgers.db unavailable — showing last known data.</div>'
     )
 
     html = f"""<!DOCTYPE html>
@@ -515,7 +618,7 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
   <h1><span class="sigil">⊕</span> Feature Request Board</h1>
   <div class="subtitle">
     Live panel · auto-refreshes every 3 s ·
-    Registry: <code>.github/FEATURE_REQUESTS.md</code>
+    Registry: <code>fr_ledgers.db</code>
   </div>
 
   <div class="status-bar">
@@ -567,13 +670,13 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
 # ─────────────────────────────────────────────────────────────────────────────
 
 class _WatcherThread(threading.Thread):
-    """Background thread that polls FEATURE_REQUESTS.md + FR_LEDGERS/ for changes."""
+    """Background thread that polls fr_ledgers.db for changes."""
 
     def __init__(self, interval: float = 3.0) -> None:
         super().__init__(daemon=True, name="fr-watcher")
         self._interval = interval
         self._stop_event = threading.Event()
-        self._last_mtimes: dict[Path, float] = {}
+        self._last_max_updated: str = ""
         self._lock = threading.Lock()
         self._frs: list[dict[str, Any]] = []
         self._stale = False
@@ -588,19 +691,9 @@ class _WatcherThread(threading.Thread):
         with self._lock:
             return self._stale
 
-    def _current_mtimes(self) -> dict[Path, float]:
-        mtimes: dict[Path, float] = {}
-        if REGISTRY_FILE.exists():
-            mtimes[REGISTRY_FILE] = REGISTRY_FILE.stat().st_mtime
-        if LEDGERS_DIR.exists():
-            for p in LEDGERS_DIR.iterdir():
-                if p.suffix == ".md":
-                    mtimes[p] = p.stat().st_mtime
-        return mtimes
-
     def _reload(self) -> None:
-        stale = not REGISTRY_FILE.exists()
-        frs = parse_feature_requests(REGISTRY_FILE)
+        frs = query_feature_requests_from_db()
+        stale = not _DB_AVAILABLE or len(frs) == 0
         with self._lock:
             self._frs = frs
             self._stale = stale
@@ -612,43 +705,18 @@ class _WatcherThread(threading.Thread):
     def run(self) -> None:
         self._reload()
         while not self._stop_event.wait(self._interval):
-            current = self._current_mtimes()
-            if current != self._last_mtimes:
-                self._last_mtimes = current
+            current_max = query_db_max_updated()
+            if current_max != self._last_max_updated:
+                self._last_max_updated = current_max
                 self._reload()
 
     def stop(self) -> None:
         self._stop_event.set()
 
 
-# Try watchdog for more efficient inotify-style watching (optional dependency)
-try:
-    from watchdog.observers import Observer  # type: ignore
-    from watchdog.events import FileSystemEventHandler  # type: ignore
-
-    class _WatchdogHandler(FileSystemEventHandler):  # type: ignore
-        def __init__(self, watcher: "_WatcherThread") -> None:
-            self._watcher = watcher
-
-        def on_any_event(self, event: Any) -> None:  # type: ignore
-            self._watcher._reload()
-
-    _WATCHDOG_AVAILABLE = True
-except ImportError:
-    _WATCHDOG_AVAILABLE = False
-
-
 def _start_watcher() -> "_WatcherThread":
     watcher = _WatcherThread()
     watcher.start()
-
-    if _WATCHDOG_AVAILABLE:
-        observer = Observer()
-        handler = _WatchdogHandler(watcher)
-        if GITHUB_ROOT.exists():
-            observer.schedule(handler, str(GITHUB_ROOT), recursive=True)
-        observer.start()
-
     return watcher
 
 
@@ -734,6 +802,13 @@ def _make_handler(watcher: "_WatcherThread") -> type:
         def do_GET(self) -> None:  # noqa: N802
             if self.path == "/api/frs" or self.path.startswith("/api/frs?"):
                 self._send_json({"frs": watcher.frs, "stale": watcher.stale})
+            elif self.path.startswith("/api/ledger/"):
+                fr_id = self.path[len("/api/ledger/"):].split("?")[0].strip()
+                if not fr_id:
+                    self._send_json({"ok": False, "error": "Missing FR ID"}, 400)
+                    return
+                events = query_ledger_events(fr_id)
+                self._send_json({"fr_id": fr_id, "events": events}, cors_origin="http://localhost:7474")
             elif self.path in ("/", "/fr_dashboard.html"):
                 self.path = "/fr_dashboard.html"
                 super().do_GET()
@@ -798,12 +873,7 @@ def main() -> None:
         sys.exit(0)
 
     print(f"[fr-server] Starting FR Ledger Panel on http://localhost:{port}/", flush=True)
-    print(f"[fr-server] Watching {REGISTRY_FILE}", flush=True)
-    print(f"[fr-server] Watching {LEDGERS_DIR}", flush=True)
-    if _WATCHDOG_AVAILABLE:
-        print("[fr-server] File watching: watchdog (inotify)", flush=True)
-    else:
-        print("[fr-server] File watching: polling (3 s) — install watchdog for inotify", flush=True)
+    print("[fr-server] Polling fr_ledgers.db for changes (every 3 s)", flush=True)
 
     watcher = _start_watcher()
     handler_class = _make_handler(watcher)

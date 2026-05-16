@@ -15,7 +15,7 @@ and do NOT start implementation.
 
 1. Read `f:\.github\instructions\feature-request-flow.instructions.md` — the
    canonical state machine for all FRs
-2. Read `f:\.github\FEATURE_REQUESTS.md` — the live registry
+2. Query active FRs: `$env:PYTHONUTF8="1"; C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active`
 3. Scan `f:\.github\agents\*-orchestrator.agent.md` to know which projects are
    live
 4. Start perf run (see self-regen protocol)
@@ -114,33 +114,25 @@ Steps:
    - Each AC must map to something Tyler stated or confirmed — not agent inference
 5. Estimate risk: `low` | `medium` | `high` (high = touches auth, secrets,
    agent framework, DB schema, or health interventions)
-6. **Create the FR ledger:** copy `f:\.github\FR_LEDGERS\_TEMPLATE.md` to
-   `f:\.github\FR_LEDGERS\<FR-ID>.md` and fill the Header (including Tyler's
-   verbatim original request and drafted acceptance criteria)
+6. **Open the FR in the database:**
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py open <FR-ID> "<title>" --type <type> --risk <risk> --projects "<projects>" --owner ⊕workspace-intake
+   ```
+   This creates the FR record with acceptance criteria and Tyler's verbatim original request.
 7. **Start the FR cycle timer:**
    ```
    C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py start "fr-cycle-<FR-ID>"
    ```
    Write the returned run_id into the ledger header's `Cycle timer` field and
    append it to the ledger's Artifacts section.
-8. Append row to the registry as `OPEN → TRIAGED`
-9. Append the first Event Log entry to the ledger (state-transition to
-   TRIAGED)
-10. **Commit the ledger and registry** via a short-lived branch (branch
-    protection blocks direct pushes to `main`):
-    ```bash
-    cd f:\⊕Workspace
-    git switch -c chore/ledger-<FR-ID>-open
-    git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-    git commit -m "⊕ workspace: ledger — <FR-ID> → TRIAGED"
-    git push origin chore/ledger-<FR-ID>-open
-    # Open a PR; CI passes trivially (markdown only) — CI agent merges after green
-    ```
-    Delegate the merge of this PR to `⊕workspace-ci` immediately after
-    presenting the scope card to Tyler. Do not wait for Tyler's scope
-    approval before opening the ledger PR — the ledger records the intent
-    regardless of whether Tyler approves the scope.
-11. **STOP and present to Tyler** for scope confirmation
+8. **Update FR state to TRIAGED and record the event:**
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> TRIAGED
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-intake state-transition "FR opened and triaged: scope, projects, and acceptance criteria recorded"
+   ```
+9. **STOP and present to Tyler** for scope confirmation
 
 ### 2. Confirm Scope (Tyler's 2nd Gateway)
 
@@ -161,30 +153,21 @@ Present a compact scope card:
 Approve? (yes / revise / reject)
 ```
 
-If Tyler says "approve" → mark `TRIAGED → BRANCHED (pending)` in the ledger
-and registry. Commit the update to the open ledger branch (or open a new
-`chore/ledger-<FR-ID>-branched` branch if the earlier PR already merged):
-```bash
-cd f:\⊕Workspace
-git switch -c chore/ledger-<FR-ID>-branched   # or reuse chore/ledger-<FR-ID>-open if still open
-git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-git commit -m "⊕ workspace: ledger — <FR-ID> → BRANCHED"
-git push origin chore/ledger-<FR-ID>-branched
-# Open/update PR; CI agent merges after green CI
+If Tyler says "approve" → update state and record event, then delegate to CI:
+```powershell
+$env:PYTHONUTF8="1"
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> BRANCHED
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-intake state-transition "Scope approved by Tyler — delegating to ⊕workspace-ci for branch creation"
 ```
 Then delegate to `⊕workspace-ci` to create branches + worktrees + draft PRs.
 
 If Tyler says "revise" → capture changes, re-present.
 
-If Tyler says "reject" → mark `CLOSED (rejected)`, archive registry row.
-Commit the rejection update on the existing open ledger branch (or a new one):
-```bash
-cd f:\⊕Workspace
-git switch -c chore/ledger-<FR-ID>-closed   # or reuse open branch
-git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-git commit -m "⊕ workspace: ledger — <FR-ID> → CLOSED (rejected)"
-git push origin chore/ledger-<FR-ID>-closed
-# Open/update PR; CI agent merges after green CI
+If Tyler says "reject" → update state and record event:
+```powershell
+$env:PYTHONUTF8="1"
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> CLOSED
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-intake state-transition "FR rejected by Tyler — closed"
 ```
 
 ### 3. Route to CI

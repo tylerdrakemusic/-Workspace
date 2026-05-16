@@ -32,14 +32,13 @@ Use workspace specialists in this order:
 3. `âŠ•workspace-proof` for proof-chain verification of what was committed
 
 If request is project-only, route to the project orchestrator, then bring result back into this protected commit pipeline.
-## Ledger-Only Commit Exclusion
+## FR State Write Protocol
 
-> **Commits that touch ONLY the following paths are exempt from this agent's approval-gate workflow:**
-> - `.github/FR_LEDGERS/*.md`
-> - `.github/FEATURE_REQUESTS.md`
-> - `reports/fr_dashboard.html`
->
-> `⊕workspace-ci` handles ledger-only commits and PRs directly — opening the branch, committing the state files, creating the PR, and enabling `gh pr merge --squash --auto` without waiting for Tyler. Do **not** route these through `⊕workspace-commitment`. If a batch of changes includes ledger-only files **plus** code files, split the ledger files into a separate commit and route only the code portion here.
+FR state transitions (OPEN, TRIAGED, BRANCHED, MERGED, ARCHIVED, etc.) are written
+directly to `fr_ledgers.db` via `fr_cli.py` — they do **not** produce committed files.
+There are no ledger-only branches, ledger-only PRs, or `chore/ledger-*` commits.
+Do **not** expect `.github/FR_LEDGERS/` or `.github/FEATURE_REQUESTS.md` to exist
+or require staging. Route all code-changing work normally through this agent.
 ## Branch + PR Discipline
 
 This agent assumes a branch-first workflow for all code-changing work:
