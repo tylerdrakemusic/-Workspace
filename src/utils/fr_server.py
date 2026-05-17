@@ -5,7 +5,7 @@ Lightweight HTTP server (stdlib only) that:
   - Serves fr_dashboard.html at /
   - Exposes GET /api/frs           → JSON list of FRs from fr_ledgers.db
   - Exposes GET /api/ledger/<FR-ID> → JSON list of events for one FR
-  - Exposes POST /signoff           → approves a GitHub PR via GITHUB_TOKEN
+  - Exposes POST /signoff           → writes state=DONE to fr_ledgers.db via DB
   - Polls fr_ledgers.db for changes and regenerates the dashboard HTML
 
 Usage:
@@ -26,8 +26,6 @@ import socket
 import sys
 import threading
 import time
-import urllib.request
-import urllib.error
 from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
@@ -57,7 +55,6 @@ ACTIVE_STATES = {
     "REVIEW_REQUESTED", "AUTO_REVIEWED", "TYLER_APPROVED", "CHANGES_REQUESTED",
     "SOAKING",
 }
-SIGNOFF_ELIGIBLE_STATES = {"REVIEW_REQUESTED", "AUTO_REVIEWED", "TYLER_APPROVED"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -104,7 +101,6 @@ def query_feature_requests_from_db() -> list[dict[str, Any]]:
             prs_raw = (r["prs"] or "").strip()
             pr_num = _extract_pr_number(prs_raw)
             is_active = state.upper() in ACTIVE_STATES
-            signoff_eligible = state.upper() in SIGNOFF_ELIGIBLE_STATES and pr_num is not None
             frs.append({
                 "id": r["id"],
                 "title": r["title"] or "",
@@ -118,7 +114,6 @@ def query_feature_requests_from_db() -> list[dict[str, Any]]:
                 "opened": (r["opened_at"] or "")[:10],
                 "updated": (r["updated_at"] or "")[:10],
                 "is_active": is_active,
-                "signoff_eligible": signoff_eligible,
                 "state_class": _state_class(state),
             })
         return frs
@@ -152,7 +147,11 @@ def query_db_max_updated() -> str:
         return ""
     try:
         conn = _get_fr_conn()
-        row = conn.execute("SELECT MAX(updated_at) FROM feature_requests").fetchone()
+        # Filter to rows with a valid ISO timestamp (old rows incorrectly stored FR IDs here)
+        row = conn.execute(
+            "SELECT MAX(updated_at) FROM feature_requests "
+            "WHERE length(updated_at) >= 10 AND substr(updated_at, 5, 1) = '-'"
+        ).fetchone()
         conn.close()
         return (row[0] or "") if row else ""
     except Exception:
@@ -359,11 +358,7 @@ _JS = r"""
   }
 
   function renderFR(fr) {
-    const approveBtn = fr.signoff_eligible
-      ? `<button class="approve-btn" onclick="approvePR('${escHtml(fr.id)}', ${fr.pr_number}, this)">
-           ✓ Approve PR #${fr.pr_number}
-         </button>`
-      : '';
+    const signoffBtn = `<button class="approve-btn" onclick="signoffFR('${escHtml(fr.id)}', this)">✓ Sign Off</button>`;
 
     return `
       <div class="fr-card">
@@ -381,14 +376,14 @@ _JS = r"""
           <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">${escHtml(fr.opened)}</span></div>
           <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">${escHtml(fr.updated)}</span></div>
         </div>
-        ${approveBtn}
-        <div class="fr-foot"><button class="ledger-btn" onclick="openLedgerDrawer('${escHtml(fr.id)}')">ledger →</button></div>
+        ${signoffBtn}
+        <div class="fr-foot"><button class="ledger-btn" onclick="openLedgerDrawer('${escHtml(fr.id)}')")>ledger →</button></div>
       </div>`;
   }
 
   function renderBoard(frs) {
     const active = frs.filter(f => f.is_active);
-    const archived = frs.filter(f => !f.is_active);
+    const archived = frs.filter(f => !f.is_active && f.state.toUpperCase() !== 'DONE');
 
     const activeHtml = active.length
       ? active.map(renderFR).join('')
@@ -444,28 +439,30 @@ _JS = r"""
     }
   }
 
-  window.approvePR = async function(frId, prNumber, btn) {
+  window.signoffFR = async function(frId, btn) {
     if (!serverOnline) {
-      alert('FR server is offline. Cannot approve PR.');
+      alert('FR server is offline. Cannot sign off.');
       return;
     }
-    if (!confirm('Approve PR #' + prNumber + ' for ' + frId + '?')) return;
     btn.disabled = true;
-    btn.textContent = 'Approving…';
+    btn.textContent = 'Signing off…';
     try {
       const r = await fetch(API + '/signoff', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({fr_id: frId, pr_number: prNumber}),
+        body: JSON.stringify({fr_id: frId}),
       });
       const data = await r.json();
       if (r.ok && data.ok) {
-        btn.textContent = '✓ Approved';
-        btn.style.background = 'var(--ok)';
+        // Remove card from active grid and decrement count
+        const card = btn.closest('.fr-card');
+        if (card) card.remove();
+        const countEl = document.getElementById('active-count');
+        if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent || '0', 10) - 1);
         const flash = document.getElementById('flash-slot');
         if (flash) {
           flash.className = 'banner banner-ok';
-          flash.textContent = '✓ PR #' + prNumber + ' approved for ' + frId;
+          flash.textContent = '✓ ' + frId + ' signed off — marked DONE';
           flash.style.display = '';
           setTimeout(() => { flash.style.display = 'none'; }, 8000);
         }
@@ -566,16 +563,14 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
     """Write a fresh fr_dashboard.html from the parsed FR list."""
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     active = [f for f in frs if f["is_active"]]
-    archived = [f for f in frs if not f["is_active"]]
+    archived = [f for f in frs if not f["is_active"] and f.get("state", "").upper() != "DONE"]
 
     def card(fr: dict[str, Any]) -> str:
-        approve_btn = ""
-        if fr["signoff_eligible"]:
-            approve_btn = (
-                f'<button class="approve-btn" '
-                f'onclick="approvePR(\'{_html_escape(fr["id"])}\', {fr["pr_number"]}, this)">'
-                f'✓ Approve PR #{fr["pr_number"]}</button>'
-            )
+        signoff_btn = (
+            f'<button class="approve-btn" '
+            f'onclick="signoffFR(\'{_html_escape(fr["id"])}\', this)">'
+            f'✓ Sign Off</button>'
+        ) if fr.get("is_active") else ""
         return f"""
     <div class="fr-card">
       <div class="fr-top">
@@ -592,7 +587,7 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
         <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">{_html_escape(fr["opened"])}</span></div>
         <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">{_html_escape(fr["updated"])}</span></div>
       </div>
-      {approve_btn}
+      {signoff_btn}
       <div class="fr-foot"><button class="ledger-btn" onclick="openLedgerDrawer('{_html_escape(fr['id'])}')" >ledger →</button></div>
     </div>"""
 
@@ -721,47 +716,23 @@ def _start_watcher() -> "_WatcherThread":
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# GitHub PR Approval
+# FR Signoff
 # ─────────────────────────────────────────────────────────────────────────────
 
-def approve_pr(pr_number: int, fr_id: str) -> dict[str, Any]:
-    """
-    Approve a GitHub PR using GITHUB_TOKEN from the environment.
-    Returns {"ok": True} on success or {"ok": False, "error": "..."} on failure.
-    """
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN", "")
-    if not token:
-        return {
-            "ok": False,
-            "error": "GITHUB_TOKEN env var not set. Set it with: "
-                     "[System.Environment]::SetEnvironmentVariable('GITHUB_TOKEN', 'ghp_...', 'Machine')",
-        }
-
-    url = f"https://api.github.com/repos/{GH_OWNER}/{GH_REPO}/pulls/{pr_number}/reviews"
-    body = json.dumps({"event": "APPROVE", "body": f"✓ Approved via FR Ledger Panel for {fr_id}"})
-    req = urllib.request.Request(
-        url,
-        data=body.encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "fr-server/1.0",
-        },
-        method="POST",
-    )
+def signoff_fr(fr_id: str) -> dict[str, Any]:
+    """Write state=DONE to fr_ledgers.db for the given FR."""
+    if not _DB_AVAILABLE:
+        return {"ok": False, "error": "fr_ledgers.db unavailable"}
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            if resp.status in (200, 201):
-                return {"ok": True}
-            return {"ok": False, "error": f"GitHub API returned HTTP {resp.status}"}
-    except urllib.error.HTTPError as exc:
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")
-        except Exception:
-            detail = str(exc)
-        return {"ok": False, "error": f"GitHub API error {exc.code}: {detail}"}
+        conn = _get_fr_conn()
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "UPDATE feature_requests SET state='DONE', updated_at=? WHERE id=?",
+            (now, fr_id),
+        )
+        conn.commit()
+        conn.close()
+        return {"ok": True}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -825,17 +796,14 @@ def _make_handler(watcher: "_WatcherThread") -> type:
                     self._send_json({"ok": False, "error": "Invalid JSON"}, 400)
                     return
 
-                pr_number = payload.get("pr_number")
                 fr_id = payload.get("fr_id", "")
-
-                if not pr_number or not isinstance(pr_number, int):
-                    self._send_json({"ok": False, "error": "pr_number must be an integer"}, 400)
-                    return
                 if not fr_id or not isinstance(fr_id, str):
                     self._send_json({"ok": False, "error": "fr_id must be a non-empty string"}, 400)
                     return
 
-                result = approve_pr(pr_number, fr_id)
+                result = signoff_fr(fr_id)
+                if result["ok"]:
+                    watcher._reload()  # immediately flush stale cache so next /api/frs is fresh
                 status = 200 if result["ok"] else 502
                 self._send_json(result, status, cors_origin="http://localhost:7474")
             else:

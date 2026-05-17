@@ -217,9 +217,14 @@ archive section with final state, PR URLs, and merge SHAs.
 
 ## Registry Schema
 
-`f:\.github\FEATURE_REQUESTS.md` has two sections:
+All FR state lives in **`fr_ledgers.db`** and is read/written exclusively via `fr_cli.py`.
+Do NOT reference or create `f:\.github\FEATURE_REQUESTS.md` or `f:\.github\FR_LEDGERS\` files;
+those are deprecated local archives. Query the live registry with:
+```powershell
+$env:PYTHONUTF8="1"; C:\G\python.exe f:\\u2295Workspace\src\utils\fr_cli.py list --active
+```
 
-**Active** table columns:
+**Feature requests table columns** (as stored in `fr_ledgers.db`):
 - FR ID
 - Title
 - Type
@@ -231,17 +236,15 @@ archive section with final state, PR URLs, and merge SHAs.
 - Opened (date)
 - Last updated (date)
 
-**Archive** table columns (same + `closed` date + `final state`).
-
 ## Constraints
 
 - DO NOT create branches yourself — delegate to `⊕workspace-ci`
+- **Always branch from `main`.** All FR state lives in `fr_ledgers.db`. Do NOT create
+  or reference `.github/FEATURE_REQUESTS.md` or `.github/FR_LEDGERS/` files (deprecated).
 - DO NOT start implementation — delegate to orchestrators
 - DO NOT merge — Tyler's gateway
 - DO NOT skip Tyler's scope confirmation
 - DO NOT allow more than 3 FRs to be `IN_PROGRESS` simultaneously
-- DO NOT skip ledger creation — every FR must have a ledger file
-- DO NOT leave ledger or registry changes uncommitted — use a `chore/ledger-<FR-ID>` branch + PR; never push metadata directly to `main`
 - DO NOT ask more than 5 interview questions — no interrogations
 - DO NOT ask questions whose answers are already stated in the request
 - DO NOT ask interview questions as plain text — always use `vscode_askQuestions`

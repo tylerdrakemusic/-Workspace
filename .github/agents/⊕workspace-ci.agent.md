@@ -288,6 +288,9 @@ Steps:
   per-task approval. See `f:\∞Life\docs\PROTECTION_HOOK.md`.
 - **NEVER let multiple agents write to the same branch or worktree**
 - **NEVER merge code-changing work directly to `main`** when an isolated branch/PR should exist
+- **Always branch from `main`.** All FR state lives in `fr_ledgers.db` and is read/written
+  via `fr_cli.py`. Do NOT create or reference `.github/FEATURE_REQUESTS.md` or
+  `.github/FR_LEDGERS/` files (deprecated). FR metadata never requires a git commit.
 - **NEVER merge a PR with red or pending `test` CI** — wait for green
 - **NEVER force push** (`--force` or `--force-with-lease`) without explicit Tyler approval
 - **NEVER commit secrets** â€” grep for API keys, tokens, passwords before staging
