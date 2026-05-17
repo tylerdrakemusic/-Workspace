@@ -32,7 +32,6 @@ def _make_fr(
     pr_number: int | None = None,
 ) -> dict[str, Any]:
     is_active = state.upper() in fr_server.ACTIVE_STATES
-    signoff_eligible = state.upper() in fr_server.SIGNOFF_ELIGIBLE_STATES and pr_number is not None
     return {
         "id": fr_id,
         "title": "Test FR",
@@ -46,7 +45,6 @@ def _make_fr(
         "opened": "2026-04-25",
         "updated": "2026-04-25",
         "is_active": is_active,
-        "signoff_eligible": signoff_eligible,
         "state_class": fr_server._state_class(state),
     }
 
@@ -75,14 +73,14 @@ class TestQueryFRsFromDb:
         fr = _make_fr("FR-002", "MERGED")
         assert fr["is_active"] is False
 
-    def test_review_requested_signoff_eligible_with_pr(self) -> None:
+    def test_review_requested_is_active(self) -> None:
         fr = _make_fr("FR-003", "REVIEW_REQUESTED", prs="[#9](...)", pr_number=9)
-        assert fr["signoff_eligible"] is True
+        assert fr["is_active"] is True
         assert fr["pr_number"] == 9
 
-    def test_branched_not_signoff_eligible(self) -> None:
+    def test_branched_is_active(self) -> None:
         fr = _make_fr("FR-004", "BRANCHED", prs="[#23](...)", pr_number=23)
-        assert fr["signoff_eligible"] is False
+        assert fr["is_active"] is True
 
     def test_state_class_review_requested(self) -> None:
         fr = _make_fr("FR-005", "REVIEW_REQUESTED")
@@ -171,7 +169,6 @@ class TestApiEndpoints:
             "opened": "2026-04-25",
             "updated": "2026-04-25",
             "is_active": True,
-            "signoff_eligible": True,
             "state_class": "state-info",
         }
         _start_test_server(self._port, [sample_fr])
@@ -209,14 +206,8 @@ class TestApiEndpoints:
         data = self._get("/api/frs")
         assert "stale" in data
 
-    def test_signoff_missing_pr_number_returns_400(self) -> None:
-        status, body = self._post("/signoff", {"fr_id": "FR-20260425-test"})
-        assert status == 400
-        assert body["ok"] is False
-        assert "pr_number" in body["error"]
-
     def test_signoff_missing_fr_id_returns_400(self) -> None:
-        status, body = self._post("/signoff", {"pr_number": 42})
+        status, body = self._post("/signoff", {})
         assert status == 400
         assert body["ok"] is False
         assert "fr_id" in body["error"]
@@ -236,9 +227,9 @@ class TestApiEndpoints:
             data = json.loads(exc.read().decode("utf-8"))
             assert data["ok"] is False
 
-    def test_signoff_calls_approve_pr_when_valid(self) -> None:
-        with patch.object(fr_server, "approve_pr", return_value={"ok": True}) as mock_approve:
-            status, body = self._post("/signoff", {"fr_id": "FR-20260425-test", "pr_number": 42})
+    def test_signoff_calls_signoff_fr_when_valid(self) -> None:
+        with patch.object(fr_server, "signoff_fr", return_value={"ok": True}) as mock_signoff:
+            status, body = self._post("/signoff", {"fr_id": "FR-20260425-test"})
         assert status == 200
         assert body["ok"] is True
-        mock_approve.assert_called_once_with(42, "FR-20260425-test")
+        mock_signoff.assert_called_once_with("FR-20260425-test")
