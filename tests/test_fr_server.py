@@ -134,6 +134,9 @@ class _MockWatcher:
     def stale(self) -> bool:
         return self._stale
 
+    def _reload(self) -> None:  # called by signoff handler after successful write
+        pass
+
 
 def _start_test_server(
     port: int, frs: list[dict[str, Any]], stale: bool = False

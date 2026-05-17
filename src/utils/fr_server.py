@@ -147,7 +147,11 @@ def query_db_max_updated() -> str:
         return ""
     try:
         conn = _get_fr_conn()
-        row = conn.execute("SELECT MAX(updated_at) FROM feature_requests").fetchone()
+        # Filter to rows with a valid ISO timestamp (old rows incorrectly stored FR IDs here)
+        row = conn.execute(
+            "SELECT MAX(updated_at) FROM feature_requests "
+            "WHERE length(updated_at) >= 10 AND substr(updated_at, 5, 1) = '-'"
+        ).fetchone()
         conn.close()
         return (row[0] or "") if row else ""
     except Exception:
@@ -798,6 +802,8 @@ def _make_handler(watcher: "_WatcherThread") -> type:
                     return
 
                 result = signoff_fr(fr_id)
+                if result["ok"]:
+                    watcher._reload()  # immediately flush stale cache so next /api/frs is fresh
                 status = 200 if result["ok"] else 502
                 self._send_json(result, status, cors_origin="http://localhost:7474")
             else:
