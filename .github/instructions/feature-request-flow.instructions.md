@@ -59,10 +59,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → ARCHITECTURE_REVIEW → REVIEW
 | `MERGED` | PR merged to default branch; cycle timer closed | ⊕workspace-ci |
 | `SOAKING` | Feature is live on main, awaiting Tyler's post-merge "confirmed in solution" signoff. FR is still visible in the portal FR panel so Tyler can exercise the feature before accepting it. | Tyler (gate) / ⊕workspace-ci (transition recorder) |
 | `SIGNED_OFF` | Tyler confirmed the feature is present and working on main. Final human gateway. | Tyler |
-| `ARCHIVED` | FR drops off the active portal FR panel. Ledger file remains in the repo as permanent history. | ⊕workspace-ci |
-
-> **Ledger-only PRs (state transitions: MERGED → SOAKING → SIGNED_OFF → ARCHIVED) bypass Tyler's gateways.**
-> `⊕workspace-ci` opens these PRs and auto-merges them asynchronously once `test` is green — no Tyler approval required. They do not block the calling workflow (fire-and-forget). A ledger-only PR touches **only** `.github/FR_LEDGERS/*.md`, `.github/FEATURE_REQUESTS.md`, and `reports/fr_dashboard.html`.
+| `ARCHIVED` | FR drops off the active portal FR panel. FR record persists in `fr_ledgers.db` as permanent history. | ⊕workspace-ci |
 | `CLOSED` | Legacy terminal state (pre-SOAK protocol). Still accepted for backward compat; treat as equivalent to `ARCHIVED` for portal filtering. | ⊕workspace-ci |
 
 ## CI Gateway (LIVE as of FR-20260425)
@@ -89,12 +86,6 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
   the merge API. Attempting merge on a red PR will be rejected by GitHub
   (public repos) or fail review (∞Life).
 - `--no-verify` on ∞Life pushes requires Tyler's explicit per-task approval.
-- **Ledger-only PRs are exempt from the human approval gate.** A PR is
-  ledger-only when its entire diff touches only `.github/FR_LEDGERS/*.md`,
-  `.github/FEATURE_REQUESTS.md`, and/or `reports/fr_dashboard.html`. These
-  PRs are opened and auto-merged by `⊕workspace-ci` (via `gh pr merge
-  --squash --auto`) once `test` is green, without waiting for Tyler. No
-  `BRANCH_CHECKED_OUT` or `TYLER_APPROVED` state transitions are required.
 
 ## Tyler's Gateways (ONLY places humans act)
 
@@ -121,114 +112,61 @@ commits, resolves conflicts, or edits the registry.
 
 ## Registry
 
-Single source of truth for active FRs:
-**`f:\.github\FEATURE_REQUESTS.md`**
+Single source of truth for active FRs: **`fr_ledgers.db`** (at
+`f:\⊕Workspace\src\data\fr_ledgers.db`), accessed via `fr_cli.py`.
 
-Structure: a markdown table of active FRs + an archive section for closed ones.
-Only `⊕workspace-intake` and `⊕workspace-ci` write to it. Every agent reads it
-before starting work to detect conflicts with in-flight FRs.
+Key commands:
+```powershell
+$env:PYTHONUTF8="1"
+# List all active FRs
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active
+# Get a specific FR
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>
+```
 
-## Per-FR Ledger (shared context for every agent)
+Only `⊕workspace-intake` and `⊕workspace-ci` call `fr_cli.py open` and
+`fr_cli.py update-state`. Every agent reads the registry before starting work
+to detect conflicts with in-flight FRs.
 
-Every FR has a dedicated ledger file:
-**`f:\.github\FR_LEDGERS\<FR-ID>.md`**
+## Per-FR Events (shared context for every agent)
 
-The ledger is the FR's **complete narrative history and shared agent context**.
-Template lives at `f:\.github\FR_LEDGERS\_TEMPLATE.md`; see
-`f:\.github\FR_LEDGERS\README.md` for the full spec.
+Every FR has a history of events stored in `fr_ledgers.db` via `fr_cli.py`.
+This is the FR's **complete narrative history and shared agent context**.
 
 ### Read rule (applies to EVERY agent)
-Before taking any action on an FR, read its ledger. This is how agents hand off
-context without a central DB — the ledger contains the original request,
-acceptance criteria, prior decisions, findings, failures, and links to all
-artifacts.
+Before taking any action on an FR, retrieve its current state and event history:
+```powershell
+$env:PYTHONUTF8="1"
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>
+```
+This returns the original request, acceptance criteria, current state, prior
+decisions, findings, failures, and links to all artifacts.
 
 ### Write rule (applies to EVERY agent)
-After acting on an FR, before finishing your turn, append ONE event entry to
-the ledger's **Event Log** section. Format:
-
-```markdown
-### <ISO-8601 timestamp> — <agent-name>
-
-**Event:** state-transition | delegation | decision | finding | failure | artifact | note
-
-**Summary:** <one-line summary>
-
-**Details:**
-<optional multi-line body>
-
-**Next:** <next agent/action, or "awaiting Tyler: <gateway>">
+After acting on an FR, before finishing your turn, record ONE event:
+```powershell
+$env:PYTHONUTF8="1"
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> <agent> <event-type> "<summary>"
 ```
 
-### Hard ledger rules
-- **Intake creates** the ledger on FR open (copy `_TEMPLATE.md`, fill header)
-- **Only intake / CI** update the Header section in place
-- **Event Log and Artifacts are append-only** — never edit or delete past entries
-- **Every state transition** gets an Event Log entry
-- **Every delegation** (agent → agent) gets an Event Log entry from the sending agent
-- **Every artifact** (perf run ID, proof ID, PR URL, commit SHA, report path) gets
-  appended to the Artifacts section
-- **On close**, the ledger stays in the repo as permanent historical record
+Event types: `state-transition` | `delegation` | `decision` | `finding` | `failure` | `artifact` | `note`
 
-### Ledger Persistence Protocol (MANDATORY)
-
-Ledger files and the registry MUST be committed immediately after every write.
-Dangling uncommitted ledger changes are a protocol violation.
-
-Branch protection blocks direct pushes to `main` in all repos (including
-⊕Workspace), so the strategy differs by lifecycle phase:
-
-**Pre-merge (OPEN through TYLER_APPROVED):**
-Ledger and registry writes during this phase go on the **feature branch**
-alongside implementation commits. They merge to `main` with the PR. The
-writing agent appends to the ledger and commits to the active feature branch:
-```bash
-cd f:\⊕Workspace
-git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-git commit -m "⊕ workspace: ledger — <FR-ID> → <new-state>"
-# pushed to the feature branch, not main
+For state transitions, also call:
+```powershell
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> <new-state> [--branch "..."] [--prs "..."]
 ```
 
-**Post-merge (MERGED through ARCHIVED):**
-After the feature branch PR is merged, any remaining ledger updates (cycle
-timer close, soak/sign-off state transitions) must go through a short-lived
-`chore/ledger-<FR-ID>` branch and an immediate PR. The PR touches only
-markdown files so pytest passes trivially → CI is green → merge promptly.
-```bash
-cd f:\⊕Workspace
-git switch -c chore/ledger-<FR-ID>-closeout
-git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-git commit -m "⊕ workspace: ledger — <FR-ID> → MERGED"
-git push origin chore/ledger-<FR-ID>-closeout
-# open PR immediately; merge after green CI
+For recording artifacts (proof files, PRs, SHAs):
+```powershell
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> <type> "<label>" --path "<path>"
 ```
 
-For reconcile runs covering multiple FRs, batch all updates onto a single
-`chore/ledger-reconcile-<YYYYMMDD>` branch in one PR.
-
-**Commit scope:**
-- Include both the ledger file AND `FEATURE_REQUESTS.md` if either changed.
-- Only include files that actually changed (use `git diff --name-only` to
-  confirm before staging).
-
-**Trigger points — when the commit is required:**
-
-| Event | Phase | Writing agent | Branch |
-|-------|-------|---------------|--------|
-| FR opened / triaged | pre-merge | `⊕workspace-intake` | feature branch |
-| Scope approved → BRANCHED | pre-merge | `⊕workspace-intake` | feature branch |
-| Any in-progress event log append | pre-merge | any agent | feature branch |
-| PR merged → MERGED | post-merge | `⊕workspace-ci` | `chore/ledger-<FR-ID>-closeout` |
-| Tyler signs off → SIGNED_OFF / ARCHIVED | post-merge | `⊕workspace-ci` | `chore/ledger-<FR-ID>-archive` |
-| Reconcile run | post-merge | `⊕workspace-ci` | `chore/ledger-reconcile-<YYYYMMDD>` |
-
-**Commit message format:** `⊕ workspace: ledger — <FR-ID> → <new-state>`
-
-Examples:
-- `⊕ workspace: ledger — FR-20260426-foo → TRIAGED`
-- `⊕ workspace: ledger — FR-20260426-foo → MERGED`
-- `⊕ workspace: ledger — FR-20260426-foo → ARCHIVED`
-- `⊕ workspace: ledger — reconcile 3 FRs (MERGED)` (for multi-FR reconcile runs)
+### Hard event rules
+- **Intake opens** the FR on first contact: `fr_cli.py open <FR-ID> ...`
+- **Every state transition** gets a `record-event` call with type `state-transition`
+- **Every delegation** (agent → agent) gets a `record-event` call from the sending agent
+- **Every artifact** (perf run ID, proof ID, PR URL, commit SHA, report path) gets a `record-artifact` call
+- **Events are append-only** — never delete or modify past events
 
 ## FR Cycle Timer (full intake-to-merge timing)
 
@@ -242,8 +180,11 @@ spans the entire FR lifecycle, including all human approval gates.
    ```
    C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py start "fr-cycle-<FR-ID>"
    ```
-   Stash the returned run_id in the ledger header's `Cycle timer` field and in
-   the registry row (Artifacts section of the ledger as well).
+   Stash the returned run_id; record it via:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> metric "Cycle timer run_id" --path "<run_id>"
+   ```
 
 2. **Every state transition** appends an Event Log entry with an ISO timestamp.
    Phase durations (open→scope-approved, branched→review, review→merge) are
@@ -258,12 +199,12 @@ spans the entire FR lifecycle, including all human approval gates.
 4. **Safety net — reconciliation** (for when Tyler merges on GitHub.com without
    CI agent action): `⊕workspace-ci` exposes a `reconcile-fr-timers` capability
    that:
-   - Reads the registry for FRs in `TYLER_APPROVED` or `AUTO_REVIEWED` state
-     with an open (unclosed) Cycle timer
+   - Queries `fr_cli.py list --active` for FRs in `TYLER_APPROVED` or `AUTO_REVIEWED`
+     state with an open (unclosed) Cycle timer
    - Queries GitHub via `mcp_github` tools for each PR's `merged_at` timestamp
    - For any merged PR, closes the cycle timer with `--at <merged_at>` to
      backfill the true merge time
-   - Updates the ledger: state → MERGED → CLOSED, appends Event Log entry
+   - Updates FR state via `fr_cli.py update-state` and records a reconciliation event
    - Can be invoked on-demand (`@⊕workspace-ci reconcile`) or scheduled
 
 ### Why this design
@@ -322,7 +263,7 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 
 ```
 1. Tyler → ⊕workspace-intake: "Add X to projects A and B"
-2. ⊕workspace-intake: triage, record in registry as TRIAGED, ask Tyler to confirm scope
+2. ⊕workspace-intake: triage, open FR in `fr_ledgers.db` via `fr_cli.py open`, ask Tyler to confirm scope
 3. Tyler: "approved"  ← GATEWAY
 4. ⊕workspace-intake → ⊕workspace-ci: create branches + worktrees + draft PRs for A and B
 5. ⊕workspace-ci: records BRANCHED state, returns PR URLs
@@ -336,13 +277,15 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
     Notifies Tyler: "Branch checked out at F:\worktrees\<fr-id>\<project> — ready to demo."
 12. Tyler: reviews the automated report AND the live feature  ← GATEWAY
 13. Tyler: "merge"  ← GATEWAY
-14. ⊕workspace-ci: merge PRs, delete branches + worktrees, state → MERGED → SOAKING.
-    Records `Merged at` timestamp in the FR ledger header. FR remains visible on
+14. ⊕workspace-ci: merge PRs, delete branches + worktrees, update state via
+    `fr_cli.py update-state <FR-ID> MERGED` and `fr_cli.py update-state <FR-ID> SOAKING`.
+    Records `Merged at` in the FR record. FR remains visible on
     the portal FR panel with "Soaking for Xd Yh" badge.
 15. Tyler: exercises the feature on main for as long as he wants.
 16. Tyler: "signed off on FR-<ID>"  ← GATEWAY (post-soak)
-17. ⊕workspace-ci: records `Signed off at` timestamp, state → SIGNED_OFF → ARCHIVED.
-    FR drops off active portal panel; ledger file persists in repo as permanent history.
+17. ⊕workspace-ci: updates state via `fr_cli.py update-state <FR-ID> SIGNED_OFF` and
+    `fr_cli.py update-state <FR-ID> ARCHIVED`.
+    FR drops off active portal panel; FR record persists in `fr_ledgers.db`.
 ```
 
 ## Agent Responsibility Matrix
@@ -369,12 +312,8 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 - NEVER merge a PR while its required `test` status check is red or pending.
 - NEVER archive an FR before it reaches `SIGNED_OFF`. Merged ≠ done.
 - NEVER let two agent sessions write to the same worktree.
-- NEVER edit the registry except via `⊕workspace-intake` or `⊕workspace-ci`.
-- NEVER edit past Event Log entries in an FR ledger — append only.
-- ALWAYS read the FR's ledger before acting on the FR.
-- ALWAYS append an Event Log entry to the FR's ledger after acting.
+- NEVER make direct writes to FR state — always use `fr_cli.py`.
+- ALWAYS retrieve FR context with `fr_cli.py get <FR-ID>` before acting on an FR.
+- ALWAYS record events with `fr_cli.py record-event` after acting on an FR.
+- ALWAYS check active FRs with `fr_cli.py list --active` before starting work.
 - ALWAYS include the FR ID in commit messages and PR titles.
-- ALWAYS record `Merged at` (ISO-8601) in the ledger header when transitioning
-  to `SOAKING`, and `Signed off at` when transitioning to `SIGNED_OFF`.
-- ALWAYS read `f:\.github\FEATURE_REQUESTS.md` before starting work to check
-  for conflicts.

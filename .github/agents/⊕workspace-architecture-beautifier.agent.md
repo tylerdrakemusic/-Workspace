@@ -128,5 +128,9 @@ hand off until the SVG is generated successfully.
   than no `.mmd`
 - DO NOT touch `.mmd` files outside `f:\⊕Workspace\diagrams\`
 - ALWAYS use the house classDef block — consistency across diagrams matters
-- ALWAYS append an Event Log entry to the FR ledger
+- ALWAYS record an event in the FR database:
+  ```powershell
+  $env:PYTHONUTF8="1"
+  C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-architecture-beautifier artifact "Updated diagram: <filename>.mmd"
+  ```
 - ALWAYS record proof for each file written

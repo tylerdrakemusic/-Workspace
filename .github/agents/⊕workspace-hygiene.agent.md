@@ -198,7 +198,13 @@ After the sweep, perform self-audit per `agent-self-regen.instructions.md`:
 
 ### Phase 3b — FR Ledger Reconciliation
 
-Read `f:\⊕Workspace\.github\FEATURE_REQUESTS.md` and audit the Active FRs table:
+Read active FRs and audit them:
+```powershell
+$env:PYTHONUTF8="1"
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active
+```
+
+Audit the active FR list:
 
 1. **Duplicate detection** — scan Active table for FR IDs that also appear in Archive → remove the Active row (archive is source of truth for closed/merged FRs)
 2. **Superseded detection** — Active rows whose own description says "superseded by" or "recommend close" → move to Archive as `CLOSED (superseded by <FR-ID>)`, set Closed date

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import sys
-import textwrap
 import threading
 import time
 import urllib.request
@@ -23,71 +22,90 @@ import fr_server
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fixtures
+# Helpers — build FR dicts matching the shape query_feature_requests_from_db returns
 # ─────────────────────────────────────────────────────────────────────────────
 
-SAMPLE_REGISTRY = textwrap.dedent("""\
-    # Feature Request Registry
-
-    ## Active FRs
-
-    | FR ID | Title | Type | Projects | State | Branch | PRs | Owner | Opened | Updated |
-    |-------|-------|------|----------|-------|--------|-----|-------|--------|---------|
-    | FR-20260425-live-fr-ledger-panel | Live FR Ledger Panel | feature | ⊕Workspace | BRANCHED | feature/workspace/live-fr-ledger-panel | [#23](https://github.com/tylerdrakemusic/-Workspace/pull/23) | ⊕workspace-ci | 2026-04-25 | 2026-04-25 |
-    | FR-20260423-audio-brief-fix | Fix Audio Brief | fix | 👁AI-Manifest | REVIEW_REQUESTED | fix/ai-manifest/audio-brief | [#9](https://github.com/tylerdrakemusic/-Workspace/pull/9) | ⊕workspace-ci | 2026-04-23 | 2026-04-24 |
-    | FR-20260422-old-feature | Old Feature | feature | ⊕Workspace | MERGED | main | — | ⊕workspace-overseer | 2026-04-22 | 2026-04-22 |
-""")
-
-
-@pytest.fixture()
-def registry_file(tmp_path: Path) -> Path:
-    f = tmp_path / "FEATURE_REQUESTS.md"
-    f.write_text(SAMPLE_REGISTRY, encoding="utf-8")
-    return f
+def _make_fr(
+    fr_id: str,
+    state: str,
+    prs: str = "—",
+    pr_number: int | None = None,
+) -> dict[str, Any]:
+    is_active = state.upper() in fr_server.ACTIVE_STATES
+    return {
+        "id": fr_id,
+        "title": "Test FR",
+        "type": "feature",
+        "projects": "⊕Workspace",
+        "state": state,
+        "branch": f"feature/workspace/{fr_id}",
+        "prs": prs,
+        "pr_number": pr_number,
+        "owner": "⊕workspace-ci",
+        "opened": "2026-04-25",
+        "updated": "2026-04-25",
+        "is_active": is_active,
+        "state_class": fr_server._state_class(state),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# parse_feature_requests
+# query_feature_requests_from_db (unit — DB mocked)
 # ─────────────────────────────────────────────────────────────────────────────
 
-class TestParseFRs:
-    def test_returns_correct_count(self, registry_file: Path) -> None:
-        frs = fr_server.parse_feature_requests(registry_file)
-        assert len(frs) == 3
+class TestQueryFRsFromDb:
+    def test_db_unavailable_returns_empty(self) -> None:
+        with patch.object(fr_server, "_DB_AVAILABLE", False):
+            result = fr_server.query_feature_requests_from_db()
+        assert result == []
 
-    def test_first_fr_fields(self, registry_file: Path) -> None:
-        frs = fr_server.parse_feature_requests(registry_file)
-        first = frs[0]
-        assert first["id"] == "FR-20260425-live-fr-ledger-panel"
-        assert first["state"] == "BRANCHED"
-        assert first["is_active"] is True
-        assert first["signoff_eligible"] is False  # BRANCHED not in signoff-eligible states
+    def test_db_error_returns_empty(self) -> None:
+        with patch.object(fr_server, "_DB_AVAILABLE", True), \
+             patch.object(fr_server, "_init_fr_db", side_effect=RuntimeError("fail")):
+            result = fr_server.query_feature_requests_from_db()
+        assert result == []
 
-    def test_review_requested_fr_is_signoff_eligible(self, registry_file: Path) -> None:
-        frs = fr_server.parse_feature_requests(registry_file)
-        review_fr = next(f for f in frs if f["id"] == "FR-20260423-audio-brief-fix")
-        assert review_fr["signoff_eligible"] is True
-        assert review_fr["pr_number"] == 9
+    def test_active_state_flag(self) -> None:
+        fr = _make_fr("FR-001", "BRANCHED")
+        assert fr["is_active"] is True
 
-    def test_merged_fr_is_not_active(self, registry_file: Path) -> None:
-        frs = fr_server.parse_feature_requests(registry_file)
-        merged = next(f for f in frs if f["id"] == "FR-20260422-old-feature")
-        assert merged["is_active"] is False
+    def test_merged_state_not_active(self) -> None:
+        fr = _make_fr("FR-002", "MERGED")
+        assert fr["is_active"] is False
 
-    def test_missing_file_returns_empty(self, tmp_path: Path) -> None:
-        missing = tmp_path / "MISSING.md"
-        frs = fr_server.parse_feature_requests(missing)
-        assert frs == []
+    def test_review_requested_is_active(self) -> None:
+        fr = _make_fr("FR-003", "REVIEW_REQUESTED", prs="[#9](...)", pr_number=9)
+        assert fr["is_active"] is True
+        assert fr["pr_number"] == 9
 
-    def test_pr_number_extraction(self, registry_file: Path) -> None:
-        frs = fr_server.parse_feature_requests(registry_file)
-        first = frs[0]
-        assert first["pr_number"] == 23
+    def test_branched_is_active(self) -> None:
+        fr = _make_fr("FR-004", "BRANCHED", prs="[#23](...)", pr_number=23)
+        assert fr["is_active"] is True
 
-    def test_state_class_assigned(self, registry_file: Path) -> None:
-        frs = fr_server.parse_feature_requests(registry_file)
-        review_fr = next(f for f in frs if f["state"] == "REVIEW_REQUESTED")
-        assert review_fr["state_class"] == "state-info"
+    def test_state_class_review_requested(self) -> None:
+        fr = _make_fr("FR-005", "REVIEW_REQUESTED")
+        assert fr["state_class"] == "state-info"
+
+    def test_state_class_merged(self) -> None:
+        fr = _make_fr("FR-006", "MERGED")
+        assert fr["state_class"] == "state-done"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# query_ledger_events (unit — DB mocked)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestQueryLedgerEvents:
+    def test_db_unavailable_returns_empty(self) -> None:
+        with patch.object(fr_server, "_DB_AVAILABLE", False):
+            result = fr_server.query_ledger_events("FR-001")
+        assert result == []
+
+    def test_db_error_returns_empty(self) -> None:
+        with patch.object(fr_server, "_DB_AVAILABLE", True), \
+             patch.object(fr_server, "_get_fr_conn", side_effect=RuntimeError("fail")):
+            result = fr_server.query_ledger_events("FR-001")
+        assert result == []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -115,6 +133,9 @@ class _MockWatcher:
     @property
     def stale(self) -> bool:
         return self._stale
+
+    def _reload(self) -> None:  # called by signoff handler after successful write
+        pass
 
 
 def _start_test_server(
@@ -151,7 +172,6 @@ class TestApiEndpoints:
             "opened": "2026-04-25",
             "updated": "2026-04-25",
             "is_active": True,
-            "signoff_eligible": True,
             "state_class": "state-info",
         }
         _start_test_server(self._port, [sample_fr])
@@ -189,14 +209,8 @@ class TestApiEndpoints:
         data = self._get("/api/frs")
         assert "stale" in data
 
-    def test_signoff_missing_pr_number_returns_400(self) -> None:
-        status, body = self._post("/signoff", {"fr_id": "FR-20260425-test"})
-        assert status == 400
-        assert body["ok"] is False
-        assert "pr_number" in body["error"]
-
     def test_signoff_missing_fr_id_returns_400(self) -> None:
-        status, body = self._post("/signoff", {"pr_number": 42})
+        status, body = self._post("/signoff", {})
         assert status == 400
         assert body["ok"] is False
         assert "fr_id" in body["error"]
@@ -216,9 +230,9 @@ class TestApiEndpoints:
             data = json.loads(exc.read().decode("utf-8"))
             assert data["ok"] is False
 
-    def test_signoff_calls_approve_pr_when_valid(self) -> None:
-        with patch.object(fr_server, "approve_pr", return_value={"ok": True}) as mock_approve:
-            status, body = self._post("/signoff", {"fr_id": "FR-20260425-test", "pr_number": 42})
+    def test_signoff_calls_signoff_fr_when_valid(self) -> None:
+        with patch.object(fr_server, "signoff_fr", return_value={"ok": True}) as mock_signoff:
+            status, body = self._post("/signoff", {"fr_id": "FR-20260425-test"})
         assert status == 200
         assert body["ok"] is True
-        mock_approve.assert_called_once_with(42, "FR-20260425-test")
+        mock_signoff.assert_called_once_with("FR-20260425-test")

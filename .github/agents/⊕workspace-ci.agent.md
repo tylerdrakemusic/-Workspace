@@ -152,39 +152,25 @@ git worktree add .worktrees\<branch-slug> <branch-name>
 3. Re-run targeted tests after conflict resolution
 4. Merge through the PR after checks and approval, then delete the branch/worktree only after merge
 5. Treat the PR body and comments as the shared handoff artifact between CLI and chat agents
-6. **On merge of an FR's PR:** close the FR cycle timer, then open a ledger
-   closeout PR:
+6. **On merge of an FR's PR:** close the FR cycle timer and update FR state via fr_cli.py:
    ```
    C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py end <cycle_run_id> \
        --status ok --detail "FR-<ID> merged: <merge SHAs>"
    ```
-   Read the cycle run_id from the FR ledger's Header `Cycle timer` field.
-   Update the ledger header (`State`, `Merged at`) and append the final Event
-   Log entry. Update the registry row state and move to archive section.
-   Then **commit via a short-lived closeout branch** (branch protection blocks
-   direct pushes to `main` even for metadata):
-   ```bash
-   cd f:\⊕Workspace
-   git switch -c chore/ledger-<FR-ID>-closeout
-   git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-   git commit -m "⊕ workspace: ledger — <FR-ID> → MERGED"
-   git push origin chore/ledger-<FR-ID>-closeout
-   # Open a PR; CI will be green (no code touched) — merge promptly
+   Then record the state transition:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> MERGED --branch "<branch>" --prs "<PR-URLs>"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-ci state-transition "FR merged — cycle timer closed. Merge SHAs: <merge SHAs>"
    ```
-   The closeout PR touches only markdown files; pytest passes trivially.
-   Merge it as soon as CI is green without requiring Tyler's review.
 
 7. **On Tyler's post-soak signoff (SIGNED_OFF → ARCHIVED):**
-   Record `Signed off at` timestamp in the ledger header, append Event Log
-   entry, update state. Reuse the open closeout branch if still live, or
-   open a new `chore/ledger-<FR-ID>-archive` branch:
-   ```bash
-   cd f:\⊕Workspace
-   git switch -c chore/ledger-<FR-ID>-archive
-   git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md
-   git commit -m "⊕ workspace: ledger — <FR-ID> → ARCHIVED"
-   git push origin chore/ledger-<FR-ID>-archive
-   # Open PR; merge after green CI
+   Update FR state via fr_cli.py:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> SIGNED_OFF
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> ARCHIVED
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-ci state-transition "Tyler signed off — FR archived"
    ```
 
 ### 6. Post-Merge Server Auto-Restart
@@ -245,46 +231,15 @@ directory or source path.
 - Never kill a process on a port that isn't registered — scope is strict.
 - If the server process is not found (already stopped), skip the kill step
   and go straight to restart.
-- This step runs **after** the merge and **before** ledger closeout so Tyler
-  can see the update while the closeout PR is still open.
+- This step runs **after** the merge and **before** invoking post-merge cleanup so Tyler
+  can see the update immediately.
 
-### 7. Ledger Commit Protocol
+### 7. FR State Updates (post-merge)
 
-After merging a feature PR, immediately open a **ledger-state PR** targeting the ⊕Workspace `main` branch. This PR is **fire-and-forget** — do not await it before proceeding with other work.
-
-**What a ledger-only PR touches (and nothing else):**
-- `.github/FR_LEDGERS/<FR-ID>.md`
-- `.github/FEATURE_REQUESTS.md`
-- `reports/fr_dashboard.html`
-
-**Steps:**
-
-1. Create the ledger branch and commit the state-transition file updates:
-   ```bash
-   git switch -c chore/ledger-<FR-ID>-merged
-   git add .github/FR_LEDGERS/<FR-ID>.md .github/FEATURE_REQUESTS.md reports/fr_dashboard.html
-   git commit -m "chore(ledger): FR-<FR-ID> → MERGED"
-   git push origin chore/ledger-<FR-ID>-merged
-   ```
-
-2. Open the PR and immediately enable auto-merge:
-   ```bash
-   gh pr create \
-     --title "chore(ledger): FR-<FR-ID> → MERGED" \
-     --body "Automated ledger state transition. No code change." \
-     --base main \
-     --head chore/ledger-<FR-ID>-merged
-   gh pr merge --squash --auto <PR-number>
-   ```
-
-3. Continue the calling workflow without waiting for the auto-merge to complete.
-
-4. After the ledger PR is merged (async), invoke `⊕workspace-hygiene` on the affected project checkout for post-merge artifact cleanup.
-
-**Key rules:**
-- Ledger-only PRs **bypass Tyler's approval gate** per `feature-request-flow.instructions.md`. `test` CI must still pass before auto-merge fires.
-- Never include source code, test files, or config changes in a ledger-only PR. If the diff would touch anything beyond the three paths above, open a separate code PR first.
-- These PRs use `--squash` to keep main history clean.
+After merging a feature PR, FR state transitions (MERGED, SOAKING, SIGNED_OFF, ARCHIVED)
+are written directly to `fr_ledgers.db` via `fr_cli.py` — no git commits or ledger-only
+PRs needed. Invoke `⊕workspace-hygiene` on the affected project checkout for
+post-merge artifact cleanup.
 
 ### 8. Reconcile FR Cycle Timers (safety net)
 
@@ -292,10 +247,15 @@ Invoked on-demand (`@⊕workspace-ci reconcile-fr-timers`) or scheduled. Catches
 FRs where Tyler merged on GitHub.com without the CI agent doing the merge.
 
 Steps:
-1. Read `f:\.github\FEATURE_REQUESTS.md` for FRs in `TYLER_APPROVED` or
-   `AUTO_REVIEWED` state (any state with open Cycle timer and at least one PR)
-2. For each such FR, read its ledger header to get the Cycle timer run_id
-   and the PR URLs
+1. Query FRs in `TYLER_APPROVED` or `AUTO_REVIEWED` state with open cycle timers:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active
+   ```
+2. For each such FR, retrieve cycle timer run_id and PR URLs:
+   ```powershell
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>
+   ```
 3. Query each PR via `mcp_github` tools — check `merged` (bool) and
    `merged_at` (ISO timestamp)
 4. For any merged PR:
@@ -306,29 +266,18 @@ Steps:
          --status ok --detail "FR-<ID> merged via GitHub" \
          --at <unix_merged_at>
      ```
-   - Update the FR ledger: state → `MERGED`, fill `Merged at`, append Event
-     Log entry with the reconciliation details and actual merge SHA
-   - Update the registry: move row to archive section
-5. **After processing all FRs in the reconcile run**, batch-commit all
-   updated ledger files and the registry via a single closeout branch:
-   ```bash
-   cd f:\⊕Workspace
-   git switch -c chore/ledger-reconcile-<YYYYMMDD>
-   git add .github/FR_LEDGERS/  .github/FEATURE_REQUESTS.md
-   git commit -m "⊕ workspace: ledger — reconcile <N> FRs (MERGED)"
-   git push origin chore/ledger-reconcile-<YYYYMMDD>
-   # Open PR; CI passes trivially (markdown only) — merge promptly
-   ```
-   If only one FR was reconciled, use the single-FR format:
-   `⊕ workspace: ledger — <FR-ID> → MERGED`
-6. Report a summary of reconciled FRs (count, IDs, cycle times)
+   - Update FR state and record reconciliation event:
+     ```powershell
+     $env:PYTHONUTF8="1"
+     C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> MERGED
+     C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-ci state-transition "Reconciled — FR merged via GitHub at <merged_at>. Merge SHA: <sha>"
+     ```
+5. Report a summary of reconciled FRs (count, IDs, cycle times)
 
 ## Safety Rules
 - **NEVER push or merge directly to `main` in any repo.** All changes flow:
   feature branch → PR → green `test` status check → merge. (FR-20260425
   CI gateway is live — direct-to-main is forbidden as a workflow rule.)
-  This applies to ledger/registry files too — use a `chore/ledger-*` branch
-  and PR for all post-merge ledger closeout commits.
 - **NEVER attempt to merge a PR while its required `test` check is red or
   pending.** The 4 public repos will reject the merge API call with HTTP 405
   ("Required status check 'test' is failing"); ∞Life relies on agent
@@ -339,12 +288,14 @@ Steps:
   per-task approval. See `f:\∞Life\docs\PROTECTION_HOOK.md`.
 - **NEVER let multiple agents write to the same branch or worktree**
 - **NEVER merge code-changing work directly to `main`** when an isolated branch/PR should exist
+- **Always branch from `main`.** All FR state lives in `fr_ledgers.db` and is read/written
+  via `fr_cli.py`. Do NOT create or reference `.github/FEATURE_REQUESTS.md` or
+  `.github/FR_LEDGERS/` files (deprecated). FR metadata never requires a git commit.
 - **NEVER merge a PR with red or pending `test` CI** — wait for green
 - **NEVER force push** (`--force` or `--force-with-lease`) without explicit Tyler approval
 - **NEVER commit secrets** â€” grep for API keys, tokens, passwords before staging
 - **NEVER commit .env files** â€” verify `.gitignore` covers them
 - **NEVER amend published commits** without approval
-- **NEVER leave ledger or registry changes uncommitted** — use a `chore/ledger-*` branch + PR for all ledger writes. Never push `.github/FR_LEDGERS/` or `.github/FEATURE_REQUESTS.md` directly to `main`.
 - **ALWAYS show Tyler the commit plan before executing** (list of groups + messages)
 - **ALWAYS run `git diff --staged` summary before each commit**
 - **ALWAYS create or reuse the correct isolated session branch/worktree before staging**

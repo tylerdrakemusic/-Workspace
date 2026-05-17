@@ -16,7 +16,11 @@ Find epic/story-level opportunities such as launches, integrations, and system-l
 
 1. Start perf run (required first action)
 2. Read `f:\⊕Workspace\AGENT_STARTUP.md`
-3. Read `f:\⊕Workspace\.github\FEATURE_REQUESTS.md`
+3. Query active FRs to avoid duplicating in-flight work:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active
+   ```
 4. Use `f:\👁AI-Manifest\tools\discover_todos.py` for discovery and approval-gated insertion
 
 ## Source of Truth

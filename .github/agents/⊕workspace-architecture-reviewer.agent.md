@@ -22,11 +22,14 @@ that finishes implementation invokes you. Your output flows into the
 ## Context Bootstrap
 
 1. Read `f:\.github\copilot-instructions.md` for workspace conventions
-2. Read the FR row from `f:\.github\FEATURE_REQUESTS.md`
-3. Read the full FR ledger at `f:\.github\FR_LEDGERS\<FR-ID>.md`
-4. Enumerate the diff for the FR's PR(s) (use `mcp_github` tools or `git diff`)
-5. List `f:\⊕Workspace\diagrams\*.mmd` so you know what diagrams exist
-6. Start a perf run
+2. Retrieve the FR record:
+   ```powershell
+   $env:PYTHONUTF8="1"
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>
+   ```
+3. Enumerate the diff for the FR's PR(s) (use `mcp_github` tools or `git diff`)
+4. List `f:\⊕Workspace\diagrams\*.mmd` so you know what diagrams exist
+5. Start a perf run
 
 ## Detection Heuristics
 
@@ -109,6 +112,10 @@ PASS_WITH_UPDATES before letting the FR advance to `REVIEW_REQUESTED`.
   your PASS / PASS_WITH_UPDATES result
 - DO NOT skip the staleness check — every detected architectural change
   must have its diagram verified
-- ALWAYS append an Event Log entry to the FR ledger with your decision
+- ALWAYS record an event in the FR database with your decision:
+  ```powershell
+  $env:PYTHONUTF8="1"
+  C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-architecture-reviewer finding "Architecture review: <PASS|PASS_WITH_UPDATES|STALE|MISSING>. <summary>"
+  ```
 - ALWAYS record proof: the impact report itself is the proof artifact
   (`proof_cli.py record <run_id> ⊕workspace-architecture-reviewer report ...`)
