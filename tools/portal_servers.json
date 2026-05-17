@@ -42,6 +42,13 @@
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_band_mgmt.ps1",
                         "enabled":  true
+                    },
+                    {
+                        "name":  "FR Board",
+                        "port":  7474,
+                        "project":  "⊕Workspace",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_fr_board.ps1",
+                        "enabled":  true
                     }
                 ]
 }

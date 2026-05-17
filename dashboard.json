@@ -6,10 +6,9 @@
       "id": "fr-board",
       "title": "Feature Requests",
       "description": "Active FRs with state, branch, merge date, soak duration, and signoff status",
-      "type": "static_html",
-      "generator": "tools/fr_dashboard.py",
-      "output": "reports/fr_dashboard.html",
-      "cli": "C:\\G\\python.exe tools/fr_dashboard.py",
+      "type": "flask_app",
+      "url": "http://localhost:7474",
+      "cli": "C:\\G\\python.exe f:\\⊕Workspace\\src\\utils\\fr_server.py --port 7474",
       "category": "workflow",
       "icon": "📋",
       "priority": 50
