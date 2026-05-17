@@ -357,7 +357,7 @@ _JS = r"""
     const signoffBtn = `<button class="approve-btn" onclick="signoffFR('${escHtml(fr.id)}', this)">✓ Sign Off</button>`;
 
     return `
-      <div class="fr-card">`;
+      <div class="fr-card">
         <div class="fr-top">
           <div class="fr-id">${escHtml(fr.id)}</div>
           <div class="fr-badges">
@@ -379,7 +379,7 @@ _JS = r"""
 
   function renderBoard(frs) {
     const active = frs.filter(f => f.is_active);
-    const archived = frs.filter(f => !f.is_active);
+    const archived = frs.filter(f => !f.is_active && f.state.toUpperCase() !== 'DONE');
 
     const activeHtml = active.length
       ? active.map(renderFR).join('')
@@ -440,7 +440,6 @@ _JS = r"""
       alert('FR server is offline. Cannot sign off.');
       return;
     }
-    if (!confirm('Sign off ' + frId + '?\nThis will mark it DONE and remove it from view.')) return;
     btn.disabled = true;
     btn.textContent = 'Signing off…';
     try {
@@ -560,16 +559,14 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
     """Write a fresh fr_dashboard.html from the parsed FR list."""
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     active = [f for f in frs if f["is_active"]]
-    archived = [f for f in frs if not f["is_active"]]
+    archived = [f for f in frs if not f["is_active"] and f.get("state", "").upper() != "DONE"]
 
     def card(fr: dict[str, Any]) -> str:
-        approve_btn = ""
-        if fr["signoff_eligible"]:
-            approve_btn = (
-                f'<button class="approve-btn" '
-                f'onclick="approvePR(\'{_html_escape(fr["id"])}\', {fr["pr_number"]}, this)">'
-                f'✓ Approve PR #{fr["pr_number"]}</button>'
-            )
+        signoff_btn = (
+            f'<button class="approve-btn" '
+            f'onclick="signoffFR(\'{_html_escape(fr["id"])}\', this)">'
+            f'✓ Sign Off</button>'
+        ) if fr.get("is_active") else ""
         return f"""
     <div class="fr-card">
       <div class="fr-top">
@@ -586,7 +583,7 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
         <div class="meta-row"><span class="meta-key">Opened</span><span class="meta-val">{_html_escape(fr["opened"])}</span></div>
         <div class="meta-row"><span class="meta-key">Updated</span><span class="meta-val">{_html_escape(fr["updated"])}</span></div>
       </div>
-      {approve_btn}
+      {signoff_btn}
       <div class="fr-foot"><button class="ledger-btn" onclick="openLedgerDrawer('{_html_escape(fr['id'])}')" >ledger →</button></div>
     </div>"""
 
