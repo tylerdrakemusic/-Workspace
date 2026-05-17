@@ -45,7 +45,19 @@ Step 1: Run pytest in each project that has tests/
 Step 2: If all pass â†’ proceed to commit
 Step 3: If any fail â†’ report failures, DO NOT commit failing code
 ```
+**Playwright / portal tests (`tests/test_portal_playwright.py`):**
 
+These tests validate from Tyler's actual portal entry point:
+```
+C:\Windows\System32\wscript.exe
+    "C:\Users\tyler\AppData\Local\WorkspacePortal\open_portal.vbs"
+        → launch_portal.ps1 → file:///f:/⊕Workspace/reports/portal.html
+```
+
+- Tests that hit `http://localhost:7474` (FR board) are auto-skipped when the server is not running — this is expected in CI; they are live-server smoke tests
+- Tests that load `file://` portal and inspect iframe `src` attributes DO run in CI (no server needed)
+- Before running playwright tests, ensure the portal has been regenerated: `C:\G\python.exe f:\⊕Workspace\tools\dashboard_portal.py --regen --no-open`
+- FR board is started via `tools/start_fr_board.ps1` (not `fr_portal_server.py` — that legacy binary is deprecated)
 ### 3. Status Report
 ```
 Step 1: git status per project subdirectory
