@@ -91,9 +91,18 @@ _FP_PATTERNS = [
     re.compile(r'api_key\s*=\s*["\']test-key'),
     # Explicit fake keys passed as method args in tests (e.g. api_key="sk-explicit")
     re.compile(r'api_key\s*=\s*["\'][a-zA-Z0-9]+-explicit'),
-    # String matching/docs referencing http://
-    re.compile(r'startswith\s*\(\s*["\']http://'),
+    # String matching/docs referencing http:// — plain and tuple-form: startswith(("http://", ...))
+    re.compile(r'startswith\s*\(\s*\(?["\']http://'),
     re.compile(r'["\']URL must start with'),
+    # SVG/XML namespace URIs are not real HTTP requests
+    re.compile(r'http://www\.w3\.org/'),
+    re.compile(r'xmlns\s*=\s*["\']http://'),
+    # http:// mentioned inside a code comment (# or //) — not a live URL
+    re.compile(r'(?:#|//)\s.*http://'),
+    # http:// followed by whitespace — URL fragment/scheme reference, not a live URL
+    re.compile(r'http://\s'),
+    # Lines with an explicit nosec suppression annotation
+    re.compile(r'#\s*nosec'),
     # random_token = "fallback" (not a real secret)
     re.compile(r'random_token\s*=\s*["\']fallback'),
     # eval/exec/shell=True inside re.compile() string literals (scan pattern definitions)
@@ -108,6 +117,9 @@ _FP_PATTERNS = [
 
 
 def _is_false_positive(line_text: str) -> bool:
+    # Honour bandit-style nosec annotations on the same line
+    if re.search(r'#\s*nosec', line_text):
+        return True
     return any(fp.search(line_text) for fp in _FP_PATTERNS)
 
 
