@@ -27,6 +27,11 @@ if (Test-Path $PORTAL_GEN) {
     $env:PYTHONIOENCODING = "utf-8"
     try {
         Start-Process -FilePath "C:\G\python.exe" -ArgumentList @($PORTAL_GEN, "--regen", "--no-open") -WindowStyle Hidden
+        # Regenerate security dashboard in parallel so it reflects current DB state on every open
+        $SECURITY_SCAN = Join-Path (Split-Path -Parent $TOOLS_DIR) "src\utils\security_scan.py"
+        if (Test-Path $SECURITY_SCAN) {
+            Start-Process -FilePath "C:\G\python.exe" -ArgumentList @($SECURITY_SCAN) -WindowStyle Hidden
+        }
     }
     finally {
         $env:PYTHONUTF8 = $prevPyUtf8
