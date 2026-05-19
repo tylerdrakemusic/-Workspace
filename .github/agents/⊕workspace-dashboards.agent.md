@@ -131,8 +131,18 @@ Each project's `dashboard.json` is a JSON file at the project root:
 2. The registry auto-discovers via `AGENT_STARTUP.md` presence
 3. Run `dashboard_portal.py --regen` to include in the portal
 
+## Portal Left Nav Design Principle (MANDATORY)
+
+The portal left sidebar is **high-level navigation only** — one entry per top-level dashboard (Music, ∞Life, Quantum, AI-Manifest, Workspace). It must stay minimal and uncluttered.
+
+**Rules:**
+- Do NOT add every new feature page to the portal left nav. Feature sub-pages (Rhyme Grouper, Artist Links, etc.) belong **inside their parent dashboard**, not in the sidebar.
+- Prefer embedding feature pages deeper in the system: as tab-nav pills inside the relevant dashboard, or as dedicated routes accessible from within that dashboard.
+- Only add a portal left-nav entry for a page that is a **top-level, standalone dashboard** a user would navigate to directly without going through a parent first.
+- When a new feature page is being registered: default is tab/pill inside the owning dashboard. Ask Tyler explicitly before adding to portal left nav.
+
 ## Constraints
-- NEVER modify dashboard generators directly â€” delegate to project orchestrators
+- NEVER modify dashboard generators directly — delegate to project orchestrators
 - ALWAYS validate specs after modification
 - ALWAYS regenerate the portal after spec changes
 - Portal output: `f:\⊕Workspace\reports\portal.html` (gitignored — regenerates on launch)
