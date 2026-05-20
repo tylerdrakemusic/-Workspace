@@ -35,7 +35,27 @@ Checklist per project: TODO hygiene · temp file scan · research freshness (>6 
 - *👁AI-Manifest*: temp output files; API key ref in `PROJECT_PROFILE.json`
 - *⊕Workspace*: stale report HTMLs (>30d); proof artifacts (>60d); token files — never delete, flag expired by name
 
-## Phase 1b — Stale Worktree Cleanup
+## Phase 1b — tmp/ Audit (all projects)
+
+For each project's `tmp/` folder, apply this decision tree:
+
+| File pattern | Action |
+|---|---|
+| Sensitive content (credentials, keys, tokens in body) | **Delete immediately** |
+| PR write/patch scripts (`write_*.py`, `patch_*.py`, `pr_*.json`, `*_results.*`) | Delete (merge complete) |
+| Report backups (`reports_backup_*`, `*_backup_*`) | Delete (reports are regeneratable) |
+| Test/demo scripts (`*_demo.*`, `test_*.py`) | Evaluate: promote to `tools/` if reusable, else delete |
+| Reusable utilities (DB rebuild, header checker, diagnostic) | Promote to `tools/` with descriptive name, then delete from `tmp/` |
+| Anything else >7d old with no active FR reference | Delete |
+
+**Target state: `tmp/` is empty after every PR merge.** Flag any non-empty `tmp/` in the Phase 4 report.
+
+Sensitive-content scan (run before any other action):
+```powershell
+Select-String -Path "<project>\tmp\*" -Pattern "SetEnvironmentVariable|PRAGMA key|Bearer |api_key|password" -ErrorAction SilentlyContinue | Select-Object Filename | Sort-Object -Unique
+```
+
+## Phase 1c — Stale Worktree Cleanup
 Worktrees live at `f:\⊕Workspace\.worktrees/{branch-slug}/`. Run:
 1. `cd f:\⊕Workspace && git worktree prune --verbose`
 2. For each worktree besides HEAD: check branch merged into `main` AND last commit >7d

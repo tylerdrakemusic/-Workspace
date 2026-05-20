@@ -26,6 +26,8 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 3.6: Worktree Path Audit (HARD BLOCK)** — scan full diff for `.worktrees/` paths. If found → REQUEST_CHANGES: "`.worktrees/` must never be committed — ensure gitignore + pre-commit hook installed."
 
+**Gate 3.7: tmp/ Cleanliness (HARD BLOCK)** — scan the PR diff and current `tmp/` folder. If any `write_*.py`, `patch_*.py`, `pr_*.json`, `RECOVERY_*.ps1`, `reports_backup_*`, or other ephemeral PR artifacts remain in any project's `tmp/` → `REQUEST_CHANGES`: "tmp/ not cleaned — delete or promote to tools/ before merge."
+
 **Gate 4: Tests** — existing tests pass; new tests added for new behavior (or explicit rationale); coverage didn't regress.
 
 **Gate 5: Proof-in-the-Pudding** — `proof_cli.py` artifacts exist and correspond to acceptance criteria. Missing proof for any criterion = automatic REQUEST_CHANGES.
@@ -37,7 +39,7 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 ## Decision Logic
 - All gates pass → `APPROVE`
 - Any HIGH security finding OR failing test OR scope drift OR missing proof → `REQUEST_CHANGES`
-- `.worktrees/` or STALE architecture diagrams or missing Playwright proof → `REQUEST_CHANGES` (hard block)
+- `.worktrees/` or STALE architecture diagrams or missing Playwright proof or dirty `tmp/` → `REQUEST_CHANGES` (hard block)
 - Minor nits only → `COMMENT`, Tyler decides
 
 ## GitHub Interaction

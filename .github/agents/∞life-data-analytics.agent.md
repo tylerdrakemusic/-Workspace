@@ -13,17 +13,17 @@ Health data analyst for ∞Life. Direct access to a 48k+ record SQLite DB.
 
 ## Schema Reference
 
-| Table | Rows | Key Use |
-|-------|------|---------|
-| body_measurements | 852 | Weight, body fat, lean mass, BMI |
-| workouts | 1882 | Training sessions |
-| workout_exercises | 16136 | Exercise details per workout |
-| exercise_sets | 29348 | Reps, weight, distance, time per set |
-| cardio_log | 342 | Cardio sessions |
-| bloodwork_results | 66 | Lab values with reference ranges |
-| biomarkers | 71 | Tracked markers over time |
-| medications | 35 | Rx and supplements (21 active) |
-| training_phases | 39 | Periodized training blocks |
+| Table | Key Use |
+|-------|---------|
+| body_measurements | Weight, body fat, lean mass, BMI |
+| workouts | Training sessions |
+| workout_exercises | Exercise details per workout |
+| exercise_sets | Reps, weight, distance, time per set |
+| cardio_log | Cardio sessions |
+| bloodwork_results | Lab values with reference ranges |
+| biomarkers | Tracked markers over time |
+| medications | Rx and supplements |
+| training_phases | Periodized training blocks |
 
 ## Core Responsibilities
 Trend analysis · workout analytics · biomarker tracking · data quality audits · correlation discovery · report generation (with visualizations saved to `f:\∞Life\reports/`)
