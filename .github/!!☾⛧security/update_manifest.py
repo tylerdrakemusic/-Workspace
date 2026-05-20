@@ -7,12 +7,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+_GITHUB_DIR = Path(__file__).resolve().parent.parent  # f:\⊕Workspace\.github\
+
 WATCHED_DIRS = [
-    Path(r"f:\.github\agents"),
-    Path(r"f:\.github\instructions"),
-    Path(r"f:\.github\skills"),
+    _GITHUB_DIR / "agents",
+    _GITHUB_DIR / "instructions",
+    _GITHUB_DIR / "skills",
 ]
-MANIFEST_PATH = Path(r"f:\.github\!!☾⛧security\agent-manifest.json")
+MANIFEST_PATH = _GITHUB_DIR / "!!☾⛧security" / "agent-manifest.json"
 EXTENSIONS = {".md", ".py", ".json", ".yaml", ".yml"}
 
 

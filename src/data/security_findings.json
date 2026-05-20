@@ -361,15 +361,15 @@
   },
   {
     "id": "29a5a1cc875554fd",
-    "status": "accepted",
+    "status": "remediated",
     "severity": "HIGH",
     "category": "GIT",
     "owasp": "&mdash;",
     "file": "tokens",
     "line": 0,
     "description": "git rm --cached tokens/ changes not yet committed — tokens still in staging",
-    "note": "git rm --cached tokens/ needs manual git commit to finalize",
-    "scan_date": "2026-04-19 07:06:26"
+    "note": "Verified: tokens/ not tracked by git (git ls-files tokens/ returns empty)",
+    "scan_date": "2026-05-19 17:40:46"
   },
   {
     "id": "7f2c58b994c6a1e3",
@@ -625,15 +625,15 @@
   },
   {
     "id": "ce948589f28b332b",
-    "status": "accepted",
+    "status": "remediated",
     "severity": "MEDIUM",
     "category": "INTEGRITY",
     "owasp": "&mdash;",
     "file": "f:/.github/agents",
     "line": 0,
     "description": "Agent manifest has 4 new + 4 modified files since last baseline — regenerate",
-    "note": "Manifest will be regenerated after all agents are stabilized",
-    "scan_date": "2026-04-19 07:06:26"
+    "note": "update_manifest.py fixed (bad hardcoded paths) and re-run — 46 files baselined at 2026-05-19 17:40:46",
+    "scan_date": "2026-05-19 17:40:46"
   },
   {
     "id": "d6f6dc5b13cb9dcb",
