@@ -29,7 +29,8 @@ Playwright tests (`tests/test_portal_playwright.py`): tests hitting `http://loca
 
 ## 4. Branch + Worktree Management
 **Rule:** one code-changing session = one branch = one worktree = one draft PR.
-**Location:** `f:\⊕Workspace\.worktrees\{branch-slug}\` (gitignored, VS Code-excluded)
+**Location:** `f:\⊕Workspace\.worktrees/{branch-slug}/` (gitignored, VS Code-excluded)
+> **Deprecated:** Legacy external paths (`f:\worktrees\`, `f:\<project>-worktrees\`) are deprecated — always use `.worktrees/` inside the repo root.
 
 ```powershell
 git worktree add .worktrees\<slug> <branch-name>   # create

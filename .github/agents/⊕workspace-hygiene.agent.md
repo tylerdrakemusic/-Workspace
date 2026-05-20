@@ -36,6 +36,7 @@ Checklist per project: TODO hygiene · temp file scan · research freshness (>6 
 - *⊕Workspace*: stale report HTMLs (>30d); proof artifacts (>60d); token files — never delete, flag expired by name
 
 ## Phase 1b — Stale Worktree Cleanup
+Worktrees live at `f:\⊕Workspace\.worktrees/{branch-slug}/`. Run:
 1. `cd f:\⊕Workspace && git worktree prune --verbose`
 2. For each worktree besides HEAD: check branch merged into `main` AND last commit >7d
 3. Auto-remove if both true; flag (don't remove) if unmerged + >30d old; never remove if uncommitted changes
