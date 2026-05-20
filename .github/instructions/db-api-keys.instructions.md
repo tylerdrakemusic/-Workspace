@@ -25,11 +25,21 @@ Generate new keys: `⊕workspace-gen-qee`.
 | Key | Scope |
 |-----|-------|
 | `OPENAPI_TOKEN` | All projects — OpenAI |
-| `QISKIT_TOKEN` | ⟨ψ⟩Quantum — IBM Quantum |
+| `GITHUB_TOKEN` | All projects — GitHub API |
 | `GOOGLE_API_KEY` | All projects — Google APIs |
 | `HF_TOKEN` | 👁AI-Manifest, ⟨ψ⟩Quantum — Hugging Face |
+| `ELEVENLABS_API_KEY` | 👁AI-Manifest — voice synthesis |
+| `QISKIT_TOKEN` | ⟨ψ⟩Quantum — IBM Quantum |
+| `IBM_CLOUD_API_KEY` | ⟨ψ⟩Quantum — IBM Cloud |
+| `IBM_QUANTUM_INSTANCE` | ⟨ψ⟩Quantum — IBM Quantum instance CRN |
 | `FACEBOOK_USER_TOKEN` | ❤Music — social/promo |
 | `FACEBOOK_APP_TOKEN` | ❤Music — social/promo |
-| `MFP_USERNAME` / `MFP_PASSWORD` | ∞Life — MyFitnessPal nutrition sync |
-| `TZ_USERNAME` / `TZ_PASSWORD` | ∞Life — TrainingZones |
-| `ELEVENLABS_API_KEY` | 👁AI-Manifest — voice synthesis |
+| `INFINITELIFE_VAULT_KEY` | ∞Life — QEC credential vault master key |
+| `GARMIN_EMAIL` / `GARMIN_PASSWORD` | ∞Life — Garmin Connect credentials |
+| `GARMIN_COOKIE` / `GARMIN_JWT` | ∞Life — Garmin session tokens |
+| `WITHINGS_CLIENT_ID` / `WITHINGS_SECRET` | ∞Life — Withings OAuth app credentials |
+| `WITHINGS_ACCESS_TOKEN` / `WITHINGS_REFRESH_TOKEN` | ∞Life — Withings OAuth tokens |
+| `WITHINGS_USER_ID` | ∞Life — Withings user identifier |
+| `MFP_USERNAME` / `MFP_PASSWORD` | ∞Life — MyFitnessPal credentials |
+| `MFP_SESSION_TOKEN` / `MFP_CF_CLEARANCE` | ∞Life — MyFitnessPal session tokens |
+| `TZ_USERNAME` / `TZ_PASSWORD` | ∞Life — TrainingZones credentials |
