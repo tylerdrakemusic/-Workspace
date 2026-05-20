@@ -45,9 +45,11 @@ foreach ($v in $vars) {
 ```
 
 ### Sync (promote USER-only → SYSTEM scope)
-Requires an **elevated (admin) terminal**. Run for each `USER-only` var found by the audit:
+**CRITICAL: Must run in an elevated (admin) PowerShell.** If not elevated, the Machine write will silently fail while the User value is deleted — causing data loss. Always verify elevation first: `([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole('Administrator')`
+
+Run for each `USER-only` var found by the audit:
 ```powershell
-# Promote $varName to SYSTEM scope without echoing value
+# Verify elevation FIRST or values will be lost
 $val = [System.Environment]::GetEnvironmentVariable($varName, "User")
 [System.Environment]::SetEnvironmentVariable($varName, $val,  "Machine")
 [System.Environment]::SetEnvironmentVariable($varName, $null, "User")
