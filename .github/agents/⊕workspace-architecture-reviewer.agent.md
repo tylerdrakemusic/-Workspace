@@ -32,6 +32,13 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 ## Staleness Check
 For each affected diagram: read `.mmd` source → search for new element name as string → STALE if absent, MISSING if diagram doesn't exist.
 
+**Topology completeness check (always run, regardless of diff):**
+1. List all files matching `f:\.github\agents\*.agent.md` — extract agent short-names
+2. Read `workspace-agent-topology.mmd` — extract all node labels
+3. Any agent file with no corresponding node in the topology → mark `workspace-agent-topology.mmd` as **STALE** and include the missing agents in the remediation list
+
+This catches pre-existing drift before it compounds across PRs.
+
 ## Decision Logic
 - **PASS** — no architectural changes
 - **PASS_WITH_UPDATES** — changes detected + all diagrams already updated in same diff

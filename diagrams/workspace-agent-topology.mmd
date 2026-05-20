@@ -1,25 +1,99 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
-    Tyler([Tyler]) --> Overseer[⊕ overseer]
-    Overseer --> Intake[⊕ intake]
-    Overseer --> CI[⊕ ci]
-    Overseer --> Reviewer[⊕ reviewer]
-    Overseer --> Doer[⊕ doer]
-    Overseer --> Alignment[⊕ alignment]
-    Overseer --> Security[⊕ security]
-    Overseer --> Hygiene[⊕ hygiene]
-    Overseer --> ArchReviewer[⊕ architecture-reviewer]
-    Overseer --> ArchBeautifier[⊕ architecture-beautifier]
-    ArchReviewer -.->|delegates STALE/MISSING| ArchBeautifier
-    Overseer --> LifeOrch[∞ orchestrator]
-    Overseer --> MusicOrch[❤ orchestrator]
-    Overseer --> QuantumOrch[⟨ψ⟩ orchestrator]
-    Overseer --> ManifestOrch[👁 orchestrator]
-    LifeOrch --> LifeAgents[∞ research<br/>brainstorm<br/>budget<br/>data-analytics<br/>risk]
-    MusicOrch --> MusicAgents[❤ catalog<br/>performance<br/>production<br/>signatures]
-    QuantumOrch --> QResearch[⟨ψ⟩ research]
-    class Overseer,LifeOrch,MusicOrch,QuantumOrch,ManifestOrch orch
-    class Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene,ArchReviewer,ArchBeautifier ws
+    Tyler([Tyler]) --> Overseer
+
+    subgraph WS["⊕ Workspace Agents"]
+        Overseer["⊕ overseer"]
+        Intake["⊕ intake"]
+        CI["⊕ ci"]
+        Reviewer["⊕ reviewer"]
+        Doer["⊕ doer"]
+        Alignment["⊕ alignment"]
+        Security["⊕ security"]
+        Hygiene["⊕ hygiene"]
+        ArchRev["⊕ arch-reviewer"]
+        ArchBeaut["⊕ arch-beautifier"]
+        GenQEE["⊕ gen-qee"]
+        Discovery["⊕ discovery"]
+        Commitment["⊕ commitment"]
+        Dashboards["⊕ dashboards"]
+        BenchAnalyzer["⊕ bench-analyzer"]
+        Protector["⊕ protector"]
+        Proof["⊕ proof"]
+    end
+
+    subgraph LIFE["∞Life"]
+        LifeOrch["∞ orchestrator"]
+        LifeBrainstorm["∞ brainstorm"]
+        LifeBudget["∞ budget"]
+        LifeDA["∞ data-analytics"]
+        LifeResearch["∞ research"]
+        LifeRisk["∞ risk"]
+    end
+
+    subgraph MUSIC["❤Music"]
+        MusicOrch["❤ orchestrator"]
+        MusicCatalog["❤ catalog"]
+        MusicPerf["❤ performance"]
+        MusicProd["❤ production"]
+        MusicSig["❤ signatures"]
+    end
+
+    subgraph QUANTUM["⟨ψ⟩Quantum"]
+        QuantumOrch["⟨ψ⟩ orchestrator"]
+        QuantumResearch["⟨ψ⟩ research"]
+    end
+
+    subgraph MANIFEST["👁AI-Manifest"]
+        ManifestOrch["👁 orchestrator"]
+    end
+
+    subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]
+        FRFlow["feature-request-flow"]
+        HygBase["hygiene-base"]
+        OrcClean["orchestrator-cleanup"]
+        DbKeys["db-api-keys"]
+    end
+
+    subgraph PINSTR["Project Base Instructions"]
+        LifeBase["∞life-base"]
+        HealthEval["∞life-health-evaluation"]
+        MusicBase["❤music-base"]
+        QuantumBase["⟨ψ⟩quantum-base"]
+    end
+
+    %% ── Overseer routing ──
+    Overseer --> Intake & CI & Reviewer & Doer & Alignment & Security
+    Overseer --> Hygiene & ArchRev & ArchBeaut & GenQEE & Discovery
+    Overseer --> Commitment & Dashboards & BenchAnalyzer & Protector & Proof
+    Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch
+    ArchRev -.->|STALE → delegates| ArchBeaut
+
+    %% ── Project routing ──
+    LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
+    MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig
+    QuantumOrch --> QuantumResearch
+
+    %% ── Instruction inheritance (dashed) ──
+    FRFlow -.-> Intake & Reviewer & ArchRev & ArchBeaut
+    HygBase -.-> Hygiene
+    OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch
+    DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch
+
+    LifeBase -.-> LifeOrch & LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
+    HealthEval -.-> LifeRisk
+    MusicBase -.-> MusicOrch & MusicCatalog & MusicPerf & MusicProd & MusicSig
+    QuantumBase -.-> QuantumOrch & QuantumResearch
+
+    %% ── Class assignments ──
+    class Overseer,Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene,ArchRev,ArchBeaut ws
+    class GenQEE,Discovery,Commitment,Dashboards,BenchAnalyzer,Protector,Proof ws
+    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
+    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig music
+    class QuantumOrch,QuantumResearch quantum
+    class ManifestOrch manifest
+    class FRFlow,HygBase,OrcClean,DbKeys,LifeBase,HealthEval,MusicBase,QuantumBase instr
+    class Tyler tyler
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -27,6 +101,4 @@ classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
-classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
-classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
-classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
