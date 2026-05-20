@@ -27,39 +27,9 @@ Two responsibilities: **key generation** and **environment variable audit/sync**
 
 ## Environment Variable Audit & Sync
 
-Expected variables (canonical list in `db-api-keys.instructions.md`):
-`HEARTMUSIC_DB_KEY` · `INFINITELIFE_DB_KEY` · `WORKSPACE_DB_KEY` · `QUANTUM_DB_KEY` · `OPENAPI_TOKEN` · `GITHUB_TOKEN` · `GOOGLE_API_KEY` · `HF_TOKEN` · `ELEVENLABS_API_KEY` · `QISKIT_TOKEN` · `IBM_CLOUD_API_KEY` · `IBM_QUANTUM_INSTANCE` · `FACEBOOK_USER_TOKEN` · `FACEBOOK_APP_TOKEN` · `INFINITELIFE_VAULT_KEY` · `GARMIN_EMAIL` · `GARMIN_PASSWORD` · `GARMIN_COOKIE` · `GARMIN_JWT` · `WITHINGS_CLIENT_ID` · `WITHINGS_SECRET` · `WITHINGS_ACCESS_TOKEN` · `WITHINGS_REFRESH_TOKEN` · `WITHINGS_USER_ID` · `MFP_USERNAME` · `MFP_PASSWORD` · `MFP_SESSION_TOKEN` · `MFP_CF_CLEARANCE` · `TZ_USERNAME` · `TZ_PASSWORD`
+Audit and sync scripts (including full var list) are in the inherited `db-api-keys.instructions.md` — do not duplicate here.
 
-### Audit (presence + scope, no values)
-```powershell
-$vars = @("HEARTMUSIC_DB_KEY","INFINITELIFE_DB_KEY","WORKSPACE_DB_KEY","QUANTUM_DB_KEY",
-  "OPENAPI_TOKEN","GITHUB_TOKEN","GOOGLE_API_KEY","HF_TOKEN","ELEVENLABS_API_KEY",
-  "QISKIT_TOKEN","IBM_CLOUD_API_KEY","IBM_QUANTUM_INSTANCE",
-  "FACEBOOK_USER_TOKEN","FACEBOOK_APP_TOKEN",
-  "INFINITELIFE_VAULT_KEY",
-  "GARMIN_EMAIL","GARMIN_PASSWORD","GARMIN_COOKIE","GARMIN_JWT",
-  "WITHINGS_CLIENT_ID","WITHINGS_SECRET","WITHINGS_ACCESS_TOKEN","WITHINGS_REFRESH_TOKEN","WITHINGS_USER_ID",
-  "MFP_USERNAME","MFP_PASSWORD","MFP_SESSION_TOKEN","MFP_CF_CLEARANCE",
-  "TZ_USERNAME","TZ_PASSWORD")
-foreach ($v in $vars) {
-    $sys  = [System.Environment]::GetEnvironmentVariable($v, "Machine")
-    $user = [System.Environment]::GetEnvironmentVariable($v, "User")
-    $scope = if ($sys) { "SYSTEM    " } elseif ($user) { "USER-only " } else { "MISSING   " }
-    Write-Host "$scope $v"
-}
-```
-
-### Sync (promote USER-only → SYSTEM scope)
-**CRITICAL: Must run in an elevated (admin) PowerShell.** If not elevated, the Machine write will silently fail while the User value is deleted — causing data loss. Always verify elevation first: `([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole('Administrator')`
-
-Run for each `USER-only` var found by the audit:
-```powershell
-# Verify elevation FIRST or values will be lost
-$val = [System.Environment]::GetEnvironmentVariable($varName, "User")
-[System.Environment]::SetEnvironmentVariable($varName, $val,  "Machine")
-[System.Environment]::SetEnvironmentVariable($varName, $null, "User")
-Write-Host "Promoted $varName to SYSTEM scope."
-```
+**CRITICAL for sync:** Must run in an elevated (Admin) PowerShell. If not elevated, Machine writes fail silently while User values are deleted — causing data loss.
 
 ## Security Constraints
 - NEVER write a generated key or var value to any file, log, DB, or env file
