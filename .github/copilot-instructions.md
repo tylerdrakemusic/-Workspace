@@ -16,23 +16,15 @@ This workspace contains Tyler James Drake's personal software projects with five
 - Python executable: `C:\G\python.exe`
 
 ## Key Paths
-- **∞Life project root:** `f:\∞Life\`
-- **∞Life database:** `f:\∞Life\src\data\infinitelife.db`
-- **∞Life DB access:** `from utils.init_db import get_connection`
-- **∞Life subject profile:** `f:\∞Life\SUBJECT_PROFILE.json`
-- **∞Life agent bootstrap:** `f:\∞Life\AGENT_STARTUP.md`
-- **❤Music project root:** `f:\❤Music\`
-- **❤Music agent bootstrap:** `f:\❤Music\AGENT_STARTUP.md`
-- **⟨ψ⟩Quantum project root:** `f:\⟨ψ⟩Quantum\`
-- **⟨ψ⟩Quantum agent bootstrap:** `f:\⟨ψ⟩Quantum\AGENT_STARTUP.md`
-- **⟨ψ⟩Quantum project profile:** `f:\⟨ψ⟩Quantum\PROJECT_PROFILE.json`
-- **👁AI-Manifest project root:** `f:\👁AI-Manifest\`
-- **👁AI-Manifest agent bootstrap:** `f:\👁AI-Manifest\AGENT_STARTUP.md`
-- **👁AI-Manifest project profile:** `f:\👁AI-Manifest\PROJECT_PROFILE.json`
-- **⊕Workspace project root:** `f:\⊕Workspace\`
-- **⊕Workspace agent bootstrap:** `f:\⊕Workspace\AGENT_STARTUP.md`
-- **⊕Workspace perf CLI:** `f:\⊕Workspace\src\utils\perf_cli.py`
-- **⊕Workspace perf DB:** `f:\⊕Workspace\src\data\workspace.db` (SQLCipher, env key: `WORKSPACE_DB_KEY`)
+| Project | Root | Notes |
+|---------|------|-------|
+| ∞Life | `f:\∞Life\` | DB: `src/data/infinitelife.db`; access: `from utils.init_db import get_connection`; profile: `SUBJECT_PROFILE.json` |
+| ❤Music | `f:\❤Music\` | — |
+| ⟨ψ⟩Quantum | `f:\⟨ψ⟩Quantum\` | Profile: `PROJECT_PROFILE.json` |
+| 👁AI-Manifest | `f:\👁AI-Manifest\` | Profile: `PROJECT_PROFILE.json` |
+| ⊕Workspace | `f:\⊕Workspace\` | Perf CLI: `src/utils/perf_cli.py`; DB: `src/data/workspace.db` (key: `WORKSPACE_DB_KEY`) |
+
+All projects: bootstrap at `<root>/AGENT_STARTUP.md`.
 
 ## Budget Discipline
 All purchases and expenditures for ∞Life must be logged in the budget ledger (`∞Life/src/data/infinitelife.db` budget table) before proceeding. Monthly target: $100-500. Always present cost-benefit analysis before recommending purchases.
