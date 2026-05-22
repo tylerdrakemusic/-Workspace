@@ -32,16 +32,18 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 4: Tests** — existing tests pass; new tests added for new behavior (or explicit rationale); coverage didn't regress.
 
+**Gate 4.5: Functional QA (HARD BLOCK)** — verify a QA PASS event exists in the FR ledger from `⊕workspace-qa`. Run `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>` and confirm a `state-transition` event with "QA PASS" in the summary. If absent → REQUEST_CHANGES: "Gate 4.5 failed — no Functional QA PASS recorded. Run `⊕workspace-qa` before marking REVIEW_REQUESTED."
+
 **Gate 5: Proof-in-the-Pudding** — `proof_cli.py` artifacts exist and correspond to acceptance criteria. Missing proof for any criterion = automatic REQUEST_CHANGES.
 
 **Gate 6: Demo** — visible surfaces (dashboard, CLI, pipeline) must have a demo artifact (screenshot, generated file, CLI output, DB query).
 
-**Gate 7: UI Validation (HARD BLOCK when HTML in diff)** — if any `*.html` or `output/**` modified, a Playwright `test_pass` or `command_output` proof artifact must exist. If not → REQUEST_CHANGES: "Gate 7 failed — UI changes with no Playwright validation proof." Gate is N/A if no HTML in diff.
+**Gate 7: UI Validation (HARD BLOCK when HTML in diff)** — if any `*.html` or `output/**` modified, a Playwright proof artifact (`test_pass` or `command_output`) recorded by `⊕workspace-qa` must exist in `proof_cli.py`. Playwright execution is `⊕workspace-qa`'s responsibility — do not re-run it here. If proof artifact absent → REQUEST_CHANGES: "Gate 7 failed — Playwright proof missing; re-run `⊕workspace-qa`." Gate is N/A if no HTML in diff.
 
 ## Decision Logic
 - All gates pass → `APPROVE`
 - Any HIGH security finding OR failing test OR scope drift OR missing proof → `REQUEST_CHANGES`
-- `.worktrees/` or STALE architecture diagrams or missing Playwright proof or dirty `tmp/` → `REQUEST_CHANGES` (hard block)
+- `.worktrees/` or STALE architecture diagrams or missing QA PASS (Gate 4.5) or missing Playwright proof or dirty `tmp/` → `REQUEST_CHANGES` (hard block)
 - Minor nits only → `COMMENT`, Tyler decides
 
 ## GitHub Interaction
@@ -60,6 +62,7 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 | Architecture Diagrams | ✅/⚠️/❌ | ... |
 | Worktree Path Audit | ✅/⚠️/❌ | ... |
 | Tests | ✅/⚠️/❌ | ... |
+| Functional QA (Gate 4.5) | ✅/⚠️/❌ | ... |
 | Proof-in-the-pudding | ✅/⚠️/❌ | ... |
 | Demo | ✅/⚠️/❌ | ... |
 | UI Validation (Playwright) | ✅/⚠️/❌/N/A | ... |
