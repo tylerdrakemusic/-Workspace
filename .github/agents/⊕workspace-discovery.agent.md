@@ -1,5 +1,5 @@
 ---
-description: "Use to discover epic/story-level TODO opportunities across all workspace projects, present approval-gated candidates, and write approved SCAN-labeled items to manifest_todos.db."
+description: "Use to discover epic/story-level TODO opportunities across all workspace projects, present approval-gated candidates, and write approved items to manifest_todos.db. Items are auto-classified as AI (automatable) or TYLER (requires human judgment) based on their content."
 user-invocable: true
 ---
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
@@ -28,9 +28,10 @@ Find epic/story-level opportunities such as launches, integrations, and system-l
 Todo storage is `f:\👁AI-Manifest\src\data\manifest_todos.db`.
 
 Schema expectations:
-- `source` includes `AI`, `TYLER`, and `SCAN`
+- `source` is auto-classified: `AI` for automatable tasks (scheduled, monitoring, pipeline, batch), `TYLER` for tasks requiring human judgment or creative input
 - `priority` is 1-10
 - Insertions are deduplicated by `(project, source, text)` unique index
+- `SCAN` source is legacy — new insertions use `AI` or `TYLER` only
 
 ## Operating Modes
 

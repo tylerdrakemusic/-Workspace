@@ -31,9 +31,9 @@ Every feature request gets a stable ID: `FR-YYYYMMDD-<slug>` (e.g.
 ## State Machine
 
 ```
-OPEN → TRIAGED → BRANCHED → IN_PROGRESS → ARCHITECTURE_REVIEW → REVIEW_REQUESTED → AUTO_REVIEWED
-       ↑                                                                                  │
-       └──── CHANGES_REQUESTED ←──────────────────────────────────────────────────────────┘
+OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE_REVIEW → REVIEW_REQUESTED → AUTO_REVIEWED
+       ↑                                                                                               │
+       └──── CHANGES_REQUESTED ←──────────────────────────────────────────────────────────────────────┘
                                                                                           │
                                                                          BRANCH_CHECKED_OUT
                                                                                           │
@@ -50,8 +50,9 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → ARCHITECTURE_REVIEW → REVIEW
 | `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
 | `BRANCHED` | Isolated branch + worktree + draft PR created per repo | ⊕workspace-ci |
 | `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
+| `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
 | `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
-| `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Before transitioning here, if the diff touches any `*.html` output file the orchestrator MUST run `pytest -m playwright` locally and record a proof artifact via `proof_cli.py`. Missing Playwright proof triggers a Gate 7 hard block in `⊕workspace-reviewer`. | project orchestrator |
+| `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Playwright validation is handled by `⊕workspace-qa` during `FUNCTIONAL_QA` — the orchestrator does NOT run it separately before this state. | project orchestrator |
 | `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof). Required `test` status check must be green before merge can be attempted. | ⊕workspace-reviewer |
 | `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
 | `CHANGES_REQUESTED` | Auto-review or Tyler requested fixes | ⊕workspace-reviewer / Tyler |

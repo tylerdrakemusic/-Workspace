@@ -20,6 +20,7 @@ graph LR
         BenchAnalyzer["⊕ bench-analyzer"]
         Protector["⊕ protector"]
         Proof["⊕ proof"]
+        QA["⊕ qa"]
     end
 
     subgraph LIFE["∞Life"]
@@ -65,7 +66,7 @@ graph LR
     %% ── Overseer routing ──
     Overseer --> Intake & CI & Reviewer & Doer & Alignment & Security
     Overseer --> Hygiene & ArchRev & ArchBeaut & GenQEE & Discovery
-    Overseer --> Commitment & Dashboards & BenchAnalyzer & Protector & Proof
+    Overseer --> Commitment & Dashboards & BenchAnalyzer & Protector & Proof & QA
     Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch
     ArchRev -.->|STALE → delegates| ArchBeaut
 
@@ -87,7 +88,7 @@ graph LR
 
     %% ── Class assignments ──
     class Overseer,Intake,CI,Reviewer,Doer,Alignment,Security,Hygiene,ArchRev,ArchBeaut ws
-    class GenQEE,Discovery,Commitment,Dashboards,BenchAnalyzer,Protector,Proof ws
+    class GenQEE,Discovery,Commitment,Dashboards,BenchAnalyzer,Protector,Proof,QA ws
     class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
     class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig music
     class QuantumOrch,QuantumResearch quantum

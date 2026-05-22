@@ -37,7 +37,7 @@ One code-changing session = one branch = one worktree = one draft PR. Branch cre
 2. Single-project (non-FR) → that project's orchestrator
 3. Multi-project identical boilerplate → `⊕workspace-doer`
 4. Multi-project project-specific → fan out to project orchestrators
-5. After implementation → `⊕workspace-reviewer` (auto-review battery)
+5. After implementation → `⊕workspace-qa` (functional QA gate) → `⊕workspace-reviewer` (auto-review battery)
 6. Git ops / branch / PR / merge / conflict → `⊕workspace-ci`
 
 ## Feature Request Flow
