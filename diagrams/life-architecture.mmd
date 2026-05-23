@@ -4,6 +4,8 @@ graph TB
     Inputs --> ETL[src/etl/<br/>importers + sync]
     ETL --> Sync[src/sync/<br/>trainerize_sync.py<br/>fetch_upcoming_workouts]
     Sync --> DB[(infinitelife.db<br/>SQLCipher)]
+    Sync --> Watchdog[tools/sync_watchdog.py<br/>health tracking · alerts]
+    Watchdog --> DB
     DB --> Analytics[src/analytics/<br/>longevity · risk · trends]
     Analytics --> Reports[reports/<br/>longevity dashboard]
     DB --> Dashboard[src/dashboard/<br/>gen_upcoming_workouts_dashboard.py]
@@ -11,7 +13,7 @@ graph TB
     DB --> Protocols[Protocols & Experiments]
     DB --> Budget[Budget Ledger]
     class Inputs,Reports io
-    class ETL,DB,Analytics,Protocols,Budget core
+    class ETL,DB,Analytics,Protocols,Budget,Watchdog core
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
