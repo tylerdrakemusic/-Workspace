@@ -5,7 +5,8 @@ if (-not $project) {
 }
 
 $projectRoot = $project.FullName
-$env:PYTHONPATH = Join-Path $projectRoot "src"
+$env:PYTHONUTF8 = "1"
+$env:PYTHONPATH = "$projectRoot;$(Join-Path $projectRoot 'src')"
 $toolPath = Join-Path $projectRoot "tools\executive_audio_brief.py"
 
 # Prevent the brief server from auto-opening a separate browser tab.
