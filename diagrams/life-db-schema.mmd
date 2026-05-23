@@ -62,3 +62,20 @@ erDiagram
 
     %% Constraints: UNIQUE(date, source, name)
     %% Index: (date, week_start_date)
+
+    %% --- Monitoring ---
+    SYNC_HEALTH {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    SYNC_ALERTS {
+        integer id PK
+        text source
+        text triggered_at
+        text reason
+        text resolved_at
+    }
