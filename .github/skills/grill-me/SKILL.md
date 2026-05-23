@@ -11,31 +11,22 @@ source: "https://github.com/mattpocock/skills/blob/main/skills/productivity/gril
 Interview me relentlessly about every aspect of this plan until we reach a
 shared understanding. Walk down each branch of the design tree, resolving
 dependencies between decisions one-by-one. For each question, provide your recommended
-answer — and make it unmistakably clear which answer is the recommendation.
+answer — mark it with `recommended: true` in the selection choices.
 
 Ask the questions one at a time.
 
 ### Recommendation tagging rules
 
-Every question that has a recommended answer MUST surface it in **two** places:
+When a question has selectable options, surface the recommendation **only** in
+the choice itself:
 
-1. **`vscode_askQuestions` option:** set `recommended: true` on the option
-   whose label IS the recommendation. VS Code renders a visual badge on that
-   option automatically.
+- **`vscode_askQuestions` option:** set `recommended: true` on the option
+  whose label IS the recommendation. VS Code renders a visual badge on that
+  option automatically. Do **not** add a separate markdown callout above the
+  choices — the badge is sufficient.
 
-2. **Question `message` field (markdown):** include a bolded callout directly
-   below the question text, e.g.:
-
-   ```
-   > **💡 Recommended: <your recommended answer here>** — <one-sentence rationale>
-   ```
-
-   This ensures the recommendation is visible even before the user expands
-   the option list, and remains visible in plain-text / non-GUI render paths.
-
-If the question is free-text only (no selectable options), include the
-callout in the `message` field with a suggested default value wrapped in
-backticks, e.g.:
+If the question is free-text only (no selectable options), include a callout
+in the `message` field with a suggested default value wrapped in backticks:
 
 ```
 > **💡 Recommended:** `my-suggested-value` — <one-sentence rationale>
