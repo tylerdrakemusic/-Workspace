@@ -2,11 +2,30 @@
 
 **Title:** Nightly Sync Failure Watchdog
 **Type:** feature
-**Status:** REVIEW_REQUESTED
+**Status:** SOAKING
 **Affected Project:** ∞Life (`tylerdrakemusic/Life`)
-**Branch:** `feature/infinitelife/sync-watchdog`
+**Branch:** `feature/infinitelife/sync-watchdog` *(merged and deleted)*
 
-Work tracked in this branch: `feature/infinitelife/sync-watchdog`
+---
+
+## Merge Record
+
+| Field | Value |
+|---|---|
+| **Merged at** | 2026-05-23T03:07:52Z |
+| **Merge commit** | `938bc87961cf68b2c52be69972dd5aa202619ea4` |
+| **PR** | tylerdrakemusic/Life#32 |
+| **CI** | ✅ `test` — 77 passed, 2 skipped |
+| **Merged by** | ⊕workspace-ci |
+
+### State history
+- `REVIEW_REQUESTED` → `AUTO_REVIEWED` (Tyler approved FR-20260522-sync-watchdog)
+- `AUTO_REVIEWED` → `MERGED` (PR #32 merged to `tylerdrakemusic/Life` main)
+- `MERGED` → `SOAKING` (2026-05-23, awaiting Tyler soak confirmation)
+
+> **SOAKING note:** Tyler to confirm feature is working on main before SIGNED_OFF.
+> Verify: `sync_health` and `sync_alerts` tables exist after next nightly sync run,
+> `[ALERT]` log lines appear on errors, alert dedup prevents duplicates.
 
 ---
 
@@ -83,4 +102,4 @@ queryable and visible.
 
 **Medium** — new DB schema (`CREATE TABLE IF NOT EXISTS`, idempotent), new
 write path added to `master_sync.py`. No changes to sync logic, OAuth, or
-auth flows. Private repo — health-data gitignore audit required before push.
+auth flows. Private repo — health-data gitignore audit passed before push.
