@@ -13,17 +13,34 @@ graph TB
     subgraph Storage
         DB[(quantumpsi.db<br/>SQLCipher)]
         Bench[benchmarks table]
+        CacheHealthLog[cache_health_log table]
     end
     subgraph Outputs
         Reports[reports/<br/>benchmark dashboard]
+        CacheCapacity[qbackups/<br/>ty_string_cache_capacity.txt]
+    end
+    subgraph Tools["tools/"]
+        FillCache[fill_cache.py]
+        CacheGuard[cache_depletion_guard.py]
+    end
+    subgraph Scheduler["Windows Task Scheduler"]
+        GuardTask[QuantumCacheDepletionGuard_Daily]
     end
     Algorithms --> IBM
     Algorithms --> Sim
     Algorithms --> Bench
     Bench --> Reports
+    GuardTask --> CacheGuard
+    CacheGuard --> CacheHealthLog
+    CacheGuard --> FillCache
+    FillCache --> CacheCapacity
     class Algorithms alg
     class Backends back
     class Storage,Outputs store
+    class FillCache,CacheGuard quantum
+    class GuardTask ext
+    class CacheHealthLog db
+    class CacheCapacity state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

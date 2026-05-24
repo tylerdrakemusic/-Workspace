@@ -25,3 +25,13 @@ erDiagram
         text source
         text timestamp
     }
+
+    %% --- Cache Monitoring ---
+    CACHE_HEALTH_LOG {
+        integer id PK
+        text ts
+        integer bits_remaining
+        integer capacity_bits
+        real pct_full
+        text action_taken
+    }
