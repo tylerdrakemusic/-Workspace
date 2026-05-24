@@ -70,3 +70,18 @@ CREATE TABLE IF NOT EXISTS proof_artifacts (
 
 CREATE INDEX IF NOT EXISTS idx_proof_run ON proof_artifacts(run_id);
 CREATE INDEX IF NOT EXISTS idx_proof_agent ON proof_artifacts(agent);
+
+CREATE TABLE IF NOT EXISTS scan_run_log (
+    run_id           TEXT PRIMARY KEY,
+    started_at       TEXT NOT NULL,
+    completed_at     TEXT,
+    projects_scanned TEXT NOT NULL DEFAULT '[]',
+    new_vulns_count  INTEGER NOT NULL DEFAULT 0,
+    total_findings   INTEGER NOT NULL DEFAULT 0,
+    bandit_exit_code INTEGER,
+    safety_exit_code INTEGER,
+    status           TEXT NOT NULL DEFAULT 'ok' CHECK(status IN ('ok','error','partial')),
+    error_detail     TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_scan_run_started ON scan_run_log(started_at);

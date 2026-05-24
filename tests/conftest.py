@@ -80,6 +80,34 @@ CREATE TABLE IF NOT EXISTS proof_artifacts (
     verified_at   TEXT,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS vulnerabilities (
+    vuln_id        TEXT PRIMARY KEY,
+    scan_date      TEXT NOT NULL,
+    category       TEXT NOT NULL,
+    severity       TEXT NOT NULL,
+    file_path      TEXT,
+    line_number    INTEGER,
+    description    TEXT NOT NULL,
+    owasp_id       TEXT,
+    status         TEXT NOT NULL DEFAULT 'open',
+    override_note  TEXT,
+    remediated_at  TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS scan_run_log (
+    run_id           TEXT PRIMARY KEY,
+    started_at       TEXT NOT NULL,
+    completed_at     TEXT,
+    projects_scanned TEXT NOT NULL DEFAULT '[]',
+    new_vulns_count  INTEGER NOT NULL DEFAULT 0,
+    total_findings   INTEGER NOT NULL DEFAULT 0,
+    bandit_exit_code INTEGER,
+    safety_exit_code INTEGER,
+    status           TEXT NOT NULL DEFAULT 'ok',
+    error_detail     TEXT
+);
 """
 
 
