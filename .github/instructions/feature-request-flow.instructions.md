@@ -28,6 +28,11 @@ Every feature request gets a stable ID: `FR-YYYYMMDD-<slug>` (e.g.
 - The PR title prefix
 - Commit message references
 
+> **AGENT RULE — NO .md FILES:** NEVER create a `.github/fr/*.md` file as the
+> FR record. The DB (`fr_ledgers.db` via `fr_cli.py`) is the sole source of
+> truth. Use `fr_cli.py open` to register every FR. Existing `.md` files in
+> `.github/fr/` are legacy supplements only — do not create new ones.
+
 ## State Machine
 
 ```
