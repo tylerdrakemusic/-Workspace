@@ -43,3 +43,19 @@ erDiagram
         string category
         int sort_order
     }
+    GUITAR_SCALE_TEMPLATES {
+        text shape_name PK
+        int root_string
+        text note_offsets
+    }
+    GUITAR_SCALE_POSITIONS {
+        int id PK
+        text key_name
+        int position_order
+        text shape_name FK
+        text label
+        text root_string_name
+        int root_fret
+        text instructor_phrase
+    }
+    GUITAR_SCALE_TEMPLATES ||--o{ GUITAR_SCALE_POSITIONS : instantiates
