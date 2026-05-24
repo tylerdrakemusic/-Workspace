@@ -79,3 +79,12 @@ erDiagram
         text reason
         text resolved_at
     }
+    TOKEN_REFRESH_LOG {
+        integer id PK
+        text provider
+        text triggered_at
+        text status
+        integer expires_at
+        real days_until_expiry
+        text error_msg
+    }

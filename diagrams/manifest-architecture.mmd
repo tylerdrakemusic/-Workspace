@@ -1,6 +1,6 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph TB
-    Triggers[Cron · CLI · Manual] --> Tools[tools/<br/>executive_audio_brief.py]
+    Triggers[Task Scheduler · CLI · Manual] --> Tools[tools/<br/>executive_audio_brief.py]
     Tools --> Briefs[brief generators]
     Tools --> LilyPortrait[src/utils/<br/>lily_portrait.py]
     Briefs --> OpenAI[OpenAI<br/>OPENAPI_TOKEN]
@@ -32,6 +32,14 @@ graph TB
     Tools -->|gather_project_status| TodosDB
     Portal --- TodoDoneAPI
     TodoDoneAPI -->|mark_done| TodosDB
+    %% FR-20260524 – priority auto-rescorer
+    RescorerTool[tools/<br/>weekly_priority_rescore.py]
+    PriorityScorer[src/utils/<br/>priority_scorer.py]
+    RescorerLog[logs/<br/>priority_rescore.jsonl]
+    Triggers --> RescorerTool
+    RescorerTool --> TodosUtil
+    RescorerTool --> PriorityScorer
+    RescorerTool --> RescorerLog
     class TodosDB db
     class TodosUtil,MigrateScript util
     class AllProjects ws
@@ -42,6 +50,9 @@ graph TB
     class WSIntegrations ws
     class LilyPortrait util
     class SVGFallback fallback
+    class RescorerTool util
+    class PriorityScorer util
+    class RescorerLog out
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
