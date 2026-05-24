@@ -6,14 +6,18 @@ graph TB
     Sync --> DB[(infinitelife.db<br/>SQLCipher)]
     Sync --> Watchdog[tools/sync_watchdog.py<br/>health tracking · alerts]
     Watchdog --> DB
+    Scheduler([Windows Task Scheduler<br/>daily 22:50]) --> WithingsWatcher
+    WithingsWatcher[tools/withings_token_watcher.py<br/>token check · refresh] --> WithingsRefresh[tools/withings_refresh.py]
+    WithingsWatcher --> DB
+    WithingsRefresh --> TokenFile[withings_tokens.json]
     DB --> Analytics[src/analytics/<br/>longevity · risk · trends]
     Analytics --> Reports[reports/<br/>longevity dashboard]
     DB --> Dashboard[src/dashboard/<br/>gen_upcoming_workouts_dashboard.py]
     Dashboard --> Output[tmp/biomarker_dashboard.html<br/>upcoming workouts panel]
     DB --> Protocols[Protocols & Experiments]
     DB --> Budget[Budget Ledger]
-    class Inputs,Reports io
-    class ETL,DB,Analytics,Protocols,Budget,Watchdog core
+    class Inputs,Reports,Scheduler,TokenFile io
+    class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh core
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
