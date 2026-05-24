@@ -22,4 +22,8 @@
         with a complete FR draft — all fields filled — as a single confirmation block.
      6. Ask Tyler: "Does this look right? Confirm, or tell me what to change."
      7. On confirmation → proceed to Phase B triage (ledger + registry + cycle timer).
-     8. On amendments → update the draft and re-confirm. -->
+     8. On amendments → update the draft and re-confirm.
+
+     ⚠️  DB-ONLY RULE: Register the FR in the DB via `fr_cli.py open` — do NOT
+     create a `.md` file in `.github/fr/`. The DB is the sole source of truth.
+     (See feature-request-flow.instructions.md § FR Identifier) -->
