@@ -13,6 +13,7 @@ graph LR
     MFP[(MyFitnessPal)]:::ext
     TZ[(TrainingZones)]:::ext
     Mermaid[(mermaid.ink)]:::ext
+    Ollama[(Ollama)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -30,6 +31,9 @@ graph LR
     Workspace -->|dalle3 image gen| OpenAI
     Workspace -->|huggingface inference| HF
     Workspace --> WSDB
+    Workspace -->|health ping| ElevenLabs
+    Workspace -->|health ping| Ollama
+    Workspace -->|health ping| HF
     %% ∞Life → external + DB
     Life -->|nutrition sync| MFP
     Life -->|workout sync| TZ

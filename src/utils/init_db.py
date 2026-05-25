@@ -242,6 +242,17 @@ def init_db() -> None:
     );
 
     CREATE INDEX IF NOT EXISTS idx_scan_run_started ON scan_run_log(started_at);
+
+    CREATE TABLE IF NOT EXISTS api_health (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        endpoint   TEXT    NOT NULL,
+        status     TEXT    NOT NULL CHECK(status IN ('up', 'down')),
+        latency_ms REAL,
+        error_msg  TEXT,
+        checked_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_health_ep ON api_health(endpoint, checked_at);
     """)
     conn.commit()
     _run_migrations(conn)

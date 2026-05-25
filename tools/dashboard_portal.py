@@ -54,6 +54,12 @@ except Exception:  # pragma: no cover - keep portal rendering even if import fai
     _collect_agent_health = None
     _get_workspace_conn = None
 
+# Import API health monitor for endpoint status widget.
+try:
+    from api_health_monitor import run_pings as _run_api_pings  # type: ignore
+except Exception:  # pragma: no cover
+    _run_api_pings = None
+
 
 # ── AC4: Agent-ops health + freshness card ─────────────────────────────────
 
@@ -227,6 +233,108 @@ def _render_health_card(snapshot: dict) -> str:
       </div>
       {regen_html}
     </div>"""
+
+
+# ── API endpoint health widget ─────────────────────────────────────────────
+
+_API_HEALTH_WIDGET_CSS = """
+  .api-health-widget {
+    margin: 0.7rem 0.9rem 0rem;
+    padding: 0.5rem 0.8rem;
+    background: rgba(30,37,48,0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+  }
+  .api-health-title {
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 0.1rem;
+  }
+  .api-health-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+  }
+  .api-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .api-dot.up      { background: #34d399; }
+  .api-dot.down    { background: #f87171; }
+  .api-dot.unknown { background: var(--muted); opacity: 0.5; }
+  .api-ep-name  { flex: 1; color: var(--text); font-size: 0.72rem; }
+  .api-latency  { color: var(--muted); font-size: 0.66rem; font-variant-numeric: tabular-nums; min-width: 3.4rem; text-align: right; }
+  .api-age      { color: var(--muted); font-size: 0.6rem; opacity: 0.6; white-space: nowrap; min-width: 2.8rem; text-align: right; }
+"""
+
+
+def _collect_api_health() -> list[dict]:
+    """Run live pings at portal-generation time and return results.
+
+    Falls back to empty list on any error so portal rendering never fails.
+    """
+    if _run_api_pings is None or _get_workspace_conn is None:
+        return []
+    try:
+        conn = _get_workspace_conn()
+        try:
+            return _run_api_pings(conn)
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    except Exception:  # pragma: no cover
+        return []
+
+
+def _render_api_health_widget(rows: list[dict]) -> str:
+    """Render the minimalist traffic-light + latency sidebar widget."""
+    if not rows:
+        return ""
+
+    lines = [
+        '<div class="api-health-widget">',
+        '<div class="api-health-title">🔌 API Health</div>',
+    ]
+    for row in rows:
+        status = row.get("status", "unknown")
+        dot_cls = status if status in ("up", "down") else "unknown"
+        label = _esc(row.get("label") or row.get("name") or "?")
+
+        latency = row.get("latency_ms")
+        latency_str = f"{latency:.0f}ms" if latency is not None else "&mdash;"
+
+        checked_at = row.get("checked_at")
+        age_str = ""
+        if checked_at:
+            try:
+                from datetime import datetime as _dt, timezone as _tz
+                t = _dt.fromisoformat(checked_at.replace("Z", "+00:00"))
+                age_secs = (_dt.now(_tz.utc) - t).total_seconds()
+                age_str = _fmt_age(age_secs)
+            except Exception:
+                pass
+
+        error = row.get("error_msg")
+        title_attr = f' title="{_esc(error)}"' if status == "down" and error else ""
+
+        lines.append(
+            f'<div class="api-health-row"{title_attr}>'
+            f'<span class="api-dot {dot_cls}"></span>'
+            f'<span class="api-ep-name">{label}</span>'
+            f'<span class="api-latency">{latency_str}</span>'
+            f'<span class="api-age">{age_str}</span>'
+            f'</div>'
+        )
+    lines.append("</div>")
+    return "\n".join(lines)
 
 
 _HEALTH_CARD_CSS = """
@@ -624,6 +732,7 @@ def render_portal(manifest: dict) -> str:
     server_sidebar = _render_server_sidebar(servers)
     health_snapshot = collect_portal_health(manifest)
     health_card = _render_health_card(health_snapshot)
+    api_health_widget = _render_api_health_widget(_collect_api_health())
 
     # Load icon config for favicon + sigil tooltip
     _icon_config_path = Path(__file__).parent.parent / "src" / "data" / "portal_icon_config.json"
@@ -955,6 +1064,7 @@ def render_portal(manifest: dict) -> str:
     color: #34d399;
   }}
 {_HEALTH_CARD_CSS}
+{_API_HEALTH_WIDGET_CSS}
 </style>
 </head>
 <body>
@@ -962,6 +1072,7 @@ def render_portal(manifest: dict) -> str:
     <div class="sidebar-header">
       <h1><span class="sigil"{_prompt_attr}>⊕</span> Dashboard Portal</h1>
     </div>
+    {api_health_widget}
     {health_card}
     {stats}
     <div class="nav-section">
