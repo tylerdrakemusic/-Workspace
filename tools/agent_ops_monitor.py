@@ -777,6 +777,70 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
     drift_html = "\n".join(drift_rows) if drift_rows else '<tr><td colspan="4" class="empty">No architecture drift detected</td></tr>'
     drift_count = len(drift)
 
+    # Proof Health panel — load from reports/proof_health.json if present.
+    _ph_json = Path(__file__).resolve().parent.parent / "reports" / "proof_health.json"
+    if _ph_json.exists():
+        try:
+            import json as _json
+            _ph = _json.loads(_ph_json.read_text(encoding="utf-8"))
+            _ph_total  = _ph.get("total", 0)
+            _ph_healthy = _ph.get("healthy", 0)
+            _ph_stale   = _ph.get("stale", 0)
+            _ph_corrupt = _ph.get("corrupt", 0)
+            _ph_skipped = _ph.get("skipped", 0)
+            _ph_rate    = _ph.get("failure_rate_pct", 0.0)
+            _ph_run_at  = _ph.get("run_at", "")[:19].replace("T", " ")
+            _ph_failed  = _ph.get("failed_rows", [])
+            _ph_status_color = "var(--danger)" if _ph_rate > 10 else "var(--success)"
+            _ph_status_label = "UNHEALTHY" if _ph_rate > 10 else "HEALTHY"
+            _ph_failed_rows_html = ""
+            if _ph_failed:
+                _ph_row_parts = []
+                for _r in _ph_failed[:50]:
+                    _reason_color = "var(--danger)" if _r["reason"] == "stale" else "var(--warning)"
+                    _ph_row_parts.append(
+                        f'<tr>'
+                        f'<td class="mono">{_esc(_r.get("proof_id",""))}</td>'
+                        f'<td>{_esc(_r.get("agent",""))}</td>'
+                        f'<td class="mono" style="word-break:break-all">{_esc(_r.get("artifact_path",""))}</td>'
+                        f'<td><span style="color:{_reason_color};font-weight:700">{_esc(_r.get("reason",""))}</span></td>'
+                        f'</tr>'
+                    )
+                _ph_failed_rows_html = "\n".join(_ph_row_parts)
+            else:
+                _ph_failed_rows_html = '<tr><td colspan="4" class="empty">No stale or corrupt artifacts</td></tr>'
+            proof_health_html = f"""
+  <h2 style="color: var(--cyan);">Proof Artifact Health
+    <span class="section-sub" style="color:{_ph_status_color}">{_ph_status_label} &bull; {_ph_rate:.1f}% failure rate</span>
+    <span class="section-sub">last run {_ph_run_at}</span>
+  </h2>
+  <div class="stat-grid" style="margin-bottom:1.5rem">
+    <div class="stat-card"><div class="stat-value">{_ph_total}</div><div class="stat-label">Total Artifacts</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--success)">{_ph_healthy}</div><div class="stat-label">Healthy</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--danger)">{_ph_stale}</div><div class="stat-label">Stale</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--warning)">{_ph_corrupt}</div><div class="stat-label">Corrupt</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--muted)">{_ph_skipped}</div><div class="stat-label">Skipped</div></div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Proof ID</th><th>Agent</th><th>Path</th><th>Reason</th></tr>
+    </thead>
+    <tbody>
+      {_ph_failed_rows_html}
+    </tbody>
+  </table>"""
+        except Exception:
+            proof_health_html = '  <h2 style="color: var(--cyan);">Proof Artifact Health</h2><p style="color:var(--muted);padding:1rem 0">Error reading proof_health.json</p>'
+    else:
+        proof_health_html = f"""
+  <h2 style="color: var(--cyan);">Proof Artifact Health</h2>
+  <p style="color:var(--muted);padding:1rem 0">
+    No report yet &mdash; run
+    <code>C:\\G\\python.exe f:\\⊕Workspace\\src\\utils\\proof_health_verifier.py</code>
+    to generate the first sweep, or register the weekly task via
+    <code>tools\\register_proof_health_task.ps1</code>.
+  </p>"""
+
     # ── Gap Breakdown (AC8: explain each gap contributing to Total Gaps) ──
     zombie_rows = []
     for z in health["zombies"]:
@@ -1309,6 +1373,8 @@ def render_dashboard(health: dict, fix_summary: dict | None = None, drift: list[
       {drift_html}
     </tbody>
   </table>
+
+  {proof_health_html}
 
   <div class="footer">
     ⊕Workspace Agent Ops Monitor &mdash; Self-regenerating dashboard &bull;
