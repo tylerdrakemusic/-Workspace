@@ -11,6 +11,9 @@ Sweep phases:
   4. qbackups trim  — keep last 5 ty_string_cache_* backups in ⟨ψ⟩Quantum
   5. DB health      — PRAGMA integrity_check on workspace.db; file-stat for
                       other encrypted DBs whose keys are in env
+  6. PNG hygiene    — move stray *.png from each project root into
+                      <project>/proof/screenshots/<YYYY-MM-DD>/; skips PNG
+                      files already inside a designated subdir
 
 Proof output: one proof_artifacts row written to workspace.db on success.
               FAILED row + exit code 1 on any unhandled exception.
@@ -49,6 +52,14 @@ PROJECTS: dict[str, Path] = {
 QBACKUP_DIR = Path(r"f:\⟨ψ⟩Quantum\qbackups")
 LOG_RETENTION_DAYS = 30
 QBACKUP_KEEP = 5
+
+# ── Subdirs where *.png files legitimately live (skip during PNG hygiene) ──────
+_PNG_SAFE_SUBDIRS: frozenset[str] = frozenset({
+    "proof", "output", "reports", "images", "Brand",
+    "data", "docs", "research", "catalog", "src",
+    ".github", ".vscode", ".playwright-mcp", ".worktrees",
+    "node_modules", "dist", "build",
+})
 
 # ── Patterns that are always safe to delete from tmp/ ──────────────────────────
 _TMP_DELETE_GLOBS = [
@@ -224,6 +235,48 @@ def db_health() -> dict[str, str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase 6 — PNG hygiene
+# ─────────────────────────────────────────────────────────────────────────────
+
+def archive_root_pngs(project: str, root: Path, dry_run: bool) -> list[tuple[str, str]]:
+    """Move stray *.png files from <root>/ into <root>/proof/screenshots/<date>/.
+
+    Only scans the immediate project root (depth=1).  Any *.png already inside
+    a _PNG_SAFE_SUBDIRS folder is left untouched.
+
+    Returns a list of (src_name, dest_relative) tuples for reporting.
+    """
+    if not root.is_dir():
+        return []
+
+    pngs = [
+        f for f in root.iterdir()
+        if f.is_file() and f.suffix.lower() == ".png"
+    ]
+    if not pngs:
+        return []
+
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    dest_dir = root / "proof" / "screenshots" / date_str
+    moved: list[tuple[str, str]] = []
+
+    for src in pngs:
+        dest = dest_dir / src.name
+        # Make dest name unique if a file with that name already exists
+        if dest.exists():
+            stem, suffix = src.stem, src.suffix
+            dest = dest_dir / f"{stem}_{uuid.uuid4().hex[:6]}{suffix}"
+
+        rel_dest = str(dest.relative_to(root))
+        if not dry_run:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            src.rename(dest)
+        moved.append((src.name, rel_dest))
+
+    return moved
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Proof artifact writer
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -297,7 +350,18 @@ def main() -> int:
         for db_label, status in health.items():
             if "row_counts" not in db_label:
                 lines.append(f"  db/{db_label}: {status}")
-
+        # ── Phase 6: PNG hygiene ──────────────────────────────────────────
+        total_pngs_moved = 0
+        for name, root in PROJECTS.items():
+            moved = archive_root_pngs(name, root, dry)
+            total_pngs_moved += len(moved)
+            tag = "DRY" if dry else "MOV"
+            if moved:
+                sample = ", ".join(src for src, _ in moved[:5])
+                ellipsis = "…" if len(moved) > 5 else ""
+                lines.append(f"  png/{name}: [{tag}] {len(moved)} files → proof/screenshots/ ({sample}{ellipsis})")
+            else:
+                lines.append(f"  png/{name}: [{tag}] 0 stray PNGs")
         elapsed = (datetime.now() - started).total_seconds()
         lines.append(f"  elapsed={elapsed:.1f}s  status=OK")
 
