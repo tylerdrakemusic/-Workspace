@@ -75,6 +75,12 @@ def _backfill_perf_runs_agent(conn) -> None:
         (re.compile(r"^Architecture review gate", re.I), "\u2295workspace-architecture-reviewer"),
         (re.compile(r"^(?:Bulk reprioritize|Apply selected discovery)", re.I), "\u2295workspace-discovery"),
         (re.compile(r"^(?:Create vocal pilot|FR intake)", re.I), "\u2295workspace-intake"),
+        # New patterns (FR-20260525-agent-rationalization backfill)
+        (re.compile(r"^qa[-\s]", re.I), "\u2295workspace-qa"),
+        (re.compile(r"^intake\s", re.I), "\u2295workspace-intake"),
+        (re.compile(r"^scope-approv", re.I), "\u2295workspace-intake"),
+        (re.compile(r"^security-", re.I), "\u2295workspace-security"),
+        (re.compile(r"^review\+PR", re.I), "\u2295workspace-reviewer"),
     ]
 
     rows = conn.execute("SELECT run_id, name FROM perf_runs WHERE agent IS NULL").fetchall()

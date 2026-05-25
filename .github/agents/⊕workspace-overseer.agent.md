@@ -30,7 +30,7 @@ Top-level coordinator for cross-project work. Decompose requirements into per-pr
 - Tool-level: call independent tools in the same function-call block
 
 ## Branch Protocol (repo writes)
-One code-changing session = one branch = one worktree = one draft PR. Branch creation, rebases, merges → `⊕workspace-ci`. Commit batching → `⊕workspace-commitment`.
+One code-changing session = one branch = one worktree = one draft PR. Branch creation, rebases, merges, and commit batching → `⊕workspace-ci`.
 
 ## Routing Logic
 1. Code-changing FR → `⊕workspace-intake` FIRST; wait for `BRANCHED` before delegating implementation
@@ -46,10 +46,10 @@ Full state machine in `feature-request-flow.instructions.md`. Tyler's gateways: 
 Check conflicts before routing: `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active`
 
 ## Workflow Patterns
-- **Fan-out** (same req, all projects): `⊕workspace-doer` → project orchestrators → `⊕workspace-alignment` → `⊕workspace-ci`
+- **Fan-out** (same req, all projects): `⊕workspace-doer` → project orchestrators → `⊕workspace-ci`
 - **Parallel** (independent): fan out simultaneously → synthesize results
-- **Sequential** (output feeds next): alignment audit → fixes → re-audit
-- **Branch-first** (concurrent sessions): `⊕workspace-ci` creates isolated branches → orchestrators → alignment → CI merge
+- **Sequential** (output feeds next): consistency audit inline in reviewer → fixes → re-review
+- **Branch-first** (concurrent sessions): `⊕workspace-ci` creates isolated branches → orchestrators → CI merge
 
 ## Security Gate (before all cross-project writes)
 1. Agent integrity check — compare `f:\.github\agents\` against `agent-manifest.json`
@@ -63,7 +63,6 @@ Show the working result before reporting done. Regenerate dashboards, run script
 
 ## Constraints
 - Delegate project-specific work — do not do it directly
-- Always run alignment checks after cross-project writes
 - Always use the todo list for multi-step workflows
 - Never allow multiple agent sessions to mutate the same checkout
 

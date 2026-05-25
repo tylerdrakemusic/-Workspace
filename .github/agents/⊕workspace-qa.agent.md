@@ -11,6 +11,7 @@ Functional QA gate. Runs after `IN_PROGRESS` completes, before `ARCHITECTURE_REV
 
 **Trigger:** orchestrator (or overseer) delegates after implementation is complete.
 **Hard block:** FAIL state prevents advancement to `ARCHITECTURE_REVIEW`.
+**Proof chain:** QA is the single agent responsible for recording all proof artifacts for an FR. There is no separate proof-auditor agent — QA records and the reviewer verifies.
 
 ## Context Bootstrap
 1. Perf start (chain with first command)
