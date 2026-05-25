@@ -1,0 +1,3722 @@
+{
+  "run_at": "2026-05-25T03:54:52Z",
+  "total": 902,
+  "total_with_paths": 532,
+  "healthy": 161,
+  "stale": 166,
+  "corrupt": 205,
+  "skipped": 370,
+  "failure_rate_pct": 69.74,
+  "failed_rows": [
+    {
+      "proof_id": "1c4d29a9af49",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR-20260424-cc-prost-setlist-05022026 registered in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "3eb04d61b12acf9f622d911a1b57f55143ccdf31c76ae0b0d14e393dfa7808ca",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "1e8c5b79013c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "FR ledger created",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260424-cc-prost-setlist-05022026.md",
+      "stored_hash": "04be485a8af4cd10221f5568883b159f5a62f0b445d8b65b00d083886162d488",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "10958e5bcea5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "User MCP config updated with mcp-server-sqlite entry",
+      "artifact_path": "C:\\Users\\tyler\\AppData\\Roaming\\Code\\User\\mcp.json",
+      "stored_hash": "2b0c2df17c3202f450907884bd151fcdf1ffa47ec1bc84040c43ea041bba3266",
+      "current_hash": "af3fa530b01c20fa6a922478fd3e5c34d7c3f41c99f76ac1318d7ca74805a18c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1a6eb31ea1e3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR ledger signed off DONE",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260424-sql-mcp-server.md",
+      "stored_hash": "6d8b43cc0c40c0a6a81379130b887b222276d0946c15f68c2b20939f9c194304",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "81561377f8f4",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Custom SQLCipher MCP server",
+      "artifact_path": "f:\\\u2295Workspace\\src\\utils\\sqlcipher_mcp_server.py",
+      "stored_hash": "5b8b0125214e32851170a9df7e49da6dc2d544d51c5a1c7cce12034a91a7fd5c",
+      "current_hash": "83a1eb0da483638a937f0755c6dd4225bdd92bac5304b93624a9c78b84b22912",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c1b8b1f6c233",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "sqlcipher_mcp_server.py committed to main (c2ccc37)",
+      "artifact_path": "f:\\\u2295Workspace\\src\\utils\\sqlcipher_mcp_server.py",
+      "stored_hash": "5b8b0125214e32851170a9df7e49da6dc2d544d51c5a1c7cce12034a91a7fd5c",
+      "current_hash": "83a1eb0da483638a937f0755c6dd4225bdd92bac5304b93624a9c78b84b22912",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e4340acbb09f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR-20260424-infinitelife-db-restore added to FEATURE_REQUESTS.md registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "837174908127c4a7c86007bd0c0814eec1e03a634283be9d5f2dc09136aae473",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f36d3d9423f5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "\u221eLife src/ scaffold + infinitelife.db created (AC1)",
+      "artifact_path": "f:\\\u221eLife\\src\\utils\\init_db.py",
+      "stored_hash": "5be964d4139b3e706b481a030028c2e6c45d0195798250528acad7af19a34da1",
+      "current_hash": "3dc8f4830002f7a942f9d612b7087a532378c563467ad371b34497aaa2a504fa",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f4bfbcd0bd6c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Biomarker Dashboard regenerated from DB, portal badge \u2192 Living (AC4)",
+      "artifact_path": "f:\\\u221eLife\\tmp\\biomarker_dashboard.html",
+      "stored_hash": "708d8e8ec52a545487e484f3222418f5541e046f121157d60d0134de740737c6",
+      "current_hash": "c4475a16b6aae70e815e29691de856c4026bf711633a36f5af26777a77aa75ea",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "58e973a696aa",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "58 biomarker rows across 10 categories seeded in infinitelife.db (AC7)",
+      "artifact_path": "f:\\\u221eLife\\src\\data\\infinitelife.db",
+      "stored_hash": "e88592cb87437aedc29245ecaeba9035d7d6cf50f249d1732e96211c66369210",
+      "current_hash": "9316ff2be89dc8b193eafcf097ce4d613e092d050de69898bfe3ecb82a104cbe",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "8739f6376f3c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed weight trend chart (None\u2192null, container height)",
+      "artifact_path": "f:\\\u221eLife\\src\\dashboard\\gen_biomarker_dashboard.py",
+      "stored_hash": "5435bc7c5fe63a0bc7330d991dbe7a1a3b5aeb4a0bc4f4e126b4f5a5c0ffb19f",
+      "current_hash": "bbcca7015e44b52f345f5e54d3a8981b176f9dc8e95c82e02394d81b066156b0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "52661e617712",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated fr_dashboard.html with JS live polling + Approve PR buttons",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\fr_dashboard.html",
+      "stored_hash": "5b69c93c7d89712804a4d8ab5b975e2e7e167d074319069eab0e15bb85531539",
+      "current_hash": "29128dfcdd8f671fcc0626dda9b0f5590d3395a412113d62dfb025cadae18e54",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "39ffc57e0856",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated open_portal.ps1 to auto-start fr_server.py on port 7474",
+      "artifact_path": "f:\\\u2295Workspace\\open_portal.ps1",
+      "stored_hash": "84c9612862dbf3aa1ed852ce72529aeec84e9e667cc12a7e6fc059f5668321ba",
+      "current_hash": "94e15199c9393d008268241f166294e822633a4aff2f8fa9aa66f9f3a357f64d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9b74a9dc1fb8",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "fr_server.py \u2014 live HTTP server port 7474",
+      "artifact_path": "f:\\\u2295Workspace\\src\\utils\\fr_server.py",
+      "stored_hash": "b639bac512deae426c7fd21a27bf61bbfb1b0325bb4b1f5771bee7e776f04c37",
+      "current_hash": "15b6ddcd4be47b76bcc35d0517da015f54297aab98b438ded3305378aaa8ef5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c78c6caf3b16",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "fr_dashboard.html \u2014 live JS polling + approve buttons",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\fr_dashboard.html",
+      "stored_hash": "f98f3e3b19eed3601e1e9a95b056390186ec801347bc81d9a173dad744199c0a",
+      "current_hash": "29128dfcdd8f671fcc0626dda9b0f5590d3395a412113d62dfb025cadae18e54",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "567aae64b039",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "test_fr_server.py \u2014 14 tests passing",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_fr_server.py",
+      "stored_hash": "a7eaa48475c37b1b99a8066cd7dc816938ccb45b2eab0e5c118b3eb5c742f24a",
+      "current_hash": "f88c136677b333cbd23ad945fc51a46c95670f82fa2b8968a3b11ffa857a33c5",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d88b4e8172ff",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "open_portal.ps1 \u2014 auto-starts fr_server.py",
+      "artifact_path": "f:\\\u2295Workspace\\open_portal.ps1",
+      "stored_hash": "f95c566ed637856f5643f8bf94bc72fe8dba3099bbe532a517e206e927813f5b",
+      "current_hash": "94e15199c9393d008268241f166294e822633a4aff2f8fa9aa66f9f3a357f64d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c70282d27b9b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "FR ledger created via intake",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260425-ci-test-harness-gateway.md",
+      "stored_hash": "34d5e23cf88a1c957d1072b4b4859fd12580e18c30e5e51ab003827f03349ede",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "a6c0a430bc74",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "5/5 PRs green after remediation",
+      "artifact_path": "https://github.com/tylerdrakemusic/-Workspace/pull/24",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "01f81cd6bfc1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "FR-20260425 fully delivered, AC6 closed",
+      "artifact_path": "https://github.com/tylerdrakemusic/-Workspace/pull/27",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f995f3b288c6",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated executive_audio_brief.py \u2014 reads both TODO_AI.md and TODO_TYLER.md, labeled sections",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\executive_audio_brief.py",
+      "stored_hash": "cb6d0a4138e6f3c002b4e4532b8700e812c873922f650bdba42b985bae4e1f96",
+      "current_hash": "67dddb5cc494164a518ba5950411110ce01778ff1b283155b31a65f2c86bc95b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "54d0c28f2e27",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Regenerated executive_brief_portal.html with AI+human todo cards",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "d391beea1dd2a1154b2855e0c9e9c50bb3f57f85ea2d0b1b4b603ede34738c80",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "ddc62777bad3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "dashboard.json updated \u2014 type flask_app, url 127.0.0.1:8200",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\dashboard.json",
+      "stored_hash": "1144376dcd19c2e7033059a41682f4fc8aea64e95b87b4124e542891d696ded7",
+      "current_hash": "cf23e8701210af29a981136fbe62728e9fb86d5265a54695f876b984897b28c8",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "920fe6b55352",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Medications table seeded: 9 rows (Burrows IM prescriptions)",
+      "artifact_path": "f:\\\u221eLife\\src\\data\\infinitelife.db",
+      "stored_hash": "497bc4f7f4f43ccb53c2e6550ec3d63d5e90c96a8c5ff9d776b33cf51ab9b105",
+      "current_hash": "9316ff2be89dc8b193eafcf097ce4d613e092d050de69898bfe3ecb82a104cbe",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f6ac7243e33f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Lab panels + results ingested: 1 panel (CMP+HbA1c), 19 markers, creatinine flagged HIGH",
+      "artifact_path": "f:\\\u221eLife\\src\\data\\infinitelife.db",
+      "stored_hash": "497bc4f7f4f43ccb53c2e6550ec3d63d5e90c96a8c5ff9d776b33cf51ab9b105",
+      "current_hash": "9316ff2be89dc8b193eafcf097ce4d613e092d050de69898bfe3ecb82a104cbe",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "8f17d8cede1a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Biomarker dashboard updated: portal link + dynamic DB reads",
+      "artifact_path": "f:\\\u221eLife\\src\\dashboard\\gen_biomarker_dashboard.py",
+      "stored_hash": "2d21a89ad799ef1f7bd9e0d0679405819bc75be72b0759209e1e3c098814c092",
+      "current_hash": "bbcca7015e44b52f345f5e54d3a8981b176f9dc8e95c82e02394d81b066156b0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d9b9a842a5cd",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR registry: removed duplicate mermaid FR from Active, archived superseded guitar-trainer-data-to-db FR, added reconcile-gaps FR",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "408136087ef627de16c6c51c2d7b57f980a3d28cf7fc1571d864640f9dfa296d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "1aa12258dbb6",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "agent_ops_monitor --fix: health 100%, 0 zombies closed, 6 proofs verified, 3 legacy orphans backfilled",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\agent_ops_dashboard.html",
+      "stored_hash": "1dcebced63147e4a28236a7c6cf266a3460a36e49e7cf2dcd6439f31ec35dfa4",
+      "current_hash": "df14e416046c4f9989e764ef83b238cba1da7e6796d97f81a3e952d0747fe46a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "00e49aeb872b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AI-Manifest TODO_TYLER: marked Node.js installed (v22.14.0) as done",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\TODO_TYLER.md",
+      "stored_hash": "3679d5b34ef5aa48128694d28fffcabf26f464ae76cacab7b85d39615af2f7ee",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "e40c6be442ae",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Workspace TODO_AI: annotated installed MCPs (Playwright+GitHub) in research candidate list",
+      "artifact_path": "f:\\\u2295Workspace\\TODO_AI.md",
+      "stored_hash": "3e9cdc7fbf77415518c4148156c1d1c7e6e006d203d83f314b7af98b67df2895",
+      "current_hash": "699970737bfdf8dc6aa6ad536e7b559ccf97cb490dbeec7942520eb1b59d5a56",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f50abd702246",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Hygiene agent: added Phase 3b FR Ledger Reconciliation, Phase 3c Agent Ops Monitor sweep, updated report template",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-hygiene.agent.md",
+      "stored_hash": "19b27558dc45f8b53b9a6cc3f8fb8ce886adbd82a4984743407c6481bdf0e06e",
+      "current_hash": "01711da1f3eaa017a52112d8236e116069d9db5ddbe5650c9d8a4da825f44eeb",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "50a24aa070b1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "DALL-E 3 integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\dalle3\\client.py",
+      "stored_hash": "30b2f847e0f3830627c857647752da64a31accf90ff7519f60c473dcf686ece1",
+      "current_hash": "3f574df139799cc6b5b1f0a12b11472719f18dea9d4f024e20913d63089f2602",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "701e7ca8e617",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "DALL-E 3 tests: 10/10 passing",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_dalle3_client.py",
+      "stored_hash": "ccf4ce5744ef19d06aa735586f364d6aad7226ac0fdbbad50855a391a15689ba",
+      "current_hash": "228d3035b701e2971fe526d25f4084539346d9fa166b56df8c62ec9da4ed0b33",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "80116bc08d65",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "HuggingFace image integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\huggingface\\client.py",
+      "stored_hash": "9231905ff0fd3921a7d70ac24654b7e19894a2a0312b5a334916a8588228cca3",
+      "current_hash": "7313c4788f342538a958d43817a952e52d6c76fe8553f4515db4f297d017dd5b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1958bcbe62af",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Lily portrait utility",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\lily_portrait.py",
+      "stored_hash": "29288ba3462541d3af3d734f4f5c2d6dfb374e4f2b0251bd9e2906b3267bd809",
+      "current_hash": "fdb4e2b33d983fa17f55303043582ca549e262e45d0df20cb71a52f19350bc5d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e60896892f12",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Lily portrait tests: 10/10 passing",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tests\\test_lily_portrait.py",
+      "stored_hash": "02e9c84a79ca775e364206b0174c074e334ba4df0c73e3357986d53c32f9d059",
+      "current_hash": "251d6dedff40db03b1ee2dbe99b43eba77246c568718dd3fb1a8d9fe72a3606a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "38ca69e1d101",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Lily portrait visible in executive brief portal",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "c863d109986915a1bf5fb492d70db569dc50c71ddf8f56dc529df1779f6ecf25",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1754b81a8ddc",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "DALL-E 3 integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\dalle3\\client.py",
+      "stored_hash": "30b2f847e0f3830627c857647752da64a31accf90ff7519f60c473dcf686ece1",
+      "current_hash": "3f574df139799cc6b5b1f0a12b11472719f18dea9d4f024e20913d63089f2602",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9b68a2d50e27",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "DALL-E 3 tests: 10/10 passing",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_dalle3_client.py",
+      "stored_hash": "ccf4ce5744ef19d06aa735586f364d6aad7226ac0fdbbad50855a391a15689ba",
+      "current_hash": "228d3035b701e2971fe526d25f4084539346d9fa166b56df8c62ec9da4ed0b33",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "78053a9d1c71",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "HuggingFace image integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\huggingface\\client.py",
+      "stored_hash": "9231905ff0fd3921a7d70ac24654b7e19894a2a0312b5a334916a8588228cca3",
+      "current_hash": "7313c4788f342538a958d43817a952e52d6c76fe8553f4515db4f297d017dd5b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "bad68ecc9b97",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Lily portrait utility",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\lily_portrait.py",
+      "stored_hash": "29288ba3462541d3af3d734f4f5c2d6dfb374e4f2b0251bd9e2906b3267bd809",
+      "current_hash": "fdb4e2b33d983fa17f55303043582ca549e262e45d0df20cb71a52f19350bc5d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c71e1d9c853c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Lily portrait tests: 10/10 passing",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tests\\test_lily_portrait.py",
+      "stored_hash": "02e9c84a79ca775e364206b0174c074e334ba4df0c73e3357986d53c32f9d059",
+      "current_hash": "251d6dedff40db03b1ee2dbe99b43eba77246c568718dd3fb1a8d9fe72a3606a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d3805a44e3f7",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Lily portrait visible in executive brief portal",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "c863d109986915a1bf5fb492d70db569dc50c71ddf8f56dc529df1779f6ecf25",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "005d7832f05e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "DALL-E 3 integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\dalle3\\client.py",
+      "stored_hash": "30b2f847e0f3830627c857647752da64a31accf90ff7519f60c473dcf686ece1",
+      "current_hash": "3f574df139799cc6b5b1f0a12b11472719f18dea9d4f024e20913d63089f2602",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "8ede9de8693e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "DALL-E 3 tests: 10/10 passing",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_dalle3_client.py",
+      "stored_hash": "ccf4ce5744ef19d06aa735586f364d6aad7226ac0fdbbad50855a391a15689ba",
+      "current_hash": "228d3035b701e2971fe526d25f4084539346d9fa166b56df8c62ec9da4ed0b33",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "bed5e038a0cc",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "HuggingFace image integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\huggingface\\client.py",
+      "stored_hash": "9231905ff0fd3921a7d70ac24654b7e19894a2a0312b5a334916a8588228cca3",
+      "current_hash": "7313c4788f342538a958d43817a952e52d6c76fe8553f4515db4f297d017dd5b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7b848fa02faa",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Lily portrait utility",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\lily_portrait.py",
+      "stored_hash": "29288ba3462541d3af3d734f4f5c2d6dfb374e4f2b0251bd9e2906b3267bd809",
+      "current_hash": "fdb4e2b33d983fa17f55303043582ca549e262e45d0df20cb71a52f19350bc5d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "398add52b80c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Lily portrait tests: 10/10 passing",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tests\\test_lily_portrait.py",
+      "stored_hash": "02e9c84a79ca775e364206b0174c074e334ba4df0c73e3357986d53c32f9d059",
+      "current_hash": "251d6dedff40db03b1ee2dbe99b43eba77246c568718dd3fb1a8d9fe72a3606a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d78a9d45cb6d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Lily portrait visible in executive brief portal",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "c863d109986915a1bf5fb492d70db569dc50c71ddf8f56dc529df1779f6ecf25",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f516e06254ed",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "DALL-E 3 integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\dalle3\\client.py",
+      "stored_hash": "30b2f847e0f3830627c857647752da64a31accf90ff7519f60c473dcf686ece1",
+      "current_hash": "3f574df139799cc6b5b1f0a12b11472719f18dea9d4f024e20913d63089f2602",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "da37ab8d43ea",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "DALL-E 3 tests: 10/10 passing",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_dalle3_client.py",
+      "stored_hash": "ccf4ce5744ef19d06aa735586f364d6aad7226ac0fdbbad50855a391a15689ba",
+      "current_hash": "228d3035b701e2971fe526d25f4084539346d9fa166b56df8c62ec9da4ed0b33",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9aeb9d899a1c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "HuggingFace image integration client",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\huggingface\\client.py",
+      "stored_hash": "9231905ff0fd3921a7d70ac24654b7e19894a2a0312b5a334916a8588228cca3",
+      "current_hash": "7313c4788f342538a958d43817a952e52d6c76fe8553f4515db4f297d017dd5b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "6acdee673c99",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Lily portrait utility",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\lily_portrait.py",
+      "stored_hash": "29288ba3462541d3af3d734f4f5c2d6dfb374e4f2b0251bd9e2906b3267bd809",
+      "current_hash": "fdb4e2b33d983fa17f55303043582ca549e262e45d0df20cb71a52f19350bc5d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "15615e4949b9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Lily portrait tests: 10/10 passing",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tests\\test_lily_portrait.py",
+      "stored_hash": "02e9c84a79ca775e364206b0174c074e334ba4df0c73e3357986d53c32f9d059",
+      "current_hash": "251d6dedff40db03b1ee2dbe99b43eba77246c568718dd3fb1a8d9fe72a3606a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "6ec54db884f7",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Lily portrait visible in executive brief portal",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "c863d109986915a1bf5fb492d70db569dc50c71ddf8f56dc529df1779f6ecf25",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9dbeee39c545",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "71 todos migrated from 9 flat files into manifest_todos.db",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\manifest_todos.db",
+      "stored_hash": "9fba0ab9a92bceaea794306b8e70975aab986b48678464548f6e9a58f10b1b3f",
+      "current_hash": "b6dfbc4479a1ba0442292300f1e9190e7dce9f6292f750c0f45886c0501f9dff",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d0093d3f56c7",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "PR#12 merged: AI-Manifest todo-db-cards d7b710d6",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\executive_audio_brief.py",
+      "stored_hash": "8894abbb929d3c7b7d9c87b7f5ae6a3d55330da8dac111b1e339a2936ea80858",
+      "current_hash": "67dddb5cc494164a518ba5950411110ce01778ff1b283155b31a65f2c86bc95b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "547d4d0e53cd",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "4 stale diagrams updated PR#52 ab4f176b",
+      "artifact_path": "f:\\\u2295Workspace\\diagrams\\manifest-architecture.mmd",
+      "stored_hash": "5f32bb62d2cbc98ae4fa649737c051aaa6a57d3040f295ef0c2ab861b4082c80",
+      "current_hash": "cca2fbbbe7fa098e0e114b5e589f9dec63a1cdfb90ee0d9ad168caa3fa827442",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "6b2e693dc3e2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed mark_done() stale ID bug and progress bar",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\executive_audio_brief.py",
+      "stored_hash": "5c85fd33330f512b4d3afc9a4081d6249a30c47ceb684a9f954ddcdcdcb04504",
+      "current_hash": "67dddb5cc494164a518ba5950411110ce01778ff1b283155b31a65f2c86bc95b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9eb5d33f2790",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added get_todo_by_id() helper",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\todos_db.py",
+      "stored_hash": "40a8ae5671e3d2fa9dac64012f5914fdf1b1cebb7fd0b319a121cbfef0935a7e",
+      "current_hash": "cbb47fa6065b29d32b2da32adb464ecdd4e9b8032cde385aa9ffe052f455c31e",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0230e85596c2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR ledger created/updated",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260427-quantum-rt-fallback-docs.md",
+      "stored_hash": "bed74e74e0fa0b2d6eaf47eaa13d11557db8b794880a32270a527222204ab4f2",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9d059fd8bcd1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Print setlist button added to generate_band_mgmt_panel.py",
+      "artifact_path": "f:\\\u2764Music\\src\\band_mgmt\\generate_band_mgmt_panel.py",
+      "stored_hash": "146478a4c5ee492279a79c3ece30eec0abbcfe5f99b8fc01987439c3ab5dd101",
+      "current_hash": "f6dda04c9c70f4af78f03d9e2b176843ec6dc53483bd1071bc6e2f89c16b25ae",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "55749ee3e0e6",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Band management panel HTML regenerated with print button",
+      "artifact_path": "f:\\\u2764Music\\reports\\band_management_panel.html",
+      "stored_hash": "4fcf874c4638edf0477487a3323f70e5928463920e1419a7e3dc6383d782a958",
+      "current_hash": "2c79ea10ddb7dc95dc905ee8f0da3a563d2065a1f196406256be1d06c743a83e",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "959ad76d9d50",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "feature-request-flow.instructions.md: ledger-PR bypass rules added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\instructions\\feature-request-flow.instructions.md",
+      "stored_hash": "f702417d8d06477e1f9ddab5b68100c00c6a5cbc39d6e291e00775ab3541bbe4",
+      "current_hash": "072776b1a351b0605033c92bcb3dbb7b8b9ec3e578cdd91f991a43afa25bac96",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3e67f9c3a3a0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-ci: Ledger Commit Protocol section added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-ci.agent.md",
+      "stored_hash": "c364ec89542db08ae091309cbc7ccc4089e052a056094ecedd3b9e26f172ac69",
+      "current_hash": "3c40bec02e887f088706eb36e670ce0296d78d48032c79e97642ed1861507068",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3cea2af0ba85",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-commitment: ledger exclusion rule added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-commitment.agent.md",
+      "stored_hash": "2f77bcccb1d168113a5370103de2a037236a199ed3b9b60b7fb617118f790012",
+      "current_hash": "e1bd1cef7718a65592b29f8b30fe5f359766b660d197af86c578387ca4d66763",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "cec62e6b6890",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-hygiene: Post-Merge Artifact Cleanup section added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-hygiene.agent.md",
+      "stored_hash": "19b27558dc45f8b53b9a6cc3f8fb8ce886adbd82a4984743407c6481bdf0e06e",
+      "current_hash": "01711da1f3eaa017a52112d8236e116069d9db5ddbe5650c9d8a4da825f44eeb",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d4455477105a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added amp_management block to Pandora in linkTyler.json",
+      "artifact_path": "f:\\\u2764Music\\studio_master\\linkTyler.json",
+      "stored_hash": "c5290e1f699a77327a742e76af4222f714f1fc4f1201ffae3cb955e63bd53b1c",
+      "current_hash": "3721c54b3e7b97772572248dfe673f3552d65e56bbbfda063e46ba7a63030bd0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "ed76dc91c015",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR-20260428 ledger closed",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260428-gig-inventory-checklist.md",
+      "stored_hash": "464a74888331c4e38f6a3e438c403584cbbea5ec112f45981d980a28675d9a7e",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3badb55cafb8",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FEATURE_REQUESTS.md archived FR-20260428",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "b980a57d77869963bbe6a654749bbb61641ca6c61f17b025c106de6a81ab161d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "1b7dface0032",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created fill_cache.py",
+      "artifact_path": "F:\\\u27e8\u03c8\u27e9Quantum\\tools\\fill_cache.py",
+      "stored_hash": "06f743e2903905d91c0eeb176cf832d5e3a1653923370956f314c302ed516307",
+      "current_hash": "5fcd92e317bff0a11b0f7269efb64cf7c32f466cd7be79d2909262de577bf6a6",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c058ad55d514",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated .gitignore to exclude cache files",
+      "artifact_path": "F:\\\u27e8\u03c8\u27e9Quantum\\.gitignore",
+      "stored_hash": "9c60c511bbbbd8887a2e6d5bdd445cd802a3df1d54884c0f8b527d24094d735b",
+      "current_hash": "34333aee8cacde7129b73a5520156d80974698b0798df982e000b07c0c5c2c06",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4c699c78f287",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added priority fields to all 5 dashboard.json specs + reordered panels",
+      "artifact_path": "f:/\u221eLife/dashboard.json",
+      "stored_hash": "9e64e7c79d2c0599ed582ebf7b0dd850d010a6d641025c4c7771a83b581490f8",
+      "current_hash": "067c9a79af1f45fd148efaf33e3c8b452a12cd2c0e6040e961751d619ae09a48",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0dc486a82831",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Sorted unified manifest by priority in dashboard_registry.py",
+      "artifact_path": "f:/\u2295Workspace/tools/dashboard_registry.py",
+      "stored_hash": "6c55c5bc532d7c42312871293ca547af0081b298b8761cd26967cc8bfa19469e",
+      "current_hash": "8b3d87d6358415d2eaf30b5edbf5bdd9775c20e506d22b3b9cd47f7e0611302a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "739ceb803710",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Regenerated portal.html with value-aligned 13-panel sidebar",
+      "artifact_path": "f:/\u2295Workspace/reports/portal.html",
+      "stored_hash": "0fb3571b0066264995e5c890210da352d47411a05e6f0058262fda5a877e41dc",
+      "current_hash": "51673837ccd30a7a46690fefbda2746e6fad4b227de03a3ec44a520707ea82be",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "aabad03c7302",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Logged FR-20260429-artist-profile-create and FR-20260429-hyperthreat-studios-doc in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "dc8514d19ba05d4c89fc2544122f94647678fe75139552ad39d9e9b716335a84",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9343c50edeb1",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created grill-me skill file",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\skills\\grill-me\\SKILL.md",
+      "stored_hash": "387e7d1fd81ca05e9af035d3aff3bd56fde5bbe11653d0bbbb8b6e6633c0ced5",
+      "current_hash": "38cb51f2a0fd84374105b727e8ffe456a4a894cb2bf6400e18c5764a62d95843",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e863de29f0c8",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Updated intake agent Phase A with grill-me auto-escalation gate",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-intake.agent.md",
+      "stored_hash": "dd621244ee739f3a2bc42846a0620e3c6fe219270a160ebc3e64a632eaf68426",
+      "current_hash": "0c4c2e83e17597c3cf839532207d89a0594b26141fb80ec5334ea07e6b7f2e7f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "16ffe47d25de",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "FR ledger created",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260430-grill-me-intake.md",
+      "stored_hash": "0dade5ed46495abb7ed3b9a0db8f02d7fb7978c9864b3f2f9dae535fa1577b15",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "6fb92d765157",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "FR ledger created",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260430-vqe-aer-bench.md",
+      "stored_hash": "68945725f864d6d16c512dd9c637fa5d5bfe278974386a64710168a5ce7a939a",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "ab0bb41e75ea",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Registry row added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "30a1c3531a226c05d15219d78c4d6f5c93debd779dad8ea41f57e8666298bdc0",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "1ca838982f1c",
+      "agent": "\u27e8\u03c8\u27e9quantum-orchestrator",
+      "proof_type": "dashboard",
+      "description": "VQE panel added to benchmark_dashboard.html with both rows",
+      "artifact_path": "F:\\worktrees\\quantum-vqe-aer-bench\\reports\\benchmark_dashboard.html",
+      "stored_hash": "0d6b2ca16321b690dd7248ffb85ea802a945178881b862424bb29e66b0de41cb",
+      "current_hash": "b5ff147abd81a11d6ab49f926fee1b911b96df117cd3f20213c2ea9d9f1e7639",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "67da44f23ed9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Delegated CI branching + orchestrator implementation; FR-20260430-vqe-aer-bench reached REVIEW_REQUESTED",
+      "artifact_path": "https://github.com/tylerdrakemusic/Quantum/pull/12",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9751c3dcbd08",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "VQE FR ledger -> MERGED -> CLOSED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260430-vqe-aer-bench.md",
+      "stored_hash": "6af245609f09cdce40a66a1894d8a148472b3f12db0ab87562c0ad6dfeeaadd5",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "03d69038e1d3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Quantum .gitignore + tool docstring",
+      "artifact_path": "F:\\worktrees\\quantum-dashboard-gitignore\\.gitignore",
+      "stored_hash": "83a22a86a3e6c3e16f4d0dba4c412686fd213c564b008ca09ef2b93b9c3d2f9d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "29b80538854d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Regenerated dashboard from main DB - 13KB populated",
+      "artifact_path": "F:\\worktrees\\quantum-dashboard-gitignore\\reports\\benchmark_dashboard.html",
+      "stored_hash": "386ace9da17ade97c721737829cd5c642be3b70ed5fc182d5e7dbefd83e052fe",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "950683c79ff0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Swapped garth->garminconnect in worktree",
+      "artifact_path": "f:\\\u221eLife-worktrees\\fix-weight-trend-sync-fix\\requirements.txt",
+      "stored_hash": "1f7465a4a1909188ccb7d812c2c1c532c76d7c7410bb5eeabdd9a643e86aa1e7",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "affebfd6bfcb",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "New garminconnect setup script",
+      "artifact_path": "f:\\\u221eLife-worktrees\\fix-weight-trend-sync-fix\\tools\\garmin_setup.py",
+      "stored_hash": "2e7c188b7490ab62872497f0b8db118e9bd0a9c47999aeedeb610b5f226b6265",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "46c037e9d1f9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Regenerated biomarker dashboard with Garmin weight up to 2026-04-30",
+      "artifact_path": "f:\\\u221eLife-worktrees\\fix-weight-trend-sync-fix\\tmp\\biomarker_dashboard.html",
+      "stored_hash": "5458ba9314f5ce23c3819cb728448d8d32b5b1e483f2f12a4572d259c4f4cf60",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "aeff1793163b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "FR ledger created: FR-20260503-studio-equipment-panel.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260503-studio-equipment-panel.md",
+      "stored_hash": "5a5329cb99b7ab3795f73f4d306c2a23aebb26f99b0487bf4bc8e1411ae2068c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9913842ebbce",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR registry updated: FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "634bbfb51cf3739d6de621198d0f5061b8fb444650376c3c4fd6ec2944372f8c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9ca19be7912f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Ledger updated to BRANCHED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260503-studio-equipment-panel.md",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "b5e006e6c2b2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Flask app src/studio/studio_panel.py",
+      "artifact_path": "f:\\\u2764Music\\src\\studio\\studio_panel.py",
+      "stored_hash": "3a48bbe721d7de0d100d0419bbc69ea7fb30a2a2ef36ed3c735ac05a12cc99c4",
+      "current_hash": "89fe7bc1ba0c83c078920e6d8a0e67dd06336a55a809b3ec098701c455d63ca3",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "6124d627a3b3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Migration script migrate_equipment_json.py",
+      "artifact_path": "f:\\\u2764Music\\src\\studio\\migrate_equipment_json.py",
+      "stored_hash": "b01755612d7437a76bbf7b9f527eb52fed789a952c4f0894f80e6d6db06ef7b6",
+      "current_hash": "17efca9efc1fc62fa027fee791d776e70924b0b942058c5f6ccafaaa4afc40ac",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e0bdde15f437",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "6 tests passed in test_studio_panel.py",
+      "artifact_path": "f:\\\u2764Music\\tests\\test_studio_panel.py",
+      "stored_hash": "e1439051b7963858cc6ed00928067a1395f4f176040aa992540fb1bcc9685114",
+      "current_hash": "7abe0445b469b4d09b6741d52548045b27885a0853b3100d4649aa8271a684af",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "bf6e066df36f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "start_studio_panel.ps1 launcher",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\start_studio_panel.ps1",
+      "stored_hash": "d254f4679f9e9bbb92ceb1a609e97986097578a0ece6eb4f4e1726fcfd4c4dcb",
+      "current_hash": "7d3a5895dcf45e716baa661df97b9d9b9a9379894e11844b2421c3084c8a2d79",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d25344321d14",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Tab order, favicon routes, JS swap in studio_panel.py",
+      "artifact_path": "f:\\\u2764Music\\src\\studio\\studio_panel.py",
+      "stored_hash": "62d540606c37dd92e722d8c1d3710e26f0e845a01f49d9ace86842e983e74ddc",
+      "current_hash": "89fe7bc1ba0c83c078920e6d8a0e67dd06336a55a809b3ec098701c455d63ca3",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "21a4029d0ce0",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "FR ledger created",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260503-studio-panel-category-ci.md",
+      "stored_hash": "bfbe3e6ff34f9b1604fba88246859704b3863fbdfb1165b740f22694c5950ca1",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "76bab4f42061",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "AC1: 16 Personal Studio rows normalized to lowercase_underscore plural",
+      "artifact_path": "f:\\\u2764Music\\src\\data\\heartmusic.db",
+      "stored_hash": "ee9d4158db9198f871d59d69e178f82eb7cb4d341f46c528f897656746738c12",
+      "current_hash": "170c7bbf94dbd6765d4b47843f756f49328855ee5c6c252e755da27b3e6178ec",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "68fa5ecb5dc3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AC2: _KEY_CATEGORY in migrate_equipment_json.py updated",
+      "artifact_path": "f:\\\u2764Music\\src\\studio\\migrate_equipment_json.py",
+      "stored_hash": "b2cbce7647c41209701458d1d8f11d574c317d1b7c32136ce33575f2164d897f",
+      "current_hash": "17efca9efc1fc62fa027fee791d776e70924b0b942058c5f6ccafaaa4afc40ac",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "fe3416ddd799",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AC3: CI agent section 6 post-merge server restart added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-ci.agent.md",
+      "stored_hash": "84bd40928382d3abb88ec332342fc589df90024f0638771514254ab3e6c13696",
+      "current_hash": "3c40bec02e887f088706eb36e670ce0296d78d48032c79e97642ed1861507068",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "571128d31f6a",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260503-lily-prompt-externalization",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260503-lily-prompt-externalization.md",
+      "stored_hash": "2549d295998d2223bad51e07c5a0ae191aa6f76b0ead230b09cb9bb990285a85",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9c333b2238c9",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Registered FR in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "9ec561972041be1183b14138cac9d608387f1d9b3fafea0852792f2bbb878b7c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "4ce58865b499",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_created",
+      "description": "lily_config.db seeded with active portrait prompt",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\lily_config.db",
+      "stored_hash": "5d77f2d2779554b845884255a123d1d02b28a517e59fe568589112a248bde304",
+      "current_hash": "2fbc04b609f03e359d87a89bcf5545bbe3a3b749aa0aaa0b2f5ef5e604f738d3",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0865287ddb05",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_modified",
+      "description": "lily_portrait.py: HF primary cascade + DB prompt load",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\lily_portrait.py",
+      "stored_hash": "72a0a101143cc20d6ce8ec8e0285d16598ebc35b87ed81f6a759fd814a02d002",
+      "current_hash": "fdb4e2b33d983fa17f55303043582ca549e262e45d0df20cb71a52f19350bc5d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0357d77c4715",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_modified",
+      "description": "executive_brief_portal.html: Edit Prompt modal added",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "d484e9a1dd28199b7d62124ea6cdbcb35fb9c7bbf479043f738f0bbbc818fdbb",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e1c9c6a0b67c",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_modified",
+      "description": "manifest-architecture.mmd updated: HF primary, lily_config_db, API endpoints",
+      "artifact_path": "f:\\\u2295Workspace\\diagrams\\manifest-architecture.mmd",
+      "stored_hash": "3d002a0a8e0370e211f75695fe4d47602d2352ad255a42cd25e7be1d78e02274",
+      "current_hash": "cca2fbbbe7fa098e0e114b5e589f9dec63a1cdfb90ee0d9ad168caa3fa827442",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1a185ee797ec",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_created",
+      "description": "lily_config.db seeded with active portrait prompt",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\lily_config.db",
+      "stored_hash": "5d77f2d2779554b845884255a123d1d02b28a517e59fe568589112a248bde304",
+      "current_hash": "2fbc04b609f03e359d87a89bcf5545bbe3a3b749aa0aaa0b2f5ef5e604f738d3",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "191c6a34d53c",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_modified",
+      "description": "lily_portrait.py: HF primary cascade + DB prompt load",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\lily_portrait.py",
+      "stored_hash": "72a0a101143cc20d6ce8ec8e0285d16598ebc35b87ed81f6a759fd814a02d002",
+      "current_hash": "fdb4e2b33d983fa17f55303043582ca549e262e45d0df20cb71a52f19350bc5d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4919dd409ada",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_modified",
+      "description": "executive_brief_portal.html: Edit Prompt modal added",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "d484e9a1dd28199b7d62124ea6cdbcb35fb9c7bbf479043f738f0bbbc818fdbb",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f912b39c6849",
+      "agent": "\ud83d\udc41ai-manifest-orchestrator",
+      "proof_type": "file_modified",
+      "description": "manifest-architecture.mmd updated: HF primary, lily_config_db, API endpoints",
+      "artifact_path": "f:\\\u2295Workspace\\diagrams\\manifest-architecture.mmd",
+      "stored_hash": "3d002a0a8e0370e211f75695fe4d47602d2352ad255a42cd25e7be1d78e02274",
+      "current_hash": "cca2fbbbe7fa098e0e114b5e589f9dec63a1cdfb90ee0d9ad168caa3fa827442",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "cfcde3788c7e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "nova_portrait.py",
+      "artifact_path": "f:\\\u221eLife\\src\\utils\\nova_portrait.py",
+      "stored_hash": "a6a9fdbbef32453f849b766d5f2fb59f44aa109e178ca4fe666541b74c41e3f2",
+      "current_hash": "54ec7fbfdf3ac5320fa9263e45101a23d979cf0826ae7f4f842040919505d346",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3c63abe5f396",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "gen_biomarker_dashboard.py",
+      "artifact_path": "f:\\\u221eLife\\src\\dashboard\\gen_biomarker_dashboard.py",
+      "stored_hash": "275a8b35e2c7bc93099d70ed8055a13e472f9bef71f291cf2a78496d07f98a77",
+      "current_hash": "bbcca7015e44b52f345f5e54d3a8981b176f9dc8e95c82e02394d81b066156b0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "57e94bae05f9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "executive_audio_brief.py \u2014 Lily edit btn changed to absolute overlay circle",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\executive_audio_brief.py",
+      "stored_hash": "e80c3909cf823154b71d820b7f67b2e73d5167481553439fb346b4c4a2a47355",
+      "current_hash": "67dddb5cc494164a518ba5950411110ce01778ff1b283155b31a65f2c86bc95b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "65d35d32532c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "executive_brief_portal.html regenerated with new button layout",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\output\\executive_brief_portal.html",
+      "stored_hash": "5de5311b0ca19a1d332b01b10ba204877f3d0ac019925fdbc13bea741cee6b2b",
+      "current_hash": "6b7cf5d4cc0e194582cdfc1eda4b0cd6dc157bb36dd9e7a29e737eb61a7122dc",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "334486390430",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created next-priority.prompt.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\prompts\\next-priority.prompt.md",
+      "stored_hash": "1e08a5800d3b93065849db1314396c7ef69b45da9c8da7afa1ed7e74452b9d4d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "89fb73c5fa0a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "todos_db.py \u2014 priority column + add_todo + update_priority",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\todos_db.py",
+      "stored_hash": "c251add6268d38fb7603443af0421b6e2f698e94d4c0f67f9b0a56b4023feb5d",
+      "current_hash": "cbb47fa6065b29d32b2da32adb464ecdd4e9b8032cde385aa9ffe052f455c31e",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "306c5ae35d4e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "priority_scorer.py \u2014 Ollama/OpenAI LLM fallback",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\priority_scorer.py",
+      "stored_hash": "8447a71c7a12c0b92af262801e2a3fddf971e62e88cc2ca9d4193b6d6d561c40",
+      "current_hash": "529064556e39d360f4fe63774d2339ca901d4bf4b296e863311255cc4141f53b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "882e7cd1570d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "executive_audio_brief.py \u2014 redesign, Lily lock, cards, API",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\executive_audio_brief.py",
+      "stored_hash": "31051e0301450bc1447635c482b8b30aa0b43fd148236df61cd0e943ebbb4aee",
+      "current_hash": "67dddb5cc494164a518ba5950411110ce01778ff1b283155b31a65f2c86bc95b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9e6fd9f35fda",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for bulk-score existing todos",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260504-bulk-score-existing-todos.md",
+      "stored_hash": "bd10039730344db29303f088b0ba6b6c006ff91c6b3f974822666b78cc795d90",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f4c2ae965200",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Updated FEATURE_REQUESTS.md with TRIAGED row",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "4b867b7f3e96c8d3e31db126ccd5a1a32d2e58bff454c72d748ac206d5b57d0b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "6a83011c956a",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Reconciled fr_dashboard and portal icon config",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\fr_dashboard.html",
+      "stored_hash": "abae717ee171fd7e8c60c335d0d5d6aa91be3c29e6f438440cf7841da42729b6",
+      "current_hash": "29128dfcdd8f671fcc0626dda9b0f5590d3395a412113d62dfb025cadae18e54",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e66663c5d338",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Added bulk scoring CLI tool",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\bulk_score_todos.py",
+      "stored_hash": "81aff90030011d3a5f76e9fe1dbea5e8940b036a95f67bcf59c0addbf81c361e",
+      "current_hash": "a0d12cb893e324c8ee3d34a932665f1a53f9ef6c94e07c9b48a69faa5366643b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3dbde1b39cc9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR registry moved to IN_PROGRESS",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "dfc713cf65507752773d3a7d9e70ae700bd0a06fe74fb8bbac5474c127c9bb0b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "103e963fcd25",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FEATURE_REQUESTS row finalized to MERGED \u2192 CLOSED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "25673bebded3da47cd968d53ded5dfec5f10c42f7d68f85f9add6e5147b2a1b9",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "dd9d638f3dcb",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for local Ollama enablement",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260504-local-ollama-enablement.md",
+      "stored_hash": "cc7cd1dffaec1bbbd4a45c49e39e3c584fb52320fbbdd08e1e53933a637ebcf7",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "30bb96b2faaf",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Added TRIAGED registry row",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "74f4f9552921c43e0b65877cfb244bd547fa9a39482a2890bdb6ab38bf64eed2",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "fb4e4b1b7271",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR row updated to BRANCHED with both branches and PRs",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "c34b30324bda9b62019381cc38f52b4566a5e942df5ffdf0c58a034b1f84de9c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "97b2b5b9efda",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR state moved to IN_PROGRESS",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "b84e1d5dfafb6a74fb6f9a28138c7071337eb9786417d52d22211d1d573956a7",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "21e043fcf1e9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Applied qwen2:0.5b priority scores to 47 of 54 todos in manifest_todos.db (production)",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\manifest_todos.db",
+      "stored_hash": "34fead9ad7cb6f3343c617d26a5742b166717b9633cc460b136f501fdc1990b6",
+      "current_hash": "b6dfbc4479a1ba0442292300f1e9190e7dce9f6292f750c0f45886c0501f9dff",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "561147f347a2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Helper script _run_scorer.py to reliably invoke bulk_score_todos with env vars",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\_run_scorer.py",
+      "stored_hash": "a0e1d41ca04fb41f22a0959c673cc301de5ac7ea3858092a83ea18259053d32c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c7e45ac09340",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Embedded Nova prompt fallback in biomarker dashboard",
+      "artifact_path": "f:\\\u221eLife\\src\\dashboard\\gen_biomarker_dashboard.py",
+      "stored_hash": "701fd4eceabfaa55c02116fc93f92cff9ba11829f9daf0d3bda3d63de76b1ebe",
+      "current_hash": "bbcca7015e44b52f345f5e54d3a8981b176f9dc8e95c82e02394d81b066156b0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "53d16cf1d403",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Regenerated static biomarker dashboard with embedded prompt",
+      "artifact_path": "f:\\\u221eLife\\tmp\\biomarker_dashboard.html",
+      "stored_hash": "0ed2eaab842fd4e2e79f1aeff044be6a8399c7da63d916245a4eac973993cabb",
+      "current_hash": "c4475a16b6aae70e815e29691de856c4026bf711633a36f5af26777a77aa75ea",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c0228747ef84",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated portal generator to load biomarker pane from live dashboard",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\dashboard_portal.py",
+      "stored_hash": "70c69c502eb4414dccb226768434f5bbb98d19f16d10e3e776cbddafd5a1b1f9",
+      "current_hash": "3551d7c6dbefd5696cef87115fae78ea9d97d4724ad5e984fb9f0ad671d30f5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4e214ca85281",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Regenerated portal artifact with live biomarker pane",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\portal.html",
+      "stored_hash": "5c7ff8310b95f2562b8f298e7052d7388ec68894d71de3ce283b5ff32e801fe8",
+      "current_hash": "51673837ccd30a7a46690fefbda2746e6fad4b227de03a3ec44a520707ea82be",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "22525879ede8",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Validated portal file path loads live biomarker dashboard and completed Nova save",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\portal.html",
+      "stored_hash": "5c7ff8310b95f2562b8f298e7052d7388ec68894d71de3ce283b5ff32e801fe8",
+      "current_hash": "51673837ccd30a7a46690fefbda2746e6fad4b227de03a3ec44a520707ea82be",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "ba9bcf73c9d0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Triaged FR registry row for distribution platform comparison",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "58bedd3aa1dc716be7a03460fea23ca5906c583a9552567554bc4cf65278c9b7",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "92621d8db967",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for distribution platform comparison",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260505-distribution-platform-comparison.md",
+      "stored_hash": "f90320051fd88cc537fa70538561fd261abac8967cfe94d288bdeea7bf2cdd5a",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "8dce2354c3bf",
+      "agent": "\u2295workspace-architecture-reviewer",
+      "proof_type": "command_output",
+      "description": "Architecture impact review PASS for FR-20260505-distribution-platform-comparison against Music PR #32 (docs/chore only, no affected diagrams)",
+      "artifact_path": ".github/FR_LEDGERS/FR-20260505-distribution-platform-comparison.md",
+      "stored_hash": "a5d9d28ff4d01d61c6edf94c888b370aec77f5a09330431ec268b5a250a00761",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "d5f6910167f9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry to AUTO_REVIEWED after successful re-review",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "f0ef4b74f954e1493640709fb5d327054d517f93da83a4acf8bd5c9481c7fdd1",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f043504ccfc8",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated canonical FR ledger header state to AUTO_REVIEWED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260505-distribution-platform-comparison.md",
+      "stored_hash": "e1382cf2ba3a8e3fad6c19ddc88db93a355eb2dd7574a4eb43f11b06dfd69d3f",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "46bcdf50684a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created new FR ledger for MFP nutrition sync fix",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260505-mfp-nutrition-sync-fix.md",
+      "stored_hash": "a63eaada70d3f10550b392fb5c1ef0f1b73ef0314eec3238fc4902b304322bcc",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "5517c7dc776a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registered FR in active registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "e2c8638ee78d22895691963f994435bd12fae068230a6dfd6129e8b0fee1acab",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "03d6576701ed",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Delegated CI branching completed with draft PRs in Life and -Workspace",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260505-mfp-nutrition-sync-fix.md",
+      "stored_hash": "a63eaada70d3f10550b392fb5c1ef0f1b73ef0314eec3238fc4902b304322bcc",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9053875d31b3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "src/sync/trainerize_sync.py",
+      "artifact_path": "f:\\worktrees\\life-fr-20260506-trainerize-workout-sync\\src\\sync\\trainerize_sync.py",
+      "stored_hash": "6513ed8c9b0872b33f3a3137f2dcb885f716a5147cdcb54c512d9bb255927896",
+      "current_hash": "e237b9bfac5066c7c464cf3740a0fb58e415b8035520fb2d6ff79e43b6c03ddd",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e6dd297d6547",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "8 sessions + 140 exercise sets stored in infinitelife.db",
+      "artifact_path": "f:\\\u221eLife\\src\\data\\infinitelife.db",
+      "stored_hash": "75bb5b87ca27ec78d0493ee440e7a3781f9914f282f70bee4a74d1bcb19014f4",
+      "current_hash": "9316ff2be89dc8b193eafcf097ce4d613e092d050de69898bfe3ecb82a104cbe",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "916074889531",
+      "agent": "\u221elife-orchestrator",
+      "proof_type": "file_created",
+      "description": "Implemented calendar-grid dashboard panel for upcoming workouts",
+      "artifact_path": "F:\\worktrees\\life-fr-20260508-upcoming-workouts\\src\\dashboard\\gen_upcoming_workouts_dashboard.py",
+      "stored_hash": "e6cb7718e3b0b12dc3c77a2f384ddcf98ba3789de85bd9950d6d5fa5333cec9e",
+      "current_hash": "5c59fcc4d6293e0b7a7994b89752dacdd722996c6be5cc1208d859e141aa13e3",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1530197f264a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Embedded upcoming workouts panel above weight trend in biomarker dashboard and pushed to main",
+      "artifact_path": "F:\\\u221eLife\\src\\dashboard\\gen_biomarker_dashboard.py",
+      "stored_hash": "8cc1e023e1a12c817abf837b8fdea4d93d2cc8f0d0b7dbbb9698a644726b601b",
+      "current_hash": "bbcca7015e44b52f345f5e54d3a8981b176f9dc8e95c82e02394d81b066156b0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4b8062136208",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Regression test added for week-range behavior",
+      "artifact_path": "tests/test_trainerize_sync.py",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3e69d26c3ea3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Trainerize sync fix: current week Mon-Sun window for upcoming workouts",
+      "artifact_path": "src/sync/trainerize_sync.py",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "cbfb2000a801",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Regression test added for week-range behavior",
+      "artifact_path": "tests/test_trainerize_sync.py",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "e37a49a8bc3b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed desktop shortcut staged PS1 to call open_portal.ps1 (AC1)",
+      "artifact_path": "f:\\\u2295Workspace\\open_portal.ps1",
+      "stored_hash": "e71885d71173df3d4cbacd0428e95c58036dff76b93644857c8d581cbf716a3f",
+      "current_hash": "94e15199c9393d008268241f166294e822633a4aff2f8fa9aa66f9f3a357f64d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "55ce5cb12452",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Removed stale studio-equipment-panel entry from dashboard.json (AC2)",
+      "artifact_path": "f:\\\u2295Workspace\\dashboard.json",
+      "stored_hash": "20592e0e9e5de0ab40d052cf339911cb420d32e4b79956f521546204f7832bec",
+      "current_hash": "6937fb01f5f6fec2a504ebcbde476ab9622c0b434f96b863f94bd4c3993730e5",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "162cad66a256",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Renamed studio to Heart Studio in \u2764Music/dashboard.json (AC2b)",
+      "artifact_path": "f:\\\u2764Music\\dashboard.json",
+      "stored_hash": "31011e1a53aadb76577372f1cdba8e33e5789193e2fb59f39029637e397ffdf9",
+      "current_hash": "ccb11fa9d1ab572ab9998cba3a6f0f2e9e865b3831da7915f7af6c5b7035622a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d2ef3e5ea0a5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Biomarker Dashboard type=flask_app url=8300 in \u221eLife/dashboard.json (AC3)",
+      "artifact_path": "f:\\\u221eLife\\dashboard.json",
+      "stored_hash": "9ebc662fd315466a3d3b36c5f5d1201c016472e77c60854716732c9cc7b9b6b7",
+      "current_hash": "067c9a79af1f45fd148efaf33e3c8b452a12cd2c0e6040e961751d619ae09a48",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c5adf6b91450",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed CORS file:// fetch in agent_ops_monitor.py (AC5)",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\agent_ops_monitor.py",
+      "stored_hash": "6b8935a25048fbbe5e0ea7aed7399ce9b5727727b6b3728c16f5bff32018558d",
+      "current_hash": "d60726c54677cfba32480c5709bcdc1aa69ae5569bee933579336c0f2ffc883b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "eacab20ff32c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed Mermaid NaN with useMaxWidth false in diagrams_dashboard.py (AC6)",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\diagrams_dashboard.py",
+      "stored_hash": "dfad031f03f7819d0f3b9fe22a5d0edc5774d38cbd1cf29a4329107a31160b46",
+      "current_hash": "9c4d75ed4e8cee1c3a320b0456b0643cc4d3b97cae4d1f842044a5d94c43341c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0f40c23d3d1e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Portal regenerated - 14 dashboards, 100% health, \u2764 Studio, Biomarker Live",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\portal.html",
+      "stored_hash": "b8c1776a9383ac52c152fa681b3739e4462b48b4858fc85277d359a06bf35e40",
+      "current_hash": "51673837ccd30a7a46690fefbda2746e6fad4b227de03a3ec44a520707ea82be",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1927934168ca",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260509-tjd-radio-gmusic-playlist.md",
+      "stored_hash": "aa656b18f97ee102829ad7194555feb7a83e8a5ebe075dba45f23b578f46e643",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "7ffb65246270",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "7f6840dc241df4b13c2bc320da4075558f081e9fc0bd30cc4b9b504444c767be",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3e38aa7fefef",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Implemented TJD Radio G:\\Muzic playlist + filter engine + artist display",
+      "artifact_path": "f:\\\u2764Music\\src\\radio\\tjd_radio.py",
+      "stored_hash": "22f328f3ea41574a94080ca6e473246d8a3758ca4699d1fdc148b6a61eb115ac",
+      "current_hash": "cbdba9bbb3cb661d74c2336f4f0cca418944adfda227fa54caf043cce9c339b8",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "852dc2cee08c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "27/27 tests pass",
+      "artifact_path": "f:\\\u2764Music\\tests\\test_tjd_radio.py",
+      "stored_hash": "7f7d6b4a9a15bd96d03a3850a5c264213e4e6c2c1c93f29676537f2af111acd6",
+      "current_hash": "e3e75c6ea5d4d33e297c7c977fd0c78babcf1a326ee2c0b43fcaca8fdcf3d354",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d2dc1f5a075b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "studio_equipment.json updated with JBL 2600 entry",
+      "artifact_path": "f:\\\u2764Music\\studio_master\\studio_equipment.json",
+      "stored_hash": "ddfebf4424cc54168ff3e062a2a3c544b6278dee53635164bb811bc2ec8ab580",
+      "current_hash": "f03175b0ebbb2a319ed733a3ee49b0249ef6bc1a10f03954214d3e243c200c84",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "62bac0d91d4b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Wiring research note created",
+      "artifact_path": "f:\\\u2764Music\\docs\\studio-wiring-jbl2600.md",
+      "stored_hash": "dfc64cfc0f01a10a950ab41c2d62541e15b1d7cb79bce3d1258a56a0d811ec1a",
+      "current_hash": "04c07a5dc9ecfd512fb6c0454c32d544d1411f979afe89350dff4643469544d7",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e10bc2ed7f63",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR registered in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "a15f2f7165de42e44ea78074ba73741401d6f7c520253fee36327a1ed4cbf187",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "fe6b5ba35dda",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "studio-wiring-jbl2600.md: Final Decision section locked",
+      "artifact_path": "f:\\\u2764Music\\docs\\studio-wiring-jbl2600.md",
+      "stored_hash": "33e3c4de7188f1e0f0177d5981ae5e10c618770f882bc5eae49f827980c0f76e",
+      "current_hash": "04c07a5dc9ecfd512fb6c0454c32d544d1411f979afe89350dff4643469544d7",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "2f7c10678a31",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "studio-wiring-decision.mmd: Mermaid signal chain diagram",
+      "artifact_path": "f:\\\u2764Music\\docs\\studio-wiring-decision.mmd",
+      "stored_hash": "ae789c53bf04eadadd41afe63ed75da317b1b040d27d4558e89e54f19930c5ea",
+      "current_hash": "0f68efaf46b4982cdf96934fe0d6c43b19e8bc21b75c507a9d487fa08009c586",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "984aa1eea783",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "open_portal.ps1 section 6b: kill+restart with 10s polling + stderr capture",
+      "artifact_path": "f:\\\u2295Workspace\\open_portal.ps1",
+      "stored_hash": "87763e4f52db70b05643ab9439aee63bb805cc4e5e03713892d1b4ebb4487c74",
+      "current_hash": "94e15199c9393d008268241f166294e822633a4aff2f8fa9aa66f9f3a357f64d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3db55cac8147",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "FR-20260509-studio-portal-autostart registered BRANCHED in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "3e405e741b34d5db26113abf497a71ffea43d5ae1b9b3291643d5670d8eaa776",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "eb28213e8dc1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Merged PR #123 after required test check passed",
+      "artifact_path": "https://github.com/tylerdrakemusic/-Workspace/pull/123",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "4866da46f4d1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Portal launcher escape/path fix merged",
+      "artifact_path": "f:\\\u2295Workspace\\open_portal.ps1",
+      "stored_hash": "e7093e6b094894518cb860c6a7ead7b8b7baee07524f630bf38ff820eca2e7b6",
+      "current_hash": "94e15199c9393d008268241f166294e822633a4aff2f8fa9aa66f9f3a357f64d",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "221708ccebe9",
+      "agent": "\u2295workspace-architecture-reviewer",
+      "proof_type": "file_created",
+      "description": "Architecture impact report for FR-20260510-tjd-radio-icecast-primary",
+      "artifact_path": "F:\\\u2295Workspace\\reports\\architecture-review-FR-20260510-tjd-radio-icecast-primary.md",
+      "stored_hash": "a453409e60e0bd26230944c64eb8114d5b13216e4772cce664d31297d1e35cf2",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c4af381126db",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for portal icon + Mermaid fallback intake",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260510-portal-icon-mermaid-fallback.md",
+      "stored_hash": "dcc1588fc0161426b21c53c82ac8be100565f0d84178963a30fba7876d12e455",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "967358ac2efe",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registered FR in active feature request board",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "7c8f48a863bc2444db3426be682556023dae45a25b8becdf6bf23729de3d7b7d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "e02550e57ed4",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Portal favicon stack now includes svg+cache-busted ico fallback",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\dashboard_portal.py",
+      "stored_hash": "cfeec84365f71e2e4b86f4bcbd7022264df90f9b0bf920d18b6ad7d37a2f8473",
+      "current_hash": "3551d7c6dbefd5696cef87115fae78ea9d97d4724ad5e984fb9f0ad671d30f5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "a4f46535a839",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Portal now emits report-root favicon path",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\dashboard_portal.py",
+      "stored_hash": "5ff4987b974a522838a9900196b0c814425fd8f8d9615aff7d6624215f6d4f07",
+      "current_hash": "3551d7c6dbefd5696cef87115fae78ea9d97d4724ad5e984fb9f0ad671d30f5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f18b2eccd5a5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added FR row to active registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "0fcd6c0008e42f4b408ffaad5185f7d17b57a8a92e811cedce56c0949fe08e80",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "28a64f73dd87",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger entry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260510-disable-executive-audio-autolaunch.md",
+      "stored_hash": "3731d3e2d3e3fb8cf50907e8469857d499166abd48985c9b9fdab19d053f23fa",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3b7b3c994c06",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Completed FR Phase A interview for quantum execution policy observability",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\prompts\\new-fr.prompt.md",
+      "stored_hash": "8fcb9a35a7fd6fa2770887286c9634e01efa817866f67e9adedfac7d3c20a4ed",
+      "current_hash": "e96dee24a6c771ec24244e0ed0f39e54a0e3f65c1cd4d13658b75f1b42239fb0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "83b2fde9e8c1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for quantum execution policy observability",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260510-quantum-exec-policy-observability.md",
+      "stored_hash": "bab7907c68339ad242eb54cf4694e5395dc37970f201017b5d29a758a006b7e0",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "5e3672bb9970",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added FR row to registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "f5e8e010e18f8bb06951bf71e909a6066e3d94ec32b18fc782a9608d63e3296c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "488f8c152318",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Removed Executive Audio Brief autostart from root launcher",
+      "artifact_path": "f:/worktrees/fr-20260510-disable-executive-audio-autolaunch/open_portal.ps1",
+      "stored_hash": "70fc42b463d7753e751f1f15a8b833bb92442c2121cabf567fc2fb9b0d162c89",
+      "current_hash": "34948f3b5a6a0dfbe6aeea4670743109bb7243cc36866350a41ed8f1a7718955",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "794bd9bc5f11",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Removed Executive Audio Brief autostart from icon regen launcher builder",
+      "artifact_path": "f:/worktrees/fr-20260510-disable-executive-audio-autolaunch/tools/regen_portal_icon.py",
+      "stored_hash": "6d03250cd5f3809986cc0001cf9da86110ac51fef66c717e3df9dd5b9b522da1",
+      "current_hash": "638441181f69fd381714bb13ea27356ed57b8ac99e0836cee02fa07c10536212",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "657e3e142169",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated staged launcher test expectations for no-autostart brief behavior",
+      "artifact_path": "f:/worktrees/fr-20260510-disable-executive-audio-autolaunch/tests/test_portal_icon.py",
+      "stored_hash": "4c2f72d0090e296003670bf5c8b70ee39f19ee04bc7ea96932fc7c2f4bfa6bc2",
+      "current_hash": "c405ce16c1600d3bcd00b758aec0f5eedd95fbab177b312d89b6c5d7ee483db1",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1307284f944e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Restored Executive Audio Brief server startup in open_portal launcher",
+      "artifact_path": "f:/worktrees/fr-20260510-disable-executive-audio-autolaunch/open_portal.ps1",
+      "stored_hash": "234fadefc2301bb58abe69b3a4296766f08ef5b003cf2bd6ae4b19ba784030f5",
+      "current_hash": "34948f3b5a6a0dfbe6aeea4670743109bb7243cc36866350a41ed8f1a7718955",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7967a5b84fb3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Expanded FR scope to include schedule normalization policy",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260510-quantum-exec-policy-observability.md",
+      "stored_hash": "6de6cf9699e6c52a969a952f448b32c596c7fdf48af4a8fbd001ee771226fcf0",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "299349af1333",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry row with concrete branch metadata",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "88240f4b2ba9d6a1ceb7e8190c339ee9efe673357ae066cd3580f112167696a7",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "80f17c4594c4",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Created branch/worktree metadata for Quantum and Workspace sessions; PR creation blocked by GitHub auth",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260510-quantum-exec-policy-observability.md",
+      "stored_hash": "6de6cf9699e6c52a969a952f448b32c596c7fdf48af4a8fbd001ee771226fcf0",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c06fa0740089",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Security gate failed before implementation due agent-manifest drift (NEW:4, MODIFIED:23)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\!!\u263e\u26e7security\\agent-manifest.json",
+      "stored_hash": "9916494096264d3565c1b06e2d60ccba1ae5dbe54bdb1ac241fba619eb412ed5",
+      "current_hash": "21640e745055973c8a087e6fae4e7d6d66c1fb171198b807f564a6134fc495b7",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "41f941a6a445",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Registered FR-20260510-workspace-discovery-agent as TRIAGED in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "5e021956514962958f534eb7f9b1776f31831782c0be24077c0136318c8bbc0a",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3a0614befe99",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added SCAN source support with migration in todos DB utility",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\todos_db.py",
+      "stored_hash": "26e51e4c6105207a9a48f87949c1751403b7836a252fadf693eab4e9e0797983",
+      "current_hash": "cbb47fa6065b29d32b2da32adb464ecdd4e9b8032cde385aa9ffe052f455c31e",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "cae18913f5cf",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Added discovery scanner CLI tool",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tools\\discover_todos.py",
+      "stored_hash": "2aefef1e9c2507ee7509e8bb4fe79a6b95225ecb1c06ad35d42636925f3e9a0b",
+      "current_hash": "8f7307687f8625f40fa830ea5b6d8503c106332fb54bf380dc264194456a553a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "45e207ec05c0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Added workspace discovery agent definition",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-discovery.agent.md",
+      "stored_hash": "5cf22d6a01cdbb6beafbf1e32d9cb0e7866c7c24f55a8e8ff13c01eacb3960a9",
+      "current_hash": "f3af977c031ac4ba889b8b04287a91a8f63286ac514897c303fbed4e52f9e35a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "86b84a782994",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registered discovery agent in copilot instructions",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\copilot-instructions.md",
+      "stored_hash": "161ed6edb2cdb63ce1ffc251575790ac4aabde969bec4114c287ae434213046d",
+      "current_hash": "0683b98244c6fb2f8f94973dfbe8289d24b1741749e147ead612f6bb06491a93",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0f68ee2062ad",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created canonical execution policy config",
+      "artifact_path": "f:\\worktrees\\fr-20260510-quantum-exec-policy-observability-quantum\\src\\config\\execution_policy.json",
+      "stored_hash": "468e30f0a03428be8cf864c29c949de156f8319339f0b9ee3692b367ea05a439",
+      "current_hash": "472afc594b7bdcfcc0a6a28aa1c469c26b79b948dc438908205a3c4f524095b2",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "41d78b941936",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Integrated policy schedule/status panel into unified benchmark dashboard",
+      "artifact_path": "f:\\worktrees\\fr-20260510-quantum-exec-policy-observability-workspace\\tools\\bench_dashboard.py",
+      "stored_hash": "edd1bcbd80daab298551bf65fb0ed9be9c90da46dbaf99f636e683467576c779",
+      "current_hash": "2ca6a5789adc4a14864a3f3f6b31442004d0d7dff456f08196705d8495056027",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "15cf53fb83e2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Playwright validation: All 20 tests passed (Quantum + Workspace dashboards, policy panels, event tables, alert badges)",
+      "artifact_path": "F:\\temp_playwright_validation.py",
+      "stored_hash": "7d0aec7431c616a85d4b7fbb7513ab3c4d12ec07b583abc38bae4eb7e12eb11f",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "571e223b297c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Playwright validation: 20/20 tests PASS - Both dashboards render policy observability correctly",
+      "artifact_path": "F:\\temp_playwright_validation.py",
+      "stored_hash": "7d0aec7431c616a85d4b7fbb7513ab3c4d12ec07b583abc38bae4eb7e12eb11f",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "508088db7ae0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "Quantum dashboard revalidated against live data: VQE H2 row, Shor ibm_fez row, and policy events section render in the active report",
+      "artifact_path": "f:\\worktrees\\fr-20260510-quantum-exec-policy-observability-quantum\\reports\\benchmark_dashboard.html",
+      "stored_hash": "c86e879657e69d8966f34a6366cd7544f317bcccf07f9acfd9bd4a0ae0705d23",
+      "current_hash": "7e4b5bd3f3b91d0fff4f7fb7c2aaba1a5088c73b5d5f77c6cb5718e38c55845b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c7e11299af13",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated AI-Manifest priority scorer with local model selection and heuristic fallback",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\priority_scorer.py",
+      "stored_hash": "774c8bdb1d5486d7ce2f5e2d4371298009015dde7b31b599169bc53abed81fcf",
+      "current_hash": "529064556e39d360f4fe63774d2339ca901d4bf4b296e863311255cc4141f53b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "127e4b7f8806",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Committed priority scorer resilience updates",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\utils\\priority_scorer.py",
+      "stored_hash": "774c8bdb1d5486d7ce2f5e2d4371298009015dde7b31b599169bc53abed81fcf",
+      "current_hash": "529064556e39d360f4fe63774d2339ca901d4bf4b296e863311255cc4141f53b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "003de1d6f30f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Pushed branch chore/manifest-merge-scorer and opened PR #25 for scorer/test changes",
+      "artifact_path": "https://github.com/tylerdrakemusic/AI-Manifest/pull/25",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "19efc23679e5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Merged AI-Manifest PR #25 after required checks cleared",
+      "artifact_path": "https://github.com/tylerdrakemusic/AI-Manifest/pull/25",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9d5298e75081",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for invisible track catalog placement",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-invisible-track-catalog-placement.md",
+      "stored_hash": "b2ef6b768019b7d7603a9244ec9f4cb2be576d741f2e73d8a8d9615188379c0c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "4f802cb11fde",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated feature request registry with TRIAGED row",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "b362a1905efdad88e7256f9f0e3dc3e3513bfd5b10dd93b3e9fea42c13a0ba48",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "7991dde91622",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for FR-20260511-vocal-pilot-mp3-training",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-vocal-pilot-mp3-training.md",
+      "stored_hash": "912ef3e5587849a1d83f4cdb36d47142a13e2105e4fe90931d3cb44fc2fb12d8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "473bba8cfc4b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated active FR registry with TRIAGED vocal pilot row",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "e178c7d5ebcd6c7671632de5756b9651e1b6e5821d2bb61901ef3624bbd4d8c5",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "62f115ddd1e8",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for catalog manifest with agent awareness scope",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-catalog-manifest-tracked.md",
+      "stored_hash": "f98cfccdc17a967ba2e005888c890d4250bbf82e8cd417bfbfad3b9cf4674d2f",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f5a19b7140d8",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Updated registry with TRIAGED catalog manifest FR",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "269ec3259045473e7f9ef73a3442571cf5d090eb6634cda1311d5df570f17fd2",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "fd75adbf4372",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Reconciled security manifest path resolution utility",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\!!\u263e\u26e7security\\update_manifest.py",
+      "stored_hash": "0b28db4bab529589c5fb9f2a903c8628f63f27eafdcd5b2e96a5ee660dacec53",
+      "current_hash": "1b3239a2fc143623bbb543467fe2ac8e5720c247c56fa217dd6c94ad05565cd0",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "fa818b1626f3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Rebased security manifest to current authorized agent/instruction baseline",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\!!\u263e\u26e7security\\agent-manifest.json",
+      "stored_hash": "72f61043be894f7adb7d1810661b5dd919521794f65005e84a63e054a3bbb656",
+      "current_hash": "21640e745055973c8a087e6fae4e7d6d66c1fb171198b807f564a6134fc495b7",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e7239668f4e1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for FitSpine purchase decision",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "847115cd9638fe94146b15ff84a2fb3844c87bb5f076aa9e4f82f30a888943f5",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "446308f53dd2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated active FR registry with FitSpine request",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "17b3d5600f3cf6a4dfa22121894afcb936e7ded9152515150cf49dc92869d368",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "34fba6785435",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_modified",
+      "description": "FR ledger updated to BRANCHED state with branch and PR details",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-catalog-manifest-tracked.md",
+      "stored_hash": "44c1dfbc43749a991c1155f96c693389737656672777d5466666b110aa58d0e8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "38458b3aaea7",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_modified",
+      "description": "FR registry updated to BRANCHED state",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "17b3d5600f3cf6a4dfa22121894afcb936e7ded9152515150cf49dc92869d368",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "dbca96984934",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added FR-20260511-workspace-local-worktree-strategy to active registry (OPEN state, pending intake triage)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "6715226d1e1a6864801529f3771f142cd71261652be4eabd41b33f5f0090a436",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c177df6f24ca",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry row to BRANCHED with branches and PR URLs",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "6715226d1e1a6864801529f3771f142cd71261652be4eabd41b33f5f0090a436",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "b6f1c1123299",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger header and event log to BRANCHED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-vocal-pilot-mp3-training.md",
+      "stored_hash": "afea5ca9bbb324482cd3dd86d33728c3f0e31643fbcee0456fca388d31998f57",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "89d1e0a0cc94",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger to BRANCHED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "c53d7bb054bfd0b9879e31610120fe8b885310cb322ec42277189fc3099effac",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "0a3b48e8a8ca",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry row to BRANCHED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "46d7952760849bec8d7a2314935a05643baa5b44d03705ee67c1e2d35d0b0f50",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "94a64c6d1325",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_created",
+      "description": "Feature branch created: feature/workspace/fr-20260511-workspace-local-worktree-strategy",
+      "artifact_path": "feature/workspace/fr-20260511-workspace-local-worktree-strategy",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "0a4e2319ad2a",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_modified",
+      "description": "FR ledger updated to BRANCHED with branch and PR details",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-workspace-local-worktree-strategy.md",
+      "stored_hash": "bc3432d2f0b47def9aaf2163b04818219700c9d4994a8bbdb29229b579a71f89",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f5adfd035590",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_modified",
+      "description": "FR registry updated to BRANCHED state",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "e8d46e466beedad49a3e197cf850d192ee59700043c5ea254aead36325ac3ea8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3d477c0ecf43",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Regression tests for missing user_id auth path",
+      "artifact_path": "f:\\worktrees\\life-fr-20260511-trainerize-no-data-regression\\tests\\test_trainerize_sync.py",
+      "stored_hash": "7a8fedbce2ec515e5ca7acdac98cc59847028f3fef3b96deb5f88637a329d67e",
+      "current_hash": "e434015c9124ceb309e2b8d2a10a00c8eefa41c62d98c0808a6cf9f532d5d7fd",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "e0a7e0de3e89",
+      "agent": "workspace-local-worktree-strategy",
+      "proof_type": "file_modified",
+      "description": ".gitignore: added .worktrees/ exclusion",
+      "artifact_path": "f:\\\u2295Workspace\\.gitignore",
+      "stored_hash": "269a7669e78fd6274f54c7164f5454d1a952604afb3d148d203cee317380ef56",
+      "current_hash": "2e9411343d34f9b78e72329f456af45d8c63b36223525ec081698a410036eefd",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "951ba902382c",
+      "agent": "workspace-local-worktree-strategy",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-ci.agent.md: batch worktree creation SOP (AC5)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-ci.agent.md",
+      "stored_hash": "41a76024bb432d96902b5393f29fd883d9df58a665103bffddc8c3f31ac3466a",
+      "current_hash": "3c40bec02e887f088706eb36e670ce0296d78d48032c79e97642ed1861507068",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f27b959f5647",
+      "agent": "workspace-local-worktree-strategy",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-reviewer.agent.md: Gate 3.5 worktree path audit (AC6)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-reviewer.agent.md",
+      "stored_hash": "e29c8817470b5bc3c332f53cdc667e99ce5e24616a2c326d1bc2a043cb42966d",
+      "current_hash": "1c5f5327ef02b7e5d2adc8b7cb1d30abfd1f0aefbe357d1d875ac39463db784f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f16ccd8f4d79",
+      "agent": "workspace-local-worktree-strategy",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-hygiene.agent.md: stale worktree cleanup phase (AC7)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-hygiene.agent.md",
+      "stored_hash": "36df3539fd01a155751eddc6565f3c0162bdbf72b7481b27d820aa22844acfec",
+      "current_hash": "01711da1f3eaa017a52112d8236e116069d9db5ddbe5650c9d8a4da825f44eeb",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d477a7549caf",
+      "agent": "workspace-local-worktree-strategy",
+      "proof_type": "file_created",
+      "description": "WORKTREE_MIGRATION.md: migration plan and deprecation notice (AC8)",
+      "artifact_path": "f:\\\u2295Workspace\\WORKTREE_MIGRATION.md",
+      "stored_hash": "1277ce8f76f0f2d7e10a6c94a60b80c35a22c10a94fe55942c6f4670858a0cf3",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "6bf8e8b69df5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Completed FitSpine decision artifact",
+      "artifact_path": "f:\\worktrees\\life-fr-20260511-fitspine-purchase-decision\\research\\longevity\\fitspine_purchase_decision_2026-05-11.md",
+      "stored_hash": "de6a03a825bbb9e4d8223ab1a64144d7d35b2d79ef81d29e86ebaca8f4c0b37d",
+      "current_hash": "58e6f47afd4ef5f6c4d0b42a30e039190668ca53406224c1395eb22535c243ee",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c20466268092",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger to REVIEW_REQUESTED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "2957fb8b83629a914d7be6e372c00592e451d230b217cf92c67bee3b13ded735",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "7988561f6b1e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry row to REVIEW_REQUESTED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "5bba8e0fd8e0f374b63b3696870495e22313eb7a38f37217956a37d0f6293658",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "748adba17407",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AC2: .gitignore updated with .worktrees/ exclusion (verified with git check-ignore)",
+      "artifact_path": "f:\\\u2295Workspace\\.gitignore",
+      "stored_hash": "269a7669e78fd6274f54c7164f5454d1a952604afb3d148d203cee317380ef56",
+      "current_hash": "2e9411343d34f9b78e72329f456af45d8c63b36223525ec081698a410036eefd",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "a83206549297",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "AC8: WORKTREE_MIGRATION.md migration plan and deprecation notice",
+      "artifact_path": "f:\\\u2295Workspace\\WORKTREE_MIGRATION.md",
+      "stored_hash": "1277ce8f76f0f2d7e10a6c94a60b80c35a22c10a94fe55942c6f4670858a0cf3",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "a6306d1a9ee7",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AC5: \u2295workspace-ci agent updated with batch worktree creation SOP",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-ci.agent.md",
+      "stored_hash": "41a76024bb432d96902b5393f29fd883d9df58a665103bffddc8c3f31ac3466a",
+      "current_hash": "3c40bec02e887f088706eb36e670ce0296d78d48032c79e97642ed1861507068",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "ca2c9c5aa26f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AC6: \u2295workspace-reviewer agent updated with Gate 3.5 worktree path audit",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-reviewer.agent.md",
+      "stored_hash": "e29c8817470b5bc3c332f53cdc667e99ce5e24616a2c326d1bc2a043cb42966d",
+      "current_hash": "1c5f5327ef02b7e5d2adc8b7cb1d30abfd1f0aefbe357d1d875ac39463db784f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4bd158db3516",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "AC7: \u2295workspace-hygiene agent updated with stale worktree cleanup phase",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-hygiene.agent.md",
+      "stored_hash": "36df3539fd01a155751eddc6565f3c0162bdbf72b7481b27d820aa22844acfec",
+      "current_hash": "01711da1f3eaa017a52112d8236e116069d9db5ddbe5650c9d8a4da825f44eeb",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "57936ae0a5eb",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR ledger transitioned to REVIEW_REQUESTED state with AC1\u2013AC8 completion marks",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-workspace-local-worktree-strategy.md",
+      "stored_hash": "bc3432d2f0b47def9aaf2163b04818219700c9d4994a8bbdb29229b579a71f89",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "23467c2133cb",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR registry row updated to REVIEW_REQUESTED state with branch and PR link",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "46d7952760849bec8d7a2314935a05643baa5b44d03705ee67c1e2d35d0b0f50",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "aab2bed39a48",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Feature implementation merged to main: all AC1\u2013AC8 infrastructure in place (gitignore, hooks, agent docs, tests, settings)",
+      "artifact_path": "feature/workspace/fr-20260511-workspace-local-worktree-strategy",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3194296d52ea",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Synced local \u2764Music main and generated manifest locally",
+      "artifact_path": "f:\\\u2764Music\\catalog\\manifest.json",
+      "stored_hash": "23df6671a5c32f5455707246c4bb5fb5edce8727880c6ea76c5176e5cd478f58",
+      "current_hash": "de0a05639a7485989635df60d056a933613df8314b8a4311d71db63a1723650a",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "47619bdded2b",
+      "agent": "\u2295workspace-reviewer",
+      "proof_type": "command_output",
+      "description": "Automated PR review complete: APPROVE status, all gates pass (3.1\u20133.5), tests 9/9, proof AC1\u2013AC8 verified",
+      "artifact_path": "[-Workspace#132](https://github.com/tylerdrakemusic/-Workspace/pull/132)",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "28e357903c81",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR tracking updated to IN_PROGRESS with implementation artifacts",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-vocal-pilot-mp3-training.md",
+      "stored_hash": "a6e1be961abb4d67317d8a4934c6a6bc6c290145ad9a0e1d1c66f53b326dc834",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "0a5e03376800",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Active registry row moved to IN_PROGRESS",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "a336f727ede4c4e25dfd1e02621a0f5b33d0135cea61b8a56204fc8cc8bffb10",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3abe40572768",
+      "agent": "\u2295workspace-architecture-reviewer",
+      "proof_type": "file_modified",
+      "description": "Architecture impact PASS report created for FR-20260511-fitspine-purchase-decision",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\architecture-review-FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "2fd7c432182ef171258487b3fcc7a3749f05530dcfa7869614c9613417c8a99b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c791d416df6a",
+      "agent": "\u2295workspace-architecture-reviewer",
+      "proof_type": "file_modified",
+      "description": "FR ledger updated with architecture-review PASS event and artifact link",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "06776e4cc2861ba7b23683478bec7016fc6aad254430a7c3955159ccc28d29fe",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "46f82b00e5d0",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "command_output",
+      "description": "PR [-Workspace#132] merged to main: workspace-local worktree strategy now live",
+      "artifact_path": "[-Workspace#132](https://github.com/tylerdrakemusic/-Workspace/pull/132)",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3c9b5c4de70c",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_modified",
+      "description": "FR ledger transitioned from REVIEW_REQUESTED \u2192 MERGED with merge timestamp",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-workspace-local-worktree-strategy.md",
+      "stored_hash": "59a543213e777fd59b8e87b83109970879da5a2b19410e2ef2a9016522ebc00b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "e3922d95ae4f",
+      "agent": "\u2295workspace-ci",
+      "proof_type": "file_modified",
+      "description": "FR registry row updated: state=MERGED, PR link updated",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "42a88e5565e580c6a5f5119cfbe67e900c4e222baf190ec06d1ca0014f51dfda",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "26cae6ed460e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FitSpine decision artifact includes recommendation and AC1-AC4",
+      "artifact_path": "f:\\worktrees\\life-fr-20260511-fitspine-purchase-decision\\research\\longevity\\fitspine_purchase_decision_2026-05-11.md",
+      "stored_hash": "a20f75a170e8d4f334405ff4c4c121840925fbfdb0be6aa3e368a8e650809b84",
+      "current_hash": "58e6f47afd4ef5f6c4d0b42a30e039190668ca53406224c1395eb22535c243ee",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "ce24ba1fcc17",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Architecture review PASS evidence created",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\architecture-review-FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "2fd7c432182ef171258487b3fcc7a3749f05530dcfa7869614c9613417c8a99b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "4fac410645a2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FitSpine decision artifact with user-provided 5ft9in height",
+      "artifact_path": "f:\\worktrees\\life-fr-20260511-fitspine-purchase-decision\\research\\longevity\\fitspine_purchase_decision_2026-05-11.md",
+      "stored_hash": "a20f75a170e8d4f334405ff4c4c121840925fbfdb0be6aa3e368a8e650809b84",
+      "current_hash": "58e6f47afd4ef5f6c4d0b42a30e039190668ca53406224c1395eb22535c243ee",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "24652b9adf0d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Architecture PASS report for FitSpine FR",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\architecture-review-FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "2fd7c432182ef171258487b3fcc7a3749f05530dcfa7869614c9613417c8a99b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3ce4b540322f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "metric",
+      "description": "Draft PR created and review rerun passed all gates",
+      "artifact_path": "https://github.com/tylerdrakemusic/Life/pull/23",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3bfaf171df7b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "iPhone sync strategy guide (5 methods with step-by-step instructions)",
+      "artifact_path": "F:\\\u2764Music\\output\\vocal_pilots_iphone_commute_pack\\IPHONE_SYNC_GUIDE.md",
+      "stored_hash": "34325757a75cee9cb4c8ff9c9f930486b51029cae93c17f8bc8fca40876fdd20",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "7c13a7d192b5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Logged FitSpine X3 purchase in \u221eLife budget ledger",
+      "artifact_path": "f:\\\u221eLife\\src\\data\\infinitelife.db",
+      "stored_hash": "6827944454e63cff196ba0e9d659f25f07fbde774ca5d286b8e444220fa23983",
+      "current_hash": "9316ff2be89dc8b193eafcf097ce4d613e092d050de69898bfe3ecb82a104cbe",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "a1e0cdeae094",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Appended purchase outcome to FR ledger",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "eb3d18fc820bba8d826ddba2f1e1db687d73a6b620e0d4979e1ee5d310e12021",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "fcebb3b2154e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created follow-up FR ledger for subject height schema support",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-subject-height-schema-support.md",
+      "stored_hash": "a602cd45f6a7411965392eb87d9419bc819476e55d0c6756a9982acdbb9958f9",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "16f60eeb839d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registered follow-up FR in active registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "edf6db68aec549b48cb1832b355a08ef11bf69a720b06c5507eb4de5c291756d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "80c828d87e6c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Reconciled FitSpine purchase FR to MERGED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-fitspine-purchase-decision.md",
+      "stored_hash": "5f526785e1e67608dd98ea7cb867ceb5f64ab801c4c5360b854df6cf7d873b6c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "abe640a7e5ec",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Unstuck reviewer by adding architecture PASS evidence and rerunning review",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260511-subject-height-schema-support.md",
+      "stored_hash": "6fdce66b9069106809d92f5d5859f004c1477cec4ebc62988e653416b9ae2a6d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c8e85b4abc71",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created architecture review report for height-schema FR",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\architecture-review-FR-20260511-subject-height-schema-support.md",
+      "stored_hash": "b8a8c505b3b9bce5198d09a54f3e2842c09889761f7badc950b0400fe537ed9f",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "be88bd10d845",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registry moved height-schema FR to AUTO_REVIEWED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "09998eb4fca4f3930a85e7b85d43e945150edc5b41035974ccfb3ca75785861a",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "4fb89bc8ee27",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Verified merged subject schema and persisted height in live \u221eLife DB",
+      "artifact_path": "f:\\\u221eLife\\src\\data\\infinitelife.db",
+      "stored_hash": "6583abf5fc09e7265a37e354349ee16a3a11ab40e99abe5f23e8ed7875abcbd5",
+      "current_hash": "9316ff2be89dc8b193eafcf097ce4d613e092d050de69898bfe3ecb82a104cbe",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4947c41f0921",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Merged PR #133 to \u2295Workspace main (portal fixes)",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\portal.html",
+      "stored_hash": "821f6c077a4eb6be8c47e3b830135ad77bb9df7d806855fceea735db78fc78cf",
+      "current_hash": "51673837ccd30a7a46690fefbda2746e6fad4b227de03a3ec44a520707ea82be",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "2ebe5ececf42",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Merged PR #135 into main",
+      "artifact_path": "https://github.com/tylerdrakemusic/-Workspace/pull/135",
+      "stored_hash": null,
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "d1946096cca6",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Launcher no-flicker flow updated",
+      "artifact_path": "f:/\u2295Workspace/tools/launch_portal.ps1",
+      "stored_hash": "3eecd5cf645dee8e76793f92ad0234e9fca8b23ad4386785fa675d9a5b4b23c9",
+      "current_hash": "024158c6eb2e02fe4c537c7eeed138798dc3bc254caca96c7c0165b73d046e06",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "a83644912707",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Bulk rescored 47 open todos using Ollama/Llama",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\manifest_todos.db",
+      "stored_hash": "ed53a16b6d7f8ecfb8098cd665bd5c1449a15d0c018812fafe001fbba915e0c4",
+      "current_hash": "b6dfbc4479a1ba0442292300f1e9190e7dce9f6292f750c0f45886c0501f9dff",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "adff67791533",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Bulk rescored 47 open todos using Ollama/Llama; distribution: 0\u21929 critical, 0\u219217 high, 47\u219220 medium, 0\u21921 low",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\manifest_todos.db",
+      "stored_hash": "ed53a16b6d7f8ecfb8098cd665bd5c1449a15d0c018812fafe001fbba915e0c4",
+      "current_hash": "b6dfbc4479a1ba0442292300f1e9190e7dce9f6292f750c0f45886c0501f9dff",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "6b9fc43c1d66",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger for VQE execution policy card",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-quantum-vqe-execution-policy-card.md",
+      "stored_hash": "bbb8203ad4e3a27133a0a8605aa0a7215c18a1c735a50078798bfe73bc0b8043",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "11dc5fdb622a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added FR to feature request registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "793b4f1e58f56e46f824ee2b78eb8cf7e5dff17ad92ba5d220a20824703e84b7",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f0368bf00f7c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Created FR ledger for executive panel localhost refused",
+      "artifact_path": "F:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-executive-panel-localhost-refused.md",
+      "stored_hash": "06975b25ed3110f125ab282afa0d976250376a5cb75daac610bc57e72327f99e",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "922231533512",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry state to TRIAGED",
+      "artifact_path": "F:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "b177357253f5ee2accb14133e8912a1da2468897fad70436f4c55b5af131b1fc",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "e2716d808322",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger to BRANCHED with branch and PR details",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-quantum-vqe-execution-policy-card.md",
+      "stored_hash": "91a8d589a2e961a3eebaf15373ef592e2d2f1a5c538ae8f8fb0938b123c9c904",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "8b274e67bac3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated registry row to BRANCHED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "b177357253f5ee2accb14133e8912a1da2468897fad70436f4c55b5af131b1fc",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "657106d4447c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Inserted 10 user-approved SCAN todos with priorities into manifest_todos.db",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\src\\data\\manifest_todos.db",
+      "stored_hash": "b5b67136ed0edc9d8679069a1600a721ac388077659f5ec607146991973d643c",
+      "current_hash": "b6dfbc4479a1ba0442292300f1e9190e7dce9f6292f750c0f45886c0501f9dff",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "19e2bed76362",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Verified inserted rows 73-82 all source=SCAN done=0 with expected priorities",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tmp\\verify_selected_discovery_todos.py",
+      "stored_hash": "a92f7d1f6683e946d86509fa9980dfa067e827a1d0206cde4d580cba6b264185",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "cfb7b171a305",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added vqe_monthly_benchmark schedule to execution_policy.json (day 15 @ 03:00 UTC, 600s cap)",
+      "artifact_path": "f:\\\u27e8\u03c8\u27e9Quantum\\src\\config\\execution_policy.json",
+      "stored_hash": "019c9457e17e2fa66f109c00c5b35b127e0891789bd567839d43f7b748a6f69b",
+      "current_hash": "2f45e2b886f581c06fe7f533197eec2d6ce5b5404027bf45ef273c7e27d56dd2",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f5a847463fac",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Refactored dashboard generator to support both Shor and VQE policy cards",
+      "artifact_path": "f:\\\u27e8\u03c8\u27e9Quantum\\tools\\gen_benchmark_dashboard.py",
+      "stored_hash": "77f6afe9cdde8855a281f527ef9655fac5255864e1957b9c094f62f6388299c6",
+      "current_hash": "191b218a8b2196b9de76c63e02e920171dad835ad5b50ef4936fb41dc06b62c2",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "59ba6c1fa656",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger to IN_PROGRESS with all deliverables complete",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-quantum-vqe-execution-policy-card.md",
+      "stored_hash": "55b0ccfc2f7f70d045efad613ea58d3beedaea652a386e02e61795a8468b1018",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "8e6688ae713c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Verified dashboard renders both Shor and VQE schedule cards; tested fallback for missing schedule",
+      "artifact_path": "f:\\\u27e8\u03c8\u27e9Quantum\\reports\\benchmark_dashboard.html",
+      "stored_hash": "ffc87c8e6c965f401dc954a59c18ada01fbdfa5f50e434a2e412c85a59bb3772",
+      "current_hash": "eb451d78525a602b09dec8e1c949bb62866fe105078202eb6b4906d82f48db78",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4d84f733b185",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Ledger updated to BRANCHED with branch SHAs",
+      "artifact_path": "F:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-executive-panel-localhost-refused.md",
+      "stored_hash": "f72ab4b603012cf78ae8c4dd66af960e6247520285f1c267d061f643528a3434",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "9adb57e1b93a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registry row updated to BRANCHED",
+      "artifact_path": "F:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "0e6f4d4ba9911830a07369817fec5e43188f49bc542b171bc3a1c0fefb910945",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "2966f3311fc6",
+      "agent": "\u2295workspace-architecture-reviewer",
+      "proof_type": "file_modified",
+      "description": "Architecture review event appended: PASS (no diagram updates required for VQE policy card feature)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-quantum-vqe-execution-policy-card.md",
+      "stored_hash": "e69dac7284ae48a5ade31a63a13bc848ae3f8995736aba10549c8c113522b6bb",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c8afae336cd4",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "command_output",
+      "description": "Analyzed top-priority open todos and selected low-risk short candidate (workspace MCP registry)",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\tmp\\top_todos_for_intake.py",
+      "stored_hash": "41257a61d1ecaa0dc1ccf03667914224e1070e15d38cff5c360bac1796eff37b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c2831794b17b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created triaged ledger for FR-20260512-workspace-mcp-registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-workspace-mcp-registry.md",
+      "stored_hash": "4614b13b38a0b81847f3c226ebff96cd1b8860a8b633dab8cae4401c2da224cc",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "b34cc1fdf32e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Inserted FR row into active FEATURE_REQUESTS registry",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "c5526c7b155c7507be0a143ebf536c905f666fc61c88cae52dc85c3d2a911ce4",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c8c385aab074",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger to BRANCHED with workspace branch and draft PR link",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-workspace-mcp-registry.md",
+      "stored_hash": "063fab7454da2bd353aec1700f548a49a34d17fcb315f7e09e2a6c8c7d983649",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "cb5e6c25abc0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR registry row to BRANCHED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "3e47f4685b14a67049b67787c6dd010720a083e670aabd367a647eb6fa41c823",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "33d9946194ac",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Transitioned FR to AUTO_REVIEWED after architecture review PASS and comprehensive PR review APPROVE",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "5180b09538ae61316776ab6d457108489eb5820af6f6a958696acf30595f1496",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "055861fb76fe",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created MCP registry artifact with scoring rubric, ranked recommendations, and guardrails",
+      "artifact_path": "f:\\\u2295Workspace\\MCP_REGISTRY.md",
+      "stored_hash": "93a646c703a3e4c18e74abd352cdaf65aa68de2b6152fc842db36a9ab0f181ba",
+      "current_hash": "53596f1198a97325b9674870b8a4523ad8e16c072059b4fa7752923baf2aec2e",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "43219c776918",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Marked MCP research TODO complete with registry pointer",
+      "artifact_path": "f:\\\u2295Workspace\\TODO_AI.md",
+      "stored_hash": "6df0a261f8afe3b61aec862b56a05379b97a222b8f87e4014a4c489f6c70d00a",
+      "current_hash": "699970737bfdf8dc6aa6ad536e7b559ccf97cb490dbeec7942520eb1b59d5a56",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c56403a8c52b",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Advanced FR ledger to REVIEW_REQUESTED with deliverables completed",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-workspace-mcp-registry.md",
+      "stored_hash": "c8e6c39af54880b51e4195feee6196125e294307bd0dd6d8cb70b6d51736df5b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "e5563ced9ed0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FEATURE_REQUESTS row to REVIEW_REQUESTED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "507f67ab69865da530ef008cfb760a82cb1a18dbd10aec0c9507dfb6887dffd5",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "4887083cbb4c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Recorded Tyler approval transition to TYLER_APPROVED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-quantum-vqe-execution-policy-card.md",
+      "stored_hash": "888b94d5d4511a6752442e7545f37a09171bf2dccfe2ca93d3a4f6a77e526d46",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "25501c8ddcbb",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Synced FEATURE_REQUESTS row to TYLER_APPROVED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "2eec3edb8e35b3d374d4cb0f583b82d89ba7e0a5d9a9de06b5caa4eae4ca123b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "fe1c2a146e14",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "dashboard.json localhost fix + portal.html localhost fix + launch_portal.ps1 readiness poll",
+      "artifact_path": "F:\\\ud83d\udc41AI-Manifest\\dashboard.json",
+      "stored_hash": "df926ac019d4d4d59300d07327cb9a4820416b8bf2540e189c642de0829da54f",
+      "current_hash": "cf23e8701210af29a981136fbe62728e9fb86d5265a54695f876b984897b28c8",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7dc33d8c2e22",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Merged PR #17 to main: VQE execution policy card feature complete",
+      "artifact_path": "f:\\\u27e8\u03c8\u27e9Quantum\\src\\config\\execution_policy.json",
+      "stored_hash": "019c9457e17e2fa66f109c00c5b35b127e0891789bd567839d43f7b748a6f69b",
+      "current_hash": "2f45e2b886f581c06fe7f533197eec2d6ce5b5404027bf45ef273c7e27d56dd2",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "74b74abd17b7",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger with merge event and MERGED state",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-quantum-vqe-execution-policy-card.md",
+      "stored_hash": "56418c563e3ad23ebde0474cdadffa3e5679e4928a94de7f4395570fb87676f5",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "0bb71d2070f3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Synced FR registry to MERGED state with PR #17 link",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "64a29221e9130976a0fe21dea58ea372708d2a75b245fb710040453b8e06f882",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "746dc5326480",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger and registry PR fields to actual PRs",
+      "artifact_path": "F:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-executive-panel-localhost-refused.md",
+      "stored_hash": "6135ad61ccffc4d4b8b4ce32b36269d9ed8bb20da847f7dcbbe3785f18eaf81a",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "3d2fa691b483",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Implemented no-repeat boundary reshuffle + variance source/metrics API in tjd_radio",
+      "artifact_path": "f:\\\u2764Music\\src\\radio\\tjd_radio.py",
+      "stored_hash": "212bc182f5babda2252e6905257f060f645b65bfd0795140b79f3bab0d7b49d6",
+      "current_hash": "cbdba9bbb3cb661d74c2336f4f0cca418944adfda227fa54caf043cce9c339b8",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "2331f54dd4cf",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated FR ledger and registry to MERGED",
+      "artifact_path": "F:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260512-executive-panel-localhost-refused.md",
+      "stored_hash": "7e57888ea4882c948578654b0feac805f918505f799e28d1b96d0265331a786d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f866c947e220",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260513-quantum-entropy-sync-panel.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260513-quantum-entropy-sync-panel.md",
+      "stored_hash": "ccea0fa2c71b73a7d0b78f7381f740d28227cf317b642540a3803682e7a27a69",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "df1a1609fb6a",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Registered FR in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "c2454228de7db165f7a90f30c2539e7c9fbda1b04b7b93deccc97847fae962a8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "f4840de91bdc",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "FR ledger created: FR-20260513-hooks-setup.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260513-hooks-setup.md",
+      "stored_hash": "83ee98302c8ce6daa014fb4b7334cc2e7749b8f2cccfc651eb453d39e8f3048d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "c69123c6d409",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "FR registry updated: FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "7fab850755320cf57e04703153a845f359cebfed8a06052d567b7a096e060ea8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "da0d0909415f",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260513-mcp-autostart-awareness.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260513-mcp-autostart-awareness.md",
+      "stored_hash": "2e354c7f2a022baa1095ab53a0d2ae0f3fc6bad4a8876cfb5ec74d189c0e13a4",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "6135eed45097",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "db_write",
+      "description": "Registered FR-20260513-mcp-autostart-awareness in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "b56d40e7606200cbbf8988b7211efbb64202ebf101fe41227c5bc65c78dd0142",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "798db9f8683d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "mcp_status.json \u2014 initial status snapshot",
+      "artifact_path": "f:\\\u2295Workspace\\src\\config\\mcp_status.json",
+      "stored_hash": "8376eb634f9c10957831c160578c885e6f23945b1f437d434ca6024f496f9200",
+      "current_hash": "74b5fe849c5ad58e3e84b1d7f004620637375c83d3cc17c52ba59072b1ba5275",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3d90b382d7d2",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "\u2295workspace-overseer.agent.md \u2014 MCP pre-flight block added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-overseer.agent.md",
+      "stored_hash": "82823a221a14bc6296e24898ddbb3288d5185ac13bcbab4dfca001384cf25916",
+      "current_hash": "0409c4e643a40adc5451b3ee587ca47605de4e5503a4bebbb156a6a6d5b6dd90",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "08a6fd77bb44",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Wired Vera portrait into band_mgmt panel generator",
+      "artifact_path": "f:\\\u2764Music\\src\\band_mgmt\\generate_band_mgmt_panel.py",
+      "stored_hash": "f1d0b51da76005e61568030c0f367105efaa429a9b36ffb83b6e7cc8c49c37e2",
+      "current_hash": "f6dda04c9c70f4af78f03d9e2b176843ec6dc53483bd1071bc6e2f89c16b25ae",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "08e35089b50c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added Gate 7 UI Validation to reviewer agent",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-reviewer.agent.md",
+      "stored_hash": "b543232bbaff1c38cd04003ab3ee1f6edc389ad4ed212231f7bab7a57e247bd4",
+      "current_hash": "1c5f5327ef02b7e5d2adc8b7cb1d30abfd1f0aefbe357d1d875ac39463db784f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "39aed1b2acb3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Added Playwright obligation to feature-request-flow",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\instructions\\feature-request-flow.instructions.md",
+      "stored_hash": "89da60ad8bf42d144978bc78c5ecf14b9eba7e33f9050cc34c810dff512841bc",
+      "current_hash": "072776b1a351b0605033c92bcb3dbb7b8b9ec3e578cdd91f991a43afa25bac96",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c4b3f7beede6",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Playwright test stub for portal",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_portal_playwright.py",
+      "stored_hash": "fe414bc8e3e5812a8686c498ef4d78c1658d988b3e1dc688d8970604f88db5b8",
+      "current_hash": "74b2a5ed3d3d9043daca53dfaafc6577efee91e07c4e3dec5c55375068960b5f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "63e4dc5d73e7",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Registered FR-20260513-rhyme-grouper-ui in FEATURE_REQUESTS.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "09fadefdb4fd6130e3ac9322e413f350ecf470d8cbb739786b4b96a52da162e5",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "557e35cbdb07",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Removed biomarker-html localhost override from dashboard_portal.py",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\dashboard_portal.py",
+      "stored_hash": "31c2ef89540d2d15ded42836993de3e2ce84f75099b345c1fc1f513773aa79ff",
+      "current_hash": "3551d7c6dbefd5696cef87115fae78ea9d97d4724ad5e984fb9f0ad671d30f5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "54c84a017ada",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Executive type living_html, removed localhost:8200",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\dashboard.json",
+      "stored_hash": "5f817a56c434d619274aea8043a0068d7d206f308eb9e053f02c07bb506dcb21",
+      "current_hash": "cf23e8701210af29a981136fbe62728e9fb86d5265a54695f876b984897b28c8",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7a4cdb2ef624",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Changed executive from flask_app to living_html",
+      "artifact_path": "f:\\\ud83d\udc41AI-Manifest\\dashboard.json",
+      "stored_hash": "621937f5c94ce1464be917d6040a429456d86260fa556178265016ae4e8ad7e8",
+      "current_hash": "cf23e8701210af29a981136fbe62728e9fb86d5265a54695f876b984897b28c8",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7d26ec2dc3d0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260514-security-vuln-remediation.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260514-security-vuln-remediation.md",
+      "stored_hash": "18c7633f9ffbd389de9defbf8d8d6ae3dc33227975dd27d9994c0d43eedfc644",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "22fb86190729",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed scanner exclusions in security_dashboard.py",
+      "artifact_path": "f:\\\u2295Workspace\\tools\\security_dashboard.py",
+      "stored_hash": "2a9cddec6cd36d41dc535a898f0b8085547554e5de2314580b9b27815ba691c8",
+      "current_hash": "ffdcffff1ec7b613074d42e9cdef6bef3398c3d3b179213be27f5375b42c7447",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f612448ab6a5",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Regenerated security_dashboard.html showing 0 open",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\security_dashboard.html",
+      "stored_hash": "867d43aff5eacce4903e9d110fda064de666a60ed4fc22f1d9f14d7cdaeacda6",
+      "current_hash": "d2706c2205f1b40e2728cfca7bc6efccff9b34aa1b94b4737ffce557430893ec",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9738596f9252",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260515-chat-customizations-eval-ext.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260515-chat-customizations-eval-ext.md",
+      "stored_hash": "ccf7554268ce97c6b5b7b549721c76ab8ab08963d8eb2c062c4d34bc00fbd045",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "630ecc0dc3a1",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Updated FEATURE_REQUESTS.md \u2014 FR-20260515 row added (BRANCHED)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "c05a3a92662fddefbb93a0896bb953b7bdf43b32928123d309a80a0c586ac784",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "bfca06a104af",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260515-quantum-cache-widget",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260515-quantum-cache-widget.md",
+      "stored_hash": "188ebccaee793619501bac433422ee60ab050156cd065bbf64d52fb770ce7352",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "815d52702241",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Updated FEATURE_REQUESTS.md registry with new FR",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "71264d6e6a4005a32d5e117907711559bdcd1a76b28a09dfea723ae8d36d7264",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "df5662bc86a5",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260515-artist-links-pill",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260515-artist-links-pill.md",
+      "stored_hash": "39bffeedf9584e4b52b4ac0e0abbf8bf87c28b868d86782fa5a3fe98bd045b8d",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "1104a22e6a99",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Updated FEATURE_REQUESTS.md registry with FR-20260515-artist-links-pill",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "1f6a224e1742bff653429534df82864b53cff70c9b54b5c18d7351cd716ade1c",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "44ccc4f3e299",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260515-artist-links-pill-music-dashboard.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260515-artist-links-pill-music-dashboard.md",
+      "stored_hash": "e902c3f56197795cccc1b87a895b2e3431215cb6e90d5152a6bb0aba613e7099",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "7bd50dc4c47c",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "src/artist_links/generate_artist_links_panel.py",
+      "artifact_path": "f:\\\u2764Music\\src\\artist_links\\generate_artist_links_panel.py",
+      "stored_hash": "24ce28795a295335eb4799b7f58c1c157eb05043885d856fbc036aff0dde969b",
+      "current_hash": "8de2ae62017783a1b63094fd9a52d955581685bf029859124a6fcaef4f3c15af",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "d33bf7b01df9",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "reports/artist_links_panel.html (63 pills: 36 live, 27 stub)",
+      "artifact_path": "f:\\\u2764Music\\reports\\artist_links_panel.html",
+      "stored_hash": "aa037a6dfd58a8d8242a98034d0d8cb68d0204fec84706b2d0c4049438fe88ca",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "addffcb06fa1",
+      "agent": "\u2764music-orchestrator",
+      "proof_type": "file_modified",
+      "description": "Added artist_links table to init_db.py",
+      "artifact_path": "f:\\\u2764Music\\src\\utils\\init_db.py",
+      "stored_hash": "7d14115d15673cb5a59588754d9fdafd944dae7b2a247d21af846a60538f1075",
+      "current_hash": "fec374c397cb65e376abfde9aeed7c885a3454b5365cbb26a74057ed2d9aa71e",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "0856e706c969",
+      "agent": "\u2764music-orchestrator",
+      "proof_type": "file_modified",
+      "description": "Added Artist Links tab to music_dashboard.py",
+      "artifact_path": "f:\\\u2764Music\\src\\analysis\\music_dashboard.py",
+      "stored_hash": "19f2dd03ec42375253ca85e44e982c422798c587185d04bfcad19656da3d65d9",
+      "current_hash": "d57dba6175382172faeb6a28efb6ab657fee3aa728c735952aaf1b31245abb1b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "28d2201197c0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Redesigned to accordion layout \u2014 22 live platforms, 12 stub/hidden",
+      "artifact_path": "f:\\\u2764Music\\src\\artist_links\\generate_artist_links_panel.py",
+      "stored_hash": "61fb19d9a77e3d0afcd87074afa90c269b8f9bce94e4913b551863aec0e85002",
+      "current_hash": "8de2ae62017783a1b63094fd9a52d955581685bf029859124a6fcaef4f3c15af",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "ebd6c0820495",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed embed_html XSS WARN - added trust comments",
+      "artifact_path": "f:\\\u2764Music\\src\\analysis\\music_dashboard.py",
+      "stored_hash": "fafff5e23f3ed2b4ec2fe60b7d7f22bf8ec8f05d50ab506684354b79895578a4",
+      "current_hash": "d57dba6175382172faeb6a28efb6ab657fee3aa728c735952aaf1b31245abb1b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "353e501c8afa",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated music-db-schema.mmd with ARTIST_LINKS entity",
+      "artifact_path": "f:\\\u2295Workspace\\diagrams\\music-db-schema.mmd",
+      "stored_hash": "512d7801d16c2ef0d3341534966686ca5827127ff85a21823619a61ef1674e53",
+      "current_hash": "b8d4c4a85765333c0fd8e5ca645423b40599212e2a8119136d2039c67eedc328",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "64fa1de8abe3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Implemented cache widget in gen_benchmark_dashboard.py \u2014 commit 87b2aa4",
+      "artifact_path": "f:\\\u27e8\u03c8\u27e9Quantum\\tools\\gen_benchmark_dashboard.py",
+      "stored_hash": "a9c2daad04456d707688354751183167a41139b8e9726021bbf7a347f505ac77",
+      "current_hash": "191b218a8b2196b9de76c63e02e920171dad835ad5b50ef4936fb41dc06b62c2",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f58d47017f11",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Regenerated portal.html with button absent (0 anchor matches, 2 CSS-only)",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\portal.html",
+      "stored_hash": "a12ab1dbedf9454dadc4529686a8d705f7b703ee1359ff1045570adef43ac5c7",
+      "current_hash": "51673837ccd30a7a46690fefbda2746e6fad4b227de03a3ec44a520707ea82be",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "b0340c540219",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed DALL-E 3 client \u2014 removed response_format, added b64_json handling",
+      "artifact_path": "f:\\\u2295Workspace\\src\\integrations\\dalle3\\client.py",
+      "stored_hash": "092960e28e26543d0725271e8a1ba69593ec853280d054f20e1396cadcf6c474",
+      "current_hash": "3f574df139799cc6b5b1f0a12b11472719f18dea9d4f024e20913d63089f2602",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "3dba30144b56",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Migrated nova_portrait.py from HuggingFace to DALL-E 3",
+      "artifact_path": "f:\\\u221eLife\\src\\utils\\nova_portrait.py",
+      "stored_hash": "d9ae37f8fd738808f842145ce1710f8176254766a8ee399319967b626e4c21fb",
+      "current_hash": "54ec7fbfdf3ac5320fa9263e45101a23d979cf0826ae7f4f842040919505d346",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7cfafcb45d43",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated DALL-E 3 client tests \u2014 b64_json + url paths",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_dalle3_client.py",
+      "stored_hash": "6b70aa8dc7f90eeecd2ff2599a185b4876499ecbc6f36a3730822ee5be2a187c",
+      "current_hash": "228d3035b701e2971fe526d25f4084539346d9fa166b56df8c62ec9da4ed0b33",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "77d5da85bbc3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created nova portrait test suite",
+      "artifact_path": "f:\\\u221eLife\\tests\\test_nova_portrait.py",
+      "stored_hash": "28b8c96f8d8502081344762e88d0fbf372a9b0d8346dfefba16cd6e61db00a22",
+      "current_hash": "c0497eceeefba6b1d848ba847e3064b48220808f6780812f5f43eac0f2eada94",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "07369da46a7a",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "Created FR ledger FR-20260516-suno-stem-isolation.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260516-suno-stem-isolation.md",
+      "stored_hash": "208a3614669cf21e5db10018453977a77cf4c5240264043153db8bc02c0b4a91",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "729bba43abe1",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_created",
+      "description": "FR ledger created: FR-20260516-fr-ledger-db-migration.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260516-fr-ledger-db-migration.md",
+      "stored_hash": "9231fbcb46172330362ad9385dcd155dc8832e89f7e9a16ca35871c8ffaa38e8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "ee20ce83e988",
+      "agent": "\u2295workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Registry updated: FR-20260516-fr-ledger-db-migration added as TRIAGED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "848bd12baa2291b8546178f6b24104630d80046b0c20317b645502ca92dfe1c1",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "bf06a847d1e9",
+      "agent": "workspace-intake",
+      "proof_type": "file_created",
+      "description": "FR ledger created: FR-20260516-fr-ledger-db-migration.md",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FR_LEDGERS\\FR-20260516-fr-ledger-db-migration.md",
+      "stored_hash": "9231fbcb46172330362ad9385dcd155dc8832e89f7e9a16ca35871c8ffaa38e8",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "1065505fab31",
+      "agent": "workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Registry row inserted: FR-20260516-fr-ledger-db-migration TRIAGED",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\FEATURE_REQUESTS.md",
+      "stored_hash": "848bd12baa2291b8546178f6b24104630d80046b0c20317b645502ca92dfe1c1",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "753081510e3d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "fr_server.py \u2014 DB query + AJAX drawer + /api/ledger endpoint",
+      "artifact_path": "f:\\\u2295Workspace\\src\\utils\\fr_server.py",
+      "stored_hash": "fd1c48c5c43eab5010316933b53800245277ff1b533c3d5d2568c865cb88b118",
+      "current_hash": "15b6ddcd4be47b76bcc35d0517da015f54297aab98b438ded3305378aaa8ef5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "9ae90a02a32d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "fr_server.py: universal signoff + DB write",
+      "artifact_path": "f:\\\u2295Workspace\\src\\utils\\fr_server.py",
+      "stored_hash": "df0e366592f9b148ef22a9bab368a1dcf7f7d328656a4f45c8a7e0197ecdf921",
+      "current_hash": "15b6ddcd4be47b76bcc35d0517da015f54297aab98b438ded3305378aaa8ef5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "238566200e84",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "test_fr_server.py: 16 tests pass",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_fr_server.py",
+      "stored_hash": "cfa315b5d687310f25c90af009f91f17716d0bd0659b1fd4a1bd6bbb17b508bd",
+      "current_hash": "f88c136677b333cbd23ad945fc51a46c95670f82fa2b8968a3b11ffa857a33c5",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "a0b40a1d098e",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "intake+ci agents: branch-from-main clarity",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-intake.agent.md",
+      "stored_hash": "890566a0463963bb2599a7ce954a7faaf497d6f521efaba61b1a28150a9fc6d6",
+      "current_hash": "0c4c2e83e17597c3cf839532207d89a0594b26141fb80ec5334ea07e6b7f2e7f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "24dfde5c1ca0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "16/16 fr_server tests green",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_fr_server.py",
+      "stored_hash": "cfa315b5d687310f25c90af009f91f17716d0bd0659b1fd4a1bd6bbb17b508bd",
+      "current_hash": "f88c136677b333cbd23ad945fc51a46c95670f82fa2b8968a3b11ffa857a33c5",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "1cb3f04418bb",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Fixed renderFR broken template literal, removed confirm() popup, filtered DONE from archive in regenerate_dashboard and renderBoard JS",
+      "artifact_path": "f:\\\u2295Workspace\\src\\utils\\fr_server.py",
+      "stored_hash": "ce3481d9271838bb78f012d832c456fa46714b089f3a09b84c1c453eb78c1d57",
+      "current_hash": "15b6ddcd4be47b76bcc35d0517da015f54297aab98b438ded3305378aaa8ef5c",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c6912fdc8829",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "16/16 test_fr_server.py tests pass",
+      "artifact_path": "f:\\\u2295Workspace\\tests\\test_fr_server.py",
+      "stored_hash": "cfa315b5d687310f25c90af009f91f17716d0bd0659b1fd4a1bd6bbb17b508bd",
+      "current_hash": "f88c136677b333cbd23ad945fc51a46c95670f82fa2b8968a3b11ffa857a33c5",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "7016f9e238d2",
+      "agent": "workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Portal nav minimalism principle added to agent instructions",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-dashboards.agent.md",
+      "stored_hash": "aca692bdc60638f7c4ff4742d50c160ad9de0721ce8195cdb8ea305c954c61bb",
+      "current_hash": "5db99e4f62254a9a16bbe3a52db67919afc0d4618b909335b1fc7574b85dbc21",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "069cff66b9df",
+      "agent": "workspace-intake",
+      "proof_type": "file_modified",
+      "description": "Portal left nav rule added to workspace conventions",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\copilot-instructions.md",
+      "stored_hash": "eaf8ae2699729eb30b6706250f32c6b3cad04ef56b93d43b1e6916e52371dc3f",
+      "current_hash": "0683b98244c6fb2f8f94973dfbe8289d24b1741749e147ead612f6bb06491a93",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "22ec0da89be0",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "db_write",
+      "description": "Marked 8 false-positive findings in workspace.db",
+      "artifact_path": "f:\\\u2295Workspace\\src\\data\\workspace.db",
+      "stored_hash": "a9931ae93e003f134b8421d5ab7e8a2825c334f8fc3d4349900afe38c90b00fe",
+      "current_hash": "07a4731e081458e708c5488a05bf1740d92d88858eeb0a9caebcab0f46f16709",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "fdbccecde62a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "dashboard",
+      "description": "Regenerated security dashboard \u2014 0 open findings",
+      "artifact_path": "f:\\\u2295Workspace\\reports\\security_dashboard.html",
+      "stored_hash": "eecf1065920dd70dbe0a6773e540b381f307fcfd6526ed986d38a766f51e817e",
+      "current_hash": "d2706c2205f1b40e2728cfca7bc6efccff9b34aa1b94b4737ffce557430893ec",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "fb11a20ab933",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Music Dashboard: Artist Links tab\u2192pill, /links route, Simple Icons brand images",
+      "artifact_path": "f:\\\u2764Music\\src\\analysis\\music_dashboard.py",
+      "stored_hash": "aad32251b7e72ec070247bc450dc93882cf6efaf587c73f381b8fdfb2fa6a121",
+      "current_hash": "d57dba6175382172faeb6a28efb6ab657fee3aa728c735952aaf1b31245abb1b",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "01bd18374a43",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Simple Icons CDN brand images replacing emoji in panel generator",
+      "artifact_path": "f:\\\u2764Music\\src\\artist_links\\generate_artist_links_panel.py",
+      "stored_hash": "bfe94ed3e953b81971ce9f2e1c51500f74772db80728935958bc47ceca2ece8e",
+      "current_hash": "8de2ae62017783a1b63094fd9a52d955581685bf029859124a6fcaef4f3c15af",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "2b9ab7df6e9f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "scale_data.py: CAGED positions + MIDI_TO_FREQ + get_scale_sequence",
+      "artifact_path": "f:\\\u2764Music-scale-exercises\\src\\training\\scale_data.py",
+      "stored_hash": "ded495d89b84d702e7e68d9a890d0279092d8263e743102f638ec629c673fa5a",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "a2f204e0ca59",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "scale_tts.py: ElevenLabs TTS instructor with disk cache",
+      "artifact_path": "f:\\\u2764Music-scale-exercises\\src\\training\\scale_tts.py",
+      "stored_hash": "ceac3a0c70972c418490fdb1baacfe7f4a250b943a25df5be429d7857475166b",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "d11b784f57d8",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "musician_training_ui.py: tab nav, fretboard, JS, 4 Flask routes, freq_table fix",
+      "artifact_path": "f:\\\u2764Music-scale-exercises\\src\\training\\musician_training_ui.py",
+      "stored_hash": "888221339ea367e479a10db0c91b41741dfa3bd856e17705dc72d47b09ad9c02",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "b425618d01bb",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "test_guitar_trainer_scales.py: 32 passing tests",
+      "artifact_path": "f:\\\u2764Music-scale-exercises\\tests\\test_guitar_trainer_scales.py",
+      "stored_hash": "71fed9574bb14021574e3f6dc46b89c3a71ffe71125b0c95598a08b9c6aa1364",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "226eefb6573f",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "test_pass",
+      "description": "32/32 tests passed: pytest tests/test_guitar_trainer_scales.py",
+      "artifact_path": "f:\\\u2764Music-scale-exercises\\tests\\test_guitar_trainer_scales.py",
+      "stored_hash": "71fed9574bb14021574e3f6dc46b89c3a71ffe71125b0c95598a08b9c6aa1364",
+      "current_hash": null,
+      "reason": "stale"
+    },
+    {
+      "proof_id": "138ab6929fd3",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Optimized \u2295workspace-overseer.agent.md 215\u219271 lines",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\agents\\\u2295workspace-overseer.agent.md",
+      "stored_hash": "9b0f069ff905dcaa576651bcf0dc7e8ed9b927b1846391cadfe585b12a863a33",
+      "current_hash": "0409c4e643a40adc5451b3ee587ca47605de4e5503a4bebbb156a6a6d5b6dd90",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "92e6bb5c6768",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_created",
+      "description": "Created db-api-keys.instructions.md (DRY extraction)",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\instructions\\db-api-keys.instructions.md",
+      "stored_hash": "d58c238e06513840410e25eaf49deb4cfadafe7b4617aca2991b48bc5878140b",
+      "current_hash": "de69535095d8a7344ffe31e7e0da0d374aaf226f68af5278834005f2361955ae",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "4e504ae1ac7a",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated feature-request-flow.instructions.md: added FUNCTIONAL_QA state",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\instructions\\feature-request-flow.instructions.md",
+      "stored_hash": "192f8c80c8952b6378169332edeaab04b310dabe3d1c99046a1a0f8cae84a382",
+      "current_hash": "072776b1a351b0605033c92bcb3dbb7b8b9ec3e578cdd91f991a43afa25bac96",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "fe871ce4825d",
+      "agent": "\u2295workspace-overseer",
+      "proof_type": "file_modified",
+      "description": "Updated feature-request-flow: FUNCTIONAL_QA state added",
+      "artifact_path": "f:\\\u2295Workspace\\.github\\instructions\\feature-request-flow.instructions.md",
+      "stored_hash": "192f8c80c8952b6378169332edeaab04b310dabe3d1c99046a1a0f8cae84a382",
+      "current_hash": "072776b1a351b0605033c92bcb3dbb7b8b9ec3e578cdd91f991a43afa25bac96",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "c001a76e36fe",
+      "agent": "heartmusic-orchestrator",
+      "proof_type": "test_pass",
+      "description": "52/52 pytest tests pass after scale-data SQLite migration + F major + river/E reorder",
+      "artifact_path": "f:\\\u2764Music\\tests\\test_guitar_trainer_scales.py",
+      "stored_hash": "554c72018eb1f3eddc650a544bad28c0263afa9fcbe9007d208adecfb77f9e06",
+      "current_hash": "4646f2fcb45606792da7b12ce9098679e03547bd8745861b52c55e6917a9aa0f",
+      "reason": "corrupt"
+    },
+    {
+      "proof_id": "f802916cd245",
+      "agent": "heartmusic-orchestrator",
+      "proof_type": "test_pass",
+      "description": "52/52 pytest pass: scale-data SQLite migration + F major + river/E reorder",
+      "artifact_path": "f:\\\u2764Music\\tests\\test_guitar_trainer_scales.py",
+      "stored_hash": "554c72018eb1f3eddc650a544bad28c0263afa9fcbe9007d208adecfb77f9e06",
+      "current_hash": "4646f2fcb45606792da7b12ce9098679e03547bd8745861b52c55e6917a9aa0f",
+      "reason": "corrupt"
+    }
+  ]
+}
