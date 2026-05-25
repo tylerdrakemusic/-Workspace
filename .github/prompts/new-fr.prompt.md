@@ -13,6 +13,17 @@
      1. Read the title (and any notes) above.
      2. Inspect the codebase to infer as many fields as possible: type, affected
         projects, motivation, risk, dependencies, and out-of-scope boundaries.
+     1.5 TODO CROSS-REFERENCE: Query manifest_todos.db for open todos that overlap
+        this request. SQL pattern (adapt project key as needed):
+          SELECT id, text, priority FROM todos
+          WHERE done=0 AND project=<inferred_project>
+            AND text LIKE '%<keyword>%'
+          ORDER BY priority DESC LIMIT 5;
+        Surface any matches in the Phase B scope card under "📎 Related todos".
+        On Tyler's confirmation, write the FR ID into each matched row:
+          UPDATE todos SET fr_id='<FR-ID>' WHERE id=<matched_id>;
+        DB path: f:\👁AI-Manifest\src\data\manifest_todos.db
+        If no matches, skip silently.
      3. Run your Phase A interview — but ONLY ask about fields you genuinely cannot
         infer. Skip any question whose answer is obvious from the title, notes, or
         codebase. Fewer questions = better. Use vscode_askQuestions with prefilled

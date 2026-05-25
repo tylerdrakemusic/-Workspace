@@ -20,12 +20,22 @@ erDiagram
         text label
         text provider
     }
+    TODOS ||--o{ PRIORITY_HISTORY : has
     TODOS {
         integer id PK
         text project
-        text source "AI|TYLER"
+        text source "AI|TYLER|SCAN"
         text text
         integer done
         text created_at
         text closed_at
+        integer priority "default 5"
+        text autonomy_level "full|supervised|human"
+        text fr_id "nullable — links to active FR"
+    }
+    PRIORITY_HISTORY {
+        integer id PK
+        integer todo_id FK
+        integer priority
+        text scored_at
     }
