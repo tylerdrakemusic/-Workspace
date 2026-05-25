@@ -24,7 +24,7 @@ from utils.init_db import get_connection
 
 ## Schemas
 
-**`perf_runs`** (⊕Workspace): `run_id` TEXT PK · `name` TEXT · `started_at` REAL · `ended_at` REAL · `status` TEXT · `detail` TEXT
+**`perf_runs`** (⊕Workspace): `run_id` TEXT PK · `name` TEXT · `agent` TEXT · `started_at` REAL · `ended_at` REAL · `status` TEXT · `detail` TEXT · `last_heartbeat` REAL
 
 **`perf_steps`** (⊕Workspace): `step_id` TEXT PK · `run_id` FK · `agent` TEXT · `description` TEXT · `started_at`/`ended_at` REAL · `elapsed_ms` REAL · `status` TEXT · `detail` TEXT
 
