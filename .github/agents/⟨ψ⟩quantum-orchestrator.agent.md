@@ -36,7 +36,7 @@ Discover dynamically: scan `f:\.github\agents\⟨ψ⟩quantum-*.agent.md`. Read 
 ## Branch Protocol (repo writes)
 One code-changing session = one branch = one worktree = one draft PR.
 - Branch names: `feature/quantum/<slug>` or `fix/quantum/<slug>`
-- Branch creation, rebases, merges → `⊕workspace-ci` or `⊕workspace-commitment`
+- Branch creation, rebases, merges → `⊕workspace-ci`
 - Never share a writable checkout with another agent
 
 ## Demo by Default

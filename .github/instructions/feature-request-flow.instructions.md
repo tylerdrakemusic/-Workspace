@@ -305,9 +305,7 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 | `⊕workspace-architecture-reviewer` | Detect architectural impact in the PR diff; verify the relevant `.mmd` diagrams were updated. Hard-blocks merge on STALE/MISSING. |
 | `⊕workspace-architecture-beautifier` | Update or create `.mmd` files in `f:\⊕Workspace\diagrams\` per the architecture-reviewer's required-updates list. |
 | `⊕workspace-reviewer` | Run alignment + security + tests + proof; post automated PR review. |
-| `⊕workspace-commitment` | Protected commit batching inside an active FR branch. |
 | `⊕workspace-security` | Security gate invoked by reviewer; can block before merge. |
-| `⊕workspace-alignment` | Consistency gate invoked by reviewer for cross-project FRs. |
 
 ## Hard Rules (apply to every agent)
 

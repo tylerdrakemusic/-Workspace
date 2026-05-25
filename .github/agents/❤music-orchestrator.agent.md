@@ -27,7 +27,7 @@ If the request will change tracked repository files:
 2. Use a single-purpose branch name such as `feature/heart-music/<slug>` or `fix/heart-music/<slug>`.
 3. Open or update a draft PR early so Tyler can track ownership and parallel agents can see the active scope.
 4. Never share a writable branch or checkout with another agent. If another session is already modifying the same area, stay on a separate branch and plan a rebase later.
-5. Route branch creation, rebases, merges, and conflict resolution through `âŠ•workspace-ci` or `âŠ•workspace-commitment`.
+5. Route branch creation, rebases, merges, and conflict resolution through `⊕workspace-ci`.
 6. Analysis-only workflows do not need branch setup.
 
 ## Demo by Default (MANDATORY)

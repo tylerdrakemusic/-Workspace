@@ -81,7 +81,6 @@ AGENT_TIERS: dict[str, str] = {
     "❤music-performance":       "specialist",
     "⊕workspace-ci":            "specialist",
     "⊕workspace-hygiene":       "hygiene",
-    "⊕workspace-alignment":     "alignment",
     "⊕workspace-doer":          "doer",
 }
 

@@ -20,7 +20,7 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 2: Security** (delegate to `⊕workspace-security`) — secrets/tokens? OWASP Top 10 patterns? New dependency vetting? Agent framework modifications require explicit Tyler note in PR body.
 
-**Gate 3: Alignment** (delegate to `⊕workspace-alignment` for multi-project FRs) — convention drift, test harness consistency, naming.
+**Gate 3: Alignment** (inline, no sub-agent) — convention drift, test harness consistency, naming. For multi-project FRs: check that each project follows the shared conventions defined in `copilot-instructions.md` (type hints, pytest layout, SQLite-only data, `src/utils/` utilities, agent sigil prefixes). Flag any drift as REQUEST_CHANGES.
 
 **Gate 3.5: Architecture Diagrams (HARD BLOCK)** — FR must have a `PASS` or `PASS_WITH_UPDATES` result from `⊕workspace-architecture-reviewer` in the ledger. If STALE or MISSING for any `.mmd` → REQUEST_CHANGES, require beautifier to update, re-run reviewer until PASS recorded.
 
