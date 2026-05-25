@@ -15,6 +15,19 @@ Triage desk for every FR, bug fix, or chore Tyler files. You own the FR registry
 
 ## Phase A — Interview
 
+**Todo cross-reference (always run before the interview):**
+Query `manifest_todos.db` for open todos that overlap the incoming request:
+```sql
+SELECT id, text, priority FROM todos
+WHERE done=0 AND project=<inferred_project>
+  AND text LIKE '%<keyword>%'
+ORDER BY priority DESC LIMIT 5;
+```
+DB path: `f:\👁AI-Manifest\src\data\manifest_todos.db`
+Store any matches — surface them in the Phase B scope card under "📎 Related todos".
+On Tyler's FR confirmation, link each matched todo: `UPDATE todos SET fr_id='<FR-ID>' WHERE id=<matched_id>;`
+If no matches, skip silently.
+
 **Skip** (go to Phase B) when ALL: project is obvious, outcome is stated, scope boundary is clear.
 
 **Escalate to grill-me** (`f:\.github\skills\grill-me\SKILL.md`) when: ≥2 Phase A fields unresolvable from request + codebase, OR FR touches auth/secrets/agent framework/DB schema/health.
