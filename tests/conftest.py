@@ -109,6 +109,15 @@ CREATE TABLE IF NOT EXISTS scan_run_log (
     status           TEXT NOT NULL DEFAULT 'ok',
     error_detail     TEXT
 );
+
+CREATE TABLE IF NOT EXISTS api_health (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint   TEXT    NOT NULL,
+    status     TEXT    NOT NULL,
+    latency_ms REAL,
+    error_msg  TEXT,
+    checked_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
