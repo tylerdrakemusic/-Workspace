@@ -29,3 +29,20 @@ erDiagram
         text created_at
         text closed_at
     }
+    TTS_QUEUE {
+        integer id PK
+        text    text
+        text    voice_id
+        text    model_id
+        text    output_format
+        integer priority
+        text    status
+        integer retry_count
+        integer max_retries
+        text    output_path
+        text    content_sha256
+        text    error_message
+        text    created_at
+        text    started_at
+        text    completed_at
+    }

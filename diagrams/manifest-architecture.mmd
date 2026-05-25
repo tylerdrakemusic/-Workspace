@@ -4,7 +4,7 @@ graph TB
     Tools --> Briefs[brief generators]
     Tools --> LilyPortrait[src/utils/<br/>lily_portrait.py]
     Briefs --> OpenAI[OpenAI<br/>OPENAPI_TOKEN]
-    Briefs --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
+    Briefs --> TtsQueueWorker
     LilyPortrait -->|1st try| DallE3[DallE3Client<br/>⊕Workspace integration]
     LilyPortrait -->|2nd try| HFImage[HuggingFaceImageClient<br/>⊕Workspace integration]
     LilyPortrait -->|fallback| SVGFallback[SVG silhouette]
@@ -40,6 +40,14 @@ graph TB
     RescorerTool --> TodosUtil
     RescorerTool --> PriorityScorer
     RescorerTool --> RescorerLog
+    %% FR-20260524-tts-batch-queue – TTS queue worker & queue DB
+    subgraph ServicesLayer[src/services/]
+        TtsQueueWorker[src/services/<br/>tts_queue_worker.py]
+    end
+    TtsQueueDB[src/utils/<br/>tts_queue_db.py]
+    TtsQueueWorker --> TtsQueueDB
+    TtsQueueWorker --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
+    TtsQueueDB --> TodosDB
     class TodosDB db
     class TodosUtil,MigrateScript util
     class AllProjects ws
@@ -53,6 +61,9 @@ graph TB
     class RescorerTool util
     class PriorityScorer util
     class RescorerLog out
+    %% FR-20260524-tts-batch-queue – TTS queue worker & queue DB
+    class TtsQueueDB util
+    class TtsQueueWorker service
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -68,3 +79,4 @@ classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
 classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
 classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
 classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
+classDef service  fill:#1a3a2a,stroke:#4ab48a,color:#c0f0da
