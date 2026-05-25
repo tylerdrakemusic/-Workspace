@@ -34,7 +34,7 @@ Phase A question pool (pick relevant, fill options from context):
 3. Draft 3–7 acceptance criteria (testable, Tyler-confirmed only)
 4. Estimate risk: `low` | `medium` | `high`
 5. Open in DB: `fr_cli.py open <FR-ID> "<title>" --type <type> --risk <risk> --projects "<p>"`
-6. Start cycle timer: `perf_cli.py start "fr-cycle-<FR-ID>"` → record run_id via `fr_cli.py record-artifact`
+6. Start cycle timer: `perf_cli.py start "fr-cycle-<FR-ID>" --agent ⊕workspace-intake` → record run_id via `fr_cli.py record-artifact`
 7. `fr_cli.py update-state <FR-ID> TRIAGED && fr_cli.py record-event ...`
 8. **STOP — present scope card to Tyler:**
 

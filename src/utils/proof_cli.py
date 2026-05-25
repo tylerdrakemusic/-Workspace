@@ -27,6 +27,7 @@ from init_db import get_connection, init_db
 PROOF_TYPES = [
     "file_created", "file_modified", "db_write", "command_output",
     "metric", "screenshot", "dashboard", "test_pass",
+    "perf_regression_alert", "perf_low_data",
 ]
 
 

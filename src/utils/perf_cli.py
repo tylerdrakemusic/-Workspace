@@ -25,12 +25,12 @@ def _conn():
     return get_connection()
 
 
-def cmd_start(name: str) -> None:
+def cmd_start(name: str, agent: str | None = None) -> None:
     run_id = str(uuid.uuid4())
     conn = _conn()
     conn.execute(
-        "INSERT INTO perf_runs (run_id, name, started_at) VALUES (?, ?, ?)",
-        (run_id, name, time.time()),
+        "INSERT INTO perf_runs (run_id, name, agent, started_at) VALUES (?, ?, ?, ?)",
+        (run_id, name, agent, time.time()),
     )
     conn.commit()
     conn.close()
@@ -117,6 +117,8 @@ def main() -> None:
 
     p_start = sub.add_parser("start")
     p_start.add_argument("name")
+    p_start.add_argument("--agent", default=None,
+                         help="Agent sigil+slug (e.g. ⊕workspace-qa). Stored in perf_runs.agent.")
 
     p_end = sub.add_parser("end")
     p_end.add_argument("run_id")
@@ -133,7 +135,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.cmd == "start":
-        cmd_start(args.name)
+        cmd_start(args.name, agent=args.agent)
     elif args.cmd == "end":
         cmd_end(args.run_id, args.status, args.detail, args.at)
     elif args.cmd == "report":

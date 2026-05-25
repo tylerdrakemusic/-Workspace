@@ -15,9 +15,9 @@ Perf CLI: `C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py`
 
 ### Start (first action, chain with first real command)
 ```
-C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py start "<agent-name>: <task-slug>"
+C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py start "<agent-name>: <task-slug>" --agent "<sigil-slug>"
 ```
-Save the printed `run_id`.
+Save the printed `run_id`. The `--agent` value should be the canonical sigil+slug for this agent (e.g. `⊕workspace-qa`, `∞life-orchestrator`). This populates `perf_runs.agent` for regression alerting.
 
 ### End (last action, chain end + report)
 ```

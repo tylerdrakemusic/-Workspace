@@ -49,6 +49,7 @@ _SCHEMA = """
 CREATE TABLE IF NOT EXISTS perf_runs (
     run_id          TEXT PRIMARY KEY,
     name            TEXT NOT NULL,
+    agent           TEXT,
     started_at      REAL NOT NULL,
     ended_at        REAL,
     status          TEXT,
@@ -128,12 +129,12 @@ def _pid() -> str:
 @pytest.fixture
 def insert_run(db_conn):
     """Factory to insert a perf_run row."""
-    def _insert(run_id=None, name="test", started_at=None, ended_at=None, status=None, detail=None, last_heartbeat=None):
+    def _insert(run_id=None, name="test", started_at=None, ended_at=None, status=None, detail=None, last_heartbeat=None, agent=None):
         rid = run_id or _pid()
         started = started_at if started_at is not None else time.time()
         db_conn.execute(
-            "INSERT INTO perf_runs (run_id, name, started_at, ended_at, status, detail, last_heartbeat) VALUES (?,?,?,?,?,?,?)",
-            (rid, name, started, ended_at, status, detail, last_heartbeat),
+            "INSERT INTO perf_runs (run_id, name, agent, started_at, ended_at, status, detail, last_heartbeat) VALUES (?,?,?,?,?,?,?,?)",
+            (rid, name, agent, started, ended_at, status, detail, last_heartbeat),
         )
         db_conn.commit()
         return rid
