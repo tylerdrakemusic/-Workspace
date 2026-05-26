@@ -7,11 +7,17 @@ graph TB
     Briefs --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
     LilyPortrait -->|1st try| DallE3[DallE3Client<br/>⊕Workspace integration]
     LilyPortrait -->|2nd try| HFImage[HuggingFaceImageClient<br/>⊕Workspace integration]
-    LilyPortrait -->|fallback| SVGFallback[SVG silhouette]
+    LilyPortrait -->|3rd try| HFSpaces[HFSpacesClient<br/>FLUX.1-schnell Gradio REST]
+    LilyPortrait -->|4th try| Pollinations[PollinationsClient<br/>image.pollinations.ai]
+    LilyPortrait -->|5th fallback| SVGFallback[SVG silhouette]
     DallE3 -->|importlib cross-project| WSIntegrations[(⊕Workspace<br/>src/integrations/)]
     HFImage -->|importlib cross-project| WSIntegrations
+    HFSpaces -->|importlib cross-project| WSIntegrations
+    Pollinations -->|importlib cross-project| WSIntegrations
     DallE3 --> ImagesOut[output/images/*.png]
     HFImage --> ImagesOut
+    HFSpaces --> ImagesOut
+    Pollinations --> ImagesOut
     SVGFallback --> ImagesOut
     ImagesOut --> Portal[output/<br/>executive_brief_portal.html]
     OpenAI --> TextOut[output/briefs/*.md]
@@ -45,7 +51,7 @@ graph TB
     class AllProjects ws
     class TodoDoneAPI manifest
     class Triggers trig
-    class OpenAI,ElevenLabs,DallE3,HFImage api
+    class OpenAI,ElevenLabs,DallE3,HFImage,HFSpaces,Pollinations api
     class TextOut,AudioOut,Portal,ImagesOut out
     class WSIntegrations ws
     class LilyPortrait util

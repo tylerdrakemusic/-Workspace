@@ -135,7 +135,7 @@ class PollinationsClient:
             "nologo": "true",
             "seed": seed,
         })
-        url = f"https://image.pollinations.ai/prompt/{encoded}?{params}"
+        url = _POLLINATIONS_BASE.format(encoded=encoded) + f"?{params}"
 
         req = urllib.request.Request(
             url, headers={"User-Agent": "workspace-portrait-gen/2.0"}
