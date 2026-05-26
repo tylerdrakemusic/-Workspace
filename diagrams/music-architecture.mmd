@@ -25,8 +25,16 @@ graph TB
     Export --> Dash
     TrainerApp --> TrainerDB
     Songs -.shared db.-> TrainerDB
+    ImagesOut[output/images/]
+    WSIntegrations[(⊕Workspace<br/>src/integrations/)]
+    VeraPortrait[src/utils/<br/>vera_portrait.py]
+    VeraPortrait -->|daily portrait PNG| ImagesOut
+    VeraPortrait -.->|lazy import HFSpaces+Pollinations| WSIntegrations
     class Inputs,Reports io
     class Catalog,Trainer core
+    class VeraPortrait util
+    class ImagesOut out
+    class WSIntegrations ws
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -37,3 +45,5 @@ classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0

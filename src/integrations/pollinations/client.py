@@ -1,12 +1,12 @@
-"""Free portrait fallback client — DiceBear illustrated avatars.
+"""Free portrait client — Pollinations.AI photorealistic images with DiceBear fallback.
 
-Pollinations.AI moved to a paid model in 2026.  This module now uses the
-**DiceBear** API (https://dicebear.com) as the free, keyless fallback for
-portrait generation.  DiceBear generates deterministic illustrated avatars
-from a text seed; not photorealistic, but far better than a silhouette.
+Primary:  **Pollinations.AI** (https://image.pollinations.ai) — free, keyless,
+photorealistic images via the default turbo model.  Returns JPEG, ~1-2 s.
 
-No account, no credits, no token required.  Uses only Python stdlib
-(``urllib``).
+Fallback: **DiceBear** (https://dicebear.com) — deterministic illustrated avatars
+when Pollinations is unreachable.  No API key required for either service.
+
+Uses only Python stdlib (``urllib``).
 
 Example::
 
@@ -14,7 +14,7 @@ Example::
 
     client = PollinationsClient()
     path = client.generate_image(
-        "a portrait of a scientist",
+        "a photorealistic portrait of a scientist",
         output_dir=Path("/tmp"),
     )
 """
@@ -26,27 +26,36 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-# DiceBear style that produces portrait-like illustrated characters.
+# ---------------------------------------------------------------------------
+# Pollinations.AI
+# ---------------------------------------------------------------------------
+_POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/{encoded}"
+_POLLINATIONS_TIMEOUT = 35
+_MIN_PHOTOREALISTIC_BYTES = 10_000  # real JPEG; DiceBear SVG-PNGs are ~2-8 KB
+
+# ---------------------------------------------------------------------------
+# DiceBear fallback
+# ---------------------------------------------------------------------------
 _DICEBEAR_STYLE = "lorelei"
 _DICEBEAR_BASE = "https://api.dicebear.com/9.x/{style}/png"
-_DEFAULT_BG = "0d1a2a"  # dark navy — matches workspace dashboard aesthetic
-_TIMEOUT_SECONDS = 30
+_DEFAULT_BG = "0d1a2a"
+_DICEBEAR_TIMEOUT = 30
 _MIN_IMAGE_BYTES = 512
 
 
 class PollinationsError(RuntimeError):
-    """Raised when the free portrait API call fails."""
+    """Raised when all free portrait tiers fail."""
 
 
 class PollinationsClient:
-    """Free portrait client backed by DiceBear (https://dicebear.com).
+    """Free portrait client — Pollinations.AI → DiceBear fallback.
 
-    The public interface mirrors the original Pollinations.AI client so
-    portrait generators do not need updating.  Internally calls DiceBear,
-    deriving a deterministic seed from the prompt hash so the same prompt
-    always produces the same avatar.
+    Tries Pollinations.AI first (photorealistic JPEG, ~1-2 s, free, no key).
+    If that fails or returns a suspiciously small payload, falls through to
+    DiceBear illustrated avatars (always succeeds).
 
-    Uses only Python stdlib.  No API key required.
+    The public interface is unchanged from before so all portrait generators
+    continue to work without modification.
     """
 
     def generate_image(
@@ -55,41 +64,98 @@ class PollinationsClient:
         output_dir: Path | str = ".",
         width: int = 1024,
         height: int = 1024,
-        seed: int | None = None,  # kept for interface compat; DiceBear uses str seed
+        seed: int | None = None,
     ) -> Path:
-        """Generate a portrait avatar and save it to *output_dir*.
+        """Generate a portrait and save it to *output_dir*.
 
         Parameters
         ----------
         prompt:
-            Text description (used to derive a deterministic DiceBear seed).
+            Text description of the desired image.
         output_dir:
             Directory to save the generated image file.  Created if absent.
         width:
-            Ignored (DiceBear returns SVG-rasterised PNGs; all sizes equal).
+            Image width in pixels (Pollinations only; ignored by DiceBear).
         height:
-            Ignored (see *width*).
+            Image height in pixels (Pollinations only; ignored by DiceBear).
         seed:
-            Ignored (seed derived from *prompt* hash for determinism).
+            Optional integer seed for reproducibility (Pollinations).
+            If None, a deterministic seed derived from the prompt hash is used.
 
         Returns
         -------
         Path
-            Absolute path to the saved PNG image file.
+            Absolute path to the saved image file.
 
         Raises
         ------
         PollinationsError
-            On network error, non-200 HTTP response, or suspiciously small
-            payload.
+            Only if both Pollinations.AI and DiceBear fail.
         """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Derive a stable short string seed from the prompt so each persona
-        # always gets the same illustrated avatar.
-        dicebear_seed = hashlib.sha256(prompt.encode()).hexdigest()[:16]
+        prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:12]
 
+        # --- Tier 1: Pollinations.AI photorealistic image ---
+        try:
+            path = self._pollinations(prompt, output_dir, prompt_hash, width, height, seed)
+            if path is not None:
+                return path
+        except Exception:
+            pass
+
+        # --- Tier 2: DiceBear illustrated avatar ---
+        try:
+            return self._dicebear(prompt, output_dir, prompt_hash)
+        except Exception as exc:
+            raise PollinationsError(f"All free image tiers failed: {exc}") from exc
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _pollinations(
+        self,
+        prompt: str,
+        output_dir: Path,
+        prompt_hash: str,
+        width: int,
+        height: int,
+        seed: int | None,
+    ) -> Path | None:
+        """Call image.pollinations.ai; return Path on success, None on failure."""
+        if seed is None:
+            seed = int(hashlib.sha256(prompt.encode()).hexdigest()[:8], 16) % (2**31)
+
+        encoded = urllib.parse.quote(prompt)
+        params = urllib.parse.urlencode({
+            "width": width,
+            "height": height,
+            "nologo": "true",
+            "seed": seed,
+        })
+        url = _POLLINATIONS_BASE.format(encoded=encoded) + f"?{params}"
+
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "workspace-portrait-gen/2.0"}
+        )
+        with urllib.request.urlopen(req, timeout=_POLLINATIONS_TIMEOUT) as resp:
+            if resp.status != 200:
+                return None
+            content: bytes = resp.read()
+
+        if len(content) < _MIN_PHOTOREALISTIC_BYTES:
+            return None  # silently fall through to DiceBear
+
+        ext = "jpg"
+        out_path = output_dir / f"pollinations_{prompt_hash}.{ext}"
+        out_path.write_bytes(content)
+        return out_path
+
+    def _dicebear(self, prompt: str, output_dir: Path, prompt_hash: str) -> Path:
+        """Call DiceBear; return Path on success, raise on failure."""
+        dicebear_seed = hashlib.sha256(prompt.encode()).hexdigest()[:16]
         base = _DICEBEAR_BASE.format(style=_DICEBEAR_STYLE)
         params = urllib.parse.urlencode({
             "seed": dicebear_seed,
@@ -99,25 +165,18 @@ class PollinationsClient:
         url = f"{base}?{params}"
 
         req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "workspace-portrait-gen/1.0"},
+            url, headers={"User-Agent": "workspace-portrait-gen/2.0"}
         )
-        try:
-            with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp:
-                if resp.status != 200:
-                    raise PollinationsError(
-                        f"HTTP {resp.status} from DiceBear"
-                    )
-                content: bytes = resp.read()
-        except OSError as exc:
-            raise PollinationsError(f"Network error contacting DiceBear: {exc}") from exc
+        with urllib.request.urlopen(req, timeout=_DICEBEAR_TIMEOUT) as resp:
+            if resp.status != 200:
+                raise PollinationsError(f"HTTP {resp.status} from DiceBear")
+            content: bytes = resp.read()
 
         if len(content) < _MIN_IMAGE_BYTES:
             raise PollinationsError(
-                f"Response only {len(content)} B — likely an error, not an image"
+                f"DiceBear returned only {len(content)} B — likely an error"
             )
 
-        prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:12]
         out_path = output_dir / f"dicebear_{prompt_hash}.png"
         out_path.write_bytes(content)
         return out_path

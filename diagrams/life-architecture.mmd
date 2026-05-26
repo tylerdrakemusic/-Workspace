@@ -2,7 +2,7 @@
 graph TB
     Tyler([Tyler]) --> Inputs[MyFitnessPal · Trainerize<br/>Bloodwork · Genomics · Journal]
     Inputs --> ETL[src/etl/<br/>importers + sync]
-    ETL --> Sync[src/sync/<br/>trainerize_sync.py<br/>fetch_upcoming_workouts]
+    ETL --> Sync[src/sync/<br/>trainerize_sync.py<br/>fetch_upcoming_workouts<br/>supplement_archiver.py]
     Sync --> DB[(infinitelife.db<br/>SQLCipher)]
     Sync --> Watchdog[tools/sync_watchdog.py<br/>health tracking · alerts]
     Watchdog --> DB
@@ -16,8 +16,14 @@ graph TB
     Dashboard --> Output[tmp/biomarker_dashboard.html<br/>upcoming workouts panel]
     DB --> Protocols[Protocols & Experiments]
     DB --> Budget[Budget Ledger]
+    NovaPortrait[src/utils/<br/>nova_portrait.py]
+    WSIntegrations[(⊕Workspace<br/>src/integrations/)]
+    NovaPortrait -->|daily portrait PNG| Output
+    NovaPortrait -.->|lazy import HFSpaces+Pollinations| WSIntegrations
     class Inputs,Reports,Scheduler,TokenFile io
     class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh core
+    class NovaPortrait util
+    class WSIntegrations ws
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -28,3 +34,4 @@ classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0

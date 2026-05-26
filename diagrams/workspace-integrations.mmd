@@ -14,6 +14,8 @@ graph LR
     TZ[(TrainingZones)]:::ext
     Mermaid[(mermaid.ink)]:::ext
     Ollama[(Ollama)]:::ext
+    PollinationsExt[(Pollinations.AI<br/>image.pollinations.ai)]:::ext
+    HFSpacesExt[(HF Spaces<br/>FLUX.1-schnell<br/>Gradio REST)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -30,6 +32,8 @@ graph LR
     Workspace -->|diagrams render| Mermaid
     Workspace -->|dalle3 image gen| OpenAI
     Workspace -->|huggingface inference| HF
+    Workspace -->|pollinations image gen| PollinationsExt
+    Workspace -->|hf spaces FLUX| HFSpacesExt
     Workspace --> WSDB
     Workspace -->|health ping| ElevenLabs
     Workspace -->|health ping| Ollama
@@ -64,7 +68,9 @@ graph LR
     Workspace -.->|gen-qee passwords| Manifest
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
-    Workspace -.->|dalle3 + hf image clients| Manifest
+    Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
+    Life -.->|nova_portrait lazy-import| Workspace
+    Music -.->|vera_portrait lazy-import| Workspace
 
 
 
