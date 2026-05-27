@@ -5,10 +5,18 @@ graph TB
         Audius[Audius catalog]
         SheetMusic[Sheet Music PDFs]
         Setlists[Band setlists]
+        AudioFiles["MP3 / FLAC / M4A<br/>G:\\Muzic · f:\\Masters · f:\\recordings"]
     end
     subgraph Catalog["catalog/"]
         Export[export_catalog.py]
         Songs[(songs · setlists<br/>sheet_music · audio)]
+    end
+    subgraph Services["src/services/"]
+        AudioTagger["audio_tagger.py\nBPM + key detection\n(librosa · mutagen)"]
+    end
+    subgraph Tools["tools/"]
+        AutoTagger["auto_tagger.py\n--smoke-test N\n--dry-run / --apply"]
+        ArchiveNote["archive/\ndetect_bpm.py ⚑\nbpm_verify.py ⚑"]
     end
     subgraph Trainer["Guitar Trainer"]
         TrainerApp[Flask app:5055]
@@ -17,7 +25,9 @@ graph TB
     subgraph Reports["reports/"]
         Portal[portal.html]
         Dash[band-mgmt dashboard]
+        TaggerReport[auto_tagger_*.html]
     end
+    DB[(heartmusic.db<br/>tracks · catalog_songs<br/>recordings)]
     Inputs --> Catalog
     Catalog --> Songs
     Songs --> Export
@@ -25,6 +35,12 @@ graph TB
     Export --> Dash
     TrainerApp --> TrainerDB
     Songs -.shared db.-> TrainerDB
+    AudioFiles -->|scan| AutoTagger
+    DB -->|source_file · file_path| AutoTagger
+    AutoTagger --> AudioTagger
+    AudioTagger -->|tempo_bpm · key_signature| DB
+    AudioTagger -->|ID3 write-back TBPM/TKEY| AudioFiles
+    AutoTagger --> TaggerReport
     ImagesOut[output/images/]
     WSIntegrations[(⊕Workspace<br/>src/integrations/)]
     VeraPortrait[src/utils/<br/>vera_portrait.py]
@@ -32,9 +48,11 @@ graph TB
     VeraPortrait -.->|lazy import HFSpaces+Pollinations| WSIntegrations
     class Inputs,Reports io
     class Catalog,Trainer core
+    class Services,Tools svc
     class VeraPortrait util
     class ImagesOut out
     class WSIntegrations ws
+    class ArchiveNote deprecated
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
