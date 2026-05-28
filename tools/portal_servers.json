@@ -44,6 +44,13 @@
                         "enabled":  true
                     },
                     {
+                        "name":  "∞Life Re-auth Server",
+                        "port":  8766,
+                        "project":  "∞Life",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_reauth_server.ps1",
+                        "enabled":  true
+                    },
+                    {
                         "name":  "FR Board",
                         "port":  7474,
                         "project":  "⊕Workspace",
