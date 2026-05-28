@@ -7,6 +7,8 @@ erDiagram
     BANDS ||--o{ SETLISTS : owns
     EXERCISES ||--o{ EXERCISE_CARDS : composes
     GUITAR_SCALE_TEMPLATES ||--o{ GUITAR_SCALE_POSITIONS : instantiates
+    RELEASE_SIGNATURES ||--o{ DUPLICATE_GROUPS : "canonical"
+    RELEASE_SIGNATURES ||--o{ DUPLICATE_GROUPS : "duplicate"
 
     TRACKS {
         integer id PK
@@ -80,4 +82,24 @@ erDiagram
         text root_string_name
         integer root_fret
         text instructor_phrase
+    }
+    RELEASE_SIGNATURES {
+        integer id PK
+        text sha256
+        text provenance_id
+        text quantum_signed_at
+        text pipeline
+        text chacha20_poly1305_seal
+        text aesgcm_seal
+        text provenance_url
+        text analyzed_at
+    }
+    DUPLICATE_GROUPS {
+        integer id PK
+        text sha256
+        integer canonical_sig_id FK
+        integer duplicate_sig_id FK
+        real provenance_score_canonical
+        real provenance_score_duplicate
+        text detected_at
     }
