@@ -35,3 +35,12 @@ erDiagram
         real pct_full
         text action_taken
     }
+
+    %% --- Policy Audit ---
+    POLICY_AUDIT_RUNS {
+        integer id PK
+        text run_ts
+        text status
+        text findings
+        text policy_file_hash
+    }

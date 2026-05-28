@@ -14,6 +14,7 @@ graph TB
         DB[(quantumpsi.db<br/>SQLCipher)]
         Bench[benchmarks table]
         CacheHealthLog[cache_health_log table]
+        PolicyAuditRuns[policy_audit_runs table]
     end
     subgraph Outputs
         Reports[reports/<br/>benchmark dashboard]
@@ -22,9 +23,11 @@ graph TB
     subgraph Tools["tools/"]
         FillCache[fill_cache.py]
         CacheGuard[cache_depletion_guard.py]
+        AuditPolicy[audit_policy.py]
     end
     subgraph Scheduler["Windows Task Scheduler"]
         GuardTask[QuantumCacheDepletionGuard_Daily]
+        PolicyAuditTask[PolicyComplianceAudit_Daily]
     end
     Algorithms --> IBM
     Algorithms --> Sim
@@ -34,12 +37,14 @@ graph TB
     CacheGuard --> CacheHealthLog
     CacheGuard --> FillCache
     FillCache --> CacheCapacity
+    PolicyAuditTask --> AuditPolicy
+    AuditPolicy --> PolicyAuditRuns
     class Algorithms alg
     class Backends back
     class Storage,Outputs store
-    class FillCache,CacheGuard quantum
-    class GuardTask ext
-    class CacheHealthLog db
+    class FillCache,CacheGuard,AuditPolicy quantum
+    class GuardTask,PolicyAuditTask ext
+    class CacheHealthLog,PolicyAuditRuns db
     class CacheCapacity state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
