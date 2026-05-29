@@ -97,6 +97,9 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
 
 
 1. **Open** — Tyler files the FR in plain language (chat, or a GitHub issue).
+
+   **UI/UX capture (intake, before interview questions):** when a FR or BFX touches UI/UX surfaces (detected by file-impact heuristics or keywords), `⊕workspace-intake` invokes the `ui-baseline-capture` skill (`f:\.github\skills\ui-baseline-capture\SKILL.md`) before the Phase A interview. The skill takes a Playwright screenshot and page structure snapshot of the affected surfaces, shows them inline in the Phase B scope card, and stores the screenshot as a `fr_artifact` (key `ui-baseline`) for the QA agent's before/after comparison.
+
 2. **Approve scope** — After `TRIAGED`, Tyler confirms scope + acceptance
    criteria before any branch is cut. *Agents MUST wait here.*
 3. **Approve PR** — After `AUTO_REVIEWED` passes AND the branch has been

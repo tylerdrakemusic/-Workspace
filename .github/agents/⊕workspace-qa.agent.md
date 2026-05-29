@@ -94,6 +94,8 @@ git -C <project-root> diff main...HEAD --name-only | Select-String "\.html$|/out
 If matched: run `pytest -m playwright` with `$env:PLAYWRIGHT_ENABLED="1"` and record a `test_pass` proof artifact.
 If not matched: mark Playwright as **N/A** in the QA report.
 
+**`ui-baseline` diff** — if the FR has a `screenshot` artifact with label `ui-baseline*` (stored by intake), invoke the `ui-baseline-capture` skill diff hook (`f:\.github\skills\ui-baseline-capture\SKILL.md` § 2). Capture the after-state and include the before/after comparison block in the QA report. Missing baseline → note and skip, not a QA failure.
+
 ## Pass / Fail Decision
 
 **PASS** — every acceptance criterion has a PASS proof artifact:
