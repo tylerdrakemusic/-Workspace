@@ -28,6 +28,8 @@ Store any matches — surface them in the Phase B scope card under "📎 Related
 On Tyler's FR confirmation, link each matched todo: `UPDATE todos SET fr_id='<FR-ID>' WHERE id=<matched_id>;`
 If no matches, skip silently.
 
+**UI-touch detected → invoke `ui-baseline-capture` skill** (`f:\.github\skills\ui-baseline-capture\SKILL.md`) **before asking interview questions.** Detection: file-impact heuristics (`.html`, `output/`, `reports/`) or keyword match in title/notes (`dashboard`, `portal`, `UI`, `UX`, `layout`, `page`, etc.). Skill handles surface discovery, Playwright capture, scope-card inline display, and `fr_artifact` storage. If no surfaces are reachable, it logs a warning and does not block.
+
 **Skip** (go to Phase B) when ALL: project is obvious, outcome is stated, scope boundary is clear.
 
 **Escalate to grill-me** (`f:\.github\skills\grill-me\SKILL.md`) when: ≥2 Phase A fields unresolvable from request + codebase, OR FR touches auth/secrets/agent framework/DB schema/health.
