@@ -613,48 +613,45 @@ def _content_frames(manifest: dict) -> str:
     display = "block" if i == 0 else "none"
 
     if dash["type"] in ("static_html", "living_html"):
-      out = dash.get("output_abs", "")
-      if out and Path(out).exists():
-        out_path = Path(out)
-        if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
-          iframe_src = out_path.name
-        else:
-          try:
-            iframe_src = _mirror_static_report(out_path, str(dash.get("id", "")), i)
-          except Exception:
-            iframe_src = out_path.as_uri()
-        panes.append(
-          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<iframe src="{iframe_src}" frameborder="0"></iframe></div>'
-        )
-      else:
-        panes.append(
-          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<div class="placeholder">Dashboard not yet generated.<br>'
-          f'<code>{_esc(dash.get("cli", ""))}</code></div></div>'
-        )
-    elif dash["type"] == "flask_app":
-      url = dash.get("url", "http://localhost:5050")
-      cli = _esc(dash.get("cli", ""))
-      # Guitar Trainer renders best as a bare iframe — the live-dash chrome
-      # (header bar + Open in Browser link) crowds the practice UI.
-      # See FR-20260425-guitar-trainer-panel-startup.
-      if dash.get("id") == "guitar-trainer":
-        panes.append(
-          f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<iframe src="{_esc(url)}" frameborder="0" allow="autoplay"></iframe></div>'
-        )
-      else:
+      serve_url = dash.get("serve_url", "") if dash["type"] == "living_html" else ""
+      if serve_url:
         panes.append(
           f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
           f'<div class="live-dash">'
           f'<div class="live-header">'
           f'<span class="live-dot"></span> Live Dashboard'
-          f'<a href="{_esc(url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-          f'<iframe src="{_esc(url)}" frameborder="0" class="live-frame" allow="autoplay" '
+          f'<a href="{_esc(serve_url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
+          f'<iframe src="{_esc(serve_url)}" frameborder="0" class="live-frame" '
           f'onerror="this.style.display=\'none\'"></iframe>'
           f'</div></div>'
         )
+      else:
+        out = dash.get("output_abs", "")
+        if out and Path(out).exists():
+          out_path = Path(out)
+          if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
+            iframe_src = out_path.name
+          else:
+            try:
+              iframe_src = _mirror_static_report(out_path, str(dash.get("id", "")), i)
+            except Exception:
+              iframe_src = out_path.as_uri()
+          panes.append(
+            f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+            f'<iframe src="{iframe_src}" frameborder="0"></iframe></div>'
+          )
+        else:
+          panes.append(
+            f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+            f'<div class="placeholder">Dashboard not yet generated.<br>'
+            f'<code>{_esc(dash.get("cli", ""))}</code></div></div>'
+          )
+    elif dash["type"] == "flask_app":
+      url = dash.get("url", "http://localhost:5050")
+      panes.append(
+        f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
+        f'<iframe src="{_esc(url)}" frameborder="0" allow="autoplay"></iframe></div>'
+      )
     elif dash["type"] == "inline_html":
       inline_id = dash.get("inline_id", "")
       panes.append(
