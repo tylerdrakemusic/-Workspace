@@ -85,3 +85,11 @@ Human-readable policy: `f:\⊕Workspace\REPO_VISIBILITY.md`
 - Clean up temporary/test files after use
 - Tests → `<project>/tests/` using pytest (see `testing-base.instructions.md`)
 - **Portal left nav is high-level only** — do NOT add every new feature page as a portal sidebar entry. Embed feature sub-pages as tab-nav pills or routes inside their owning dashboard. Only top-level standalone dashboards belong in the sidebar. Ask Tyler before adding anything new to the portal left nav.
+
+<skills>
+<skill>
+<name>test-driven-development</name>
+<description>Use when implementing any feature, bugfix, or behavior change. Enforces Red-Green-Refactor: write a failing test first, verify it fails for the right reason, write minimal code to pass, then refactor. MANDATORY before writing any production code. Exceptions (ask Tyler): throwaway prototypes, generated code, configuration files.</description>
+<file>f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md</file>
+</skill>
+</skills>

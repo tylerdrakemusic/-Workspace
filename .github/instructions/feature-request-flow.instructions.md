@@ -54,7 +54,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 | `OPEN` | Tyler filed a request; not yet scoped | ⊕workspace-intake |
 | `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
 | `BRANCHED` | Isolated branch + worktree + draft PR created per repo | ⊕workspace-ci |
-| `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
+| `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — load `f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md` before writing any production code (see TDD Gate section below). | project orchestrator |
 | `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
 | `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
 | `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Playwright validation is handled by `⊕workspace-qa` during `FUNCTIONAL_QA` — the orchestrator does NOT run it separately before this state. | project orchestrator |
@@ -92,6 +92,38 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
   the merge API. Attempting merge on a red PR will be rejected by GitHub
   (public repos) or fail review (∞Life).
 - `--no-verify` on ∞Life pushes requires Tyler's explicit per-task approval.
+
+## TDD Gate (IN_PROGRESS)
+
+Before writing any production code during `IN_PROGRESS`, the implementation
+agent **MUST** invoke the TDD skill:
+
+```
+read_file: f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md
+```
+
+The Iron Law: **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.**
+Red-Green-Refactor is not optional. If an agent writes implementation code
+before a failing test exists, delete it and start over.
+
+Exceptions (require explicit Tyler approval): throwaway prototypes, generated
+scaffolding code, configuration-only changes.
+
+## Dependency Sync (BRANCHED Gate)
+
+At `BRANCHED → IN_PROGRESS`, before any implementation agent starts work,
+sync external skill dependencies:
+
+```powershell
+# Sync superpowers to latest main + refresh local TDD skill copy
+cd F:\superpowers
+git fetch origin
+git merge --ff-only origin/main
+Copy-Item "F:\superpowers\skills\test-driven-development\SKILL.md" `
+    "f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md" -Force
+```
+
+This ensures implementation agents always use the latest TDD skill version.
 
 ## Tyler's Gateways (ONLY places humans act)
 
