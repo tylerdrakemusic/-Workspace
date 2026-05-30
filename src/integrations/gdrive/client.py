@@ -183,3 +183,57 @@ class GDriveClient:
         resolved = "/".join(path_parts)
         self._folder_cache[parent_id] = resolved
         return resolved
+
+    def download_file(self, file_id: str, dest_path) -> None:
+        """Download a binary file (PDF, DOCX, etc.) to *dest_path*.
+
+        Args:
+            file_id: Drive file ID.
+            dest_path: ``pathlib.Path`` or str destination path.
+        """
+        import io  # noqa: PLC0415
+
+        from googleapiclient.http import MediaIoBaseDownload  # noqa: PLC0415
+        from pathlib import Path  # noqa: PLC0415
+
+        dest = Path(dest_path)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        request = self._service.files().get_media(
+            fileId=file_id, supportsAllDrives=True
+        )
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        dest.write_bytes(fh.getvalue())
+
+    def export_file(
+        self,
+        file_id: str,
+        dest_path,
+        mime_type: str = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ) -> None:
+        """Export a Google Workspace file (Docs, Sheets …) to *dest_path*.
+
+        Args:
+            file_id: Drive file ID.
+            dest_path: Destination path.
+            mime_type: Export MIME type.  Defaults to OOXML (.docx).
+        """
+        import io  # noqa: PLC0415
+
+        from googleapiclient.http import MediaIoBaseDownload  # noqa: PLC0415
+        from pathlib import Path  # noqa: PLC0415
+
+        dest = Path(dest_path)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        request = self._service.files().export_media(
+            fileId=file_id, mimeType=mime_type
+        )
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        dest.write_bytes(fh.getvalue())
