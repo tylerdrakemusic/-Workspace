@@ -1,5 +1,6 @@
 ---
-description: "Use to run an automated PR review for any feature request that has reached REVIEW_REQUESTED state. Combines alignment, security, test results, and proof-in-the-pudding artifacts into a single review comment. Posts APPROVE / REQUEST_CHANGES / COMMENT back to GitHub. Runs before Tyler's final approval gateway."
+description: "Reviewer agent — STANDARD tier (Gemini 2.5 Pro, Google, 1x). Use to run an automated PR review for any feature request that has reached REVIEW_REQUESTED state. Combines alignment, security, test results, and proof-in-the-pudding artifacts into a single review comment. Posts APPROVE / REQUEST_CHANGES / COMMENT back to GitHub. Runs before Tyler's final approval gateway."
+model: gemini-2.5-pro
 user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->

@@ -1,5 +1,6 @@
 ---
-description: "Use when validating a completed feature implementation against its FR acceptance criteria. Derives a test plan from the FR diff + acceptance criteria, executes functional tests (DB queries, CLI runs, script executions, file checks, and Playwright for HTML-touching changes), records proof artifacts, and transitions FUNCTIONAL_QA → ARCHITECTURE_REVIEW on PASS or → CHANGES_REQUESTED on FAIL. Hard-blocking gate — must pass before architecture review runs."
+description: "QA agent — STANDARD tier (GPT-5.3-Codex, OpenAI, 1x). Use when validating a completed feature implementation against its FR acceptance criteria. Derives a test plan from the FR diff + acceptance criteria, executes functional tests (DB queries, CLI runs, script executions, file checks, and Playwright for HTML-touching changes), records proof artifacts, and transitions FUNCTIONAL_QA → ARCHITECTURE_REVIEW on PASS or → CHANGES_REQUESTED on FAIL. Hard-blocking gate — must pass before architecture review runs."
+model: gpt-5.3-codex
 user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
