@@ -7,6 +7,15 @@ applyTo: "**/tests/**/*.py"
 
 Shared test conventions for all projects in this workspace. Apply these standards to every test file.
 
+## TDD-First Requirement
+
+Before writing any test or implementation code, load and follow the TDD skill:
+
+**Skill:** `f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md`
+
+The Red-Green-Refactor cycle is mandatory. Write the failing test first, verify
+it fails for the right reason, then write minimal production code to pass it.
+
 ## Framework & Tooling
 - **Framework:** pytest (>=8.0)
 - **Coverage:** pytest-cov (>=5.0), target 50% initially

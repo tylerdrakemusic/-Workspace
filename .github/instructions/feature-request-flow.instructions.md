@@ -53,8 +53,8 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 |-------|---------|-------|
 | `OPEN` | Tyler filed a request; not yet scoped | ⊕workspace-intake |
 | `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
-| `BRANCHED` | Isolated branch + worktree + draft PR created per repo | ⊕workspace-ci |
-| `IN_PROGRESS` | Implementation agent(s) writing code | project orchestrator |
+| `BRANCHED` | Isolated branch + worktree + draft PR created per repo. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
+| `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — load `f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md` before writing any production code (see TDD Gate section below). | project orchestrator |
 | `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
 | `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
 | `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Playwright validation is handled by `⊕workspace-qa` during `FUNCTIONAL_QA` — the orchestrator does NOT run it separately before this state. | project orchestrator |
@@ -177,58 +177,11 @@ C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> <typ
 - **Every artifact** (perf run ID, proof ID, PR URL, commit SHA, report path) gets a `record-artifact` call
 - **Events are append-only** — never delete or modify past events
 
-## FR Cycle Timer (full intake-to-merge timing)
+## FR Cycle Timer
 
-Every FR has one perf_cli run that measures the full cycle: from intake open
-to merge. This is separate from each agent's own short-lived perf runs — it
-spans the entire FR lifecycle, including all human approval gates.
+Full protocol: `f:\⊕Workspace\.github\instructions\fr-cycle-timer.instructions.md`
 
-### Protocol
-
-1. **Intake starts the cycle timer** on FR open:
-   ```
-   C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py start "fr-cycle-<FR-ID>"
-   ```
-   Stash the returned run_id; record it via:
-   ```powershell
-   $env:PYTHONUTF8="1"
-   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> metric "Cycle timer run_id" --path "<run_id>"
-   ```
-
-2. **Every state transition** appends an Event Log entry with an ISO timestamp.
-   Phase durations (open→scope-approved, branched→review, review→merge) are
-   derivable by parsing these timestamps — no extra perf calls needed.
-
-3. **CI closes the cycle timer when it merges the PR** (primary path):
-   ```
-   C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py end <cycle_run_id> \
-       --status ok --detail "FR-<ID> merged: <merge SHAs>"
-   ```
-
-4. **Safety net — reconciliation** (for when Tyler merges on GitHub.com without
-   CI agent action): `⊕workspace-ci` exposes a `reconcile-fr-timers` capability
-   that:
-   - Queries `fr_cli.py list --active` for FRs in `TYLER_APPROVED` or `AUTO_REVIEWED`
-     state with an open (unclosed) Cycle timer
-   - Queries GitHub via `mcp_github` tools for each PR's `merged_at` timestamp
-   - For any merged PR, closes the cycle timer with `--at <merged_at>` to
-     backfill the true merge time
-   - Updates FR state via `fr_cli.py update-state` and records a reconciliation event
-   - Can be invoked on-demand (`@⊕workspace-ci reconcile`) or scheduled
-
-### Why this design
-- **Zero infrastructure** — no webhook server, no always-on daemon
-- **Accurate timing** — GitHub's `merged_at` is authoritative even if Tyler
-  merges manually
-- **Tyler stays sovereign** — he can merge via GitHub UI, CLI, or the CI agent;
-  reconciliation closes the loop either way
-- **Optional acceleration** — a GitHub Actions workflow per repo can trigger
-  reconciliation automatically on merge (template at
-  `.github/workflow-templates/fr-merge-reconcile.yml`), but is not required
-
-### Reporting
-After close, `perf_cli report <cycle_run_id>` shows total FR wall-clock time.
-For phase breakdowns, parse the ledger's Event Log timestamps.
+Summary: intake starts `perf_cli` run on FR open; every state transition adds an ISO-timestamped event (phase durations are derivable); CI closes the timer on merge. For manual merges, `@⊕workspace-ci reconcile` backfills from GitHub's `merged_at`.
 
 ## Concurrency Rules
 

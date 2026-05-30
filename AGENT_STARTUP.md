@@ -20,3 +20,16 @@ Workspace-level tools shared by all sigil projects (∞Life, ❤Music, ⟨ψ⟩Q
 | **Engine** | SQLCipher |
 | **Env key** | `WORKSPACE_DB_KEY` |
 | **Tables** | `perf_runs`, `perf_steps`, `vulnerabilities`, `proof_artifacts` |
+
+## Dependency Sync
+
+Sync external skill repositories to latest main and refresh local copies:
+
+```powershell
+cd F:\superpowers
+git fetch origin
+git merge --ff-only origin/main
+Copy-Item "F:\superpowers\skills\test-driven-development\SKILL.md" `
+    "f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md" -Force
+Write-Host "superpowers synced + TDD skill refreshed"
+```
