@@ -37,8 +37,26 @@ One code-changing session = one branch = one worktree = one draft PR. Branch cre
 2. Single-project (non-FR) → that project's orchestrator
 3. Multi-project identical boilerplate → `⊕workspace-doer`
 4. Multi-project project-specific → fan out to project orchestrators
-5. After implementation → `⊕workspace-qa` (functional QA gate) → `⊕workspace-reviewer` (auto-review battery)
+5. After implementation → route QA + Review to the **complexity-appropriate tier** (see Tier Routing below) → `⊕workspace-ci`
 6. Git ops / branch / PR / merge / conflict → `⊕workspace-ci`
+
+## Tier Routing (COMPLEXITY_ASSESSED)
+
+Before delegating QA and Review, assess the FR's complexity tier using `complexity_router.py`:
+
+```powershell
+$env:PYTHONUTF8="1"
+$tier = (C:\G\python.exe f:\⊕Workspace\src\utils\complexity_router.py --files <N> [--new-schema] [--new-agents] --projects <N> [--security]).Trim()
+# $tier = light | standard | heavy
+```
+
+| Tier | QA agent | Review agent |
+|------|----------|-------------|
+| light | `⊕workspace-qa-light` | `⊕workspace-reviewer-light` |
+| standard | `⊕workspace-qa` | `⊕workspace-reviewer` |
+| heavy | `⊕workspace-qa-heavy` | `⊕workspace-reviewer-heavy` |
+
+Record the assessed tier: `fr_cli.py record-event <FR-ID> ⊕workspace-overseer "note" "COMPLEXITY_ASSESSED: <tier>"`
 
 ## Feature Request Flow
 Full state machine in `feature-request-flow.instructions.md`. Tyler's gateways: **open FR → approve scope → approve merge → post-soak signoff**. Agent-to-agent between gates.

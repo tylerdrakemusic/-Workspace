@@ -54,7 +54,8 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 | `OPEN` | Tyler filed a request; not yet scoped | ⊕workspace-intake |
 | `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
 | `BRANCHED` | Isolated branch + worktree + draft PR created per repo. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
-| `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — load `f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md` before writing any production code (see TDD Gate section below). | project orchestrator |
+| `COMPLEXITY_ASSESSED` | Orchestrator runs `complexity_router.py` against the FR diff to select **light / standard / heavy** tier. Routes TDD, QA, and Review to the matching tiered agent. This is a protocol step, not a DB state — it happens within `IN_PROGRESS` setup. See **Complexity Assessment & Tier Routing** section below. | project orchestrator |
+| `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — after COMPLEXITY_ASSESSED, delegate to `⊕workspace-tdd-<tier>` (not the TDD skill directly). The tiered TDD agent loads and follows the full TDD skill protocol. | project orchestrator |
 | `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
 | `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
 | `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Playwright validation is handled by `⊕workspace-qa` during `FUNCTIONAL_QA` — the orchestrator does NOT run it separately before this state. | project orchestrator |
@@ -277,3 +278,53 @@ F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 - ALWAYS record events with `fr_cli.py record-event` after acting on an FR.
 - ALWAYS check active FRs with `fr_cli.py list --active` before starting work.
 - ALWAYS include the FR ID in commit messages and PR titles.
+
+## Complexity Assessment & Tier Routing (COMPLEXITY_ASSESSED)
+
+Before starting implementation (`IN_PROGRESS`), the project orchestrator **must** assess the FR's complexity and select the appropriate model tier. This ensures TDD, QA, and Review agents run on models matched to the task's difficulty and cost budget.
+
+### Tier Selection
+
+```powershell
+$env:PYTHONUTF8="1"
+# Assess tier based on FR signals
+C:\G\python.exe f:\⊕Workspace\src\utils\complexity_router.py `
+    --files <N> `
+    [--new-schema] [--new-agents] `
+    --projects <N> `
+    [--security]
+# Outputs: light | standard | heavy
+```
+
+### Complexity Signals
+
+| Signal | Light | Standard | Heavy |
+|--------|-------|----------|-------|
+| Files changed | ≤2 | 3–10 | **10+** |
+| New DB schema (tables/columns) | no | no | **yes** |
+| New agents or integrations | no | no | **yes** |
+| Projects in scope | 1 | ≤2 | **3+** |
+| Security-sensitive (health/auth/secrets) | no | no | **yes** |
+
+Any single heavy signal → **heavy**. All light conditions met → **light**. Otherwise → **standard**.
+
+### Model Matrix
+
+| Tier | Cost | TDD agent (Anthropic) | QA agent (OpenAI) | Review agent (Google) |
+|------|------|-----------------------|-------------------|-----------------------|
+| **light** | 0.33x | `⊕workspace-tdd-light` (Claude Haiku 4.5) | `⊕workspace-qa-light` (GPT-5.4 mini) | `⊕workspace-reviewer-light` (Gemini 3 Flash) |
+| **standard** | 1x | `⊕workspace-tdd-standard` (Claude Sonnet 4.6) | `⊕workspace-qa` (GPT-5.3-Codex) | `⊕workspace-reviewer` (Gemini 2.5 Pro) |
+| **heavy** | premium | `⊕workspace-tdd-heavy` (Claude Opus 4.8) | `⊕workspace-qa-heavy` (GPT-5.5) | `⊕workspace-reviewer-heavy` (Gemini 3.1 Pro) |
+
+### Routing Protocol
+
+1. Orchestrator assesses tier using `complexity_router.py` after `BRANCHED`
+2. Records tier as an FR event:
+   ```powershell
+   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> <orchestrator> "note" "COMPLEXITY_ASSESSED: <tier> — <rationale>"
+   ```
+3. Delegates TDD to `⊕workspace-tdd-<tier>` subagent
+4. On `FUNCTIONAL_QA`, overseer routes to `⊕workspace-qa[-light|-heavy]`
+5. On `REVIEW_REQUESTED`, overseer routes to `⊕workspace-reviewer[-light|-heavy]`
+
+**Default tier when signals are unavailable:** `standard`.
