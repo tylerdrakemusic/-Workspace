@@ -617,13 +617,7 @@ def _content_frames(manifest: dict) -> str:
       if serve_url:
         panes.append(
           f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<div class="live-dash">'
-          f'<div class="live-header">'
-          f'<span class="live-dot"></span> Live Dashboard'
-          f'<a href="{_esc(serve_url)}" target="_blank" class="open-btn">Open in Browser ↗</a></div>'
-          f'<iframe src="{_esc(serve_url)}" frameborder="0" class="live-frame" '
-          f'onerror="this.style.display=\'none\'"></iframe>'
-          f'</div></div>'
+          f'<iframe src="{_esc(serve_url)}" frameborder="0" allow="autoplay"></iframe></div>'
         )
       else:
         out = dash.get("output_abs", "")

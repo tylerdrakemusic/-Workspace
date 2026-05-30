@@ -135,3 +135,13 @@ def test_guitar_trainer_flask_app_also_has_no_live_header() -> None:
     html = dp._content_frames(_make_flask_manifest("guitar-trainer", "http://localhost:5055"))
     assert "live-header" not in html, "guitar-trainer pane should never emit live-header"
     assert "open-btn" not in html, "guitar-trainer pane should never emit open-btn"
+
+
+def test_living_html_serve_url_has_no_live_header() -> None:
+    """BFX-20260530-remove-live-dash-chrome: living_html with serve_url must not emit live-header chrome."""
+    manifest = _make_manifest(serve_url="http://localhost:8300/")
+    html = dp._content_frames(manifest)
+    assert "live-header" not in html, "living_html pane still emits live-header chrome"
+    assert "open-btn" not in html, "living_html pane still emits open-btn"
+    assert "live-dash" not in html, "living_html pane still emits live-dash wrapper"
+    assert 'src="http://localhost:8300/"' in html, "serve_url must still be used as iframe src"
