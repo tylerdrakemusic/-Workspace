@@ -25,7 +25,7 @@ WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Known project roots — discovered dynamically via AGENT_STARTUP.md presence
 REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
-VALID_TYPES = {"static_html", "flask_app", "console", "inline_html"}
+VALID_TYPES = {"static_html", "living_html", "flask_app", "console", "inline_html"}
 
 
 def discover_projects() -> list[Path]:
