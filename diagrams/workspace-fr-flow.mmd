@@ -2,7 +2,8 @@
 stateDiagram-v2
     [*] --> TRIAGED: Tyler opens FR
     TRIAGED --> BRANCHED: Tyler approves scope
-    BRANCHED --> IN_PROGRESS: implementation begins
+    BRANCHED --> COMPLEXITY_ASSESSED: complexity_router.py
+    COMPLEXITY_ASSESSED --> IN_PROGRESS: tier selected · TDD/QA/Review routed
     IN_PROGRESS --> FUNCTIONAL_QA: implementation done
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED

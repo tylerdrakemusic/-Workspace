@@ -18,6 +18,19 @@ graph LR
         BenchAnalyzer["⊕ bench-analyzer"]
         Protector["⊕ protector"]
         QA["⊕ qa"]
+        subgraph TDD_TIER["TDD Tier Variants"]
+            TDDLight["⊕ tdd-light"]
+            TDDStd["⊕ tdd-standard"]
+            TDDHeavy["⊕ tdd-heavy"]
+        end
+        subgraph QA_TIER["QA Tier Variants"]
+            QALight["⊕ qa-light"]
+            QAHeavy["⊕ qa-heavy"]
+        end
+        subgraph REV_TIER["Reviewer Tier Variants"]
+            ReviewerLight["⊕ reviewer-light"]
+            ReviewerHeavy["⊕ reviewer-heavy"]
+        end
     end
 
     subgraph LIFE["∞Life"]
@@ -65,7 +78,10 @@ graph LR
     Overseer --> Hygiene & ArchRev & ArchBeaut & GenQEE & Discovery
     Overseer --> Dashboards & BenchAnalyzer & Protector & QA
     Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch
+    Overseer --> TDDLight & TDDStd & TDDHeavy
     ArchRev -.->|STALE → delegates| ArchBeaut
+    QA --> QALight & QAHeavy
+    Reviewer --> ReviewerLight & ReviewerHeavy
 
     %% ── Project routing ──
     LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
@@ -86,6 +102,7 @@ graph LR
     %% ── Class assignments ──
     class Overseer,Intake,CI,Reviewer,Doer,Security,Hygiene,ArchRev,ArchBeaut ws
     class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
+    class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
     class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
     class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig music
     class QuantumOrch,QuantumResearch quantum
