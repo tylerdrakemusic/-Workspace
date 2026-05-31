@@ -8,6 +8,7 @@ Groups:
 """
 from __future__ import annotations
 
+import os
 import time
 import sys
 from pathlib import Path
@@ -111,6 +112,10 @@ class TestAlignment:
             assert "has_tests" in entry,  f"entry missing 'has_tests': {entry}"
             assert "test_count" in entry, f"entry missing 'test_count': {entry}"
 
+    @pytest.mark.skipif(
+        os.getenv("CI") == "true",
+        reason="requires local multi-root workspace filesystem (all 5 projects checked out)",
+    )
     def test_all_projects_have_tests(self):
         report = wd.alignment_report()
         assert len(report) == 5
