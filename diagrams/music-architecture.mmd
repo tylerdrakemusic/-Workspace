@@ -4,6 +4,7 @@ graph TB
         Suno[Suno releases]
         Audius[Audius catalog]
         SheetMusic[Sheet Music PDFs]
+        GDriveSheetMusic[(Google Drive PDFs · DOCX · Docs)]
         Setlists[Band setlists]
         AudioFiles["MP3 / FLAC / M4A<br/>G:\\Muzic · f:\\Masters · f:\\recordings"]
     end
@@ -46,6 +47,10 @@ graph TB
     VeraPortrait[src/utils/<br/>vera_portrait.py]
     VeraPortrait -->|daily portrait PNG| ImagesOut
     VeraPortrait -.->|lazy import HFSpaces+Pollinations| WSIntegrations
+    IngestScript["ingest_sheet_music_gdrive.py ⚑spike"]
+    GDriveSheetMusic -->|pull PDFs· DOCX· Docs| IngestScript
+    IngestScript -.->|gdrive client SA auth| WSIntegrations
+    IngestScript -->|upsert rows| DB
     class Inputs,Reports io
     class Catalog,Trainer core
     class Services,Tools svc
@@ -53,6 +58,8 @@ graph TB
     class ImagesOut out
     class WSIntegrations ws
     class ArchiveNote deprecated
+    class GDriveSheetMusic ext
+    class IngestScript svc
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

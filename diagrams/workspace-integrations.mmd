@@ -16,6 +16,7 @@ graph LR
     Ollama[(Ollama)]:::ext
     PollinationsExt[(Pollinations.AI<br/>image.pollinations.ai)]:::ext
     HFSpacesExt[(HF Spaces<br/>FLUX.1-schnell<br/>Gradio REST)]:::ext
+    GDrive[(Google Drive)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -38,6 +39,7 @@ graph LR
     Workspace -->|health ping| ElevenLabs
     Workspace -->|health ping| Ollama
     Workspace -->|health ping| HF
+    Workspace -->|gdrive client SA auth| GDrive
     %% ∞Life → external + DB
     Life -->|nutrition sync| MFP
     Life -->|workout sync| TZ
@@ -46,6 +48,7 @@ graph LR
     %% ❤Music → external + DB
     Music -->|catalog import| Suno
     Music --> MusicDB
+    Music -.->|sheet_music ingest| GDrive
     %% ⟨ψ⟩Quantum → external + DB
     Quantum -->|qiskit jobs| IBMQ
     Quantum -->|model hub| HF

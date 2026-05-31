@@ -103,3 +103,16 @@ erDiagram
         real provenance_score_duplicate
         text detected_at
     }
+    SHEET_MUSIC {
+        integer id PK
+        text source
+        text gdrive_file_id UK
+        text local_path
+        text name
+        text file_ext
+        text category
+        text artist
+        text title
+        text key_descriptor
+        text ingested_at
+    }
