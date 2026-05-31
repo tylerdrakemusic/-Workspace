@@ -162,6 +162,18 @@ def _run_migrations(conn) -> None:
     if row and "CHECK(proof_type IN" in (row[0] or ""):
         _rebuild_proof_artifacts(conn)
 
+    # Add 'stale' status to vulnerabilities if missing
+    vuln_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='vulnerabilities'"
+    ).fetchone()
+    if vuln_row and "'stale'" not in (vuln_row[0] or ""):
+        import sys as _sys
+        _tools_dir = str(Path(__file__).resolve().parent.parent / "tools")
+        if _tools_dir not in _sys.path:
+            _sys.path.insert(0, _tools_dir)
+        from migrate_add_stale_status import migrate as _migrate_stale
+        _migrate_stale(conn)
+
 
 def init_db() -> None:
     """Create all tables if they do not exist."""
@@ -203,7 +215,7 @@ def init_db() -> None:
         line_number    INTEGER,
         description    TEXT NOT NULL,
         owasp_id       TEXT,
-        status         TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','remediated','accepted','false_positive')),
+        status         TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','remediated','accepted','false_positive','stale')),
         override_note  TEXT,
         remediated_at  TEXT,
         created_at     TEXT NOT NULL DEFAULT (datetime('now'))
