@@ -32,6 +32,11 @@ erDiagram
         integer priority "default 5"
         text autonomy_level "full|supervised|human"
         text fr_id "nullable — links to active FR"
+        text rationale "nullable — LLM-generated rationale"
+        text implementation_hints "nullable — LLM-generated hints"
+        text context_snapshot "nullable — project context at discovery"
+        text estimated_effort "nullable — XS|S|M|L|XL"
+        text dependencies "nullable — todo IDs / FR IDs (comma-sep)"
     }
     PRIORITY_HISTORY {
         integer id PK
