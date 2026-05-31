@@ -305,6 +305,7 @@ def _summary_cards(vulns: list[dict]) -> str:
     open_v = sum(1 for v in vulns if v["status"] == "open")
     remediated = sum(1 for v in vulns if v["status"] == "remediated")
     accepted = sum(1 for v in vulns if v["status"] in ("accepted", "false_positive"))
+    stale = sum(1 for v in vulns if v["status"] == "stale")
     crit = sum(1 for v in vulns if v["severity"] == "critical" and v["status"] == "open")
     high = sum(1 for v in vulns if v["severity"] == "high" and v["status"] == "open")
     medium = sum(1 for v in vulns if v["severity"] == "medium" and v["status"] == "open")
@@ -318,6 +319,7 @@ def _summary_cards(vulns: list[dict]) -> str:
         <div class="stat open-stat">{open_v}</div><div class="label">Open</div>
         <div class="stat remediated-stat">{remediated}</div><div class="label">Remediated</div>
         <div class="stat accepted-stat">{accepted}</div><div class="label">Accepted / FP</div>
+        <div class="stat" style="color:var(--muted-badge)">{stale}</div><div class="label">Stale</div>
       </div>
       <div class="card severity-card">
         <h3>Open by Severity</h3>
@@ -676,6 +678,7 @@ def render_html(vulns: list[dict]) -> str:
       <button class="filter-btn" data-filter="remediated" onclick="filterStatus('remediated', this)">Remediated</button>
       <button class="filter-btn" data-filter="accepted" onclick="filterStatus('accepted', this)">Accepted</button>
       <button class="filter-btn" data-filter="false_positive" onclick="filterStatus('false_positive', this)">False Positive</button>
+      <button class="filter-btn" data-filter="stale" onclick="filterStatus('stale', this)">Stale</button>
     </div>
     <h2 style="color: var(--security-accent); border-bottom: 2px solid var(--security-accent); padding-bottom: 0.5rem; margin: 2rem 0 1rem;">Vulnerability Inventory</h2>
     {table}

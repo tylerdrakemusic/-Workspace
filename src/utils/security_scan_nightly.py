@@ -212,6 +212,37 @@ def write_scan_run_log(
     conn.commit()
 
 
+# ── Stale sweep integration ────────────────────────────────────────────────────
+
+def _run_stale_sweep(conn: Any, *, dry_run: bool = False) -> dict:
+    """Run the stale/dedup sweep as a post-step after nightly scan.
+
+    Imports stale_vuln_dedup lazily from tools/ so no circular deps.
+    """
+    _tools_dir = SCRIPT_DIR.parent.parent / "tools"
+    if str(_tools_dir) not in sys.path:
+        sys.path.insert(0, str(_tools_dir))
+    try:
+        from stale_vuln_dedup import run_sweep  # noqa: PLC0415
+        result = run_sweep(conn, dry_run=dry_run)
+        _log(
+            f"  Stale sweep: {result['total_stale']} stale "
+            f"({result['stale_file_gone']} file-gone, "
+            f"{result['stale_line_shifted']} line-shifted, "
+            f"{result['stale_pattern_gone']} pattern-gone), "
+            f"{result['deduped']} deduped."
+        )
+        return result
+    except Exception as exc:
+        _log(f"  [stale sweep] ERROR: {exc}")
+        return {
+            "total_stale": 0, "deduped": 0,
+            "stale_file_gone": 0, "stale_line_shifted": 0,
+            "stale_pattern_gone": 0,
+            "stale_candidates": [], "dedup_candidates": [],
+        }
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> int:
@@ -266,6 +297,7 @@ def main() -> int:
             "error" if error_parts else "ok",
             "; ".join(error_parts) or None,
         )
+        _run_stale_sweep(conn, dry_run=False)
         conn.close()
     except Exception as exc:
         _log(f"  [DB] ERROR writing results: {exc}")

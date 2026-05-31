@@ -291,8 +291,11 @@ def test_main_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     verify_conn.row_factory = _sqlite3.Row
 
     log_rows = verify_conn.execute("SELECT * FROM scan_run_log").fetchall()
-    assert len(log_rows) == 1
-    assert log_rows[0]["new_vulns_count"] >= 1
+    # main() writes 1 nightly-scan row + 1 stale-sweep row = 2 total
+    assert len(log_rows) >= 1
+    # The first row is the nightly scan
+    nightly_row = next(r for r in log_rows if "stale_sweep" not in (r["error_detail"] or ""))
+    assert nightly_row["new_vulns_count"] >= 1
 
     vuln_rows = verify_conn.execute("SELECT * FROM vulnerabilities").fetchall()
     assert len(vuln_rows) >= 1
