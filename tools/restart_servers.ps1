@@ -12,9 +12,9 @@ foreach ($s in $config.servers) {
 
     $conn = Get-NetTCPConnection -LocalPort $s.port -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
-        $pid = $conn | Select-Object -ExpandProperty OwningProcess -First 1
-        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-        Write-Host "  [$($s.name)] :$($s.port) — killed PID $pid"
+        $targetPid = $conn | Select-Object -ExpandProperty OwningProcess -First 1
+        Stop-Process -Id $targetPid -Force -ErrorAction SilentlyContinue
+        Write-Host "  [$($s.name)] :$($s.port) — killed PID $targetPid"
     } else {
         Write-Host "  [$($s.name)] :$($s.port) — not running, skipping"
     }
