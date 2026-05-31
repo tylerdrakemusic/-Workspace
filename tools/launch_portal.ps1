@@ -85,6 +85,10 @@ if (-not $NoOpen) {
     Write-Host ("  [Executive] :8200 " + $(if ($execReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($execReady) { "Green" } else { "Yellow" })
     $musicReady = Wait-PortListening -Port 5050 -TimeoutSeconds 8
     Write-Host ("  [Music Dashboard] :5050 " + $(if ($musicReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($musicReady) { "Green" } else { "Yellow" })
+    # Guitar Trainer (:5055) — Flask cold-start fix (BFX-20260530-guitar-trainer-cold-start).
+    # Browser does not retry connection-refused; must be up before portal opens.
+    $gtReady = Wait-PortListening -Port 5055 -TimeoutSeconds 10
+    Write-Host ("  [Guitar Trainer] :5055 " + $(if ($gtReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($gtReady) { "Green" } else { "Yellow" })
     if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
     Write-Host "  Portal opened." -ForegroundColor Green
 } else {
