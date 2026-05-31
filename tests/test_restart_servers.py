@@ -7,6 +7,7 @@ Tests verify:
 3. WorkspacePortal/open_portal.ps1 calls restart_servers.ps1 before launch_portal.ps1
 """
 import re
+import pytest
 from pathlib import Path
 
 WORKTREE = Path(__file__).parent.parent
@@ -83,11 +84,12 @@ class TestRestartServersContent:
         )
 
 
+@pytest.mark.skipif(
+    not DESKTOP_OPEN_PORTAL.exists(),
+    reason="Desktop open_portal.ps1 is machine-specific — skip when not on Tyler's workstation",
+)
 class TestOpenPortalUpdated:
     def setup_method(self):
-        assert DESKTOP_OPEN_PORTAL.exists(), (
-            f"open_portal.ps1 not found at {DESKTOP_OPEN_PORTAL}"
-        )
         self.content = DESKTOP_OPEN_PORTAL.read_text(encoding="utf-8")
 
     def test_calls_restart_servers_first(self):
