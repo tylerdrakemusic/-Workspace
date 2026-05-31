@@ -296,7 +296,7 @@ def _severity_badge(sev: str) -> str:
 
 
 def _status_badge(status: str) -> str:
-    cls = {"open": "fail", "remediated": "success", "accepted": "accepted", "false_positive": "muted"}
+    cls = {"open": "fail", "remediated": "success", "accepted": "accepted", "false_positive": "muted", "stale": "muted"}
     return f'<span class="badge {cls.get(status, "fail")}">{_esc(status.upper().replace("_", " "))}</span>'
 
 
