@@ -31,7 +31,10 @@ PROJECT_SIGILS: dict[str, str] = {
     "⊕Workspace":    "⊕",
 }
 
-AGENTS_DIR = Path(r"f:\⊕Workspace\.github\agents")
+# Resolve relative to this module: src/utils/ → src/ → repo-root/ → .github/agents/
+# This makes CI (ubuntu) and local (Windows) both work correctly.
+_WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent
+AGENTS_DIR = _WORKSPACE_ROOT / ".github" / "agents"
 
 # ---------------------------------------------------------------------------
 # Internal routing helpers
