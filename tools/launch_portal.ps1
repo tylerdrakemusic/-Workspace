@@ -77,24 +77,18 @@ foreach ($s in $servers) { Start-Server $s }
 
 $portalUri = "file:///" + ($PORTAL -replace "\\", "/")
 if (-not $NoOpen) {
-    # Wait for Executive service (:8200) before opening portal — prevents iframe
-    # connection-refused on first load (host-mismatch / sequencing fix FR-20260512).
-    $execPort = 8200
-    $execReady = Wait-PortListening -Port $execPort -TimeoutSeconds 15
-    if ($execReady) {
-        Write-Host "  [Executive] :$execPort ready." -ForegroundColor Green
-    } else {
-        Write-Host "  [Executive] :$execPort not ready after 15s — portal will show retry prompt." -ForegroundColor Yellow
-    }
-    # Wait for Guitar Trainer (:5055) — Flask takes ~1-3s to bind on cold start.
-    # Without this wait the iframe renders 'connection refused' before the server
-    # is up and the browser does not retry (BFX-20260530-guitar-trainer-cold-start).
+    # Wait only for the two iframes visible on first load — browsers don't retry
+    # connection-refused, so these must be up before the portal renders.
+    # All other services (5055/7474/8300/etc.) are in non-default tabs and can
+    # warm up in the background while the user reads the portal.
+    $execReady = Wait-PortListening -Port 8200 -TimeoutSeconds 10
+    Write-Host ("  [Executive] :8200 " + $(if ($execReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($execReady) { "Green" } else { "Yellow" })
+    $musicReady = Wait-PortListening -Port 5050 -TimeoutSeconds 8
+    Write-Host ("  [Music Dashboard] :5050 " + $(if ($musicReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($musicReady) { "Green" } else { "Yellow" })
+    # Guitar Trainer (:5055) — Flask cold-start fix (BFX-20260530-guitar-trainer-cold-start).
+    # Browser does not retry connection-refused; must be up before portal opens.
     $gtReady = Wait-PortListening -Port 5055 -TimeoutSeconds 10
-    if ($gtReady) {
-        Write-Host "  [Guitar Trainer] :5055 ready." -ForegroundColor Green
-    } else {
-        Write-Host "  [Guitar Trainer] :5055 not ready after 10s — iframe will show retry prompt." -ForegroundColor Yellow
-    }
+    Write-Host ("  [Guitar Trainer] :5055 " + $(if ($gtReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($gtReady) { "Green" } else { "Yellow" })
     if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
     Write-Host "  Portal opened." -ForegroundColor Green
 } else {
