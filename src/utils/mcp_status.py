@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,7 +41,7 @@ def _probe_command_server(name: str, server: dict) -> dict:
     if command in ("npx", "npx.cmd"):
         # Quick check: can we resolve npx?
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603,B607
                 ["npx", "--version"],
                 capture_output=True,
                 text=True,
@@ -62,7 +62,7 @@ def _probe_command_server(name: str, server: dict) -> dict:
         if script and not Path(script).exists():
             return {"status": "error", "detail": f"script not found: {script}"}
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603,B607
                 [command, "--version"],
                 capture_output=True,
                 text=True,

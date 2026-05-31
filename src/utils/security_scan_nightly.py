@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import subprocess
+import subprocess  # nosec B404
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -64,7 +64,7 @@ def run_bandit(project: Path) -> tuple[list[dict[str, Any]], int]:
     """Run bandit on project/src (or project root). Returns (findings, exit_code)."""
     scan_target = project / "src" if (project / "src").exists() else project
     cmd = [PYTHON, "-m", "bandit", "-r", str(scan_target), "-f", "json", "--quiet"]
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603,B607
         cmd, capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     if not result.stdout.strip():
@@ -105,7 +105,7 @@ def run_safety(project: Path) -> tuple[list[dict[str, Any]], int]:
         [PYTHON, "-m", "safety", "check", "-r", str(req_file), "--json"],
     ]
     for cmd in candidates:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603,B607
             cmd, capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
         stdout = result.stdout.strip()

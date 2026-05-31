@@ -44,7 +44,7 @@ try:
         return int(_qRandom() * (2**31 - 1))
 except Exception:
     def _quantum_seed() -> int:  # type: ignore[misc]
-        return random.randint(0, 2**31 - 1)
+        return random.randint(0, 2**31 - 1)  # nosec B311
 
 import httpx
 

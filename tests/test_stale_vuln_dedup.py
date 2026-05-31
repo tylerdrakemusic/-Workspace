@@ -93,7 +93,7 @@ def test_line_in_range_missing_file() -> None:
 
 def test_pattern_at_line_detects_eval(tmp_path: Path) -> None:
     f = tmp_path / "code.py"
-    f.write_text("x = 1\nresult = eval(user_input)\ny = 2\n", encoding="utf-8")
+    f.write_text("x = 1\nresult = eval(user_input)\ny = 2\n", encoding="utf-8")  # nosec B307
     assert check_pattern_at_line(str(f), 2) is True
 
 
@@ -132,7 +132,7 @@ def test_classify_pattern_gone(tmp_path: Path) -> None:
 
 def test_classify_still_valid(tmp_path: Path) -> None:
     f = tmp_path / "dangerous.py"
-    f.write_text("x = 1\nresult = eval(cmd)\n", encoding="utf-8")
+    f.write_text("x = 1\nresult = eval(cmd)\n", encoding="utf-8")  # nosec B307
     vuln = {"file_path": str(f), "line_number": 2}
     assert classify_vuln(vuln) is None
 
@@ -289,7 +289,7 @@ def test_apply_dedup_keeps_oldest(db_conn) -> None:
 def test_apply_valid_vuln_stays_open(db_conn, tmp_path: Path) -> None:
     """A still-valid finding must not be marked stale."""
     f = tmp_path / "danger.py"
-    f.write_text("x = 1\nresult = eval(user_cmd)\n", encoding="utf-8")
+    f.write_text("x = 1\nresult = eval(user_cmd)\n", encoding="utf-8")  # nosec B307
     vid = _insert_vuln(db_conn, file_path=str(f), line_number=2, description="eval")
     run_sweep(db_conn, dry_run=False)
     row = db_conn.execute(
@@ -557,7 +557,7 @@ def test_dashboard_html_has_stale_count_in_summary() -> None:
     vulns = [
         {"vuln_id": "s1", "scan_date": "2026-01-01", "category": "OWASP",
          "severity": "medium", "file_path": "f.py", "line_number": 1,
-         "description": "shell=True", "owasp_id": "A03", "status": "stale",
+         "description": "shell=True", "owasp_id": "A03", "status": "stale",  # nosec B602
          "override_note": None, "remediated_at": None, "created_at": "2026-01-01"},
         {"vuln_id": "s2", "scan_date": "2026-01-01", "category": "OWASP",
          "severity": "low", "file_path": "g.py", "line_number": 2,
