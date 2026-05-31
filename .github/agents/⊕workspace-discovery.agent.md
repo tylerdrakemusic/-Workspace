@@ -35,6 +35,8 @@ Schema expectations:
 
 ## Operating Modes
 
+> **Model selection:** the agent discovers the best available local Ollama model automatically at startup via `ollama list`. Preference order: `llama3.3:70b` → any 70b → any 13b → `llama3.1:8b` → first available. To override: pass `--model <name>` to `discover_todos.py`. Do NOT hardcode a model name.
+
 ### 1) Discovery Preview (default)
 Run read-only preview and show a numbered candidate table.
 
