@@ -1,0 +1,184 @@
+{
+  "generated_at": "2026-05-31T06:02:56.287135+00:00",
+  "dashboards": [
+    {
+      "id": "biomarker-html",
+      "title": "Biomarker Dashboard",
+      "project": "\u221eLife",
+      "type": "living_html",
+      "status": "fresh",
+      "age_secs": 3757.9220402240753,
+      "age_label": "1.0h",
+      "cli": "C:\\G\\python.exe src/analysis/biomarker_dashboard_html.py --no-open"
+    },
+    {
+      "id": "band-mgmt",
+      "title": "Band Management",
+      "project": "\u2764Music",
+      "type": "living_html",
+      "status": "stale",
+      "age_secs": 53735.922040224075,
+      "age_label": "14.9h",
+      "cli": "C:\\G\\python.exe src/band_mgmt/generate_band_mgmt_panel.py --serve"
+    },
+    {
+      "id": "quantum-benchmarks",
+      "title": "Quantum Benchmarks",
+      "project": "\u27e8\u03c8\u27e9Quantum",
+      "type": "static_html",
+      "status": "stale",
+      "age_secs": 1264945.922040224,
+      "age_label": "14.6d",
+      "cli": "C:\\G\\python.exe tools/bench_dashboard.py --no-open"
+    },
+    {
+      "id": "agent-ops",
+      "title": "Agent Ops Monitor",
+      "project": "\u2295Workspace",
+      "type": "living_html",
+      "status": "stale",
+      "age_secs": 53733.922040224075,
+      "age_label": "14.9h",
+      "cli": "C:\\G\\python.exe tools/agent_ops_monitor.py --fix --no-open"
+    },
+    {
+      "id": "copilot-usage",
+      "title": "Copilot Usage Monitor",
+      "project": "\u2295Workspace",
+      "type": "static_html",
+      "status": "stale",
+      "age_secs": 53709.922040224075,
+      "age_label": "14.9h",
+      "cli": "C:\\G\\python.exe tools/copilot_usage_monitor.py --no-open"
+    },
+    {
+      "id": "security-vulns",
+      "title": "Security Vulnerabilities",
+      "project": "\u2295Workspace",
+      "type": "static_html",
+      "status": "warn",
+      "age_secs": 8217.922040224075,
+      "age_label": "2.3h",
+      "cli": "C:\\G\\python.exe tools/security_dashboard.py --scan --no-open"
+    },
+    {
+      "id": "diagrams",
+      "title": "Architecture Diagrams",
+      "project": "\u2295Workspace",
+      "type": "static_html",
+      "status": "fresh",
+      "age_secs": 5273.922040224075,
+      "age_label": "1.5h",
+      "cli": "C:\\G\\python.exe tools/diagrams_dashboard.py --no-open"
+    }
+  ],
+  "stuck_frs": [
+    {
+      "id": "FR-20260522-sync-watchdog",
+      "title": "Nightly Sync Failure Watchdog",
+      "state": "SOAKING",
+      "hours_stuck": 194.9,
+      "updated_at": "2026-05-23T03:11:41Z"
+    },
+    {
+      "id": "FR-20260523-nightly-security-scheduler",
+      "title": "Nightly Security Scan Scheduler \u2014 bandit + safety across all 5 project roots; diff new findings against vulnerabilities DB; auto-write new vulns",
+      "state": "SOAKING",
+      "hours_stuck": 170.5,
+      "updated_at": "2026-05-24T03:30:00Z"
+    },
+    {
+      "id": "FR-20260524-quantum-cache-depletion-guard",
+      "title": "Quantum Cache Depletion Guard -- daily monitor ty_string_cache.txt bit count; if <25% capacity trigger QuantumCacheFill_Monthly early; log event to DB",
+      "state": "SOAKING",
+      "hours_stuck": 154.5,
+      "updated_at": "2026-05-24T19:35:48Z"
+    },
+    {
+      "id": "FR-20260524-todo-priority-auto-rescorer",
+      "title": "TODO Priority Auto-Rescorer - weekly pipeline for manifest_todos.db",
+      "state": "SOAKING",
+      "hours_stuck": 154.4,
+      "updated_at": "2026-05-24T19:39:24Z"
+    },
+    {
+      "id": "FR-20260524-mfp-nutrition-sync-repair",
+      "title": "Fix MFP Nutrition Trend Live Sync (Auth Repair + Daily Auto-Refresh)",
+      "state": "SOAKING",
+      "hours_stuck": 148.7,
+      "updated_at": "2026-05-25T01:19:08Z"
+    },
+    {
+      "id": "FR-20260524-practice-log-broken",
+      "title": "Practice log in Exercises tab stuck at 4/21/2026 - split-brain log + reverse template bug",
+      "state": "SOAKING",
+      "hours_stuck": 146.0,
+      "updated_at": "2026-05-25T04:03:57Z"
+    },
+    {
+      "id": "FR-20260524-proof-artifact-staleness-verifier",
+      "title": "Proof Artifact Staleness Verifier",
+      "state": "SOAKING",
+      "hours_stuck": 145.8,
+      "updated_at": "2026-05-25T04:12:04Z"
+    },
+    {
+      "id": "FR-20260524-tts-batch-queue",
+      "title": "ElevenLabs TTS Batch Queue Processor",
+      "state": "SOAKING",
+      "hours_stuck": 145.4,
+      "updated_at": "2026-05-25T04:38:34Z"
+    },
+    {
+      "id": "FR-20260525-perf-regression-alerter",
+      "title": "Agent Perf Regression Alerter \u2014 weekly query perf_runs; rolling 30d median per agent; flag 2x regression; write proof_artifacts alert rows",
+      "state": "SOAKING",
+      "hours_stuck": 135.6,
+      "updated_at": "2026-05-25T14:25:12Z"
+    },
+    {
+      "id": "FR-20260525-practice-streak-badge",
+      "title": "Practice Streak and Consistency Badge - Guitar Trainer",
+      "state": "SOAKING",
+      "hours_stuck": 134.5,
+      "updated_at": "2026-05-25T15:31:39Z"
+    },
+    {
+      "id": "FR-20260526-bpm-key-auto-tagger",
+      "title": "BPM / Key Auto-Tagger from Audio File Metadata SCAN",
+      "state": "CHANGES_REQUESTED",
+      "hours_stuck": 97.2,
+      "updated_at": "2026-05-27T04:52:25Z"
+    },
+    {
+      "id": "FR-20260527-audio-refresh-interrupt",
+      "title": "Fix 60s meta refresh interrupting executive audio brief playback",
+      "state": "SOAKING",
+      "hours_stuck": 77.7,
+      "updated_at": "2026-05-28T00:19:47Z"
+    },
+    {
+      "id": "FR-20260527-execution-policy-auditor",
+      "title": "execution_policy.json Compliance Auditor",
+      "state": "SOAKING",
+      "hours_stuck": 77.2,
+      "updated_at": "2026-05-28T00:51:38Z"
+    },
+    {
+      "id": "FR-20260528-ui-baseline-capture",
+      "title": "UI/UX Baseline Capture During FR/BFX Scope Clarification",
+      "state": "SOAKING",
+      "hours_stuck": 50.7,
+      "updated_at": "2026-05-29T03:20:40Z"
+    }
+  ],
+  "summary": {
+    "total_dashboards": 7,
+    "fresh": 2,
+    "warn": 1,
+    "stale": 4,
+    "missing": 0,
+    "stuck_frs": 14,
+    "all_clean": false
+  }
+}
