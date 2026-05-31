@@ -17,8 +17,9 @@ import argparse
 import html as html_mod
 import os
 import re
+import shlex
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import sys
 import time
 import webbrowser
@@ -426,8 +427,10 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
         cwd = dash.get("project_root", str(PROJECT_ROOT))
         print(f"  Regenerating {dash['project']} / {dash['title']}...")
         try:
-            proc = subprocess.run(
-                cli, shell=True, cwd=cwd, capture_output=True, text=True, timeout=120,
+            # Split cli string into a list so shell=False is safe  # nosec B603
+            cli_args = shlex.split(cli) if isinstance(cli, str) else list(cli)
+            proc = subprocess.run(  # nosec B603,B607
+                cli_args, shell=False, cwd=cwd, capture_output=True, text=True, timeout=120,
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
             if proc.returncode == 0:

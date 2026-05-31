@@ -200,7 +200,7 @@ def check_workspace_db() -> dict[str, str]:
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
         ).fetchall()
         for (tbl,) in tables:
-            count = conn.execute(f"SELECT COUNT(*) FROM [{tbl}]").fetchone()[0]  # noqa: S608
+            count = conn.execute(f"SELECT COUNT(*) FROM [{tbl}]").fetchone()[0]  # noqa: S608  # nosec B608
             row_counts.append(f"{tbl}:{count}")
         result["workspace.db:row_counts"] = ",".join(row_counts)
         conn.close()

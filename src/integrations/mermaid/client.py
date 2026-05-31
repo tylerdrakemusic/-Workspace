@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import base64
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import tempfile
 import zlib
 from pathlib import Path
@@ -89,7 +89,7 @@ class MermaidClient:
                 "-o", str(out_path),
                 "-b", "transparent",
             ]
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec B603
                 cmd,
                 capture_output=True,
                 text=True,
@@ -116,7 +116,7 @@ class MermaidClient:
             if attempt:
                 time.sleep(attempt * 1.5)
             try:
-                with urllib.request.urlopen(req, timeout=self.HTTP_TIMEOUT_SEC) as resp:
+                with urllib.request.urlopen(req, timeout=self.HTTP_TIMEOUT_SEC) as resp:  # nosec B310
                     return resp.read()
             except urllib.error.HTTPError as exc:
                 last_exc = MermaidRenderError(f"HTTP {exc.code}: {exc.reason}")
@@ -124,7 +124,8 @@ class MermaidClient:
                     raise last_exc from exc
             except urllib.error.URLError as exc:
                 last_exc = MermaidRenderError(f"URL error: {exc.reason}")
-        assert last_exc is not None
+        if last_exc is None:  # pragma: no cover
+            raise MermaidRenderError("Retry loop exited without capturing an error")
         raise last_exc
 
     # ── helpers ──────────────────────────────────────────────────

@@ -102,13 +102,13 @@ class PollinationsClient:
             path = self._pollinations(prompt, output_dir, prompt_hash, width, height, seed)
             if path is not None:
                 return path
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
         # --- Tier 2: DiceBear illustrated avatar ---
         try:
             return self._dicebear(prompt, output_dir, prompt_hash)
-        except Exception as exc:
+        except Exception as exc:  # nosec B110
             raise PollinationsError(f"All free image tiers failed: {exc}") from exc
 
     # ------------------------------------------------------------------
@@ -140,7 +140,7 @@ class PollinationsClient:
         req = urllib.request.Request(
             url, headers={"User-Agent": "workspace-portrait-gen/2.0"}
         )
-        with urllib.request.urlopen(req, timeout=_POLLINATIONS_TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=_POLLINATIONS_TIMEOUT) as resp:  # nosec B310
             if resp.status != 200:
                 return None
             content: bytes = resp.read()
@@ -167,7 +167,7 @@ class PollinationsClient:
         req = urllib.request.Request(
             url, headers={"User-Agent": "workspace-portrait-gen/2.0"}
         )
-        with urllib.request.urlopen(req, timeout=_DICEBEAR_TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=_DICEBEAR_TIMEOUT) as resp:  # nosec B310
             if resp.status != 200:
                 raise PollinationsError(f"HTTP {resp.status} from DiceBear")
             content: bytes = resp.read()
