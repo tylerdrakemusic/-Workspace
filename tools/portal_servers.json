@@ -56,6 +56,13 @@
                         "project":  "⊕Workspace",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_fr_board.ps1",
                         "enabled":  true
+                    },
+                    {
+                        "name":  "Biomarker Dashboard",
+                        "port":  8300,
+                        "project":  "∞Life",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_biomarker.ps1",
+                        "enabled":  true
                     }
                 ]
 }
