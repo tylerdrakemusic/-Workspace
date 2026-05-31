@@ -21,10 +21,11 @@ _ON_CI = bool(os.getenv("CI"))
 # Paths
 # ---------------------------------------------------------------------------
 
-WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
-PORTAL_HTML    = WORKSPACE_ROOT / "reports" / "portal.html"
-OPEN_PORTAL_PS = WORKSPACE_ROOT / "open_portal.ps1"
-SERVERS_JSON   = WORKSPACE_ROOT / "tools" / "portal_servers.json"
+WORKSPACE_ROOT    = Path(__file__).resolve().parents[1]
+PORTAL_HTML       = WORKSPACE_ROOT / "reports" / "portal.html"
+OPEN_PORTAL_PS    = WORKSPACE_ROOT / "open_portal.ps1"
+LAUNCH_PORTAL_PS  = WORKSPACE_ROOT / "tools" / "launch_portal.ps1"
+SERVERS_JSON      = WORKSPACE_ROOT / "tools" / "portal_servers.json"
 
 
 # ---------------------------------------------------------------------------
@@ -41,6 +42,11 @@ def portal_text() -> str:
 @pytest.fixture(scope="module")
 def open_portal_text() -> str:
     return OPEN_PORTAL_PS.read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="module")
+def launch_portal_text() -> str:
+    return LAUNCH_PORTAL_PS.read_text(encoding="utf-8")
 
 
 @pytest.fixture(scope="module")
@@ -220,4 +226,32 @@ def test_servers_array_contains_guitar_trainer_port(portal_text: str) -> None:
     )
     assert "Guitar Trainer" in servers_literal, (
         "SERVERS array does not include 'Guitar Trainer' label"
+    )
+
+
+# ---------------------------------------------------------------------------
+# launch_portal.ps1 — Guitar Trainer readiness wait (BFX-20260530-guitar-trainer-cold-start)
+# ---------------------------------------------------------------------------
+
+def test_launch_portal_waits_for_guitar_trainer_before_open(launch_portal_text: str) -> None:
+    """launch_portal.ps1 must call Wait-PortListening for port 5055 before opening the browser.
+
+    Without this wait, a cold-start desktop launch opens the portal while Flask is
+    still binding, causing the Guitar Trainer iframe to show 'connection refused'.
+    """
+    # Locate the Wait-PortListening call for port 5055
+    wait_pattern = re.compile(r"Wait-PortListening\s+-Port\s+5055", re.IGNORECASE)
+    wait_match = wait_pattern.search(launch_portal_text)
+    assert wait_match, (
+        "launch_portal.ps1 is missing a Wait-PortListening call for port 5055. "
+        "Add it before the portal-open command to prevent cold-start race condition."
+    )
+
+    # The wait must appear BEFORE the portal is opened in the browser
+    open_idx = launch_portal_text.find("$BRAVE $portalUri")
+    if open_idx == -1:
+        open_idx = launch_portal_text.find("Start-Process $portalUri")
+    assert open_idx != -1, "Portal open command not found in launch_portal.ps1"
+    assert wait_match.start() < open_idx, (
+        "Wait-PortListening for port 5055 must appear before the portal-open command"
     )

@@ -86,6 +86,15 @@ if (-not $NoOpen) {
     } else {
         Write-Host "  [Executive] :$execPort not ready after 15s — portal will show retry prompt." -ForegroundColor Yellow
     }
+    # Wait for Guitar Trainer (:5055) — Flask takes ~1-3s to bind on cold start.
+    # Without this wait the iframe renders 'connection refused' before the server
+    # is up and the browser does not retry (BFX-20260530-guitar-trainer-cold-start).
+    $gtReady = Wait-PortListening -Port 5055 -TimeoutSeconds 10
+    if ($gtReady) {
+        Write-Host "  [Guitar Trainer] :5055 ready." -ForegroundColor Green
+    } else {
+        Write-Host "  [Guitar Trainer] :5055 not ready after 10s — iframe will show retry prompt." -ForegroundColor Yellow
+    }
     if (Test-Path $BRAVE) { & $BRAVE $portalUri } else { Start-Process $portalUri }
     Write-Host "  Portal opened." -ForegroundColor Green
 } else {
