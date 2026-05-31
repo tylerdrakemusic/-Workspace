@@ -76,6 +76,9 @@ class GDriveClient:
         credentials = _load_credentials()
         self._service = build_service(credentials)
         self._folder_cache: dict[str, str] = {}  # file_id → resolved path
+        sa_email = os.environ.get("GDRIVE_SA_EMAIL", "")
+        if sa_email:
+            print(f"[GDriveClient] service account: {sa_email}")
 
     # ------------------------------------------------------------------
     # Public API
