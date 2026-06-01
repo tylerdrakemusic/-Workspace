@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -146,3 +146,57 @@ def test_living_html_serve_url_has_no_live_header() -> None:
     assert "open-btn" not in html, "living_html pane still emits open-btn"
     assert "live-dash" not in html, "living_html pane still emits live-dash wrapper"
     assert 'src="http://localhost:8300/"' in html, "serve_url must still be used as iframe src"
+
+
+# ---------------------------------------------------------------------------
+# BFX-20260531-dashboard-portal-shell-test
+# regenerate_dashboards must call subprocess.run with shell=False
+# ---------------------------------------------------------------------------
+
+def _make_regen_manifest() -> dict:
+    return {
+        "dashboards": [
+            {
+                "id": "test-dash",
+                "title": "Test Dashboard",
+                "type": "static_html",
+                "cli": "C:\\\\G\\\\python.exe tools/gen_test.py",
+                "project": "workspace",
+                "project_root": str(WORKSPACE_ROOT),
+                "output": "reports/test.html",
+                "output_abs": str(WORKSPACE_ROOT / "reports" / "test.html"),
+                "category": "test",
+                "icon": "\U0001f9ea",
+                "priority": 99,
+            }
+        ],
+        "projects": [],
+    }
+
+
+def test_regenerate_dashboards_uses_shell_false() -> None:
+    """BFX-20260531-dashboard-portal-shell-test: subprocess.run must be called with shell=False."""
+    manifest = _make_regen_manifest()
+    mock_result = MagicMock(returncode=0, stdout="ok", stderr="")
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        dp.regenerate_dashboards(manifest)
+        mock_run.assert_called_once()
+        _, kwargs = mock_run.call_args
+        assert kwargs.get("shell") is False, (
+            "regenerate_dashboards must pass shell=False to subprocess.run — "
+            "regression guard for BFX-20260531-dashboard-portal-shell-test"
+        )
+
+
+def test_regenerate_dashboards_passes_list_not_string_to_subprocess() -> None:
+    """BFX-20260531-dashboard-portal-shell-test: cli string must be split into a list (shlex) before subprocess."""
+    manifest = _make_regen_manifest()
+    mock_result = MagicMock(returncode=0, stdout="ok", stderr="")
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        dp.regenerate_dashboards(manifest)
+        args, _ = mock_run.call_args
+        cmd = args[0]
+        assert isinstance(cmd, list), (
+            f"subprocess.run must receive a list, not {type(cmd).__name__!r} — "
+            "shell=True bypass guard"
+        )
