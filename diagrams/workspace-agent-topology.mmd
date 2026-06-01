@@ -64,6 +64,7 @@ graph LR
         HygBase["hygiene-base"]
         OrcClean["orchestrator-cleanup"]
         DbKeys["db-api-keys"]
+        PlayPreflight["playwright-server-preflight"]
     end
 
     subgraph PINSTR["Project Base Instructions"]
@@ -93,6 +94,7 @@ graph LR
     HygBase -.-> Hygiene
     OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch
     DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch
+    PlayPreflight -.-> QA & QALight & QAHeavy
 
     LifeBase -.-> LifeOrch & LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
     HealthEval -.-> LifeRisk
@@ -107,7 +109,7 @@ graph LR
     class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig music
     class QuantumOrch,QuantumResearch quantum
     class ManifestOrch manifest
-    class FRFlow,HygBase,OrcClean,DbKeys,LifeBase,HealthEval,MusicBase,QuantumBase instr
+    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
     class Tyler tyler
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
