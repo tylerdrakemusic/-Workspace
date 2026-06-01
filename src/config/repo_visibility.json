@@ -88,6 +88,29 @@
         "block: src/data/workspace.db (SQLCipher key DB)",
         "warn: any cross-project data artifacts from ∞Life scope"
       ]
+    },
+    "Capital": {
+      "sigil": "Σ",
+      "project": "ΣCapital",
+      "github_slug": "tylerdrakemusic/Capital",
+      "visibility": "private",
+      "sensitivity": "high",
+      "contains_health_data": false,
+      "contains_pii": true,
+      "public_safe": false,
+      "push_guards": [
+        "block: *.db",
+        "block: data/holdings/",
+        "block: data/statements/",
+        "block: data/picks/",
+        "block: logs/",
+        "block: tmp/",
+        "block: *.env, .env, secrets.*, *.key, *.pem",
+        "block: files containing account numbers (regex: \\b\\d{8,}\\b in brokerage/bank context)",
+        "warn: any reference to Schwab employer-restricted symbols",
+        "require: financial-data gitignore audit before every commit"
+      ],
+      "notes": "Free-tier private repo — server-side branch protection unavailable. Local .git/hooks/pre-push blocks direct pushes to main (mirrors ∞Life PROTECTION_HOOK pattern)."
     }
   }
 }

@@ -14,6 +14,7 @@
 | ⟨ψ⟩Quantum | `tylerdrakemusic/Quantum` | PUBLIC | 🟢 Low | Quantum computing research, algorithm implementations, IBM Quantum experiments. No personal data. Public benefits open-source community and portfolio. **Keep public.** |
 | 👁AI-Manifest | `tylerdrakemusic/AI-Manifest` | PUBLIC | 🟡 Low-Medium | AI integration platform, ElevenLabs TTS, executive brief tools. Watch for: API key exposure in output files, TTS audio containing personal content, voice synthesis configs. Audit `output/` before any push. **Keep public with guards.** |
 | ⊕Workspace | `tylerdrakemusic/-Workspace` | PUBLIC | 🟡 Medium | Workspace config, agent definitions, CI scripts, FR registry. Contains agent architecture (acceptable), perf/proof DBs (acceptable — no PII). **Keep public — transparency in tooling is fine.** |
+| ΣCapital | `tylerdrakemusic/Capital` | **PRIVATE** | 🟠 High | Personal finance + investment tracking. Contains brokerage account numbers, holdings, statements, watchlists/picks, and Schwab employment exposure. Paper-DB simulation only (no live trading). **Must remain private.** |
 
 ---
 
@@ -30,10 +31,13 @@
 
 ## Mandatory Pre-Push Rules (All Repos)
 
-### PRIVATE repos (∞Life)
+### PRIVATE repos (∞Life, ΣCapital)
 - NEVER push real health data files without verifying they're in `.gitignore`
-- NEVER push `*.db` files (health DB)
-- NEVER push `data/bloodwork/`, `data/medical_records/`, `data/genomics/`
+- NEVER push `*.db` files (health DB / financial DB)
+- NEVER push `data/bloodwork/`, `data/medical_records/`, `data/genomics/` (∞Life)
+- NEVER push `data/holdings/`, `data/statements/`, `data/picks/` or files containing account numbers (ΣCapital)
+- ΣCapital: never reference Schwab employer-restricted symbols in committed code
+- Both: local `.git/hooks/pre-push` blocks direct pushes to `main` (free-tier private repos lack server-side branch protection)
 - History purge required for `infinitelife.db` in commit `cea7510` (see remediation section)
 
 ### PUBLIC repos (❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace)

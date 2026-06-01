@@ -1,12 +1,13 @@
 # Workspace Instructions
 
 ## Project Context
-This workspace contains Tyler James Drake's personal software projects with five projects:
+This workspace contains Tyler James Drake's personal software projects with six projects:
 - **∞Life/** — Longevity optimization system (primary)
 - **❤Music/** — Music production, catalog management, and performance tracking
 - **⟨ψ⟩Quantum/** — Quantum computing toolkit (IBM Quantum, algorithms, quantum RNG)
 - **👁AI-Manifest/** — AI integration platform (ElevenLabs voice synthesis, AI services)
 - **⊕Workspace/** — Shared workspace utilities (perf tracking, discovery, alignment)
+- **ΣCapital/** — Personal finance + investment tracking (PRIVATE, financial PII)
 
 ## Code Standards
 - Python 3.11+ with type hints on all function signatures
@@ -23,6 +24,7 @@ This workspace contains Tyler James Drake's personal software projects with five
 | ⟨ψ⟩Quantum | `f:\⟨ψ⟩Quantum\` | Profile: `PROJECT_PROFILE.json` |
 | 👁AI-Manifest | `f:\👁AI-Manifest\` | Profile: `PROJECT_PROFILE.json` |
 | ⊕Workspace | `f:\⊕Workspace\` | Perf CLI: `src/utils/perf_cli.py`; DB: `src/data/workspace.db` (key: `WORKSPACE_DB_KEY`) |
+| ΣCapital | `f:\ΣCapital\` | **PRIVATE** — financial PII; vision: `PROJECT_NORTH_STAR.md` |
 
 All projects: bootstrap at `<root>/AGENT_STARTUP.md`.
 
@@ -39,6 +41,7 @@ Each scope has a Unicode sigil prefix for visual identification and agent discov
 | **⟨ψ⟩** | ⟨ψ⟩Quantum project | `⟨ψ⟩quantum-*.agent.md` |
 | **👁** | 👁AI-Manifest project | `👁ai-manifest-*.agent.md` |
 | **⊕** | Workspace-wide (cross-project) | `⊕workspace-*.agent.md` |
+| **Σ** | ΣCapital project | `Σcapital-*.agent.md` |
 
 **Encoding reference:** see `.github/instructions/sigil-encoding.instructions.md`
 for UTF-8/16 byte sequences, mojibake recovery, Windows/macOS/Linux console
@@ -70,9 +73,11 @@ Human-readable policy: `f:\⊕Workspace\REPO_VISIBILITY.md`
 | ❤Music (`tylerdrakemusic/Music`) | 🌐 Public | 🟡 Low-Medium |
 | ⟨ψ⟩Quantum (`tylerdrakemusic/Quantum`) | 🌐 Public | 🟢 Low |
 | 👁AI-Manifest (`tylerdrakemusic/AI-Manifest`) | 🌐 Public | 🟡 Low-Medium |
-| ⊕Workspace (`tylerdrakemusic/-Workspace`) | 🌐 Public | 🟡 Medium |
+| ΣCapital (`tylerdrakemusic/Capital`) | **🔒 PRIVATE** | 🟠 High — financial PII, Schwab employment exposure |
 
 **Agent rules for git/push operations:**
+- ∞Life (PRIVATE): always run health-data gitignore audit before any commit. Block: `*.db`, `data/bloodwork/`, `data/medical_records/`, `data/genomics/`, `logs/`, `tmp/`, `SUBJECT_PROFILE.json`
+- ΣCapital (PRIVATE): always run financial-data gitignore audit before any commit. Block: `*.db`, `data/holdings/`, `data/statements/`, `data/picks/`, `logs/`, `tmp/`, files containing account numbers. Local `.git/hooks/pre-push` blocks direct pushes to `main`.
 - ∞Life (PRIVATE): always run health-data gitignore audit before any commit. Block: `*.db`, `data/bloodwork/`, `data/medical_records/`, `data/genomics/`, `logs/`, `tmp/`, `SUBJECT_PROFILE.json`
 - PUBLIC repos: block secrets/credentials in ALL files. For 👁AI-Manifest: audit `output/` before push. Never reference ∞Life health paths in public repos.
 - Before any cross-project push: check `repo_visibility.json` for the target repo's push guards.
