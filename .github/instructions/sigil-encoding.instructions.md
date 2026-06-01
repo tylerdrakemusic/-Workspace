@@ -293,7 +293,7 @@ len(sigil_string) returns unexpected number
 
 ## Quick Verification
 
-If you suspect an encoding issue, run this from PowerShell or bash ΣCapital to
+If you suspect an encoding issue, run this from PowerShell or bash to
 verify the console pipeline:
 
 ```powershell
