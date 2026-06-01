@@ -5,6 +5,7 @@ user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\.github\instructions\playwright-server-preflight.instructions.md -->
 
 # ⊕ Workspace QA Agent — Heavy Tier
 

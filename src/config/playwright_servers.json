@@ -1,0 +1,84 @@
+{
+  "_comment": "Per-project server manifest for the Playwright pre-flight protocol. Agents MUST read this before any Playwright invocation. See .github/instructions/playwright-server-preflight.instructions.md.",
+  "projects": {
+    "∞Life": {
+      "server_label": "Biomarker Dashboard",
+      "type": "flask",
+      "cmd": [
+        "C:\\G\\python.exe",
+        "src/dashboard/gen_biomarker_dashboard.py",
+        "--serve",
+        "--port",
+        "8300"
+      ],
+      "env": {
+        "PYTHONUTF8": "1",
+        "PYTHONPATH": "f:\\∞Life\\src"
+      },
+      "cwd": "f:\\∞Life",
+      "port": 8300,
+      "health_url": "http://127.0.0.1:8300/",
+      "health_timeout_s": 10
+    },
+    "❤Music": {
+      "server_label": "Guitar Trainer",
+      "type": "flask",
+      "cmd": [
+        "C:\\G\\python.exe",
+        "src/training/musician_training_ui.py",
+        "--port",
+        "5055"
+      ],
+      "env": {
+        "PYTHONUTF8": "1",
+        "PYTHONPATH": "f:\\❤Music\\src"
+      },
+      "cwd": "f:\\❤Music",
+      "port": 5055,
+      "health_url": "http://127.0.0.1:5055/",
+      "health_timeout_s": 10
+    },
+    "⟨ψ⟩Quantum": {
+      "server_label": "Benchmark Dashboard",
+      "type": "static_file",
+      "file_path": "f:\\⟨ψ⟩Quantum\\reports\\benchmark_dashboard.html",
+      "notes": "Static HTML — served via file:// in Playwright. No server to kill or start. Regenerate before testing with: C:\\G\\python.exe tools/gen_benchmark_dashboard.py"
+    },
+    "👁AI-Manifest": {
+      "server_label": "Executive Brief Portal",
+      "type": "flask",
+      "cmd": [
+        "C:\\G\\python.exe",
+        "tools/executive_audio_brief.py",
+        "--serve",
+        "--port",
+        "8200"
+      ],
+      "env": {
+        "PYTHONUTF8": "1"
+      },
+      "cwd": "f:\\👁AI-Manifest",
+      "port": 8200,
+      "health_url": "http://127.0.0.1:8200/",
+      "health_timeout_s": 10
+    },
+    "⊕Workspace": {
+      "server_label": "FR Board",
+      "type": "flask",
+      "cmd": [
+        "C:\\G\\python.exe",
+        "src/utils/fr_server.py",
+        "--port",
+        "7474"
+      ],
+      "env": {
+        "PYTHONUTF8": "1"
+      },
+      "cwd": "f:\\⊕Workspace",
+      "port": 7474,
+      "health_url": "http://127.0.0.1:7474/",
+      "health_timeout_s": 10,
+      "notes": "Portal HTML is a static file://. FR Board is the live server used for interactive Playwright tests."
+    }
+  }
+}

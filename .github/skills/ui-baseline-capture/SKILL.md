@@ -55,6 +55,12 @@ in the scope card. Do NOT block. Proceed to Phase A interview questions.
 
 ### 1.3 Capture Procedure
 
+**Server pre-flight (for live server URLs only):** before navigating to any `http://localhost:*`
+target, execute the Playwright server pre-flight protocol defined in
+`f:\.github\instructions\playwright-server-preflight.instructions.md`. Read
+`playwright_servers.json` for the project, kill the port, start fresh, and health-check until
+HTTP 200. For `file://` targets (`static_file` type in the manifest), skip pre-flight entirely.
+
 For each surface in the target list:
 
 1. **Serve local files if needed** — if the target is a local `.html` path (not

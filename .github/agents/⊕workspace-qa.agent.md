@@ -5,6 +5,7 @@ user-invocable: false
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\.github\instructions\playwright-server-preflight.instructions.md -->
 
 # ⊕ Workspace QA Agent
 
@@ -69,9 +70,26 @@ grep_search → verify expected strings / structure
 ```
 
 ### Playwright (HTML in diff only)
+
+> **PRE-FLIGHT REQUIRED** — Before running any Playwright command, execute the full
+> server restart protocol from `playwright-server-preflight.instructions.md`:
+> read `playwright_servers.json` for the project, kill the port, start fresh, health-check
+> until HTTP 200 (hard-fail on timeout), then run Playwright inside a `try/finally` that
+> kills the server on exit. Skipping this step causes stale-server failures.
+
 ```powershell
-$env:PYTHONUTF8="1"; $env:PLAYWRIGHT_ENABLED="1"
-C:\G\python.exe -m pytest <project>/tests/ -m playwright -v 2>&1
+# 1. Pre-flight (see playwright-server-preflight.instructions.md for full steps)
+$manifest = Get-Content -LiteralPath "f:\⊕Workspace\src\config\playwright_servers.json" -Raw | ConvertFrom-Json
+$config   = $manifest.projects."<ProjectName>"
+# ... kill port, start server, health-check loop, store $serverPid ...
+
+# 2. Playwright (inside try/finally)
+try {
+    $env:PYTHONUTF8 = "1"; $env:PLAYWRIGHT_ENABLED = "1"
+    C:\G\python.exe -m pytest <project>/tests/ -m playwright -v 2>&1
+} finally {
+    Stop-Process -Id $serverPid -Force -ErrorAction SilentlyContinue
+}
 ```
 
 ### Recording each result
