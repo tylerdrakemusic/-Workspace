@@ -63,6 +63,13 @@
                         "project":  "∞Life",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_biomarker.ps1",
                         "enabled":  true
+                    },
+                    {
+                        "name":  "Quantum Benchmark",
+                        "port":  8210,
+                        "project":  "⟨ψ⟩Quantum",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_quantum_benchmark.ps1",
+                        "enabled":  true
                     }
                 ]
 }
