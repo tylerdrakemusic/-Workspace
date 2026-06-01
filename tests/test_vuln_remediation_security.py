@@ -11,10 +11,22 @@ Verifies genuine code-level remediations:
 """
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
-# ── helpers ──────────────────────────────────────────────────────────────────
+import pytest
+
+# ── path helpers ──────────────────────────────────────────────────────────────
+
+_WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
+_MUSIC_ROOT = _WORKSPACE_ROOT.parent / "\u2764Music"
+
+_requires_music = pytest.mark.skipif(
+    not (_MUSIC_ROOT / "src").exists() or bool(os.environ.get("CI")),
+    reason="❤Music project not checked out in this environment",
+)
+
 
 def _read(path: str | Path) -> str:
     return Path(path).read_text(encoding="utf-8")
@@ -24,7 +36,7 @@ def _read(path: str | Path) -> str:
 
 def test_dashboard_portal_no_shell_true() -> None:
     """_regen_dashboards must not pass shell=True to subprocess.run."""
-    src = _read(r"f:\⊕Workspace\tools\dashboard_portal.py")
+    src = _read(_WORKSPACE_ROOT / "tools" / "dashboard_portal.py")
     assert "shell=True" not in src, (
         "dashboard_portal.py still passes shell=True to subprocess.run — use a list + shell=False"
     )
@@ -32,7 +44,7 @@ def test_dashboard_portal_no_shell_true() -> None:
 
 def test_dashboard_portal_imports_shlex() -> None:
     """dashboard_portal must import shlex to split CLI strings safely."""
-    src = _read(r"f:\⊕Workspace\tools\dashboard_portal.py")
+    src = _read(_WORKSPACE_ROOT / "tools" / "dashboard_portal.py")
     assert "import shlex" in src, (
         "dashboard_portal.py must import shlex to split the cli string into a list"
     )
@@ -40,9 +52,10 @@ def test_dashboard_portal_imports_shlex() -> None:
 
 # ── sig_analyzer: MD5 usedforsecurity=False on ALL paths ─────────────────────
 
+@_requires_music
 def test_sig_analyzer_no_bare_md5_call() -> None:
     """Every hashlib.md5 / hashlib.new('md5'...) call must pass usedforsecurity=False."""
-    src = _read(r"f:\❤Music\src\analysis\sig_analyzer.py")
+    src = _read(_MUSIC_ROOT / "src" / "analysis" / "sig_analyzer.py")
     # Bare hashlib.new("md5", data) without usedforsecurity keyword
     bare_md5_pattern = re.compile(
         r'hashlib\.new\("md5",\s*\w+\s*\)(?!\s*#\s*nosec)',
@@ -55,9 +68,10 @@ def test_sig_analyzer_no_bare_md5_call() -> None:
 
 # ── scale_tts: SHA1 usedforsecurity=False ────────────────────────────────────
 
+@_requires_music
 def test_scale_tts_sha1_usedforsecurity_false() -> None:
     """scale_tts SHA1 cache-key hash must pass usedforsecurity=False."""
-    src = _read(r"f:\❤Music\src\training\scale_tts.py")
+    src = _read(_MUSIC_ROOT / "src" / "training" / "scale_tts.py")
     # Every hashlib.sha1(...) call must include the keyword
     sha1_calls = re.findall(r"hashlib\.sha1\([^)]+\)", src)
     for call in sha1_calls:
@@ -70,7 +84,7 @@ def test_scale_tts_sha1_usedforsecurity_false() -> None:
 
 def test_mermaid_client_no_assert_last_exc() -> None:
     """mermaid/client.py must not use assert to validate internal state."""
-    src = _read(r"f:\⊕Workspace\src\integrations\mermaid\client.py")
+    src = _read(_WORKSPACE_ROOT / "src" / "integrations" / "mermaid" / "client.py")
     assert "assert last_exc is not None" not in src, (
         "mermaid/client.py uses 'assert last_exc is not None' — "
         "replace with an explicit 'if last_exc is None: raise ...' guard."
@@ -79,7 +93,7 @@ def test_mermaid_client_no_assert_last_exc() -> None:
 
 def test_mermaid_client_raises_on_none_last_exc() -> None:
     """After fix: an explicit raise guard must exist near the retry loop exit."""
-    src = _read(r"f:\⊕Workspace\src\integrations\mermaid\client.py")
+    src = _read(_WORKSPACE_ROOT / "src" / "integrations" / "mermaid" / "client.py")
     # Should have an if-check + raise near last_exc
     assert "if last_exc is None" in src, (
         "mermaid/client.py missing 'if last_exc is None: raise ...' guard."
@@ -88,9 +102,10 @@ def test_mermaid_client_raises_on_none_last_exc() -> None:
 
 # ── studio_panel: UPDATE field names come from an allowlist ──────────────────
 
+@_requires_music
 def test_studio_panel_update_allowlist() -> None:
     """studio_panel update_equipment must validate field names against an allowlist."""
-    src = _read(r"f:\❤Music\src\studio\studio_panel.py")
+    src = _read(_MUSIC_ROOT / "src" / "studio" / "studio_panel.py")
     # The loop should iterate over a fixed tuple/set of allowed columns
     # Presence of the five known columns inside the loop is sufficient signal
     for col in ("studio_name", "category", "label", "spec_json", "status"):
