@@ -25,6 +25,7 @@ console codepage. Fix the assumption, not the data.
 | ⟨ψ⟩Quantum | `⟨` `ψ` `⟩` | MATH L-ANGLE · GREEK PSI · MATH R-ANGLE | U+27E8 U+03C8 U+27E9 | `E2 9F A8` + `CF 88` + `E2 9F A9` | `27E8` `03C8` `27E9` | `\u27e8\u03c8\u27e9` | `\u27e8\u03c8\u27e9` | `&#10216;&psi;&#10217;` |
 | 👁AI-Manifest | `👁` | EYE | U+1F441 | `F0 9F 91 81` | surrogate pair `D83D DC41` | `\U0001F441` | `\ud83d\udc41` | `&#128065;` |
 | ⊕Workspace | `⊕` | CIRCLED PLUS | U+2295 | `E2 8A 95` | `2295` | `\u2295` | `\u2295` | `&oplus;` |
+| ΣCapital | `Σ` | GREEK CAPITAL LETTER SIGMA | U+03A3 | `CE A3` | `03A3` | `\u03a3` | `\u03a3` | `&Sigma;` |
 
 **Pitfalls worth memorizing:**
 
@@ -55,6 +56,7 @@ latin1), each UTF-8 byte becomes a separate character. Recognize these:
 | `ψ` | `CF 88` | `Ï^` | `Ï^` |
 | `👁` | `F0 9F 91 81` | `ð\x9f\x91\x81` (often `ð` followed by junk) | same |
 | `⊕` | `E2 8A 95` | `â\x8a\x95` | `â^` |
+| `Σ` | `CE A3` | `Î£` | `Î£` |
 
 **Reverse lookup heuristics:**
 
@@ -281,6 +283,11 @@ len(sigil_string) returns unexpected number
   - Some older fonts lack the glyph → renders as `�` or `☐`. Bytes are fine.
 - **⊕ (U+2295)** — safe everywhere. Common in math; won't clash with
   operators in any programming language.
+- **Σ (U+03A3)** — single 2-byte UTF-8 codepoint; safe in path names, JSON,
+  HTML, Python identifiers, and SQLite TEXT. Visually distinct from Latin
+  `E` and Cyrillic `Е` (U+0415); don't confuse the three when typing
+  filenames. PowerShell tab-completion handles Σ correctly on UTF-8
+  consoles (chcp 65001).
 
 ---
 
@@ -295,10 +302,10 @@ python -c "print('∞Life ❤Music ⟨ψ⟩Quantum 👁AI-Manifest ⊕Workspace'
 ```
 ```bash
 # macOS / Linux
-python3 -c "print('∞Life ❤Music ⟨ψ⟩Quantum 👁AI-Manifest ⊕Workspace')"
+python3 -c "print('∞Life ❤Music ⟨ψ⟩Quantum 👁AI-Manifest ⊕Workspace ΣCapital')"
 ```
 
-Expected output: all five sigils render correctly. If anything shows as `?`,
+Expected output: all six sigils render correctly. If anything shows as `?`,
 mojibake, or raises an error, your environment is misconfigured per the
 sections above.
 

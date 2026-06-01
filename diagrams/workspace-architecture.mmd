@@ -20,17 +20,23 @@ graph TB
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
     end
+    subgraph Capital["Σ Capital"]
+        CapitalDB[(sigmacapital.db<br/>SQLCipher)]
+        CapitalApp[Weekend Picks · Signals<br/>Paper-DB Sim]
+    end
     Portal --> Registry
     Registry -.scans.-> Life
     Registry -.scans.-> Music
     Registry -.scans.-> Quantum
     Registry -.scans.-> Manifest
+    Registry -.scans.-> Capital
     Registry -.scans.-> Workspace
     Life --> LifeDB
     Music --> MusicDB
     Quantum --> QDB
+    Capital --> CapitalDB
     class Workspace workspace
-    class Life,Music,Quantum,Manifest project
+    class Life,Music,Quantum,Manifest,Capital project
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

@@ -23,11 +23,13 @@ graph LR
     Music[❤ Music]:::orch
     Quantum[⟨ψ⟩ Quantum]:::orch
     Manifest[👁 AI-Manifest]:::orch
+    Capital[Σ Capital]:::orch
     %% Databases
     WSDB[(workspace.db)]:::db
     LifeDB[(infinitelife.db)]:::db
     MusicDB[(heartmusic.db)]:::db
     QDB[(quantumpsi.db)]:::db
+    CapitalDB[(sigmacapital.db)]:::db
     %% Workspace → external
     Workspace -->|mcp_github| GitHub
     Workspace -->|diagrams render| Mermaid
@@ -69,6 +71,9 @@ graph LR
     Workspace -.->|gen-qee passwords| Music
     Workspace -.->|gen-qee passwords| Quantum
     Workspace -.->|gen-qee passwords| Manifest
+    Workspace -.->|gen-qee passwords| Capital
+    %% ΣCapital → DB (no external integrations yet — paper-DB sim only, no broker APIs by compliance)
+    Capital --> CapitalDB
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
