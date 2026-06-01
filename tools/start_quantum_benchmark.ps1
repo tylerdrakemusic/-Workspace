@@ -25,6 +25,8 @@ if (-not (Test-Path $dbPath)) {
 $serverScript = Join-Path $projectRoot "tools\gen_benchmark_dashboard.py"
 
 # Start the server in a hidden window; port 8210, no auto-open browser tab.
+# Note: serve mode is the default (no --static flag needed).
 Start-Process -FilePath "C:\G\python.exe" `
-    -ArgumentList @($serverScript, "--serve", "--port", "8210", "--no-open") `
+    -ArgumentList @($serverScript, "--port", "8210", "--no-open") `
+    -WorkingDirectory $projectRoot `
     -WindowStyle Hidden
