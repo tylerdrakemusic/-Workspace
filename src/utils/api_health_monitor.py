@@ -47,6 +47,18 @@ _ENDPOINTS: list[dict[str, Any]] = [
         "auth_header": lambda: {"Authorization": f"Bearer {os.environ.get('HF_TOKEN', '')}"},
         "timeout": 8.0,
     },
+    {
+        "name": "perplexity",
+        "label": "Perplexity.ai",
+        "url": "https://api.perplexity.ai/search",
+        "method": "POST",
+        "body": {"query": "ping", "max_results": 1, "max_tokens_per_page": 32},
+        "auth_header": lambda: {
+            "Authorization": f"Bearer {os.environ.get('PERPLEXITY_API_KEY', '')}",
+            "Content-Type": "application/json",
+        },
+        "timeout": 10.0,
+    },
 ]
 
 _RETAIN_ROWS = 30  # max rows per endpoint
@@ -98,9 +110,15 @@ def _prune(conn, endpoint: str) -> None:
 def _ping(ep: dict[str, Any]) -> dict[str, Any]:
     """Ping a single endpoint. Never raises — failed pings return status='down'."""
     headers = ep["auth_header"]()
+    method = ep.get("method", "GET").upper()
     t0 = time.monotonic()
     try:
-        r = httpx.get(ep["url"], headers=headers, timeout=ep["timeout"], follow_redirects=True)
+        if method == "POST":
+            r = httpx.post(
+                ep["url"], headers=headers, json=ep.get("body", {}), timeout=ep["timeout"]
+            )
+        else:
+            r = httpx.get(ep["url"], headers=headers, timeout=ep["timeout"], follow_redirects=True)
         latency_ms = (time.monotonic() - t0) * 1000
         if r.status_code < 400:
             return {"status": "up", "latency_ms": round(latency_ms, 1), "error_msg": None}

@@ -17,6 +17,7 @@ graph LR
     PollinationsExt[(Pollinations.AI<br/>image.pollinations.ai)]:::ext
     HFSpacesExt[(HF Spaces<br/>FLUX.1-schnell<br/>Gradio REST)]:::ext
     GDrive[(Google Drive)]:::ext
+    Perplexity[(Perplexity.ai<br/>Sonar + Reasoning)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -41,6 +42,8 @@ graph LR
     Workspace -->|health ping| ElevenLabs
     Workspace -->|health ping| Ollama
     Workspace -->|health ping| HF
+    Workspace -->|health ping| Perplexity
+    Workspace -->|sonar search + reasoning| Perplexity
     Workspace -->|gdrive client SA auth| GDrive
     %% ∞Life → external + DB
     Life -->|nutrition sync| MFP
@@ -72,8 +75,9 @@ graph LR
     Workspace -.->|gen-qee passwords| Quantum
     Workspace -.->|gen-qee passwords| Manifest
     Workspace -.->|gen-qee passwords| Capital
-    %% ΣCapital → DB (no external integrations yet — paper-DB sim only, no broker APIs by compliance)
+    %% ΣCapital → DB + Perplexity research (FR-20260601-perplexity-integration)
     Capital --> CapitalDB
+    Capital -.->|capital research via ⊕Workspace integration| Perplexity
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest

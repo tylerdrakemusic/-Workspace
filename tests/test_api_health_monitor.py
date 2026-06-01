@@ -97,6 +97,7 @@ def test_ping_never_raises_on_exception():
 
 def test_run_pings_never_raises_even_on_exception(monkeypatch):
     monkeypatch.setattr(ahm.httpx, "get", MagicMock(side_effect=RuntimeError("boom")))
+    monkeypatch.setattr(ahm.httpx, "post", MagicMock(side_effect=RuntimeError("boom")))
     conn = _mem_db()
     results = ahm.run_pings(conn)  # must not raise
     assert isinstance(results, list)
@@ -107,19 +108,21 @@ def test_run_pings_never_raises_even_on_exception(monkeypatch):
 
 def test_run_pings_writes_three_rows():
     conn = _mem_db()
-    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)):
+    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)), \
+         patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         results = ahm.run_pings(conn)
-    assert len(results) == 3
+    assert len(results) == 4  # elevenlabs, ollama, huggingface, perplexity
     db_rows = conn.execute("SELECT COUNT(*) FROM api_health").fetchone()[0]
-    assert db_rows == 3
+    assert db_rows == 4
 
 
 def test_run_pings_endpoint_names():
     conn = _mem_db()
-    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)):
+    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)), \
+         patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         results = ahm.run_pings(conn)
     names = [r["name"] for r in results]
-    assert names == ["elevenlabs", "ollama", "huggingface"]
+    assert names == ["elevenlabs", "ollama", "huggingface", "perplexity"]
 
 
 def test_run_pings_prunes_to_30_rows():
@@ -132,7 +135,8 @@ def test_run_pings_prunes_to_30_rows():
         )
     conn.commit()
     # One more ping should leave exactly 30
-    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)):
+    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)), \
+         patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         ahm.run_pings(conn)
     count = conn.execute(
         "SELECT COUNT(*) FROM api_health WHERE endpoint='elevenlabs'"
@@ -144,16 +148,17 @@ def test_run_pings_prunes_to_30_rows():
 
 def test_get_latest_per_endpoint_canonical_order():
     conn = _mem_db()
-    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)):
+    with patch.object(ahm.httpx, "get", return_value=_mock_response(200)), \
+         patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         ahm.run_pings(conn)
     rows = ahm.get_latest_per_endpoint(conn)
-    assert [r["name"] for r in rows] == ["elevenlabs", "ollama", "huggingface"]
+    assert [r["name"] for r in rows] == ["elevenlabs", "ollama", "huggingface", "perplexity"]
 
 
 def test_get_latest_per_endpoint_unknown_when_empty():
     conn = _mem_db()
     rows = ahm.get_latest_per_endpoint(conn)
-    assert len(rows) == 3
+    assert len(rows) == 4  # elevenlabs, ollama, huggingface, perplexity
     assert all(r["status"] == "unknown" for r in rows)
 
 
