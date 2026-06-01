@@ -59,6 +59,10 @@ graph LR
         ManifestOrch["👁 orchestrator"]
     end
 
+    subgraph CAPITAL["ΣCapital"]
+        CapitalOrch["Σ orchestrator (stub)"]
+    end
+
     subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]
         FRFlow["feature-request-flow"]
         HygBase["hygiene-base"]
@@ -78,7 +82,7 @@ graph LR
     Overseer --> Intake & CI & Reviewer & Doer & Security
     Overseer --> Hygiene & ArchRev & ArchBeaut & GenQEE & Discovery
     Overseer --> Dashboards & BenchAnalyzer & Protector & QA
-    Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch
+    Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch & CapitalOrch
     Overseer --> TDDLight & TDDStd & TDDHeavy
     ArchRev -.->|STALE → delegates| ArchBeaut
     QA --> QALight & QAHeavy
@@ -92,8 +96,8 @@ graph LR
     %% ── Instruction inheritance (dashed) ──
     FRFlow -.-> Intake & Reviewer & ArchRev & ArchBeaut
     HygBase -.-> Hygiene
-    OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch
-    DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch
+    OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch & CapitalOrch
+    DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch & CapitalOrch
     PlayPreflight -.-> QA & QALight & QAHeavy
 
     LifeBase -.-> LifeOrch & LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
@@ -109,6 +113,7 @@ graph LR
     class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig music
     class QuantumOrch,QuantumResearch quantum
     class ManifestOrch manifest
+    class CapitalOrch capital
     class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
     class Tyler tyler
 
@@ -116,6 +121,7 @@ classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
