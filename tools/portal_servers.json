@@ -9,6 +9,13 @@
                         "enabled":  true
                     },
                     {
+                        "name":  "Icecast (TJD Radio)",
+                        "port":  18000,
+                        "project":  "❤Music",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_icecast.ps1",
+                        "enabled":  true
+                    },
+                    {
                         "name":  "TJD Radio",
                         "port":  8100,
                         "project":  "❤Music",
