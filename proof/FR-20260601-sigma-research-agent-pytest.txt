@@ -1,0 +1,17 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.4, pytest-8.2.2
+rootdir: f:\ΣCapital
+configfile: pytest.ini
+collected 10 items / 1 deselected / 9 selected
+
+TestSentimentExtractor::test_bullish_keywords PASSED
+TestSentimentExtractor::test_bearish_keywords PASSED
+TestSentimentExtractor::test_neutral_when_no_signal PASSED
+TestWatchlistUnion::test_deduplicates_overlap PASSED
+TestWatchlistUnion::test_portfolio_only_symbol_included PASSED
+TestBatchRun::test_correct_row_count PASSED
+TestBatchRun::test_row_fields_are_valid PASSED
+TestStalePurge::test_old_signals_deleted PASSED
+TestDryRun::test_dry_run_writes_no_rows PASSED
+
+======================= 9 passed, 1 deselected in 7.57s =======================

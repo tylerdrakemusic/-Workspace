@@ -77,6 +77,13 @@
                         "project":  "⟨ψ⟩Quantum",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_quantum_benchmark.ps1",
                         "enabled":  true
+                    },
+                    {
+                        "name":  "Trade Approval Gate",
+                        "port":  7475,
+                        "project":  "ΣCapital",
+                        "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_trade_gate.ps1",
+                        "enabled":  true
                     }
                 ]
 }
