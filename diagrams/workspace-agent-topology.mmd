@@ -61,6 +61,7 @@ graph LR
 
     subgraph CAPITAL["ΣCapital"]
         CapitalOrch["Σ orchestrator (stub)"]
+        CapitalResearch["Σ research"]
     end
 
     subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]
@@ -92,6 +93,7 @@ graph LR
     LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
     MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig
     QuantumOrch --> QuantumResearch
+    CapitalOrch --> CapitalResearch
 
     %% ── Instruction inheritance (dashed) ──
     FRFlow -.-> Intake & Reviewer & ArchRev & ArchBeaut
@@ -114,6 +116,7 @@ graph LR
     class QuantumOrch,QuantumResearch quantum
     class ManifestOrch manifest
     class CapitalOrch capital
+    class CapitalResearch capital
     class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
     class Tyler tyler
 

@@ -4,6 +4,9 @@ graph TB
     Signals[Public market signals<br/>news · filings · sentiment] --> Ingest[src/ingest/<br/>signal fetchers — future]
     Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
     Research[src/research/<br/>weekend pick generation — future] --> DB
+    Agents[src/agents/<br/>research] --> DB
+    Agents -->|news/sentiment batch| Perplexity[(Perplexity.ai<br/>Sonar)]
+    ResearchAgent["Σcapital-research<br/>.agent.md"] --> Agents
     DB --> Picks[picks table<br/>weekly recommendations]
     DB --> Portfolio[portfolio + trades<br/>paper-DB sim only]
     Picks --> Tyler
@@ -14,6 +17,8 @@ graph TB
     Hook -.blocks.-> DB
     class Signals,Manual io
     class Ingest,Research,Picks,Portfolio,DB core
+    class Agents,ResearchAgent core
+    class Perplexity ext
     class Tyler tyler
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
