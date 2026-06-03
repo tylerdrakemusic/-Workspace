@@ -9,6 +9,8 @@
 
 ---
 
+<!-- NOTE: There are MCP servers likely running; use them. -->
+
 <!-- ⊕workspace-intake instructions:
      1. Read the title (and any notes) above.
      2. Inspect the codebase to infer as many fields as possible: type, affected

@@ -15,7 +15,7 @@ Top-level coordinator for cross-project work. Decompose requirements into per-pr
 
 ## Context Bootstrap
 1. Perf start (chain with first read to share one approval gate)
-2. MCP pre-flight: read `f:\⊕Workspace\src\config\mcp_status.json`; warn on `status: error` servers
+2. MCP pre-flight: read `f:\⊕Workspace\src\config\mcp_status.json`; prefer servers with `status: ok` and avoid redundant shell/script fallback builds. Warn on `status: error` servers.
 3. Read `f:\⊕Workspace\AGENT_STARTUP.md`
 4. Discover agents: `f:\.github\agents\*-orchestrator.agent.md` + `f:\.github\agents\⊕workspace-*.agent.md`
 

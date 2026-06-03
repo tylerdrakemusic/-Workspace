@@ -11,6 +11,7 @@ Run the `⊕workspace-discovery` agent to find epic/story-level opportunities ac
 
 ## Behavior
 
+- There are MCP servers likely running; use them for MCP-related detection and avoid redundant shell/script build probes.
 - At startup, auto-detects the best available local Ollama model via `ollama list`
 - Scans project context and synthesizes opportunities
 - Scores priorities with the existing 1-10 priority system

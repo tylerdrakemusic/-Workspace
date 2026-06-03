@@ -18,8 +18,12 @@ import subprocess  # nosec B404
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from shutil import which
 
-MCP_JSON_PATH = Path(os.environ["APPDATA"]) / "Code" / "User" / "mcp.json"
+APPDATA_PATH = os.environ.get("APPDATA")
+if APPDATA_PATH is None:
+    APPDATA_PATH = Path.home() / ".config" / "Code"
+MCP_JSON_PATH = Path(APPDATA_PATH) / "User" / "mcp.json"
 OUTPUT_PATH = Path(__file__).parent.parent / "config" / "mcp_status.json"
 
 # HTTP servers are always-on (managed by VS Code / GitHub Copilot extension).
@@ -39,10 +43,19 @@ def _probe_command_server(name: str, server: dict) -> dict:
     # For npx-based servers check that npx itself resolves.
     # For python-based servers check that the script file exists.
     if command in ("npx", "npx.cmd"):
-        # Quick check: can we resolve npx?
+        # Quick check: can we resolve npx, or fall back to npm if npx is missing.
+        npx_path = which(command)
+        if npx_path is None:
+            if which("npm") is not None:
+                return {
+                    "status": "ok",
+                    "detail": "npm reachable; npx fallback available",
+                }
+            return {"status": "error", "detail": "npx not found on PATH"}
+
         try:
             result = subprocess.run(  # nosec B603,B607
-                ["npx", "--version"],
+                [npx_path, "--version"],
                 capture_output=True,
                 text=True,
                 encoding="utf-8",

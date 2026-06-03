@@ -10,7 +10,7 @@ Top-level coordinator for the 👁AI-Manifest project. Decompose requests, deleg
 
 **Context bootstrap:** Read `f:\👁AI-Manifest\AGENT_STARTUP.md` and `PROJECT_PROFILE.json` first.
 
-**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. Warn on `status: error` servers. Skip if absent.
+**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. Prefer servers with `status: ok` and avoid redundant shell/script fallback builds; warn on `status: error` servers. Skip if absent.
 
 ## Agent Discovery
 Discover dynamically: scan `f:\.github\agents\👁ai-manifest-*.agent.md`. Read each agent's `description` frontmatter.
