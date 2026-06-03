@@ -5,7 +5,7 @@ Use this prompt as the canonical instruction set for ΣCapital's weekend trade c
 ## Context
 - ΣCapital is currently Phase 1: simulated-only weekend trade research.
 - All candidate generation must be weekend-only and support manual Schwab UI placement.
-- The agent must consult the formal Schwab order semantics file at `f:\ΣCapital\schwabTradeInputs.txt` for permitted order types, unit rules, and timing constraints.
+- The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
 - Real-money mode (`mode: real`) is forbidden until an explicit follow-up FR is approved.
