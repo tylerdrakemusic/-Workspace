@@ -8,7 +8,7 @@ Use this prompt as the canonical instruction set for ΣCapital's weekend trade c
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
-- Before proposing any candidates, kick off a fresh ΣCapital research batch via the Σcapital-research agent to ingest the latest news pricing and sentiment signals.
+- Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals`. If no current batch is available, run the Σcapital-research agent batch and only generate picks after the latest Perplexity signals are ingested.
 - Real-money mode (`mode: real`) is forbidden until an explicit follow-up FR is approved.
 
 ## Candidate Schema
@@ -39,6 +39,7 @@ The agent must generate trade candidates using the following fields:
 5. Do not suggest units in `Dollars` for the weekend flow.
 6. Use `Shares` only, and derive share quantity from available capital and risk sizing.
 7. Ground candidate generation in ΣCapital's local database state:
+   - confirm the latest `signals` batch is present in `sigmacapital.db`; if not, run research before generating picks.
    - consult `sigmacapital.db` `signals` table for recent research signals and batch context,
    - consult `account_state` `buying_power` for available purchasing capacity,
    - consult `portfolio`, `quotes`, `position_valuations`, or `risk_thresholds` as needed to avoid unsupported sizing or duplicate exposures.
