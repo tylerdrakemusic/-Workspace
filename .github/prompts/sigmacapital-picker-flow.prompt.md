@@ -1,10 +1,10 @@
-# ΣCapital Weekend Trade Picker Flow Prompt
+# ΣCapital Off-Market Trade Picker Flow Prompt
 
-Use this prompt as the canonical instruction set for ΣCapital's weekend trade candidate generation and approval workflow.
+Use this prompt as the canonical instruction set for ΣCapital's off-market/evening trade candidate generation and approval workflow.
 
 ## Context
-- ΣCapital is currently Phase 1: simulated-only weekend trade research.
-- All candidate generation must be weekend-only and support manual Schwab UI placement.
+- ΣCapital is currently Phase 1: simulated-only off-market/evening trade research.
+- All candidate generation should prefer off-market/evening placement and support manual Schwab UI placement.
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
@@ -17,7 +17,7 @@ The agent must generate trade candidates using the following fields:
 
 - `symbol`: equity ticker symbol for the proposed trade
 - `action`: `Buy`, `Sell`, or `Sell Short`
-- `unit`: `Shares` only for weekend flow
+- `unit`: `Shares` only for off-market flow
 - `quantity`: positive share amount
 - `order_type`: `Limit`, `Stop`, `Stop Limit`, or `Trailing Stop`
 - `limit_price`: required for `Limit` and `Stop Limit`
@@ -33,11 +33,11 @@ The agent must generate trade candidates using the following fields:
 - `notes`: optional contextual details or risk considerations
 
 ## Workflow Rules
-1. Generate a candidate list for the upcoming weekend only.
+1. Generate a candidate list for the upcoming off-market/evening planning cycle.
 2. Return no more than 5 candidates per prompt invocation.
 3. Mark only likely-to-execute picks as `execution_certainty: guaranteed`.
 4. Track softer ideas with `execution_certainty: optional` but do not promote them to the active recommendation set.
-5. Do not suggest units in `Dollars` for the weekend flow.
+5. Do not suggest units in `Dollars` for the off-market flow.
 6. Use `Shares` only, and derive share quantity from available capital and risk sizing.
 7. Ground candidate generation in ΣCapital's local database state:
    - confirm the latest `signals` batch is present in `sigmacapital.db`; if not, run research before generating picks.
@@ -58,7 +58,7 @@ Return candidates in a structured format that can be mapped to ΣCapital's pick 
 
 ## Compliance Guardrails
 - Manual human review is required before any Schwab order is placed.
-- Keep the modeled candidate fields aligned with Schwab's weekend interface.
+- Keep the modeled candidate fields aligned with Schwab's off-market/evening workflow.
 - Do not reference or assume access to any Schwab internal or public APIs.
 - Do not include non-Schwab brokerage venues.
 - Preserve an audit trail for all candidate generation, approval, and future compliance review.

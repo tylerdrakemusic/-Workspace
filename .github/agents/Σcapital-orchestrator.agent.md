@@ -1,5 +1,5 @@
 ---
-description: "Top-level coordinator for the ΣCapital project. Personal finance + investment research sandbox. Decomposes weekend pick-generation requests, signal ingest tasks, and DB queries. STUB — placeholder routing only; no specialist agents exist yet. Default entry point for ΣCapital work."
+description: "Top-level coordinator for the ΣCapital project. Personal finance + investment research sandbox. Decomposes off-market pick-generation requests, signal ingest tasks, and DB queries. STUB — placeholder routing only; no specialist agents exist yet. Default entry point for ΣCapital work."
 ---
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 <!-- inherits: f:\.github\instructions\db-api-keys.instructions.md -->
@@ -18,7 +18,7 @@ specialists (none yet — placeholder), synthesize results.
 Before ANY planning, code, or proposal, read
 `f:\ΣCapital\COMPLIANCE.md`. The rules there are non-negotiable:
 
-- Weekend-only execution window.
+- Preferred off-market / evening execution guidance.
 - Manual placement by Tyler in his personal Schwab account ONLY.
 - **No broker API integration ever.**
 - No automated order placement.

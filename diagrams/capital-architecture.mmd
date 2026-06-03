@@ -1,9 +1,9 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
 graph TB
-    Tyler([Tyler]) --> Manual[Manual placement<br/>Schwab personal account<br/>weekend window only]
+    Tyler([Tyler]) --> Manual[Manual placement<br/>Schwab personal account<br/>off-market / evening preferred]
     Signals[Public market signals<br/>news · filings · sentiment] --> Ingest[src/ingest/<br/>signal fetchers — future]
     Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
-    Research[src/research/<br/>weekend pick generation — future] --> DB
+    Research[src/research/<br/>off-market pick generation — future] --> DB
     Agents[src/agents/<br/>research, risk] --> DB
     Agents -->|news/sentiment batch| Perplexity[(Perplexity.ai<br/>Sonar)]
     Agents -->|pricing/volatility| YFinance[(yfinance<br/>Yahoo Finance)]
@@ -15,7 +15,7 @@ graph TB
     DB --> Picks[picks table<br/>weekly recommendations]
     DB --> Portfolio[portfolio + trades<br/>paper-DB sim only]
     Picks --> Tyler
-    Compliance[COMPLIANCE.md<br/>weekend-only · no broker API<br/>no automated orders]:::state
+    Compliance[COMPLIANCE.md<br/>off-market guidance · no broker API<br/>no automated orders]:::state
     Compliance -.enforces.-> Manual
     Compliance -.enforces.-> Research
     Hook[.git/hooks/pre-push<br/>mirrors ∞Life PROTECTION_HOOK]:::state
