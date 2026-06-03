@@ -13,7 +13,7 @@ You are the top-level coordinator for Tyler James Drake's â¤Music project. U
 
 **Context bootstrap:** follow `❤music-base.instructions.md` — read AGENT_STARTUP.md + ARTIST_PROFILE.json first.
 
-**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. For each server with `status: error`, warn:
+**MCP pre-flight:** read `f:\⊕Workspace\src\config\mcp_status.json`. Prefer servers with `status: ok` and use the running MCP server instead of redundant shell/script fallback builds. For each server with `status: error`, warn:
 > ⚠️ MCP server `<name>` is down — falling back to built-in tools (`grep_search`, `file_search`, `read_file`). Start it in the VS Code MCP panel if full capability is needed.
 If the file is absent, skip silently.
 

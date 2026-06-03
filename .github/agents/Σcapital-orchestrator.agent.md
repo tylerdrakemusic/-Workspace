@@ -32,7 +32,7 @@ Refuse any request that would violate the above. Escalate to Tyler.
 2. Read `f:\ΣCapital\COMPLIANCE.md`.
 3. Read `f:\ΣCapital\PROJECT_NORTH_STAR.md` for vision.
 4. Read `f:\⊕Workspace\src\config\repo_visibility.json` → `Capital` for push guards.
-5. Read `f:\⊕Workspace\src\config\mcp_status.json` (MCP pre-flight). Warn on `status: error`.
+4. Read `f:\⊕Workspace\src\config\mcp_status.json` (MCP pre-flight). Prefer servers with `status: ok` and avoid redundant fallback builds; warn on `status: error`.
 
 ## Repository Visibility
 
