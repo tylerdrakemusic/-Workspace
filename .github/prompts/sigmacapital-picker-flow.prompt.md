@@ -8,11 +8,13 @@ Use this prompt as the canonical instruction set for ΣCapital's weekend trade c
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
+- Before proposing any candidates, kick off a fresh ΣCapital research batch via the Σcapital-research agent to ingest the latest news pricing and sentiment signals.
 - Real-money mode (`mode: real`) is forbidden until an explicit follow-up FR is approved.
 
 ## Candidate Schema
 The agent must generate trade candidates using the following fields:
 
+- `symbol`: equity ticker symbol for the proposed trade
 - `action`: `Buy`, `Sell`, or `Sell Short`
 - `unit`: `Shares` only for weekend flow
 - `quantity`: positive share amount
@@ -36,13 +38,20 @@ The agent must generate trade candidates using the following fields:
 4. Track softer ideas with `execution_certainty: optional` but do not promote them to the active recommendation set.
 5. Do not suggest units in `Dollars` for the weekend flow.
 6. Use `Shares` only, and derive share quantity from available capital and risk sizing.
-7. For buy candidates, estimate the expected order cost and reserve that amount against available buying power when approved.
-8. Approved candidates must be treated as persisted picks: the approval gate saves them to ΣCapital's `picks` DB table and updates candidate status accordingly.
-9. Do not propose order types outside the supported Schwab list.
-10. Do not add any real-money execution instructions until a follow-up FR is approved.
+7. Ground candidate generation in ΣCapital's local database state:
+   - consult `sigmacapital.db` `signals` table for recent research signals and batch context,
+   - consult `account_state` `buying_power` for available purchasing capacity,
+   - consult `portfolio`, `quotes`, `position_valuations`, or `risk_thresholds` as needed to avoid unsupported sizing or duplicate exposures.
+8. Ensure the candidate `limit_price`, `stop_price`, and `estimated_cost` are grounded in verified pricing data, using ΣCapital's trade approval gate reference pricing and fresh yfinance-based quote validation where available.
+9. Do proper due diligence before proposing any pick: validate news/sentiment, confirm current market data, and avoid speculative entries based on stale or missing signals.
+10. Do not suggest sell-side candidates when there are no current holdings. Use the portfolio/position data if available; if holdings cannot be confirmed, avoid Sell and Sell Short recommendations.
+11. For buy candidates, estimate the expected order cost and reserve that amount against available buying power when approved.
+12. Approved candidates must be treated as persisted picks: the approval gate saves them to ΣCapital's `picks` DB table and updates candidate status accordingly.
+13. Do not propose order types outside the supported Schwab list.
+14. Do not add any real-money execution instructions until a follow-up FR is approved.
 
 ## Output Format
-Return candidates in a structured format that can be mapped to ΣCapital's pick table and approval gate. Each candidate should clearly include: `action`, `unit`, `quantity`, `order_type`, `limit_price`, `stop_price`, `trailing_amount`, `trailing_amount_type`, `timing`, `execution_certainty`, `mode`, `rationale`, and `confidence`.
+Return candidates in a structured format that can be mapped to ΣCapital's pick table and approval gate. Each candidate should clearly include: `symbol`, `action`, `unit`, `quantity`, `order_type`, `limit_price`, `stop_price`, `trailing_amount`, `trailing_amount_type`, `timing`, `execution_certainty`, `mode`, `rationale`, `confidence`, and `notes`.
 
 ## Compliance Guardrails
 - Manual human review is required before any Schwab order is placed.
