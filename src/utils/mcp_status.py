@@ -20,7 +20,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from shutil import which
 
-MCP_JSON_PATH = Path(os.environ["APPDATA"]) / "Code" / "User" / "mcp.json"
+APPDATA_PATH = os.environ.get("APPDATA")
+if APPDATA_PATH is None:
+    APPDATA_PATH = Path.home() / ".config" / "Code"
+MCP_JSON_PATH = Path(APPDATA_PATH) / "User" / "mcp.json"
 OUTPUT_PATH = Path(__file__).parent.parent / "config" / "mcp_status.json"
 
 # HTTP servers are always-on (managed by VS Code / GitHub Copilot extension).
