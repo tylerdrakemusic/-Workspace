@@ -197,6 +197,22 @@ def test_regenerate_dashboards_splits_windows_paths_with_posix_false() -> None:
         mock_split.assert_called_once_with(manifest["dashboards"][0]["cli"], posix=False)
 
 
+def test_api_health_widget_renders_ai_health_label() -> None:
+    """The API/AI health widget title should use AI Health."""
+    rows = [
+        {
+            "status": "up",
+            "label": "ElevenLabs",
+            "latency_ms": 120.0,
+            "checked_at": "2026-06-03T00:00:00Z",
+        }
+    ]
+    html = dp._render_api_health_widget(rows)
+
+    assert "🔌 AI Health" in html, "The AI Health label must be rendered in the health widget"
+    assert "api-health-title" in html, "The health title container class must remain present"
+
+
 def test_regenerate_dashboards_passes_list_not_string_to_subprocess() -> None:
     """BFX-20260531-dashboard-portal-shell-test: cli string must be split into a list (shlex) before subprocess."""
     manifest = _make_regen_manifest()

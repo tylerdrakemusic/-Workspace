@@ -55,7 +55,7 @@ except Exception:  # pragma: no cover - keep portal rendering even if import fai
     _collect_agent_health = None
     _get_workspace_conn = None
 
-# Import API health monitor for endpoint status widget.
+# Import AI health monitor for endpoint status widget.
 try:
     from api_health_monitor import run_pings as _run_api_pings  # type: ignore
 except Exception:  # pragma: no cover
@@ -302,7 +302,7 @@ def _render_api_health_widget(rows: list[dict]) -> str:
 
     lines = [
         '<div class="api-health-widget">',
-        '<div class="api-health-title">🔌 API Health</div>',
+        '<div class="api-health-title">🔌 AI Health</div>',
     ]
     for row in rows:
         status = row.get("status", "unknown")
