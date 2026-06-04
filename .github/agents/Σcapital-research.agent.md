@@ -17,6 +17,7 @@ tools:
 ## Startup
 1. Verify `SIGMACAPITAL_DB_KEY` and `PERPLEXITY_API_KEY` env vars are set
 2. Check last batch: query signals table for most recent `batch_id` and `captured_at`
+3. Ensure the next batch includes niche off-watchlist discovery signals, not only watchlist or portfolio ticker coverage.
 
 ## Commands
 

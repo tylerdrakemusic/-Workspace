@@ -8,7 +8,7 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
-- Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than one day. If no current batch is available, run the Σcapital-research agent batch and only generate picks after the latest Perplexity signals are ingested.
+- Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
 - Ensure fresh yfinance quote data has been ingested into `sigmacapital.db.quotes` within the last second before recommending any pick.
 - Real-money mode (`mode: real`) is forbidden until an explicit follow-up FR is approved.
 
@@ -40,7 +40,8 @@ The agent must generate trade candidates using the following fields:
 5. Do not suggest units in `Dollars` for the off-market flow.
 6. Use `Shares` only, and derive share quantity from available capital and risk sizing.
 7. Ground candidate generation in ΣCapital's local database state:
-   - confirm the latest `signals` batch is present in `sigmacapital.db`; if not, run research before generating picks.
+   - require a fresh research batch for every invocation. If the latest `signals` batch is missing or stale, run Σcapital-research immediately before generating picks and only continue after the new batch is confirmed.
+   - the research batch must include niche off-watchlist discovery signals for new ticker ideas beyond the current watchlist and portfolio.
    - confirm the latest `quotes` data in `sigmacapital.db` is fresh and current before using it to size or price candidates.
    - consult `sigmacapital.db` `signals` table for recent research signals and batch context,
    - consult `account_state` `buying_power` for available purchasing capacity,
