@@ -428,7 +428,8 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
         print(f"  Regenerating {dash['project']} / {dash['title']}...")
         try:
             # Split cli string into a list so shell=False is safe  # nosec B603
-            cli_args = shlex.split(cli) if isinstance(cli, str) else list(cli)
+            # Use posix=False on Windows-style paths so backslashes are not eaten as escapes.
+            cli_args = shlex.split(cli, posix=False) if isinstance(cli, str) else list(cli)
             proc = subprocess.run(  # nosec B603,B607
                 cli_args, shell=False, cwd=cwd, capture_output=True, text=True, timeout=120,
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
