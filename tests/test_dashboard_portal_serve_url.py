@@ -188,6 +188,15 @@ def test_regenerate_dashboards_uses_shell_false() -> None:
         )
 
 
+def test_regenerate_dashboards_splits_windows_paths_with_posix_false() -> None:
+    """CLI strings with Windows backslashes must be split without POSIX escaping."""
+    manifest = _make_regen_manifest()
+    mock_result = MagicMock(returncode=0, stdout="ok", stderr="")
+    with patch("dashboard_portal.shlex.split", return_value=["C:\\G\\python.exe", "tools\\gen_test.py"]) as mock_split, patch("subprocess.run", return_value=mock_result):
+        dp.regenerate_dashboards(manifest)
+        mock_split.assert_called_once_with(manifest["dashboards"][0]["cli"], posix=False)
+
+
 def test_regenerate_dashboards_passes_list_not_string_to_subprocess() -> None:
     """BFX-20260531-dashboard-portal-shell-test: cli string must be split into a list (shlex) before subprocess."""
     manifest = _make_regen_manifest()
