@@ -302,7 +302,7 @@ def _render_api_health_widget(rows: list[dict]) -> str:
 
     lines = [
         '<div class="api-health-widget">',
-        '<div class="api-health-title">🔌 API Health</div>',
+        '<div class="api-health-title">🔌 AI Health</div>',
     ]
     for row in rows:
         status = row.get("status", "unknown")

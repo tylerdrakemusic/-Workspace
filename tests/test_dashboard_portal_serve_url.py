@@ -209,3 +209,24 @@ def test_regenerate_dashboards_passes_list_not_string_to_subprocess() -> None:
             f"subprocess.run must receive a list, not {type(cmd).__name__!r} — "
             "shell=True bypass guard"
         )
+
+
+# ---------------------------------------------------------------------------
+# FR-20260603-ai-health-widget-label
+# The sidebar health widget title must read "AI Health", not "API Health".
+# ---------------------------------------------------------------------------
+
+def test_api_health_widget_title_is_ai_health() -> None:
+    """FR-20260603-ai-health-widget-label: widget title must be 'AI Health', not 'API Health'."""
+    rows = [{"status": "up", "label": "OpenAI", "latency_ms": 42.0, "checked_at": None}]
+    html = dp._render_api_health_widget(rows)
+    assert "AI Health" in html, "Widget title must contain 'AI Health'"
+    assert "API Health" not in html, (
+        "Widget title must not contain 'API Health' — "
+        "regression guard for FR-20260603-ai-health-widget-label"
+    )
+
+
+def test_api_health_widget_empty_returns_empty_string() -> None:
+    """_render_api_health_widget must return empty string when given no rows (unchanged behaviour)."""
+    assert dp._render_api_health_widget([]) == ""
