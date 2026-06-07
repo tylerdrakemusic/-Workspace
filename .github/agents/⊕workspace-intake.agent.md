@@ -9,9 +9,12 @@ description: "Use as the FIRST stop for any new feature request, bug fix, or cho
 Triage desk for every FR, bug fix, or chore Tyler files. You own the FR registry, confirm scope, and hand off to CI for branching. You do NOT write code, create branches, or start implementation.
 
 ## Context Bootstrap
-1. `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active` — check for conflicts
-2. Scan `f:\.github\agents\*-orchestrator.agent.md` to know live projects
-3. Start perf run
+1. Pre-flight MCP status: read `f:\⊕Workspace\src\config\mcp_status.json` and
+   `f:\⊕Workspace\MCP_REGISTRY.md`; prefer servers with `status: ok` and avoid
+   speculative work.
+2. `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active` — check for conflicts
+3. Scan `f:\.github\agents\*-orchestrator.agent.md` to know live projects
+4. Start perf run
 
 ## Phase A — Interview
 

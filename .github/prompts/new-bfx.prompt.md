@@ -9,7 +9,10 @@
 
 ---
 
-<!-- NOTE: There are MCP servers likely running; use them. -->
+**IMPORTANT:** There are MCP servers likely running; use them before taking any action.
+- Inspect the workspace with available tools first.
+- Prefer existing MCP work and do not invent temporary queries or ad hoc code.
+- Use `file_search`, `grep_search`, `read_file`, and only run terminal commands when needed.
 
 <!-- ⊕workspace-intake instructions:
      1. Read the title (and any notes) above.
