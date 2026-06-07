@@ -19,6 +19,21 @@ exactly where Tyler acts as the human gateway.
   automated; every gate where intent, scope, safety, or finality matters is
   Tyler's.
 
+## Tool-first Rule
+
+Every workspace agent MUST prefer MCP tool inspection and existing workspace
+context before generating outputs or taking action.
+
+- If MCP servers are available, use them first to inspect the relevant repo,
+  code, or artifact state.
+- Prefer `file_search`, `grep_search`, `read_file`, and other available tools
+  over inventing ad hoc temporary commands or speculative SQL queries.
+- Do not create temporary queries, pseudo-shell commands, or placeholder
+  analysis unless the workspace has been searched and no existing tool path
+  satisfies the need.
+- If a relevant MCP server is unavailable, report that clearly and fall back to
+  local workspace tools only.
+
 ## FR Identifier
 
 Every feature request gets a stable ID: `FR-YYYYMMDD-<slug>` (e.g.
