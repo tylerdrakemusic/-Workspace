@@ -9,7 +9,7 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - No broker API integration is allowed.
 - No automated order placement is allowed.
 - Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
-- Ensure fresh yfinance quote data has been ingested into `sigmacapital.db.quotes` within the last second before recommending any pick.
+- Ensure fresh yfinance pricing is available for the candidate symbol before recommending any pick.
 - Real-money mode (`mode: real`) is forbidden until an explicit follow-up FR is approved.
 
 ## Candidate Schema
@@ -42,10 +42,10 @@ The agent must generate trade candidates using the following fields:
 7. Ground candidate generation in ΣCapital's local database state:
    - require a fresh research batch for every invocation. If the latest `signals` batch is missing or stale, run Σcapital-research immediately before generating picks and only continue after the new batch is confirmed.
    - the research batch must include niche off-watchlist discovery signals for new ticker ideas beyond the current watchlist and portfolio.
-   - confirm the latest `quotes` data in `sigmacapital.db` is fresh and current before using it to size or price candidates.
+   - confirm the latest live yfinance pricing is fresh and current before using it to size or price candidates.
    - consult `sigmacapital.db` `signals` table for recent research signals and batch context,
    - consult `account_state` `buying_power` for available purchasing capacity,
-   - consult `portfolio`, `quotes`, `position_valuations`, or `risk_thresholds` as needed to avoid unsupported sizing or duplicate exposures.
+   - consult `portfolio`, `position_valuations`, or `risk_thresholds` as needed to avoid unsupported sizing or duplicate exposures.
 8. Ensure the candidate `limit_price`, `stop_price`, and `estimated_cost` are grounded in verified pricing data, using ΣCapital's trade approval gate reference pricing and fresh yfinance-based quote validation where available.
 9. Do proper due diligence before proposing any pick: validate news/sentiment, confirm current market data, and avoid speculative entries based on stale or missing signals.
 10. Do not suggest sell-side candidates when there are no current holdings. Use the portfolio/position data if available; if holdings cannot be confirmed, avoid Sell and Sell Short recommendations.
