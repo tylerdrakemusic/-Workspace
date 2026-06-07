@@ -1,11 +1,12 @@
 """
 SQLCipher MCP Server — encrypted multi-DB access for all workspace DBs.
 
-Exposes four workspace databases via MCP tools:
+Exposes five workspace databases via MCP tools:
   - workspace  → ⊕Workspace/src/data/workspace.db      (WORKSPACE_DB_KEY)
   - infinitelife → ∞Life/src/data/infinitelife.db       (INFINITELIFE_DB_KEY)
   - heartmusic → ❤Music/src/data/heartmusic.db         (HEARTMUSIC_DB_KEY)
   - quantum    → ⟨ψ⟩Quantum/src/data/quantumpsi.db     (QUANTUM_DB_KEY)
+  - sigmacapital → ΣCapital/src/data/sigmacapital.db  (SIGMACAPITAL_DB_KEY)
 
 Tools exposed:
   - list_tables(db)                — list tables + row counts
@@ -78,6 +79,17 @@ DB_REGISTRY: dict[str, dict[str, Any]] = {
         "env_key": "QUANTUM_DB_KEY",
         "readonly": False,
         "hex_key": True,
+        "pragmas": {
+            "cipher_page_size": "4096",
+            "kdf_iter": "256000",
+            "cipher_hmac_algorithm": "HMAC_SHA512",
+        },
+    },
+    "sigmacapital": {
+        "path": _ROOT / "ΣCapital" / "data" / "sigmacapital.db",
+        "env_key": "SIGMACAPITAL_DB_KEY",
+        "readonly": False,
+        "hex_key": False,
         "pragmas": {
             "cipher_page_size": "4096",
             "kdf_iter": "256000",
@@ -225,7 +237,7 @@ def read_query(db: str, sql: str, params: list[Any] | None = None) -> str:
     Execute a SELECT query against a workspace database. Read-only.
 
     Args:
-        db: Database name — one of: workspace, infinitelife, heartmusic, quantum
+        db: Database name — one of: workspace, infinitelife, heartmusic, quantum, sigmacapital
         sql: A SELECT SQL statement
         params: Optional list of positional parameters for the query
     """
@@ -256,7 +268,7 @@ def write_query(db: str, sql: str, params: list[Any] | None = None) -> str:
     Execute an INSERT, UPDATE, or DELETE query. Blocked for 'infinitelife' (health data).
 
     Args:
-        db: Database name — one of: workspace, heartmusic, quantum (NOT infinitelife)
+        db: Database name — one of: workspace, heartmusic, quantum, sigmacapital (NOT infinitelife)
         sql: An INSERT, UPDATE, or DELETE SQL statement
         params: Optional list of positional parameters
     """
