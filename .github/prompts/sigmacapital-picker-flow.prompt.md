@@ -26,8 +26,8 @@ The agent must generate trade candidates using the following fields:
 - `trailing_amount`: required for `Trailing Stop`
 - `trailing_amount_type`: `points` or `percent` when `Trailing Stop` is selected
 - `timing`: `Day`, `Day + extended hours`, or `Good till canceled`
-- `execution_certainty`: `guaranteed` or `optional`
-- `estimated_cost`: the modelled order cost used to reserve buying power for guaranteed buy ideas
+- `execution_certainty`: `elevated` or `optional`
+- `estimated_cost`: the modelled order cost used to reserve buying power for elevated buy ideas
 - `mode`: `simulated` (must remain `simulated` until future FR)
 - `rationale`: natural-language explanation of the trade idea
 - `confidence`: numeric score or percentile representing conviction
@@ -36,7 +36,7 @@ The agent must generate trade candidates using the following fields:
 ## Workflow Rules
 1. Generate a candidate list for the upcoming off-market/evening planning cycle.
 2. Return no more than 5 candidates per prompt invocation.
-3. Mark only likely-to-execute picks as `execution_certainty: guaranteed`.
+3. Mark only likely-to-execute picks as `execution_certainty: elevated`.
 4. Track softer ideas with `execution_certainty: optional` but do not promote them to the active recommendation set.
 5. Do not suggest units in `Dollars` for the off-market flow.
 6. Use `Shares` only, and derive share quantity from available capital and risk sizing.

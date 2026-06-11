@@ -32,7 +32,7 @@ their `execution_certainty` field based on this classification:
 
 > **Important:** Stop and Trailing Stop orders are **conditional** — they remain dormant until the stop price is reached. The execution certainty applies only *after* the trigger price is hit; if the stop price is never reached, the order never activates. "Elevated execution certainty" means that once triggered, the resulting market order fills with near-certainty (subject to slippage), not that the order is unconditionally guaranteed to fill.
 
-**Rule for ΣCapital picks:** use `execution_certainty: guaranteed` for Stop and
+**Rule for ΣCapital picks:** use `execution_certainty: elevated` for Stop and
 Trailing Stop orders — these provide high execution certainty *once the trigger
 price is reached* and the order converts to a market order. Use
 `execution_certainty: optional` for Limit and Stop Limit orders, which are
@@ -165,7 +165,7 @@ decision sequence:
    - `Day` or `Good till canceled` → any supported type.
 
 4. **Set `execution_certainty`:**
-   - `guaranteed` → Stop or Trailing Stop (elevated execution certainty *once the stop price is triggered*; the order remains dormant and inactive until that trigger is reached).
+   - `elevated` → Stop or Trailing Stop (elevated execution certainty *once the stop price is triggered*; the order remains dormant and inactive until that trigger is reached).
    - `optional` → Limit or Stop Limit (conditional on price; may not fill even if the target level is approached).
 
 5. **Populate required fields per order type:**
@@ -187,7 +187,7 @@ decision sequence:
 - Do **not** pair `Day + extended hours` timing with any order type other than
   Limit.
 - Do **not** use Trailing Stop as an entry order type.
-- Do **not** set `execution_certainty: guaranteed` on a Limit or Stop Limit
+- Do **not** set `execution_certainty: elevated` on a Limit or Stop Limit
   order.
 - Do **not** set `execution_certainty: optional` on a Stop or Trailing Stop
   order. Stop and Trailing Stop orders provide elevated execution certainty *once
