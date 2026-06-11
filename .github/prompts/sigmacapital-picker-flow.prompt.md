@@ -6,6 +6,7 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - ΣCapital is currently Phase 1: simulated-only off-market/evening trade research.
 - All candidate generation should prefer off-market/evening placement and support manual Schwab UI placement.
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
+- The agent must consult the order-type tradeoff and risk guidance at `f:\⊕Workspace\.github\instructions\sigmacapital-order-type-tradeoffs.instructions.md` when selecting an order type for each candidate. This document governs when to use each order type, execution vs price risk tradeoffs, market-context rules, and the required `execution_certainty` classification.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
 - Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
