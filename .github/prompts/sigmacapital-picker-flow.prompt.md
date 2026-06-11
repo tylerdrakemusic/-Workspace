@@ -6,6 +6,7 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - ΣCapital is currently Phase 1: simulated-only off-market/evening trade research.
 - All candidate generation should prefer off-market/evening placement and support manual Schwab UI placement.
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
+- The agent must consult the order-type tradeoff and risk guidance at `f:\⊕Workspace\.github\instructions\sigmacapital-order-type-tradeoffs.instructions.md` when selecting an order type for each candidate. This document governs when to use each order type, execution vs price risk tradeoffs, market-context rules, and the required `execution_certainty` classification.
 - No broker API integration is allowed.
 - No automated order placement is allowed.
 - Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
@@ -25,8 +26,8 @@ The agent must generate trade candidates using the following fields:
 - `trailing_amount`: required for `Trailing Stop`
 - `trailing_amount_type`: `points` or `percent` when `Trailing Stop` is selected
 - `timing`: `Day`, `Day + extended hours`, or `Good till canceled`
-- `execution_certainty`: `guaranteed` or `optional`
-- `estimated_cost`: the modelled order cost used to reserve buying power for guaranteed buy ideas
+- `execution_certainty`: `elevated` or `optional`
+- `estimated_cost`: the modelled order cost used to reserve buying power for elevated buy ideas
 - `mode`: `simulated` (must remain `simulated` until future FR)
 - `rationale`: natural-language explanation of the trade idea
 - `confidence`: numeric score or percentile representing conviction
@@ -35,7 +36,7 @@ The agent must generate trade candidates using the following fields:
 ## Workflow Rules
 1. Generate a candidate list for the upcoming off-market/evening planning cycle.
 2. Return no more than 5 candidates per prompt invocation.
-3. Mark only likely-to-execute picks as `execution_certainty: guaranteed`.
+3. Mark only likely-to-execute picks as `execution_certainty: elevated`.
 4. Track softer ideas with `execution_certainty: optional` but do not promote them to the active recommendation set.
 5. Do not suggest units in `Dollars` for the off-market flow.
 6. Use `Shares` only, and derive share quantity from available capital and risk sizing.
