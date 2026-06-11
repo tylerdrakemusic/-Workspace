@@ -17,14 +17,18 @@ their `execution_certainty` field based on this classification:
 
 | Order Type | Execution Certainty | Price Certainty | Best For |
 |---|---|---|---|
-| Stop | **High** (becomes market order) | Low (slippage risk) | Breakout entries, stop-loss exits |
-| Trailing Stop | High (becomes market order) | Low (gap/slippage risk) | Locking in gains on open positions |
-| Limit | Low (may not fill) | **High** (fills at limit or better) | Precision entries, off-market bids |
-| Stop Limit | Low (may not fill) | **High** (fills at limit or better) | Controlled breakouts with a price floor |
+| Stop | **High once triggered** (conditional on stop price being reached; converts to market order) | Low (slippage risk) | Breakout entries, stop-loss exits |
+| Trailing Stop | **High once triggered** (conditional on trailing threshold being hit; converts to market order) | Low (gap/slippage risk) | Locking in gains on open positions |
+| Limit | Low (may not fill even if price is reached) | **High** (fills at limit or better) | Precision entries, off-market bids |
+| Stop Limit | Low (may not fill if price gaps through limit) | **High** (fills at limit or better) | Controlled breakouts with a price floor |
 
-**Rule for ΣCapital picks:** if `execution_certainty: guaranteed`, the order
-type must offer high execution certainty (Stop or Trailing Stop). If
-`execution_certainty: optional`, Limit or Stop Limit are appropriate.
+> **Important:** Stop and Trailing Stop orders are **conditional** — they remain dormant until the stop price is reached. The execution certainty applies only *after* the trigger price is hit; if the stop price is never reached, the order never activates. "Higher execution certainty" means that once triggered, the resulting market order fills with near-certainty (subject to slippage), not that the order is unconditionally guaranteed to fill.
+
+**Rule for ΣCapital picks:** use `execution_certainty: guaranteed` for Stop and
+Trailing Stop orders — these provide high execution certainty *once the trigger
+price is reached* and the order converts to a market order. Use
+`execution_certainty: optional` for Limit and Stop Limit orders, which are
+conditional on price and may not fill at all.
 
 ---
 
@@ -153,8 +157,8 @@ decision sequence:
    - `Day` or `Good till canceled` → any supported type.
 
 4. **Set `execution_certainty`:**
-   - `guaranteed` → Stop or Trailing Stop (unconditional execution once triggered).
-   - `optional` → Limit or Stop Limit (conditional; may not fill).
+   - `guaranteed` → Stop or Trailing Stop (high execution certainty *once the stop price is triggered*; the order remains dormant and inactive until that trigger is reached).
+   - `optional` → Limit or Stop Limit (conditional on price; may not fill even if the target level is approached).
 
 5. **Populate required fields per order type:**
    - Limit: `limit_price` required.
@@ -178,7 +182,9 @@ decision sequence:
 - Do **not** set `execution_certainty: guaranteed` on a Limit or Stop Limit
   order.
 - Do **not** set `execution_certainty: optional` on a Stop or Trailing Stop
-  order.
+  order. Stop and Trailing Stop orders provide high execution certainty *once
+  triggered* — but note that activation is conditional on the stop price being
+  reached; if the price never hits the stop, the order never activates.
 - Always include a primary risk flag in `notes` for any Stop or Trailing Stop
   recommendation.
 - Always cross-check `sigmacapital-schwab-trade-inputs.instructions.md` for
