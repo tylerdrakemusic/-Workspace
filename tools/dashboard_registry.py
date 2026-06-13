@@ -28,11 +28,30 @@ REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
 VALID_TYPES = {"static_html", "living_html", "flask_app", "console", "inline_html"}
 
 
+def _is_git_worktree_root(project_root: Path) -> bool:
+    """Return True for a git worktree clone root that should not be treated as an independent project."""
+    git_file = project_root / ".git"
+    if not git_file.exists() or not git_file.is_file():
+        return False
+    try:
+        contents = git_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+    if not contents.startswith("gitdir:"):
+        return False
+    gitdir = contents.split(":", 1)[1].strip().replace("\\", "/")
+    return ".git/worktrees/" in gitdir
+
+
 def discover_projects() -> list[Path]:
     """Find all project directories containing AGENT_STARTUP.md."""
     projects = []
     for child in sorted(WORKSPACE_ROOT.iterdir()):
-        if child.is_dir() and (child / "AGENT_STARTUP.md").exists():
+        if not child.is_dir():
+            continue
+        if _is_git_worktree_root(child):
+            continue
+        if (child / "AGENT_STARTUP.md").exists():
             projects.append(child)
     return projects
 
