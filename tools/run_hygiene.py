@@ -31,6 +31,8 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from src.utils.agent_frontmatter_integrity import run_agent_frontmatter_integrity
+
 # ── Path bootstrap ─────────────────────────────────────────────────────────────
 WORKSPACE_ROOT   = Path(__file__).resolve().parents[1]   # f:\⊕Workspace
 WORKSPACE_UTILS  = WORKSPACE_ROOT / "src" / "utils"
@@ -335,7 +337,14 @@ def main() -> int:
             deleted = rotate_logs(name, root, dry)
             tag = "DRY" if dry else "DEL"
             lines.append(f"  logs/{name}: [{tag}] {len(deleted)} files")
-
+        # ── Phase 2b: agent frontmatter integrity scan ───────────────────────────
+        try:
+            afi_result = run_agent_frontmatter_integrity()
+            lines.append(
+                f"  agent/frontmatter: {afi_result['issues']} issues, {afi_result['warnings']} warnings"
+            )
+        except Exception as exc:  # noqa: BLE001
+            lines.append(f"  agent/frontmatter: ERROR {exc}")
         # ── Phase 3: worktree prune ───────────────────────────────────────────
         wt_result = prune_worktrees(dry)
         lines.append(f"  worktrees: {wt_result}")
