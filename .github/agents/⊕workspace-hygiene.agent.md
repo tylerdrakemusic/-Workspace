@@ -73,6 +73,7 @@ Worktrees live at `f:\⊕Workspace\.worktrees/{branch-slug}/`. Run:
 - `applyTo` pattern matches no existing file → flag dead pattern
 - Broken `<!-- inherits -->` links → fix
 - Old path references → update
+- Run `f:\⊕Workspace\src\utils\agent_frontmatter_integrity.py` to audit agent/instruction frontmatter and update the weekly SCAN todo.
 
 **2c. Registration consistency:**
 - Every `.agent.md` should appear in `copilot-instructions.md` agent table
