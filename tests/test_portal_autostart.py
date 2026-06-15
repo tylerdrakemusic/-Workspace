@@ -66,6 +66,16 @@ def test_launch_portal_skips_browser_when_noopen(launch_portal_text: str) -> Non
     )
 
 
+def test_launch_portal_waits_for_trade_approval_gate(launch_portal_text: str) -> None:
+    """`launch_portal.ps1` must wait for port 7475 before opening the portal."""
+    assert "Wait-PortListening -Port 7475" in launch_portal_text, (
+        "launch_portal.ps1 must wait for Trade Approval Gate port 7475 before opening the portal"
+    )
+    assert "[Trade Approval Gate] :7475" in launch_portal_text, (
+        "launch_portal.ps1 should log Trade Approval Gate readiness when waiting for port 7475"
+    )
+
+
 def test_launch_portal_noopen_before_browser_open(launch_portal_text: str) -> None:
     """The -NoOpen guard must wrap the Start-Process / Brave open call."""
     noopen_idx   = launch_portal_text.find("-not $NoOpen")
