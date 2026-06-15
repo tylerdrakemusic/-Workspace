@@ -77,10 +77,12 @@ foreach ($s in $servers) { Start-Server $s }
 
 $portalUri = "file:///" + ($PORTAL -replace "\\", "/")
 if (-not $NoOpen) {
-    # Wait only for the two iframes visible on first load — browsers don't retry
+    # Wait only for the three iframes visible on first load — browsers don't retry
     # connection-refused, so these must be up before the portal renders.
-    # All other services (5055/7474/8300/etc.) are in non-default tabs and can
-    # warm up in the background while the user reads the portal.
+    # Trade Approval Gate is the default first pane, so port 7475 must bind
+    # before the local file:// portal shell opens.
+    $tradeReady = Wait-PortListening -Port 7475 -TimeoutSeconds 10
+    Write-Host ("  [Trade Approval Gate] :7475 " + $(if ($tradeReady) { "ready" } else { "not ready — iframe may fail on first render" })) -ForegroundColor $(if ($tradeReady) { "Green" } else { "Yellow" })
     $execReady = Wait-PortListening -Port 8200 -TimeoutSeconds 10
     Write-Host ("  [Executive] :8200 " + $(if ($execReady) { "ready" } else { "not ready — iframe will show retry prompt" })) -ForegroundColor $(if ($execReady) { "Green" } else { "Yellow" })
     $musicReady = Wait-PortListening -Port 5050 -TimeoutSeconds 8
