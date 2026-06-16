@@ -45,6 +45,7 @@ The agent must generate trade candidates using the following fields:
    - the research batch must include niche off-watchlist discovery signals for new ticker ideas beyond the current watchlist and portfolio.
    - confirm the latest live yfinance pricing is fresh and current before using it to size or price candidates.
    - consult `sigmacapital.db` `signals` table for recent research signals and batch context,
+   - confirm each research symbol has financial signal enrichment in `sigmacapital.db.signals` before candidate scoring. If the financial signal is missing, enrich the symbol with earnings and fundamentals data before using it in a pick.
    - consult `account_state` `buying_power` for available purchasing capacity,
    - consult `portfolio`, `position_valuations`, or `risk_thresholds` as needed to avoid unsupported sizing or duplicate exposures.
 8. Ensure the candidate `limit_price`, `stop_price`, and `estimated_cost` are grounded in verified pricing data, using ΣCapital's trade approval gate reference pricing and fresh yfinance-based quote validation where available.
