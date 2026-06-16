@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-06-14T17:55:36Z",
+  "selected_model": "llama3.3:70b",
+  "preferred_model": "llama3.3:70b",
+  "preferred_available": false,
+  "available_models": [],
+  "storage_path": "G:\\.ollama\\models",
+  "storage_path_exists": false,
+  "free_bytes": null,
+  "can_auto_pull": false,
+  "pull_attempted": false,
+  "pull_succeeded": null,
+  "pull_reason": null,
+  "selected_reason": "failed to determine model inventory",
+  "error": "Ollama CLI command timed out: Command '['C:\\\\Users\\\\tyler\\\\AppData\\\\Local\\\\Programs\\\\Ollama\\\\ollama.EXE', 'pull', 'llama3.3:70b']' timed out after 600 seconds"
+}

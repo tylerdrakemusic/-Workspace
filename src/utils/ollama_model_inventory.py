@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-DEFAULT_OLLAMA_MODELS_DIR = Path(r"F:\.ollama\models")
+DEFAULT_OLLAMA_MODELS_DIR = Path(r"G:\.ollama\models")
 PREFERRED_MODEL = "llama3.3:70b"
 DEFAULT_MIN_FREE_BYTES = 90 * 1024**3  # 90 GiB
 STATUS_FILE = Path(__file__).resolve().parents[2] / "src" / "config" / "ollama_model_status.json"
@@ -377,7 +377,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--storage-path",
         type=Path,
         default=None,
-        help="Custom local Ollama models directory (default: env OLLAMA_MODELS or F:\\.ollama\\models).",
+        help="Custom local Ollama models directory (default: env OLLAMA_MODELS or G:\\.ollama\\models).",
     )
     parser.add_argument(
         "--no-auto-pull",
