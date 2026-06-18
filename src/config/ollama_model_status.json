@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-14T17:55:36Z",
+  "generated_at": "2026-06-16T23:43:48Z",
   "selected_model": "llama3.3:70b",
   "preferred_model": "llama3.3:70b",
   "preferred_available": false,
   "available_models": [],
   "storage_path": "G:\\.ollama\\models",
-  "storage_path_exists": false,
+  "storage_path_exists": true,
   "free_bytes": null,
   "can_auto_pull": false,
   "pull_attempted": false,

@@ -31,7 +31,7 @@ import httpx
 # Constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_BASE_URL = "http://localhost:11434"
+DEFAULT_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "llama3.1:8b"
 
 # Request timeouts (seconds)
@@ -107,7 +107,14 @@ class OllamaClient:
         resp = self._get(_TAGS_ENDPOINT)
         return resp.get("models", [])
 
-    def generate(self, prompt: str, *, model: str | None = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        *,
+        model: str | None = None,
+        timeout: float | None = None,
+        **kwargs: Any,
+    ) -> str:
         """Send *prompt* to the model and return the full response text.
 
         Parameters
@@ -116,6 +123,10 @@ class OllamaClient:
             The text prompt to send.
         model:
             Override the instance model for this call only.
+        timeout:
+            Optional read timeout in seconds for this generation request.
+        **kwargs:
+            Additional Ollama generation parameters, such as ``max_tokens``.
 
         Returns
         -------
@@ -131,8 +142,9 @@ class OllamaClient:
             "model": model or self.model,
             "prompt": prompt,
             "stream": False,
+            **kwargs,
         }
-        resp = self._post(_GENERATE_ENDPOINT, payload)
+        resp = self._post(_GENERATE_ENDPOINT, payload, timeout=timeout)
         response_text = resp.get("response")
         if response_text is None:
             raise OllamaError(
@@ -178,12 +190,26 @@ class OllamaClient:
             ) from exc
         return self._parse(resp, path)
 
-    def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def _post(
+        self,
+        path: str,
+        payload: dict[str, Any],
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
+        if timeout is not None:
+            request_timeout = httpx.Timeout(
+                connect=_CONNECT_TIMEOUT,
+                read=timeout,
+                write=10.0,
+                pool=5.0,
+            )
+        else:
+            request_timeout = _TIMEOUT
         try:
             resp = httpx.post(
                 self.base_url + path,
                 json=payload,
-                timeout=_TIMEOUT,
+                timeout=request_timeout,
             )
         except (httpx.ConnectError, httpx.TimeoutException) as exc:
             raise OllamaError(
