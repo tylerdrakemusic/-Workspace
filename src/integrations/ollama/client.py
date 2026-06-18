@@ -4,9 +4,12 @@ This module is the single source of truth for Ollama access across all
 workspace projects (Workspace, Life, Music, Quantum, AI-Manifest).
 Import from any project via::
 
+    import os
     import sys
     from pathlib import Path
-    sys.path.insert(0, str(Path(r"f:\\OWorkspace")))
+
+    workspace_root = Path(os.environ.get("WORKSPACE_ROOT", r"f:\⊕Workspace"))
+    sys.path.insert(0, str(workspace_root))
     from src.integrations.ollama import OllamaClient
 
     client = OllamaClient()
