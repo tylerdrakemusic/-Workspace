@@ -15,6 +15,11 @@ from typing import Any
 
 DEFAULT_OLLAMA_MODELS_DIR = Path(r"G:\.ollama\models")
 PREFERRED_MODEL = "llama3.3:70b"
+FALLBACK_MODEL_CANDIDATES = [
+    "llama3:70b",
+    "mistral:13b",
+    "llama3.1:8b",
+]
 DEFAULT_MIN_FREE_BYTES = 90 * 1024**3  # 90 GiB
 STATUS_FILE = Path(__file__).resolve().parents[2] / "src" / "config" / "ollama_model_status.json"
 
@@ -157,6 +162,25 @@ def _select_fallback_model(model_names: list[str]) -> str:
     return model_names[0] if model_names else "llama3.1:8b"
 
 
+def _pull_fallback_models(
+    installed_models: list[str],
+    models_path: Path,
+    min_free_bytes: int,
+) -> tuple[str | None, bool, str | None]:
+    last_reason: str | None = None
+    for model in FALLBACK_MODEL_CANDIDATES:
+        if model == PREFERRED_MODEL or model in installed_models:
+            continue
+        can_auto, _ = _can_auto_pull(models_path, min_free_bytes)
+        if not can_auto:
+            return None, False, "low disk space for fallback pulls"
+        success, reason = _pull_model(model, models_path)
+        last_reason = reason
+        if success:
+            return model, True, None
+    return None, False, last_reason
+
+
 def build_status(
     selected_model: str,
     preferred_model: str,
@@ -287,7 +311,7 @@ def select_best_local_model(
                     error=str(exc),
                 )
 
-        if preferred_available:
+        if pull_succeeded and preferred_available:
             selected_reason = "preferred model pulled successfully"
             return build_status(
                 selected_model=PREFERRED_MODEL,
@@ -301,6 +325,53 @@ def select_best_local_model(
                 pull_succeeded=pull_succeeded,
                 pull_reason=pull_reason,
                 selected_reason=selected_reason,
+            )
+
+        fallback_model, fallback_succeeded, fallback_reason = _pull_fallback_models(
+            available_models,
+            models_path,
+            min_free_bytes,
+        )
+        if fallback_succeeded and fallback_model is not None:
+            pull_succeeded = True
+            pull_reason = f"preferred pull failed; fallback {fallback_model} pulled successfully"
+            try:
+                available_models = list_local_models()
+                preferred_available = PREFERRED_MODEL in available_models
+            except OllamaModelInventoryError as exc:
+                return build_status(
+                    selected_model=fallback_model,
+                    preferred_model=PREFERRED_MODEL,
+                    preferred_available=False,
+                    available_models=[],
+                    storage_path=models_path,
+                    free_bytes=free_bytes,
+                    can_auto_pull=can_auto,
+                    pull_attempted=pull_attempted,
+                    pull_succeeded=pull_succeeded,
+                    pull_reason=pull_reason,
+                    selected_reason=f"preferred model missing and fallback {fallback_model} pulled successfully",
+                    error=str(exc),
+                )
+            return build_status(
+                selected_model=fallback_model,
+                preferred_model=PREFERRED_MODEL,
+                preferred_available=preferred_available,
+                available_models=available_models,
+                storage_path=models_path,
+                free_bytes=free_bytes,
+                can_auto_pull=can_auto,
+                pull_attempted=pull_attempted,
+                pull_succeeded=pull_succeeded,
+                pull_reason=pull_reason,
+                selected_reason=f"preferred model missing and fallback {fallback_model} pulled successfully",
+            )
+
+        if not pull_succeeded and fallback_reason:
+            pull_reason = (
+                f"{pull_reason}; fallback reason: {fallback_reason}"
+                if pull_reason
+                else fallback_reason
             )
 
     if not can_auto and auto_pull:

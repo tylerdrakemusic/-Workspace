@@ -108,3 +108,19 @@ def test_select_best_local_model_attempts_pull_when_missing(monkeypatch: pytest.
     assert result.pull_succeeded is True
     assert result.preferred_available is True
     assert result.selected_model == PREFERRED_MODEL
+
+
+def test_select_best_local_model_pulls_fallback_when_preferred_pull_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    with patch(
+        "src.utils.ollama_model_inventory.list_local_models",
+        side_effect=[["llama3:70b"], ["llama3:70b", "mistral:13b"]],
+    ), patch("src.utils.ollama_model_inventory._can_auto_pull", return_value=(True, 120 * 1024**3)), patch(
+        "src.utils.ollama_model_inventory._pull_model",
+        side_effect=[(False, "preferred fetch failed"), (True, None)],
+    ):
+        result = select_best_local_model(auto_pull=True)
+    assert result.pull_attempted is True
+    assert result.pull_succeeded is True
+    assert result.selected_model == "mistral:13b"
+    assert "fallback mistral:13b pulled successfully" in result.selected_reason
+    assert result.preferred_available is False
