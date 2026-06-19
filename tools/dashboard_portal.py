@@ -1143,7 +1143,19 @@ def render_portal(manifest: dict) -> str:
     async function checkServer(port, dotId) {{
       const dot = document.getElementById(dotId);
       if (!dot) return;
-      const up = await probe('http://127.0.0.1:' + port + '/', 5000) || await probe('http://localhost:' + port + '/', 5000);
+      const probeUrls = [
+        'http://127.0.0.1:' + port + '/health',
+        'http://localhost:' + port + '/health',
+        'http://127.0.0.1:' + port + '/',
+        'http://localhost:' + port + '/',
+      ];
+      let up = false;
+      for (const url of probeUrls) {{
+        if (await probe(url, 3000)) {{
+          up = true;
+          break;
+        }}
+      }}
       if (up) {{
         dot.classList.add('up');
         dot.classList.remove('down');
