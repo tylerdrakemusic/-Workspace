@@ -780,6 +780,8 @@ def _make_handler(watcher: "_WatcherThread") -> type:
                     return
                 events = query_ledger_events(fr_id)
                 self._send_json({"fr_id": fr_id, "events": events}, cors_origin="http://localhost:7474")
+            elif self.path == "/health":
+                self._send_json({"ok": True, "port": self.server.server_address[1]})
             elif self.path in ("/", "/fr_dashboard.html"):
                 self.path = "/fr_dashboard.html"
                 super().do_GET()
