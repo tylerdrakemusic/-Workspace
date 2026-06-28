@@ -18,6 +18,7 @@ graph LR
     HFSpacesExt[(HF Spaces<br/>FLUX.1-schnell<br/>Gradio REST)]:::ext
     GDrive[(Google Drive)]:::ext
     Perplexity[(Perplexity.ai<br/>Sonar + Reasoning)]:::ext
+    Schwab[(Charles Schwab API)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -78,6 +79,7 @@ graph LR
     %% ΣCapital → DB + Perplexity research (FR-20260601-perplexity-integration)
     Capital --> CapitalDB
     Capital -.->|capital research via ⊕Workspace integration| Perplexity
+    Capital -->|OAuth + market data| Schwab
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
