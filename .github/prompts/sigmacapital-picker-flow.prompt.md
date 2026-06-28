@@ -29,6 +29,7 @@ The agent must generate trade candidates using the following fields:
 - `execution_certainty`: `elevated` or `optional`
 - `estimated_cost`: the modelled order cost used to reserve buying power for elevated buy ideas
 - `mode`: `simulated` (must remain `simulated` until future FR)
+- `model`: the LLM model that generated the pick (e.g. `Claude Opus 4.8`, `gpt-5`). The agent must stamp every candidate with the exact model it is running on so each pick's provenance is captured and later surfaced on the portfolio holdings view.
 - `rationale`: natural-language explanation of the trade idea
 - `confidence`: numeric score or percentile representing conviction
 - `notes`: optional contextual details or risk considerations
@@ -55,9 +56,10 @@ The agent must generate trade candidates using the following fields:
 12. Approved candidates must be treated as persisted picks: the approval gate saves them to ΣCapital's `picks` DB table and updates candidate status accordingly.
 13. Do not propose order types outside the supported Schwab list.
 14. Do not add any real-money execution instructions until a follow-up FR is approved.
+15. Stamp every generated candidate with the `model` field set to the exact LLM model the agent is running on. This provenance flows through approval into `execution_history` and the `portfolio` row, where it is surfaced on the portfolio holdings view. When the same holding is bought under more than one model, the portfolio `model` value accumulates a deduped, comma-separated list (e.g. `raptor, Claude Opus 4.8`).
 
 ## Output Format
-Return candidates in a structured format that can be mapped to ΣCapital's pick table and approval gate. Each candidate should clearly include: `symbol`, `action`, `unit`, `quantity`, `order_type`, `limit_price`, `stop_price`, `trailing_amount`, `trailing_amount_type`, `timing`, `execution_certainty`, `mode`, `rationale`, `confidence`, and `notes`.
+Return candidates in a structured format that can be mapped to ΣCapital's pick table and approval gate. Each candidate should clearly include: `symbol`, `action`, `unit`, `quantity`, `order_type`, `limit_price`, `stop_price`, `trailing_amount`, `trailing_amount_type`, `timing`, `execution_certainty`, `mode`, `model`, `rationale`, `confidence`, and `notes`.
 
 ## Compliance Guardrails
 - Manual human review is required before any Schwab order is placed.
