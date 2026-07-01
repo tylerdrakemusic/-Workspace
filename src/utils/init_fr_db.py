@@ -110,6 +110,11 @@ def init_db() -> None:
     CREATE INDEX IF NOT EXISTS idx_artifacts_fr ON fr_artifacts(fr_id);
     """)
     conn.commit()
+
+    # Additive, idempotent migration — see migrate_fr_target_quarter.py
+    from migrate_fr_target_quarter import migrate as _migrate_target_quarter  # noqa: E402
+    _migrate_target_quarter(conn)
+
     conn.close()
 
 
