@@ -199,6 +199,7 @@ def build_roadmap(
     for fr in frs:
         quarter = assign_quarter(fr, today=today)
         project = (fr.get("projects") or "").split(",")[0].strip() or "unknown"
+        deps = extract_fr_dependencies(fr)
         node = {
             "id": fr["id"],
             "title": fr.get("title"),
@@ -206,11 +207,12 @@ def build_roadmap(
             "state": fr.get("state"),
             "risk": fr.get("risk"),
             "quarter": quarter,
+            "depends_on": deps,
         }
         nodes.append(node)
         quarters.setdefault(quarter, []).append(fr["id"])
 
-        for dep_id in extract_fr_dependencies(fr):
+        for dep_id in deps:
             fr_edges.append({"from": fr["id"], "to": dep_id})
             if dep_id in active_ids:
                 dep_project = next(
