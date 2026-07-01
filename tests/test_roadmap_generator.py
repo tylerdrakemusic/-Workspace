@@ -1,4 +1,6 @@
 """Tests for roadmap_generator.py — dependency parsing, quarter bucketing, graph build."""
+import json
+import sqlite3
 import sys
 from datetime import date
 from pathlib import Path
@@ -8,12 +10,17 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "utils"))
 
 from roadmap_generator import (  # noqa: E402
+    ACTIVE_FR_STATES,
+    UNMAPPED_PROJECT,
     add_quarters,
     assign_quarter,
     build_roadmap,
+    canonicalize_project,
     current_quarter,
     extract_fr_dependencies,
     extract_todo_fr_references,
+    fetch_active_frs,
+    generate_roadmap,
     parse_dependencies,
 )
 
@@ -151,7 +158,7 @@ def test_build_roadmap_structure_keys():
     assert len(roadmap["nodes"]) == 1
     node = roadmap["nodes"][0]
     assert node["id"] == "FR-1"
-    assert node["project"] == "workspace"
+    assert node["project"] == "⊕Workspace"
     assert node["quarter"] in roadmap["quarters"]
 
 
@@ -163,7 +170,7 @@ def test_build_roadmap_fr_to_fr_and_project_to_project_edges():
     ]
     roadmap = build_roadmap(frs, todos=[], today=date(2026, 6, 30))
     assert {"from": "FR-20260601-music", "to": "FR-20260601-workspace"} in roadmap["fr_edges"]
-    assert {"from": "music", "to": "workspace"} in roadmap["project_edges"]
+    assert {"from": "❤Music", "to": "⊕Workspace"} in roadmap["project_edges"]
 
 
 def test_build_roadmap_todo_refs_known_case():
@@ -185,3 +192,226 @@ def test_build_roadmap_todo_ref_marks_inactive_fr():
     todos = [{"id": 5, "project": "music", "text": "Depends on: FR-20250101-old"}]
     roadmap = build_roadmap(frs, todos=todos, today=date(2026, 6, 30))
     assert roadmap["todo_refs"][0]["fr_active"] is False
+
+
+def test_build_roadmap_quarters_section_populated_and_covers_all_nodes():
+    frs = [
+        _fr("FR-1", "First", state="OPEN"),
+        _fr("FR-2", "Second", state="IN_PROGRESS", target_quarter="2026-Q4"),
+    ]
+    roadmap = build_roadmap(frs, todos=[], today=date(2026, 6, 30))
+    assert roadmap["quarters"]
+    all_ids_in_quarters = {fr_id for ids in roadmap["quarters"].values() for fr_id in ids}
+    assert all_ids_in_quarters == {"FR-1", "FR-2"}
+    for node in roadmap["nodes"]:
+        assert node["id"] in roadmap["quarters"][node["quarter"]]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Active-state include-list (real-data regression: over-inclusive filter dumped
+# 239 mostly-finished nodes because DONE/MERGED/SOAKING weren't excluded)
+
+def test_active_fr_states_excludes_terminal_states():
+    terminal = {"DONE", "MERGED", "SOAKING", "SIGNED_OFF", "ARCHIVED", "CLOSED"}
+    assert ACTIVE_FR_STATES.isdisjoint(terminal)
+
+
+def test_active_fr_states_includes_in_flight_states():
+    for state in (
+        "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS", "CHANGES_REQUESTED",
+        "FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "REVIEW_REQUESTED",
+        "AUTO_REVIEWED", "TYLER_APPROVED", "BRANCH_CHECKED_OUT",
+    ):
+        assert state in ACTIVE_FR_STATES
+
+
+def test_fetch_active_frs_excludes_done_and_merged(tmp_path):
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        "CREATE TABLE feature_requests (id TEXT PRIMARY KEY, title TEXT, state TEXT, "
+        "projects TEXT, risk TEXT, opened_at TEXT, acceptance_criteria TEXT, concurrency_notes TEXT);"
+    )
+    conn.executemany(
+        "INSERT INTO feature_requests (id, title, state, projects, risk, opened_at) VALUES (?,?,?,?,?,?)",
+        [
+            ("FR-1", "Done work", "DONE", "workspace", "low", "2026-01-01"),
+            ("FR-2", "Merged work", "MERGED", "workspace", "low", "2026-01-01"),
+            ("FR-3", "Soaking work", "SOAKING", "workspace", "low", "2026-01-01"),
+            ("FR-4", "Active work", "OPEN", "workspace", "low", "2026-01-01"),
+            ("FR-5", "Changes requested", "CHANGES_REQUESTED", "workspace", "low", "2026-01-01"),
+        ],
+    )
+    conn.commit()
+    active = fetch_active_frs(conn)
+    conn.close()
+    assert {fr["id"] for fr in active} == {"FR-4", "FR-5"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Project name canonicalization
+
+@pytest.mark.parametrize("raw,expected", [
+    ("∞Life", "∞Life"),
+    ("life", "∞Life"),
+    ("InfiniteLife", "∞Life"),
+    ("infinitelife", "∞Life"),
+    ("inflife", "∞Life"),
+    ("8Life", "∞Life"),
+    ("❤Music", "❤Music"),
+    ("music", "❤Music"),
+    ("Music", "❤Music"),
+    ("HeartMusic", "❤Music"),
+    ("heartmusic", "❤Music"),
+    ("heart-music", "❤Music"),
+    ("heart_music", "❤Music"),
+    ("?Music", "❤Music"),
+    ("⊕Music", "❤Music"),
+    ("⟨ψ⟩Quantum", "⟨ψ⟩Quantum"),
+    ("quantum", "⟨ψ⟩Quantum"),
+    ("Quantum", "⟨ψ⟩Quantum"),
+    ("psi-quantum", "⟨ψ⟩Quantum"),
+    ("psi_Quantum", "⟨ψ⟩Quantum"),
+    ("???Quantum", "⟨ψ⟩Quantum"),
+    ("👁AI-Manifest", "👁AI-Manifest"),
+    ("AI-Manifest", "👁AI-Manifest"),
+    ("ai_manifest", "👁AI-Manifest"),
+    ("aimanifest", "👁AI-Manifest"),
+    ("??AI-Manifest", "👁AI-Manifest"),
+    ("⊕Workspace", "⊕Workspace"),
+    ("workspace", "⊕Workspace"),
+    ("Workspace", "⊕Workspace"),
+    ("WORKSPACE", "⊕Workspace"),
+    ("oplus-workspace", "⊕Workspace"),
+    ("?Workspace", "⊕Workspace"),
+    ("ΣCapital", "ΣCapital"),
+    ("SigmaCapital", "ΣCapital"),
+    ("SIGMACapital", "ΣCapital"),
+    ("sigmacapital", "ΣCapital"),
+    ("capital", "ΣCapital"),
+    ("⊕Workspace (primary); indirectly all 5 projects via the workspace file", "⊕Workspace"),
+    ("❤Music (primary)", "❤Music"),
+])
+def test_canonicalize_project_known_aliases(raw, expected):
+    assert canonicalize_project(raw) == expected
+
+
+@pytest.mark.parametrize("raw", [None, "", "  ", "All 5", "All 5 projects", "unknown"])
+def test_canonicalize_project_unmappable_goes_to_unmapped_bucket(raw):
+    assert canonicalize_project(raw) == UNMAPPED_PROJECT
+
+
+def test_build_roadmap_canonicalizes_project_names():
+    frs = [
+        _fr("FR-1", "Music FR", project="heart_music"),
+        _fr("FR-2", "Workspace FR", project="?Workspace"),
+    ]
+    roadmap = build_roadmap(frs, todos=[], today=date(2026, 6, 30))
+    projects = {n["id"]: n["project"] for n in roadmap["nodes"]}
+    assert projects == {"FR-1": "❤Music", "FR-2": "⊕Workspace"}
+
+
+def test_build_roadmap_project_edges_use_canonical_names():
+    frs = [
+        _fr("FR-20260601-music", "Music FR", project="heartmusic",
+            acceptance_criteria="Depends on: FR-20260601-workspace"),
+        _fr("FR-20260601-workspace", "Workspace FR", project="oplus-workspace"),
+    ]
+    roadmap = build_roadmap(frs, todos=[], today=date(2026, 6, 30))
+    assert {"from": "❤Music", "to": "⊕Workspace"} in roadmap["project_edges"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# End-to-end integration against a seeded fixture DB (not the real, encrypted
+# fr_ledgers.db / manifest_todos.db)
+
+@pytest.fixture
+def fixture_fr_conn():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        "CREATE TABLE feature_requests ("
+        " id TEXT PRIMARY KEY, title TEXT, state TEXT, projects TEXT, risk TEXT,"
+        " opened_at TEXT, acceptance_criteria TEXT, concurrency_notes TEXT, target_quarter TEXT"
+        ");"
+    )
+    conn.executemany(
+        "INSERT INTO feature_requests "
+        "(id, title, state, projects, risk, opened_at, acceptance_criteria, concurrency_notes, target_quarter) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        [
+            ("FR-20260101-old-done", "Old finished work", "DONE", "workspace", "low",
+             "2026-01-01", None, None, None),
+            ("FR-20260201-old-merged", "Old merged work", "MERGED", "music", "low",
+             "2026-02-01", None, None, None),
+            ("FR-20260301-old-soaking", "Old soaking work", "SOAKING", "quantum", "low",
+             "2026-03-01", None, None, None),
+            ("FR-20260601-active-music", "Active music work", "IN_PROGRESS", "heart_music", "medium",
+             "2026-06-01", "Depends on: FR-20260601-active-workspace", None, None),
+            ("FR-20260601-active-workspace", "Active workspace work", "OPEN", "?Workspace", "low",
+             "2026-06-15", None, None, "2026-Q4"),
+        ],
+    )
+    conn.commit()
+    yield conn
+    conn.close()
+
+
+@pytest.fixture
+def fixture_todos_db(tmp_path):
+    db_path = tmp_path / "manifest_todos_fixture.db"
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript(
+        "CREATE TABLE todos (id INTEGER PRIMARY KEY, project TEXT, text TEXT, done INTEGER);"
+    )
+    conn.executemany(
+        "INSERT INTO todos (id, project, text, done) VALUES (?,?,?,?)",
+        [
+            (1, "ai_manifest", "Depends on: FR-20260601-active-music", 0),
+            (2, "music", "Old closed-out todo", 1),
+        ],
+    )
+    conn.commit()
+    conn.close()
+    return db_path
+
+
+def test_generate_roadmap_end_to_end_against_fixture_db(fixture_fr_conn, fixture_todos_db, tmp_path):
+    out_path = tmp_path / "roadmap.json"
+    roadmap = generate_roadmap(
+        output_path=out_path,
+        fr_connection=fixture_fr_conn,
+        todos_db_path=fixture_todos_db,
+    )
+
+    # Filtering: only the 2 active FRs surface, DONE/MERGED/SOAKING excluded.
+    node_ids = {n["id"] for n in roadmap["nodes"]}
+    assert node_ids == {"FR-20260601-active-music", "FR-20260601-active-workspace"}
+
+    # Canonicalization: raw aliases collapse to canonical project names.
+    projects = {n["id"]: n["project"] for n in roadmap["nodes"]}
+    assert projects == {
+        "FR-20260601-active-music": "❤Music",
+        "FR-20260601-active-workspace": "⊕Workspace",
+    }
+
+    # Cross-project dependency edge uses canonical names.
+    assert {"from": "❤Music", "to": "⊕Workspace"} in roadmap["project_edges"]
+
+    # Quarter bucketing: manual override honored, quarters section populated.
+    workspace_node = next(n for n in roadmap["nodes"] if n["id"] == "FR-20260601-active-workspace")
+    assert workspace_node["quarter"] == "2026-Q4"
+    assert "FR-20260601-active-workspace" in roadmap["quarters"]["2026-Q4"]
+
+    # Todo reference resolved against active FR set.
+    assert {
+        "todo_id": 1, "todo_project": "ai_manifest",
+        "fr_id": "FR-20260601-active-music", "fr_active": True,
+    } in roadmap["todo_refs"]
+
+    # Only one open todo counted (done=1 excluded); only 1 fr_id reference.
+    assert len(roadmap["todo_refs"]) == 1
+
+    assert out_path.is_file()
+    written = json.loads(out_path.read_text(encoding="utf-8"))
+    assert written["nodes"] == roadmap["nodes"]

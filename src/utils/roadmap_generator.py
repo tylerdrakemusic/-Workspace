@@ -23,7 +23,81 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-ARCHIVED_STATES = {"SIGNED_OFF", "ARCHIVED", "CLOSED"}
+# Terminal/completed states, per feature-request-flow.instructions.md (DONE,
+# MERGED, SOAKING, SIGNED_OFF, ARCHIVED, CLOSED). These are excluded from the
+# roadmap because the work is finished (or merged and only awaiting Tyler's
+# post-merge signoff) — not forward-looking. Rather than excluding a blocklist
+# (whose vocabulary drifts as new terminal states like "DONE" are added), the
+# generator uses the INCLUDE-list below.
+
+# Active/in-flight FR lifecycle states (see feature-request-flow.instructions.md
+# state machine). This is an INCLUDE-list rather than relying on excluding
+# ARCHIVED_STATES, because terminal-state vocabulary varies across DBs and new
+# terminal states (e.g. "DONE") have been added to fr_ledgers.db that predate
+# this generator.
+ACTIVE_FR_STATES = {
+    "OPEN",
+    "TRIAGED",
+    "BRANCHED",
+    "IN_PROGRESS",
+    "CHANGES_REQUESTED",
+    "FUNCTIONAL_QA",
+    "ARCHITECTURE_REVIEW",
+    "REVIEW_REQUESTED",
+    "AUTO_REVIEWED",
+    "TYLER_APPROVED",
+    "BRANCH_CHECKED_OUT",
+}
+
+# manifest_todos.db has no lifecycle-state column (only a `done` 0/1 flag), so
+# there is no equivalent ACTIVE_TODO_STATES set to define — `fetch_open_todos`
+# already filters on `done = 0`.
+
+CANONICAL_PROJECTS = ["∞Life", "❤Music", "⟨ψ⟩Quantum", "👁AI-Manifest", "⊕Workspace", "ΣCapital"]
+UNMAPPED_PROJECT = "Unmapped"
+
+# Ordered (specific-before-generic) keyword -> canonical project map. Matching is
+# substring-based against a normalized (lowercased, ascii-letters-only) token, so
+# more specific / composite keywords must be listed before the generic single-word
+# keywords they contain (e.g. "heartmusic" before "music") to avoid ambiguity.
+_PROJECT_KEYWORDS: list[tuple[str, str]] = [
+    ("infinitelife", "∞Life"),
+    ("psiquantum", "⟨ψ⟩Quantum"),
+    ("sigmacapital", "ΣCapital"),
+    ("heartmusic", "❤Music"),
+    ("oplusworkspace", "⊕Workspace"),
+    ("aimanifest", "👁AI-Manifest"),
+    ("inflife", "∞Life"),
+    ("quantum", "⟨ψ⟩Quantum"),
+    ("workspace", "⊕Workspace"),
+    ("music", "❤Music"),
+    ("capital", "ΣCapital"),
+    ("life", "∞Life"),
+]
+
+_NON_LETTER_RE = re.compile(r"[^a-z]")
+
+
+def _normalize_project_token(raw: str) -> str:
+    """Lowercase and strip everything but ascii letters (drops sigils, digits,
+    punctuation, mojibake artifacts like leading '?' or '8', parentheticals)."""
+    return _NON_LETTER_RE.sub("", raw.lower())
+
+
+def canonicalize_project(raw: str | None) -> str:
+    """Map a raw project string (any known alias, mojibake variant, or casing)
+    to exactly one of the 6 canonical project names, or `Unmapped` if no known
+    keyword is found.
+    """
+    if not raw or not raw.strip():
+        return UNMAPPED_PROJECT
+    token = _normalize_project_token(raw)
+    if not token:
+        return UNMAPPED_PROJECT
+    for keyword, canonical in _PROJECT_KEYWORDS:
+        if keyword in token:
+            return canonical
+    return UNMAPPED_PROJECT
 
 MANIFEST_TODOS_DB_PATH = (
     Path(__file__).resolve().parents[3] / "👁AI-Manifest" / "src" / "data" / "manifest_todos.db"
@@ -162,10 +236,10 @@ def assign_quarter(fr: dict[str, Any], today: date | None = None) -> str:
 # DB reads
 
 def fetch_active_frs(conn: sqlite3.Connection) -> list[dict[str, Any]]:
-    placeholders = ",".join("?" * len(ARCHIVED_STATES))
+    placeholders = ",".join("?" * len(ACTIVE_FR_STATES))
     rows = conn.execute(
-        f"SELECT * FROM feature_requests WHERE state NOT IN ({placeholders})",  # nosec B608
-        list(ARCHIVED_STATES),
+        f"SELECT * FROM feature_requests WHERE state IN ({placeholders})",  # nosec B608
+        list(ACTIVE_FR_STATES),
     ).fetchall()
     return [dict(row) for row in rows]
 
@@ -198,7 +272,8 @@ def build_roadmap(
 
     for fr in frs:
         quarter = assign_quarter(fr, today=today)
-        project = (fr.get("projects") or "").split(",")[0].strip() or "unknown"
+        raw_project = (fr.get("projects") or "").split(",")[0].strip()
+        project = canonicalize_project(raw_project)
         deps = extract_fr_dependencies(fr)
         node = {
             "id": fr["id"],
@@ -217,11 +292,11 @@ def build_roadmap(
             if dep_id in active_ids:
                 dep_project = next(
                     (
-                        (f.get("projects") or "").split(",")[0].strip()
+                        canonicalize_project((f.get("projects") or "").split(",")[0].strip())
                         for f in frs
                         if f["id"] == dep_id
                     ),
-                    "unknown",
+                    UNMAPPED_PROJECT,
                 )
                 if dep_project and dep_project != project:
                     project_pairs.add((project, dep_project))
@@ -251,19 +326,34 @@ def build_roadmap(
 # ─────────────────────────────────────────────────────────────────────────────
 # Entry point
 
-def generate_roadmap(output_path: Path | None = None) -> dict[str, Any]:
-    from init_fr_db import get_connection, init_db  # noqa: E402
+def generate_roadmap(
+    output_path: Path | None = None,
+    fr_connection: sqlite3.Connection | None = None,
+    todos_db_path: Path | None = None,
+) -> dict[str, Any]:
+    """Generate the roadmap JSON artifact.
 
-    init_db()
-    fr_conn = get_connection()
+    `fr_connection` and `todos_db_path` are injectable so tests can run this
+    end-to-end against a seeded fixture DB instead of the real (encrypted)
+    `fr_ledgers.db` / `manifest_todos.db` paths.
+    """
+    owns_fr_conn = False
+    if fr_connection is None:
+        from init_fr_db import get_connection, init_db  # noqa: E402
+
+        init_db()
+        fr_connection = get_connection()
+        owns_fr_conn = True
     try:
-        frs = fetch_active_frs(fr_conn)
+        frs = fetch_active_frs(fr_connection)
     finally:
-        fr_conn.close()
+        if owns_fr_conn:
+            fr_connection.close()
 
+    todos_path = todos_db_path if todos_db_path is not None else MANIFEST_TODOS_DB_PATH
     todos: list[dict[str, Any]] = []
-    if MANIFEST_TODOS_DB_PATH.is_file():
-        todo_conn = sqlite3.connect(str(MANIFEST_TODOS_DB_PATH))
+    if todos_path.is_file():
+        todo_conn = sqlite3.connect(str(todos_path))
         todo_conn.row_factory = sqlite3.Row
         try:
             todos = fetch_open_todos(todo_conn)
