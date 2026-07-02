@@ -8,6 +8,7 @@ erDiagram
         real shares
         real avg_cost
         text opened_at
+        text model
     }
     PICKS {
         integer id PK
@@ -29,6 +30,7 @@ erDiagram
         real price
         text executed_at
         text mode "sim|real"
+        text model
     }
     SIGNALS {
         integer id PK
@@ -56,9 +58,12 @@ erDiagram
         real scoring
         text mode "simulated|real"
         text created_at
+        text model
     }
 
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
     %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
+    %% mode='real' reserved for future FR after broker-API compliance review
+    %% model column (FR-20260627): per-pick LLM provenance — legacy portfolio/execution rows backfilled to 'raptor', legacy candidates left NULL
     %% mode='real' authorized (charter amended, broker-API compliance review complete)
     %% for the single dedicated low-risk account; M2 order placement gated on funding
