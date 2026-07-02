@@ -69,6 +69,11 @@ graph LR
     Manifest -.->|migrate_todos.py reads TODO_*.md| Music
     Manifest -.->|migrate_todos.py reads TODO_*.md| Quantum
     Manifest -.->|migrate_todos.py reads TODO_*.md| Workspace
+    %% FR-20260630-cross-project-roadmap-generator
+    RoadmapJSON[(roadmap.json)]:::db
+    Workspace -->|roadmap_generator.py| RoadmapJSON
+    Manifest -->|subprocess: invokes roadmap_generator.py| Workspace
+    Manifest -.->|reads roadmap.json| Workspace
     %% Cross-project integrations (the workspace's connective tissue)
     Quantum -.->|QRNG entropy| Workspace
     Workspace -.->|gen-qee passwords| Life

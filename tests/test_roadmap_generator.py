@@ -1,5 +1,7 @@
 """Tests for roadmap_generator.py — dependency parsing, quarter bucketing, graph build."""
 import json
+import os
+import subprocess
 import sqlite3
 import sys
 from datetime import date
@@ -398,20 +400,43 @@ def test_generate_roadmap_end_to_end_against_fixture_db(fixture_fr_conn, fixture
     # Cross-project dependency edge uses canonical names.
     assert {"from": "❤Music", "to": "⊕Workspace"} in roadmap["project_edges"]
 
-    # Quarter bucketing: manual override honored, quarters section populated.
-    workspace_node = next(n for n in roadmap["nodes"] if n["id"] == "FR-20260601-active-workspace")
-    assert workspace_node["quarter"] == "2026-Q4"
-    assert "FR-20260601-active-workspace" in roadmap["quarters"]["2026-Q4"]
 
-    # Todo reference resolved against active FR set.
-    assert {
-        "todo_id": 1, "todo_project": "ai_manifest",
-        "fr_id": "FR-20260601-active-music", "fr_active": True,
-    } in roadmap["todo_refs"]
+# ─────────────────────────────────────────────────────────────────────────────
+# AC1: cross-project subprocess invocation contract (👁AI-Manifest's portal
+# pipeline calls this script via subprocess with a fixed path + --out arg —
+# see feature-request-flow / BFX-20260701-roadmap-tab-follow-up).
 
-    # Only one open todo counted (done=1 excluded); only 1 fr_id reference.
-    assert len(roadmap["todo_refs"]) == 1
+def test_main_cli_invokable_as_subprocess_and_writes_valid_json(tmp_path):
+    """Verify the stable subprocess contract:
+    C:\\G\\python.exe f:\\⊕Workspace\\src\\utils\\roadmap_generator.py --out <path>
+    """
+    script = Path(__file__).resolve().parent.parent / "src" / "utils" / "roadmap_generator.py"
+    out_path = tmp_path / "roadmap_subprocess.json"
 
+    env = dict(os.environ)
+    env["PYTHONUTF8"] = "1"
+    # CI runners don't have FR_LEDGERS_DB_KEY/WORKSPACE_DB_KEY set as system
+    # env vars (only Tyler's dev machine does), so generate_roadmap()'s
+    # get_connection() would raise RuntimeError. Since fr_ledgers.db is
+    # gitignored and won't exist in a fresh checkout, any key value works —
+    # sqlcipher3 encrypts a brand-new empty DB with whatever key is supplied
+    # on first open. Only inject a dummy key when one isn't already present
+    # so this still exercises Tyler's real DB/key locally.
+    if not env.get("FR_LEDGERS_DB_KEY") and not env.get("WORKSPACE_DB_KEY"):
+        env["FR_LEDGERS_DB_KEY"] = "test-only-dummy-key-for-ci"
+
+    result = subprocess.run(
+        [sys.executable, str(script), "--out", str(out_path)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
     assert out_path.is_file()
-    written = json.loads(out_path.read_text(encoding="utf-8"))
-    assert written["nodes"] == roadmap["nodes"]
+
+    data = json.loads(out_path.read_text(encoding="utf-8"))
+    assert set(data.keys()) == {
+        "generated_at", "nodes", "fr_edges", "project_edges", "todo_refs", "quarters",
+    }

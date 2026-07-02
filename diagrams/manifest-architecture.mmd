@@ -3,6 +3,7 @@ graph TB
     Triggers[Task Scheduler · CLI · Manual] --> Tools[tools/<br/>executive_audio_brief.py]
     Tools --> Briefs[brief generators]
     Tools --> LilyPortrait[src/utils/<br/>lily_portrait.py]
+    Tools --> RoadmapPanel[src/utils/<br/>roadmap_panel.py]
     Briefs --> OpenAI[OpenAI<br/>OPENAPI_TOKEN]
     Briefs --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
     LilyPortrait -->|1st try| DallE3[DallE3Client<br/>⊕Workspace integration]
@@ -24,6 +25,13 @@ graph TB
     ElevenLabs --> AudioOut[output/tts/*.mp3]
     TextOut --> Portal
     AudioOut --> Portal
+    %% FR-20260630-cross-project-roadmap-generator
+    RoadmapGen[⊕Workspace<br/>roadmap_generator.py]
+    RoadmapJSON[(⊕Workspace<br/>roadmap.json)]:::db
+    Tools -->|subprocess: shells out| RoadmapGen
+    RoadmapGen --> RoadmapJSON
+    RoadmapPanel -.->|reads roadmap.json| RoadmapJSON
+    RoadmapPanel -->|Roadmap tab| Portal
     %% PR#12 – todos DB
     TodosUtil[src/utils/<br/>todos_db.py]
     TodosDB[(src/data/<br/>manifest_todos.db)]
@@ -59,6 +67,9 @@ graph TB
     class RescorerTool util
     class PriorityScorer util
     class RescorerLog out
+    class RoadmapPanel util
+    class RoadmapJSON db
+    class RoadmapGen ws
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
