@@ -56,6 +56,24 @@ def servers_json() -> dict:
     return json.loads(SERVERS_JSON.read_text(encoding="utf-8-sig"))
 
 
+@pytest.fixture(scope="module")
+def guitar_trainer_pane_id(portal_text: str) -> str:
+    """Resolve the dash-pane id whose iframe points at :5055.
+
+    Pane indices are assigned by dashboard registry order, which shifts
+    whenever a new dashboard is added (e.g. Band Management). Do not
+    hardcode a pane number — look it up by iframe src instead.
+    """
+    match = re.search(
+        r'<div class="dash-pane" id="(pane-\d+)"[^>]*>\s*'
+        r'<iframe src="http://localhost:5055"',
+        portal_text,
+    )
+    if not match:
+        pytest.skip("No pane with a :5055 iframe found in portal.html")
+    return match.group(1)
+
+
 # ---------------------------------------------------------------------------
 # Port conflict checks
 # ---------------------------------------------------------------------------
@@ -147,69 +165,69 @@ def test_open_portal_guitar_trainer_before_open(open_portal_text: str) -> None:
 # portal.html pane-3 — bare iframe, no live-dash chrome
 # ---------------------------------------------------------------------------
 
-def test_pane9_has_no_live_dash_wrapper(portal_text: str) -> None:
-    """pane-3 must not contain a .live-dash wrapper."""
-    pane9_match = re.search(r'id="pane-3"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-3 not found in portal.html"
+def test_pane9_has_no_live_dash_wrapper(portal_text: str, guitar_trainer_pane_id: str) -> None:
+    """Guitar Trainer pane must not contain a .live-dash wrapper."""
+    pane9_match = re.search(rf'id="{guitar_trainer_pane_id}"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
+    assert pane9_match, f"{guitar_trainer_pane_id} not found in portal.html"
     inner = pane9_match.group(1)
     assert "live-dash" not in inner, (
-        "pane-3 still contains 'live-dash' wrapper — should be bare iframe"
+        f"{guitar_trainer_pane_id} still contains 'live-dash' wrapper — should be bare iframe"
     )
 
 
-def test_pane9_has_no_live_header(portal_text: str) -> None:
-    """pane-3 must not contain the live-header div."""
-    pane9_match = re.search(r'id="pane-3"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-3 not found in portal.html"
+def test_pane9_has_no_live_header(portal_text: str, guitar_trainer_pane_id: str) -> None:
+    """Guitar Trainer pane must not contain the live-header div."""
+    pane9_match = re.search(rf'id="{guitar_trainer_pane_id}"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
+    assert pane9_match, f"{guitar_trainer_pane_id} not found in portal.html"
     inner = pane9_match.group(1)
     assert "live-header" not in inner, (
-        "pane-3 still contains 'live-header' element"
+        f"{guitar_trainer_pane_id} still contains 'live-header' element"
     )
 
 
-def test_pane9_has_no_open_in_browser_button(portal_text: str) -> None:
-    """pane-3 must not contain the 'Open in Browser' link."""
-    pane9_match = re.search(r'id="pane-3"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-3 not found in portal.html"
+def test_pane9_has_no_open_in_browser_button(portal_text: str, guitar_trainer_pane_id: str) -> None:
+    """Guitar Trainer pane must not contain the 'Open in Browser' link."""
+    pane9_match = re.search(rf'id="{guitar_trainer_pane_id}"[^>]*>(.*?)</div>', portal_text, re.DOTALL)
+    assert pane9_match, f"{guitar_trainer_pane_id} not found in portal.html"
     inner = pane9_match.group(1)
     assert "open-btn" not in inner, (
-        "pane-3 still contains 'open-btn' element"
+        f"{guitar_trainer_pane_id} still contains 'open-btn' element"
     )
     assert "Open in Browser" not in inner, (
-        "pane-3 still contains 'Open in Browser' text"
+        f"{guitar_trainer_pane_id} still contains 'Open in Browser' text"
     )
 
 
-def test_pane9_iframe_points_to_5055(portal_text: str) -> None:
-    """pane-3 iframe src must point to localhost:5055."""
+def test_pane9_iframe_points_to_5055(portal_text: str, guitar_trainer_pane_id: str) -> None:
+    """Guitar Trainer pane iframe src must point to localhost:5055."""
     if _ON_CI:
-        pytest.skip("pane-3 content is environment-specific; Guitar Trainer pane requires local multi-project checkout")
-    pane9_match = re.search(r'id="pane-3"[^>]*>.*?</div>', portal_text, re.DOTALL)
-    assert pane9_match, "pane-3 not found in portal.html"
+        pytest.skip("Guitar Trainer pane content is environment-specific; requires local multi-project checkout")
+    pane9_match = re.search(rf'id="{guitar_trainer_pane_id}"[^>]*>.*?</div>', portal_text, re.DOTALL)
+    assert pane9_match, f"{guitar_trainer_pane_id} not found in portal.html"
     block = pane9_match.group(0)
     assert 'src="http://localhost:5055"' in block, (
-        "pane-3 iframe does not point to http://localhost:5055"
+        f"{guitar_trainer_pane_id} iframe does not point to http://localhost:5055"
     )
 
 
-def test_pane9_is_bare_iframe(portal_text: str) -> None:
-    """pane-3 full element must be exactly: dash-pane div containing a single iframe."""
+def test_pane9_is_bare_iframe(portal_text: str, guitar_trainer_pane_id: str) -> None:
+    """Guitar Trainer pane's full element must be exactly: dash-pane div containing a single iframe."""
     if _ON_CI:
-        pytest.skip("pane-3 content is environment-specific; Guitar Trainer pane requires local multi-project checkout")
-    # Match the complete pane-3 div (self-contained on one line as generated)
+        pytest.skip("Guitar Trainer pane content is environment-specific; requires local multi-project checkout")
+    # Match the complete pane div (self-contained on one line as generated)
     pane9_match = re.search(
-        r'<div class="dash-pane" id="pane-3"[^>]*>(.*?)</div>',
+        rf'<div class="dash-pane" id="{guitar_trainer_pane_id}"[^>]*>(.*?)</div>',
         portal_text,
         re.DOTALL,
     )
-    assert pane9_match, "pane-3 not found in portal.html"
+    assert pane9_match, f"{guitar_trainer_pane_id} not found in portal.html"
     inner = pane9_match.group(1).strip()
     # Inner content should be a single iframe tag and nothing else
-    assert inner.startswith("<iframe"), f"pane-3 inner content does not start with <iframe>: {inner[:80]}"
+    assert inner.startswith("<iframe"), f"{guitar_trainer_pane_id} inner content does not start with <iframe>: {inner[:80]}"
     assert inner.endswith(">") or inner.endswith("></iframe>"), (
-        f"pane-3 inner content has unexpected trailing content: {inner[-80:]}"
+        f"{guitar_trainer_pane_id} inner content has unexpected trailing content: {inner[-80:]}"
     )
-    assert inner.count("<div") == 0, "pane-3 contains unexpected nested <div> elements"
+    assert inner.count("<div") == 0, f"{guitar_trainer_pane_id} contains unexpected nested <div> elements"
 
 
 # ---------------------------------------------------------------------------

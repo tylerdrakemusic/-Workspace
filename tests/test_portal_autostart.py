@@ -114,6 +114,28 @@ def test_register_protocol_handler_command_structure(register_protocol_text: str
 windows_only = pytest.mark.skipif(sys.platform != "win32", reason="Windows registry not available on this platform")
 
 
+def _resolve_staged_indirection(registry_command: str) -> str:
+    """Follow a wscript.exe/.vbs registry handler command to its staged .ps1 content.
+
+    register_portal_protocol.ps1 keeps the registry command pointed at an
+    ASCII-safe .vbs shim (via wscript.exe) to avoid shell/protocol issues with
+    the ⊕ sigil path. The .vbs shim in turn launches a staged .ps1 stub that
+    actually contains "-NoOpen" and "launch_portal.ps1". Returns the staged
+    .ps1 content (or empty string if not found/applicable) so callers can
+    check both the registry command and its indirection target.
+    """
+    match = re.search(r'"([^"]+\.vbs)"', registry_command)
+    if not match:
+        return ""
+    vbs_path = Path(match.group(1))
+    if not vbs_path.is_file():
+        return ""
+    staged_ps1 = vbs_path.with_suffix(".ps1")
+    if not staged_ps1.is_file():
+        return ""
+    return staged_ps1.read_text(encoding="utf-8-sig")
+
+
 @windows_only
 def test_registry_portal_protocol_registered() -> None:
     """HKCU portal:// protocol handler must exist in the registry."""
@@ -134,7 +156,12 @@ def test_registry_portal_protocol_registered() -> None:
 
 @windows_only
 def test_registry_handler_includes_noopen() -> None:
-    """Registered portal:// handler command must include -NoOpen."""
+    """Registered portal:// handler must include -NoOpen, either directly in the
+    registry command or in the staged launcher script it indirects through
+    (register_portal_protocol.ps1 wraps the real command in an ASCII-safe
+    staged .ps1 invoked via wscript.exe + a .vbs shim, for shell/protocol
+    stability with the ⊕ sigil path).
+    """
     import winreg
     try:
         key = winreg.OpenKey(
@@ -143,16 +170,18 @@ def test_registry_handler_includes_noopen() -> None:
         )
         value, _ = winreg.QueryValueEx(key, "")
         winreg.CloseKey(key)
-        assert "-NoOpen" in value, (
-            f"Registry handler command does not include -NoOpen: {value}"
-        )
     except FileNotFoundError:
         pytest.fail("portal:// protocol not registered")
+    resolved = value + _resolve_staged_indirection(value)
+    assert "-NoOpen" in resolved, (
+        f"Registry handler command (and any staged launcher it delegates to) does not include -NoOpen: {value}"
+    )
 
 
 @windows_only
 def test_registry_handler_points_to_launch_portal() -> None:
-    """Registered handler must reference launch_portal.ps1."""
+    """Registered handler must reference launch_portal.ps1, either directly or
+    via the staged .ps1 it indirects through."""
     import winreg
     try:
         key = winreg.OpenKey(
@@ -161,11 +190,12 @@ def test_registry_handler_points_to_launch_portal() -> None:
         )
         value, _ = winreg.QueryValueEx(key, "")
         winreg.CloseKey(key)
-        assert "launch_portal.ps1" in value, (
-            f"Registry handler does not reference launch_portal.ps1: {value}"
-        )
     except FileNotFoundError:
         pytest.fail("portal:// protocol not registered")
+    resolved = value + _resolve_staged_indirection(value)
+    assert "launch_portal.ps1" in resolved, (
+        f"Registry handler (and any staged launcher it delegates to) does not reference launch_portal.ps1: {value}"
+    )
 
 
 # ---------------------------------------------------------------------------
