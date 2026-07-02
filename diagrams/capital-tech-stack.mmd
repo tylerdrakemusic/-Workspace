@@ -4,8 +4,10 @@ graph LR
     Python --> Dotenv[python-dotenv]
     Python --> Pytest[pytest]
     Python --> Perplexity["perplexity-client<br/>(via ⊕Workspace/src/integrations)"]
+    Python --> Crypto["cryptography<br/>token encryption · self-signed loopback cert"]
+    Python --> Requests["requests<br/>OAuth + Schwab Market Data HTTP"]
     class Python lang
-    class SQLCipher,Dotenv,Pytest lib
+    class SQLCipher,Dotenv,Pytest,Crypto,Requests lib
     class Perplexity ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

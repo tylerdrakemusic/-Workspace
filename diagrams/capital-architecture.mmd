@@ -15,16 +15,26 @@ graph TB
     DB --> Picks[picks table<br/>weekly recommendations]
     DB --> Portfolio[portfolio + trades<br/>paper-DB sim only]
     Picks --> Tyler
-    Compliance[COMPLIANCE.md<br/>off-market guidance · no broker API<br/>no automated orders]:::state
+    %% Schwab API M1 — OAuth + Market Data ingestion (FR-20260628-sigmacapital-schwab-api)
+    Schwab[(Charles Schwab API<br/>OAuth 2.0)] --> OAuthLoop[HTTPS loopback<br/>port 8182 market data<br/>port 8183 trading]
+    OAuthLoop --> TokenStore[token_store<br/>data/secrets/ · encrypted via cryptography<br/>0600 perms · gitignored]
+    TokenStore --> MarketData[MarketDataClient<br/>src/integrations/schwab/market_data.py]
+    MarketData -->|source=schwab_marketdata<br/>category=quote| DB
+    TradeGate[Trade Gate<br/>port 7475] -->|GET /api/schwab/status| Reauth[tools/schwab_reauth.py]
+    TradeGate -->|POST /api/schwab/reauth| Reauth
+    Reauth -.refreshes.-> TokenStore
+    Compliance[COMPLIANCE.md<br/>Schwab API authorized<br/>M1: market data + re-auth<br/>M2 order placement gated on funding]:::state
     Compliance -.enforces.-> Manual
     Compliance -.enforces.-> Research
+    Compliance -.governs.-> Schwab
     Hook[.git/hooks/pre-push<br/>mirrors ∞Life PROTECTION_HOOK]:::state
     Hook -.blocks.-> DB
     class Signals,Manual state
     class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
-    class Agents,ResearchAgent orch
+    class Agents,ResearchAgent,MarketData,Reauth,TradeGate orch
+    class OAuthLoop,TokenStore state
     class DB db
-    class Perplexity,YFinance,Anthropic ext
+    class Perplexity,YFinance,Anthropic,Schwab ext
     class Tyler tyler
 
 classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
