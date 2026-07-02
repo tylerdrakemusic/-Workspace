@@ -415,6 +415,15 @@ def test_main_cli_invokable_as_subprocess_and_writes_valid_json(tmp_path):
 
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
+    # CI runners don't have FR_LEDGERS_DB_KEY/WORKSPACE_DB_KEY set as system
+    # env vars (only Tyler's dev machine does), so generate_roadmap()'s
+    # get_connection() would raise RuntimeError. Since fr_ledgers.db is
+    # gitignored and won't exist in a fresh checkout, any key value works —
+    # sqlcipher3 encrypts a brand-new empty DB with whatever key is supplied
+    # on first open. Only inject a dummy key when one isn't already present
+    # so this still exercises Tyler's real DB/key locally.
+    if not env.get("FR_LEDGERS_DB_KEY") and not env.get("WORKSPACE_DB_KEY"):
+        env["FR_LEDGERS_DB_KEY"] = "test-only-dummy-key-for-ci"
 
     result = subprocess.run(
         [sys.executable, str(script), "--out", str(out_path)],
