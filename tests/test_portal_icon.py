@@ -201,11 +201,19 @@ def test_all_server_scripts_exist() -> None:
 
 
 def test_portal_html_has_fr_and_brief_servers() -> None:
-    """portal.html must embed fr_dashboard.html (uses :7474) and the AI brief iframe (:8200)."""
+    """portal.html must embed the FR Board (live iframe at :7474) and the AI brief iframe (:8200).
+
+    The FR Board pane iframes the live fr_server.py directly rather than
+    embedding a static fr_dashboard.html snapshot — a static embed silently
+    breaks auto-refresh (see test_portal_playwright.py), so this checks for
+    the live-server iframe instead of the retired static-file reference.
+    """
     if _ON_CI:
         pytest.skip("fr_dashboard.html and AI brief iframes require local multi-project checkout; not present in CI")
     html = PORTAL_HTML.read_text(encoding="utf-8")
-    assert "fr_dashboard.html" in html, "portal.html missing fr_dashboard.html pane"
+    assert "127.0.0.1:7474" in html or "localhost:7474" in html, (
+        "portal.html missing FR Board iframe (:7474)"
+    )
     assert "127.0.0.1:8200" in html or "localhost:8200" in html, (
         "portal.html missing Executive Audio Brief iframe (:8200)"
     )
@@ -223,8 +231,15 @@ def test_staged_launcher_starts_music_servers() -> None:
         import pytest
         pytest.skip("Staged launcher not yet created — run create_desktop_shortcut.py first")
     content = staged_ps1.read_text(encoding="utf-8-sig")
-    # Accept either direct-start staged launchers or a thin delegate to root open_portal.ps1.
-    delegates_to_root_launcher = "open_portal.ps1" in content and "f:\\⊕Workspace\\open_portal.ps1" in content
+    # Accept either direct-start staged launchers or a thin delegate to the
+    # server-start step (restart_servers.ps1 and/or the root open_portal.ps1).
+    # restart_servers.ps1 reads portal_servers.json (single source of truth for
+    # server start commands) so referencing it is equivalent to starting each
+    # server directly.
+    delegates_to_root_launcher = (
+        ("open_portal.ps1" in content and "f:\\⊕Workspace\\open_portal.ps1" in content)
+        or "restart_servers.ps1" in content
+    )
     if not delegates_to_root_launcher:
         for name, port in _ALL_SERVERS.items():
             assert str(port) in content, (
