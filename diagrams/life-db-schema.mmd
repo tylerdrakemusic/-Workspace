@@ -28,6 +28,59 @@ erDiagram
         real weight_kg
         text source
     }
+    %% Constraint: UNIQUE(date, source)
+    SLEEP_LOG {
+        integer id PK
+        text date
+        integer sleep_score
+        real total_sleep_min
+        real deep_min
+        real light_min
+        real rem_min
+        real awake_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    RESTING_HR_LOG {
+        integer id PK
+        text date
+        integer resting_hr
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    HRV_LOG {
+        integer id PK
+        text date
+        real hrv_ms
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    STRESS_LOG {
+        integer id PK
+        text date
+        integer avg_stress
+        integer max_stress
+        real rest_stress_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    BODY_BATTERY_LOG {
+        integer id PK
+        text date
+        integer min_level
+        integer max_level
+        integer end_level
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    ACTIVITY_LOG {
+        integer id PK
+        text date
+        integer steps
+        real active_calories
+        real total_calories
+        text source
+    }
     SYNC_LOG {
         integer id PK
         text source
