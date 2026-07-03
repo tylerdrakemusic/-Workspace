@@ -16,6 +16,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,10 +30,30 @@ ACTIVE_STATES = {
     "CHANGES_REQUESTED", "SOAKING",
 }
 
+# Matches an event summary tagging a passing architecture review, e.g.
+# "ARCHITECTURE_REVIEW:PASS — ..." or "ARCHITECTURE_REVIEW: PASS_WITH_UPDATES ..."
+_ARCH_REVIEW_PASS_RE = re.compile(
+    r"ARCHITECTURE_REVIEW\s*[:\-]?\s*(PASS_WITH_UPDATES|PASS)\b", re.IGNORECASE
+)
+
 
 def _conn():
     init_db()
     return get_connection()
+
+
+def _has_architecture_review_pass(conn, fr_id: str) -> bool:
+    """Return True if the FR's event log contains an ARCHITECTURE_REVIEW:PASS
+    (or PASS_WITH_UPDATES) event, per the feature-request-flow state machine.
+    """
+    rows = conn.execute(
+        "SELECT summary FROM fr_events WHERE fr_id=?", (fr_id,)
+    ).fetchall()
+    for row in rows:
+        summary = row["summary"] if hasattr(row, "keys") else row[0]
+        if summary and _ARCH_REVIEW_PASS_RE.search(summary):
+            return True
+    return False
 
 
 def _now() -> str:
@@ -99,6 +120,15 @@ def cmd_update_state(args: argparse.Namespace) -> None:
     fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
     if not fr:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        conn.close()
+        sys.exit(1)
+    if args.new_state.upper() == "MERGED" and not _has_architecture_review_pass(conn, args.fr_id):
+        print(
+            f"[fr_cli] BLOCKED: cannot transition {args.fr_id} to MERGED — "
+            "no ARCHITECTURE_REVIEW:PASS (or PASS_WITH_UPDATES) event found in event log. "
+            "Run the architecture review and record the passing event before merging.",
+            file=sys.stderr,
+        )
         conn.close()
         sys.exit(1)
     now = _now()
