@@ -9,6 +9,11 @@ erDiagram
     GUITAR_SCALE_TEMPLATES ||--o{ GUITAR_SCALE_POSITIONS : instantiates
     RELEASE_SIGNATURES ||--o{ DUPLICATE_GROUPS : "canonical"
     RELEASE_SIGNATURES ||--o{ DUPLICATE_GROUPS : "duplicate"
+    BANDS ||--o{ BAND_SONG_ARRANGEMENTS : arranges
+    CATALOG_SONGS ||--o{ BAND_SONG_ARRANGEMENTS : arranged_for
+    CATALOG_SONGS ||--o{ CATALOG_SONG_ALIASES : aliased_by
+    ALBUMS ||--o{ RELEASES : released_as
+    VAULT_LINES ||--o{ PHONETIC_GROUPS : "grouped_via vault_line_groups"
 
     TRACKS {
         integer id PK
@@ -115,4 +120,106 @@ erDiagram
         text title
         text key_descriptor
         text ingested_at
+    }
+    BANDS {
+        integer id PK
+        text name UK
+        text genre
+        integer active
+        text notes
+        text created_at
+    }
+    BAND_SONG_ARRANGEMENTS {
+        integer id PK
+        integer band_id FK
+        integer catalog_song_id FK
+        text default_key
+        integer default_bpm
+        text notes
+        text created_at
+    }
+    CATALOG_SONG_ALIASES {
+        integer id PK
+        text alias UK
+        integer catalog_song_id FK
+        text created_at
+    }
+    ARTIST_LINKS {
+        integer id PK
+        text category
+        text platform
+        text label
+        text url
+        text embed_html
+        text song_title
+        text status
+        integer sort_order
+        text created_at
+        text updated_at
+    }
+    RELEASES {
+        integer id PK
+        integer album_id FK
+        text distributor
+        text release_date
+        text upc
+        integer spotify_confirmed
+        integer apple_confirmed
+        integer amazon_confirmed
+        integer youtube_confirmed
+        text platform_urls
+        text soundexchange_id
+        text notes
+        text created_at
+    }
+    GUITAR_TRAINING_LOG {
+        integer id PK
+        integer exercise_id FK
+        text song_path
+        text seg_start
+        text seg_end
+        integer repetition
+        integer duration_minutes
+        text key
+        integer position
+        text exercise_name
+        text logged_at
+    }
+    SCALE_PRACTICE_LOG {
+        integer id PK
+        text key
+        text mode
+        text scale
+        integer position
+        integer bpm
+        integer reps
+        integer duration_minutes
+        text logged_at
+    }
+    STUDIO_EQUIPMENT {
+        integer id PK
+        text studio_name
+        text category
+        text label
+        text spec_json
+        text status
+        text created_at
+        text updated_at
+    }
+    VAULT_LINES {
+        integer id PK
+        text line UK
+        integer is_hook
+        text created_at
+    }
+    PHONETIC_GROUPS {
+        integer id PK
+        text suffixes
+    }
+    CATALOG_AUDIO_FILES {
+        integer id PK
+        text file_path
+        text sha256
+        text status
+        text created_at
     }

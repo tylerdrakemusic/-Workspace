@@ -1,19 +1,26 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph TB
-    subgraph Algorithms["src/algorithms/"]
-        Shor[Shor's Algorithm]
-        QRNG[Quantum RNG]
-        QAOA[QAOA]
-        VQE[VQE]
+    subgraph Bench["tools/ — benchmark scripts"]
+        Shor[bench_shors_v2.py<br/>run_shors_bench.py]
+        VQE[bench_vqe.py<br/>run_vqe_bench.py]
     end
     subgraph Backends
         IBM[IBM Quantum<br/>QISKIT_TOKEN]
         Sim[Aer Simulator<br/>local]
     end
+    subgraph Util["src/utils/"]
+        Orion[orion_portrait.py<br/>+ orion_config_db.py]
+        ExecPolicyMod[execution_policy.py]
+    end
+    subgraph WalkMusic["src/quantum_walk_music.py<br/>src/quantum_walk_music/"]
+        Midi[MIDI generation<br/>via midiutil<br/>FR-20260518-quantum-walk-music]
+    end
     subgraph Storage
         DB[(quantumpsi.db<br/>SQLCipher)]
-        Bench[benchmarks table]
+        BenchTbl[benchmarks<br/>shors_qpu_bench<br/>vqe_runs table]
         CacheHealthLog[cache_health_log table]
+        BackendHealthTbl[backend_health table]
+        PolicyTbl[policy_events<br/>policy_audit_runs table]
     end
     subgraph Outputs
         Reports[reports/<br/>benchmark dashboard]
@@ -22,25 +29,41 @@ graph TB
     subgraph Tools["tools/"]
         FillCache[fill_cache.py]
         CacheGuard[cache_depletion_guard.py]
+        BackendMonitor[backend_availability_monitor.py]
+        AuditPolicy[audit_policy.py]
+    end
+    subgraph Config["src/config/"]
+        PolicyJson[execution_policy.json]
     end
     subgraph Scheduler["Windows Task Scheduler"]
         GuardTask[QuantumCacheDepletionGuard_Daily]
     end
-    Algorithms --> IBM
-    Algorithms --> Sim
-    Algorithms --> Bench
-    Bench --> Reports
+    Bench --> IBM
+    Bench --> Sim
+    Bench --> BenchTbl
+    BenchTbl --> Reports
     GuardTask --> CacheGuard
     CacheGuard --> CacheHealthLog
     CacheGuard --> FillCache
     FillCache --> CacheCapacity
-    class Algorithms alg
+    Orion -.lazy import.-> WSIntegrations[⊕Workspace/src/integrations]
+    Orion --> DB
+    BackendMonitor --> BackendHealthTbl
+    AuditPolicy --> PolicyJson
+    AuditPolicy --> PolicyTbl
+    ExecPolicyMod --> PolicyJson
+    WalkMusic --> Midi
+    class Bench alg
     class Backends back
     class Storage,Outputs store
-    class FillCache,CacheGuard quantum
+    class FillCache,CacheGuard,BackendMonitor,AuditPolicy quantum
     class GuardTask ext
-    class CacheHealthLog db
+    class CacheHealthLog,BenchTbl,BackendHealthTbl,PolicyTbl db
     class CacheCapacity state
+    class WSIntegrations ws
+    class Orion,ExecPolicyMod quantum
+    class WalkMusic,Midi quantum
+    class PolicyJson state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

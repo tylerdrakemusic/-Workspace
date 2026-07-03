@@ -24,12 +24,43 @@ graph TB
         TrainerApp[Flask app:5055]
         TrainerDB[(exercises<br/>cards)]
     end
+    subgraph Radio["src/radio/"]
+        RadioApp["tjd_radio.py<br/>TJD Radio :8100"]
+        RadioProxy["/api/radio/*<br/>now_playing · playlist"]
+    end
+    subgraph ChordSheet["Chord Sheet Generation"]
+        ChordSheetTool[tools/make_chord_sheet.py]
+        ChordSheetRoutes["/chord-sheet/<br/>parse · generate · merge"]
+    end
+    subgraph ArtistLinksMod["src/artist_links/"]
+        ArtistLinksPanel[generate_artist_links_panel.py]
+        ArtistLinksRoutes["/api/links CRUD"]
+        ArtistLinksDB[(artist_links)]
+    end
+    subgraph ReleaseOps["Release Ops"]
+        ReleaseOpsRoutes["/api/release_ops"]
+        ReleasesDB[(releases)]
+    end
+    subgraph BandMgmt["src/band_mgmt/"]
+        BandMgmtPanel[generate_band_mgmt_panel.py]
+        BandMgmtDB[(bands · band_song_arrangements<br/>catalog_song_aliases)]
+    end
+    subgraph RhymeGrouper["Rhyme Grouper"]
+        RhymeUtils[src/analysis/rhyme_utils.py]
+        RhymeRoute["/rhymes"]
+        RhymeDB[(vault_lines · phonetic_groups)]
+    end
+    subgraph Studio["src/studio/"]
+        StudioPanel[studio_panel.py]
+        StudioDB[(studio_equipment)]
+    end
     subgraph Reports["reports/"]
         Portal[portal.html]
         Dash[band-mgmt dashboard]
         TaggerReport[auto_tagger_*.html]
     end
     DB[(heartmusic.db<br/>tracks · catalog_songs<br/>recordings)]
+    Dashboard[music_dashboard.py]
     Inputs --> Catalog
     Catalog --> Songs
     Songs --> Export
@@ -54,6 +85,24 @@ graph TB
     GDriveSheetMusic -->|pull PDFs· DOCX· Docs| IngestScript
     IngestScript -.->|gdrive client SA auth| WSIntegrations
     IngestScript -->|upsert rows| DB
+    Dashboard --> RadioProxy
+    RadioProxy -->|forward :8100| RadioApp
+    Dashboard --> ChordSheetRoutes
+    ChordSheetRoutes --> ChordSheetTool
+    ChordSheetTool -.->|lazy cross-project import| WSIntegrations
+    WSIntegrations -.->|Ollama client| Ollama[(Ollama LLM<br/>local)]
+    Dashboard --> ArtistLinksRoutes
+    ArtistLinksRoutes --> ArtistLinksPanel
+    ArtistLinksPanel --> ArtistLinksDB
+    Dashboard --> ReleaseOpsRoutes
+    ReleaseOpsRoutes --> ReleasesDB
+    Dashboard --> BandMgmtPanel
+    BandMgmtPanel --> BandMgmtDB
+    Dashboard --> RhymeRoute
+    RhymeRoute --> RhymeUtils
+    RhymeUtils --> RhymeDB
+    Dashboard --> StudioPanel
+    StudioPanel --> StudioDB
     class Inputs,Reports io
     class Catalog,Trainer core
     class Services,Tools svc
@@ -63,6 +112,9 @@ graph TB
     class ArchiveNote deprecated
     class GDriveSheetMusic ext
     class IngestScript svc
+    class Radio,ChordSheet,ArtistLinksMod,ReleaseOps,BandMgmt,RhymeGrouper,Studio core
+    class Dashboard svc
+    class Ollama ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

@@ -54,6 +54,21 @@ graph TB
     RescorerTool --> TodosUtil
     RescorerTool --> PriorityScorer
     RescorerTool --> RescorerLog
+    %% FR-20260703-tts-queue-vocal-ollama
+    TtsQueueWorker[src/services/<br/>tts_queue_worker.py]
+    TtsQueueDB[(src/data/<br/>tts_queue.db)]
+    VocalSynthesis[src/integrations/<br/>vocal_synthesis.py]
+    OllamaIntegration[src/integrations/ollama/<br/>client.py]
+    OllamaServer[[Ollama local server<br/>localhost:11434]]
+    Triggers -->|background thread pool| TtsQueueWorker
+    TtsQueueWorker --> TtsQueueDB
+    TtsQueueWorker --> ElevenLabs
+    TtsQueueWorker --> AudioOut
+    VocalSynthesis --> ElevenLabs
+    VocalSynthesis --> AudioOut
+    OllamaIntegration -->|importlib cross-project| WSIntegrations
+    OllamaIntegration --> OllamaServer
+    Tools --> OllamaIntegration
     class TodosDB db
     class TodosUtil,MigrateScript util
     class AllProjects ws
@@ -70,6 +85,9 @@ graph TB
     class RoadmapPanel util
     class RoadmapJSON db
     class RoadmapGen ws
+    class TtsQueueWorker,VocalSynthesis,OllamaIntegration util
+    class TtsQueueDB db
+    class OllamaServer ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

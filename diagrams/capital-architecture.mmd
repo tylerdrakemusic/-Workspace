@@ -23,15 +23,18 @@ graph TB
     TradeGate[Trade Gate<br/>port 7475] -->|GET /api/schwab/status| Reauth[tools/schwab_reauth.py]
     TradeGate -->|POST /api/schwab/reauth| Reauth
     Reauth -.refreshes.-> TokenStore
+    TokenStore --> AccountsTrading[AccountsTradingClient<br/>src/integrations/schwab/accounts_trading.py]
+    AccountsTrading -->|account/trading endpoints| Schwab
     Compliance[COMPLIANCE.md<br/>Schwab API authorized<br/>M1: market data + re-auth<br/>M2 order placement gated on funding]:::state
     Compliance -.enforces.-> Manual
     Compliance -.enforces.-> Research
     Compliance -.governs.-> Schwab
+    Compliance -.governs.-> AccountsTrading
     Hook[.git/hooks/pre-push<br/>mirrors ∞Life PROTECTION_HOOK]:::state
     Hook -.blocks.-> DB
     class Signals,Manual state
     class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
-    class Agents,ResearchAgent,MarketData,Reauth,TradeGate orch
+    class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
     class OAuthLoop,TokenStore state
     class DB db
     class Perplexity,YFinance,Anthropic,Schwab ext

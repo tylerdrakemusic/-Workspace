@@ -17,12 +17,22 @@ graph TB
     DB --> Protocols[Protocols & Experiments]
     DB --> Budget[Budget Ledger]
     NovaPortrait[src/utils/<br/>nova_portrait.py]
+    WGSProvider[src/utils/<br/>wgs_provider.py<br/>WGS provider ordering]
+    ResearchIndex[src/utils/<br/>research_index.py<br/>literature_entries indexing]
+    NovaConfigDB[src/utils/<br/>nova_config_db.py]
+    TruDx[src/etl/<br/>trudiagnostic_import.py<br/>epigenetic clocks · organ ages]
+    MigrateFR[src/utils/<br/>migrate_fr20260426.py<br/>lab_panels]
     WSIntegrations[(⊕Workspace<br/>src/integrations/)]
     NovaPortrait -->|daily portrait PNG| Output
     NovaPortrait -.->|lazy import HFSpaces+Pollinations| WSIntegrations
+    WGSProvider --> DB
+    ResearchIndex --> DB
+    NovaConfigDB --> DB
+    TruDx --> DB
+    MigrateFR --> DB
     class Inputs,Reports,Scheduler,TokenFile io
-    class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh core
-    class NovaPortrait util
+    class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh,TruDx core
+    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR util
     class WSIntegrations ws
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

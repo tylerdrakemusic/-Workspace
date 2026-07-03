@@ -1,13 +1,13 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
-    Python[Python 3.11] --> SQLCipher[sqlcipher3]
-    Python --> Pandas[pandas · numpy]
-    Python --> Requests[requests<br/>MFP · Trainerize API]
-    Python --> Playwright[playwright<br/>headless auth]
+    Python[Python 3.11] --> SQLCipher[pysqlcipher3<br/>Win-only]
+    Python --> Garmin[garminconnect<br/>curl_cffi Win-only]
+    Python --> Requests[requests<br/>Withings · Trainerize API]
+    Python --> MFP[myfitnesspal · rookiepy<br/>Win-only]
+    Python --> YAML[PyYAML<br/>etl_expected_markers.yaml]
     Python --> Pytest[pytest]
-    Python --> Matplotlib[matplotlib<br/>plotly]
     class Python lang
-    class SQLCipher,Pandas,Requests,Pytest,Matplotlib lib
+    class SQLCipher,Garmin,Requests,MFP,YAML,Pytest lib
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
