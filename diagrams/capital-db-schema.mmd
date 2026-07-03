@@ -1,6 +1,6 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
 erDiagram
-    PICKS ||--o{ TRADES : generates
+    TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
 
     PORTFOLIO {
         integer id PK
@@ -10,7 +10,12 @@ erDiagram
         text opened_at
         text model
     }
-    PICKS {
+    ACCOUNT_STATE {
+        text key PK
+        real value
+        text updated_at
+    }
+    EXECUTION_HISTORY {
         integer id PK
         date week_of
         text symbol
@@ -20,17 +25,33 @@ erDiagram
         text created_at
         text status
         text risk_reason
-    }
-    TRADES {
-        integer id PK
-        integer pick_id FK
-        text symbol
-        text side "buy|sell"
-        real shares
-        real price
-        text executed_at
-        text mode "sim|real"
+        text unit
+        real quantity
+        text order_type
+        real limit_price
+        real stop_price
+        real trailing_amount
+        text trailing_amount_type
+        text timing
+        text execution_certainty
+        text mode "simulated|real"
+        real estimated_cost
         text model
+        text scoring_method
+    }
+    MARKET_DATA_CACHE {
+        integer id PK
+        text symbol
+        text data_type
+        text payload
+        text fetched_at
+    }
+    PORTFOLIO_VALUE_HISTORY {
+        integer id PK
+        text captured_at
+        real portfolio_value
+        real buying_power
+        real total_value
     }
     SIGNALS {
         integer id PK

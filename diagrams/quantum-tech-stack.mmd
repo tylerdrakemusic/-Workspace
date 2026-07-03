@@ -1,12 +1,14 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
-    Python[Python 3.11] --> Qiskit[qiskit · qiskit-aer<br/>qiskit-ibm-runtime]
+    Python[Python 3.11] --> Qiskit[qiskit · qiskit-aer<br/>qiskit-algorithms]
+    Python --> Chem[qiskit-nature<br/>openfermion]
     Python --> Numpy[numpy · scipy]
-    Python --> SQLCipher[sqlcipher3]
+    Python --> SQLCipher[sqlcipher3-binary<br/>python-dotenv]
+    Python --> Midi[midiutil]
     Python --> Pytest[pytest]
-    HF[Hugging Face<br/>HF_TOKEN] -.optional.-> Python
+    HF[Hugging Face<br/>HF_TOKEN] -.optional, lazy import via orion_portrait module.-> Python
     class Python lang
-    class Qiskit,Numpy,SQLCipher,Pytest,HF lib
+    class Qiskit,Chem,Numpy,SQLCipher,Pytest,Midi,HF lib
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

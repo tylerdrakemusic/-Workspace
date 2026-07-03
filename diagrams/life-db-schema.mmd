@@ -1,32 +1,139 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 erDiagram
-    BIOMARKERS ||--o{ MEASUREMENTS : tracks
-    PROTOCOLS ||--o{ PROTOCOL_RUNS : executes
-    BUDGET ||--o{ BUDGET_ENTRIES : contains
-    NUTRITION ||--o{ MEALS : logs
+    RESEARCH_NOTES ||--o{ LITERATURE_ENTRIES : indexes
+    BLOODWORK_VISITS ||--o{ BIOMARKERS : contains
+    EPIGENETIC_TESTS ||--o{ EPIGENETIC_CLOCKS : contains
+    EPIGENETIC_TESTS ||--o{ SYMPHONY_ORGAN_AGES : contains
     WORKOUT_SESSIONS ||--o{ WORKOUT_EXERCISES : contains
 
-    BIOMARKERS {
-        text marker PK
-        text unit
-        real target_low
-        real target_high
+    SUPPLEMENTS {
+        text name PK
+        text dose
+        text frequency
+        text status
     }
-    MEASUREMENTS {
-        integer id PK
-        text marker FK
-        real value
-        text date
-        text source
+    EXPERIMENTS {
+        text protocol_id PK
+        text title
+        text status
     }
     PROTOCOLS {
         text protocol_id PK
         text title
         text status
     }
+    WEIGHT_LOG {
+        integer id PK
+        text date
+        real weight_kg
+        text source
+    }
+    SYNC_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+    }
+    MEDICATIONS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    BLOODWORK_VISITS {
+        integer id PK
+        text visit_date
+        text lab
+        text notes
+    }
+    BIOMARKERS {
+        integer id PK
+        integer visit_id FK
+        text marker
+        real value
+        text unit
+        real target_low
+        real target_high
+    }
+    RESEARCH_NOTES {
+        integer id PK
+        text title
+        text date
+        text summary
+    }
+    LITERATURE_ENTRIES {
+        integer id PK
+        integer note_id FK
+        text citation
+        text doi
+        text tags
+    }
+    WGS_PROVIDER_ORDERS {
+        integer id PK
+        text provider
+        text status
+        text ordered_at
+        text notes
+    }
+    ETL_AUDIT_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    EPIGENETIC_TESTS {
+        integer id PK
+        text test_date
+        text provider
+    }
+    EPIGENETIC_CLOCKS {
+        integer id PK
+        integer test_id FK
+        text clock_name
+        real age_estimate
+    }
+    SYMPHONY_ORGAN_AGES {
+        integer id PK
+        integer test_id FK
+        text organ
+        real age_estimate
+    }
+    NUTRITION_LOG {
+        integer id PK
+        text date
+        text meal
+        real calories
+        real protein_g
+        text source
+    }
+    VITALS {
+        integer id PK
+        text date
+        text metric
+        real value
+        text source
+    }
     BUDGET {
         text category PK
         real monthly_target
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
     }
     WORKOUT_SESSIONS {
         integer id PK
@@ -46,22 +153,6 @@ erDiagram
         real weight_kg
         real duration_sec
     }
-    UPCOMING_WORKOUTS {
-        integer id PK
-        text date
-        text week_start_date
-        text source
-        text name
-        text scheduled_time
-        real duration_min
-        text difficulty
-        text exercises_json
-        text notes
-        text synced_at
-    }
-
-    %% Constraints: UNIQUE(date, source, name)
-    %% Index: (date, week_start_date)
 
     %% --- Monitoring ---
     SYNC_HEALTH {

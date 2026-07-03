@@ -1,6 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 erDiagram
-    PERF_RUNS ||--o{ PERF_PROOFS : has
+    PERF_RUNS ||--o{ PROOF_ARTIFACTS : has
+    PERF_RUNS ||--o{ PERF_STEPS : has
     PERF_RUNS {
         text run_id PK
         text task
@@ -10,7 +11,15 @@ erDiagram
         real end_ts
         text detail
     }
-    PERF_PROOFS {
+    PERF_STEPS {
+        integer id PK
+        text run_id FK
+        text step_name
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PROOF_ARTIFACTS {
         integer id PK
         text run_id FK
         text agent
@@ -20,14 +29,6 @@ erDiagram
         text detail
         real ts
     }
-    DASHBOARD_REGISTRY {
-        text id PK
-        text title
-        text project
-        text type
-        text generator
-        text output
-    }
     API_HEALTH {
         integer id PK
         text endpoint
@@ -36,3 +37,21 @@ erDiagram
         text error_msg
         real checked_at
     }
+    VULNERABILITIES {
+        integer id PK
+        text scan_id
+        text project
+        text severity
+        text finding
+        text file_path
+        real detected_at
+    }
+    SCAN_RUN_LOG {
+        integer id PK
+        text scan_id
+        text scan_type
+        text status
+        real started_at
+        real finished_at
+    }
+    SCAN_RUN_LOG ||--o{ VULNERABILITIES : produces
