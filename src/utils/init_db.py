@@ -265,6 +265,23 @@ def init_db() -> None:
     );
 
     CREATE INDEX IF NOT EXISTS idx_api_health_ep ON api_health(endpoint, checked_at);
+
+    CREATE TABLE IF NOT EXISTS agent_feedback (
+        id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp             TEXT    NOT NULL DEFAULT (datetime('now')),
+        agent_or_prompt_name  TEXT    NOT NULL,
+        artifact_type         TEXT    NOT NULL CHECK(artifact_type IN ('agent','instructions','prompt','skill','reference')),
+        target_file_path      TEXT    NOT NULL,
+        finding_text          TEXT    NOT NULL,
+        severity              TEXT    NOT NULL CHECK(severity IN ('trivial','substantive')),
+        status                TEXT    NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','auto_applied','approved','rejected','applied')),
+        fr_id                 TEXT,
+        applied_at            TEXT,
+        applied_by            TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_agent_feedback_status ON agent_feedback(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_feedback_severity ON agent_feedback(severity);
     """)
     conn.commit()
     _run_migrations(conn)
