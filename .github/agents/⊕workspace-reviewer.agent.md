@@ -23,6 +23,8 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 3: Alignment** (inline, no sub-agent) — convention drift, test harness consistency, naming. For multi-project FRs: check that each project follows the shared conventions defined in `copilot-instructions.md` (type hints, pytest layout, SQLite-only data, `src/utils/` utilities, agent sigil prefixes). Flag any drift as REQUEST_CHANGES.
 
+**Gate 3.4: ΣCapital SIMULATED/REAL Diff Scan (warn, not hard block)** — for any diff touching `ΣCapital/src/**/*.py`: grep the diff for `mode='real'`, `mode = 'real'`, `live=True`, or `confirm=True`. If any match is found AND the same diff does not also modify `ΣCapital/COMPLIANCE.md`, flag as `COMMENT`: "Diff introduces a real/live trading precondition (see COMPLIANCE.md §9 SIMULATED vs REAL Decision Table) without a corresponding COMPLIANCE.md update — confirm this is intentional and already covered by an approved real-money transition FR before merging." This is a warning requiring human review, not an automatic REQUEST_CHANGES.
+
 **Gate 3.5: Architecture Diagrams (HARD BLOCK)** — FR must have a `PASS` or `PASS_WITH_UPDATES` result from `⊕workspace-architecture-reviewer` in the ledger. If STALE or MISSING for any `.mmd` → REQUEST_CHANGES, require beautifier to update, re-run reviewer until PASS recorded.
 
 > **Topology completeness sub-check (always run):** Count `.agent.md` files in `f:\.github\agents\` and compare against nodes in `workspace-agent-topology.mmd`. Any agent file absent from the diagram = STALE, even if that agent is not new in this diff. This catches pre-existing drift before it compounds.
@@ -60,6 +62,7 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 | Scope conformance | ✅/⚠️/❌ | ... |
 | Security | ✅/⚠️/❌ | ... |
 | Alignment | ✅/⚠️/❌ | ... |
+| ΣCapital SIMULATED/REAL Scan | ✅/⚠️/❌/N/A | ... |
 | Architecture Diagrams | ✅/⚠️/❌ | ... |
 | Worktree Path Audit | ✅/⚠️/❌ | ... |
 | Tests | ✅/⚠️/❌ | ... |
