@@ -55,3 +55,16 @@ erDiagram
         real finished_at
     }
     SCAN_RUN_LOG ||--o{ VULNERABILITIES : produces
+    AGENT_FEEDBACK {
+        integer id PK
+        text timestamp
+        text agent_or_prompt_name
+        text artifact_type
+        text target_file_path
+        text finding_text
+        text severity
+        text status
+        text fr_id "idx_agent_feedback_status, idx_agent_feedback_severity"
+        text applied_at
+        text applied_by
+    }
