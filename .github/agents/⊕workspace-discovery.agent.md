@@ -36,6 +36,8 @@ Schema expectations:
 ## Operating Modes
 
 > **Model selection:** the agent discovers the best available local Ollama model automatically at startup via `ollama list`. Preference order: `llama3.3:70b` → any 70b → any 13b → `llama3.1:8b` → first available. To override: pass `--model <name>` to `discover_todos.py`. Do NOT hardcode a model name.
+>
+> **Manual discovery:** for scopes not wired into `discover_todos.py` (e.g. `capital`), or whenever Tyler asks to skip the local-LLM pipeline, perform discovery directly — read the project's `AGENT_STARTUP.md`/README/docs, active FRs (`fr_cli.py list --active`), and existing open todos (`get_open_todos(project)`), then synthesize candidates yourself and present the same numbered table. Insert via `add_todo()` (project key `capital`) after approval, same as the scripted path.
 
 ### 1) Discovery Preview (default)
 Run read-only preview and show a numbered candidate table.
