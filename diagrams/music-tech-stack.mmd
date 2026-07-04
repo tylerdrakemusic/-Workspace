@@ -9,11 +9,12 @@ graph LR
     Python --> Pypdf["pypdf<br/>lyrics .pdf import"]
     Python --> Pronouncing["pronouncing<br/>CMU phoneme lookup"]
     Python --> Demucs["demucs<br/>stem separation"]
+    Python --> Requests[requests<br/>GetSongBPM HTTP client]
     Web[HTML · CSS · JS] --> Tone[Tone.js<br/>Strudel]
     Python -.->|lazy cross-project import| WSOllama[(⊕Workspace<br/>src/integrations/ollama)]
     WSOllama -.-> Ollama[(Ollama LLM<br/>local server)]
     class Python,Web lang
-    class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone,PythonDocx,Pypdf,Pronouncing,Demucs lib
+    class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone,PythonDocx,Pypdf,Pronouncing,Demucs,Requests lib
     class WSOllama ws
     class Ollama ext
 

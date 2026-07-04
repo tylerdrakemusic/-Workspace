@@ -19,6 +19,7 @@ graph LR
     GDrive[(Google Drive)]:::ext
     Perplexity[(Perplexity.ai<br/>Sonar + Reasoning)]:::ext
     Schwab[(Charles Schwab API)]:::ext
+    GetSongBPM[(GetSongBPM API)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -55,6 +56,7 @@ graph LR
     Music -->|catalog import| Suno
     Music --> MusicDB
     Music -.->|sheet_music ingest| GDrive
+    Music -->|BPM autolookup| GetSongBPM
     %% ⟨ψ⟩Quantum → external + DB
     Quantum -->|qiskit jobs| IBMQ
     Quantum -->|model hub| HF

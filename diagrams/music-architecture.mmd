@@ -31,6 +31,7 @@ graph TB
     subgraph ChordSheet["Chord Sheet Generation"]
         ChordSheetTool[tools/make_chord_sheet.py]
         ChordSheetRoutes["/chord-sheet/<br/>parse · generate · merge"]
+        BpmLookup[src/utils/<br/>bpm_lookup.py]
     end
     subgraph ArtistLinksMod["src/artist_links/"]
         ArtistLinksPanel[generate_artist_links_panel.py]
@@ -91,6 +92,8 @@ graph TB
     ChordSheetRoutes --> ChordSheetTool
     ChordSheetTool -.->|lazy cross-project import| WSIntegrations
     WSIntegrations -.->|Ollama client| Ollama[(Ollama LLM<br/>local)]
+    ChordSheetTool --> BpmLookup
+    BpmLookup -.->|title+artist query| GetSongBPM[(GetSongBPM API)]
     Dashboard --> ArtistLinksRoutes
     ArtistLinksRoutes --> ArtistLinksPanel
     ArtistLinksPanel --> ArtistLinksDB
@@ -114,7 +117,7 @@ graph TB
     class IngestScript svc
     class Radio,ChordSheet,ArtistLinksMod,ReleaseOps,BandMgmt,RhymeGrouper,Studio core
     class Dashboard svc
-    class Ollama ext
+    class Ollama,GetSongBPM ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

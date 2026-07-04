@@ -44,6 +44,16 @@ parse it into the `song_template.json` schema used by
 - Preserve chord/lyric line pairing exactly as they appear in the source.
 - Use `[Section]` markers in raw text as section boundaries.
 - Best-effort `key`/`bpm` if not explicit in the source (mark `"?"` if unknown — do not fabricate).
+- **BPM:** call
+  [`resolve_bpm`](../../../../❤Music/src/utils/chord_sheet_output.py)
+  with the parsed `title`/`artist` and any manually-noted BPM from the source
+  as `manual_bpm`. This attempts an automated lookup via
+  [`lookup_bpm`](../../../../❤Music/src/utils/bpm_lookup.py) (GetSongBPM API,
+  keyed off the `GETSONGBPM_API_KEY` env var) first. Fallback to manual/prompt
+  entry triggers when the automated lookup returns nothing — no API key set,
+  HTTP error, timeout, or no match found for the title+artist — in which case
+  `resolve_bpm` falls back to `manual_bpm` if present, else `"?"`. Never
+  fabricate a BPM value.
 - If input is genuinely unparseable, stop and tell Tyler rather than guessing content.
 
 ### 2. Resolve output paths
