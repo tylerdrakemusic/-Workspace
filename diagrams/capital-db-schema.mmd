@@ -1,6 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
 erDiagram
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
 
     PORTFOLIO {
         integer id PK
@@ -80,6 +81,14 @@ erDiagram
         text mode "simulated|real"
         text created_at
         text model
+    }
+
+    REAL_MONEY_CONFIRMATIONS {
+        integer id PK
+        integer candidate_id
+        text account_ref
+        text context
+        text confirmed_at
     }
 
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
