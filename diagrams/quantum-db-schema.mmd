@@ -84,3 +84,16 @@ erDiagram
         text findings
         text policy_file_hash
     }
+
+    %% --- Batch job retry/backoff (FR-20260704-qiskit-aer-retry-supervisor) ---
+    JOB_RETRY_STATUS {
+        integer id PK
+        text job_id "unique idx_job_retry_status_job_id"
+        text backend
+        text status "pending/running/succeeded/failed/retrying"
+        integer attempt
+        integer max_attempts
+        text error_msg
+        text created_at
+        text updated_at
+    }
