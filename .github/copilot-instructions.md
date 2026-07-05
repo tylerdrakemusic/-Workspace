@@ -57,7 +57,7 @@ setup, and per-sigil pitfalls. Auto-attached by VS Code when relevant.
 - **⊕workspace-security** — Agent file integrity checks, OWASP Top 10 vulnerability scans, secret exposure scanning, prompt injection detection. Run before any multi-project write workflow.
 - **⊕workspace-bench-analyzer** — Benchmark analysis across quantum and agent perf data. Discrepancy detection, trend analysis, dashboard generation.
 - **⊕workspace-dashboards** — Spec-driven dashboard discovery, portal generation, dashboard registration. Manages unified portal across all projects.
-- **⊕workspace-hygiene** — Unified workspace hygiene agent. Cleans all 5 projects, audits and self-repairs agent files, enforces self-regeneration protocol. Replaces all per-project hygiene agents. Run weekly.
+- **⊕workspace-hygiene** — Unified workspace hygiene agent. Cleans all 6 projects (incl. ΣCapital) plus F:\ drive-root clutter, audits and self-repairs agent files, enforces self-regeneration protocol. Replaces all per-project hygiene agents. Run weekly.
 - **⊕workspace-gen-qee** — Quantum Entropy Engine. Generates cryptographically strong passwords and DB keys using quantum-assisted randomness. Output is console-only, never stored.
 - **⊕workspace-qa** — Functional QA gate. Runs after implementation (FUNCTIONAL_QA state), derives a test plan from FR acceptance criteria, executes functional tests (DB queries, CLI runs, Playwright for UI changes), records proof artifacts. Hard-blocking: FAIL prevents architecture review.
 - **⊕workspace-protector** — Reality check audit. Scans all projects for file explosion, complexity drift, scope creep, dead code, and IDE errors. Produces truth report for course-correction.

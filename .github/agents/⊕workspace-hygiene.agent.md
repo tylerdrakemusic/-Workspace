@@ -1,13 +1,13 @@
 ---
 name: ⊕workspace-hygiene
-description: "Unified workspace hygiene agent. Cleans all 5 projects (∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace), audits and self-repairs all agent files, enforces self-regeneration protocol, and updates itself after each run. Run weekly or on-demand."
+description: "Unified workspace hygiene agent. Cleans all 6 projects (∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace, ΣCapital), audits and self-repairs all agent files, sweeps stray F:\ drive-root clutter, enforces self-regeneration protocol, and updates itself after each run. Run weekly or on-demand."
 ---
 <!-- inherits: f:\.github\instructions\hygiene-base.instructions.md -->
 <!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Hygiene Agent
 
-Unified hygiene for all 5 projects + agent infrastructure. **Scope:** ∞Life · ❤Music · ⟨ψ⟩Quantum · 👁AI-Manifest · ⊕Workspace · `.github/agents/` · `.github/instructions/`
+Unified hygiene for all 6 projects + agent infrastructure. **Scope:** ∞Life · ❤Music · ⟨ψ⟩Quantum · 👁AI-Manifest · ⊕Workspace · ΣCapital · `.github/agents/` · `.github/instructions/` · `F:\` drive root
 
 ## Startup
 1. Start perf timer (chain with first read)
@@ -25,6 +25,7 @@ Apply `hygiene-base.instructions.md` sweep to each project:
 | ⟨ψ⟩Quantum | `f:\⟨ψ⟩Quantum\` | — |
 | 👁AI-Manifest | `f:\👁AI-Manifest\` | — |
 | ⊕Workspace | `f:\⊕Workspace\` | `workspace.db` |
+| ΣCapital | `f:\ΣCapital\` | — (PRIVATE repo — never move financial data out; `data/secrets/` off-limits) |
 
 Checklist per project: TODO hygiene · temp file scan · research freshness (>6 mo flag) · logs >30d · DB health (flag only, never delete)
 
@@ -34,6 +35,15 @@ Checklist per project: TODO hygiene · temp file scan · research freshness (>6 
 - *⟨ψ⟩Quantum*: prune qbackups (keep last 5); **NEVER delete `ty_string_cache.txt`**; shim files at drive root — do NOT touch without verifying consumers
 - *👁AI-Manifest*: temp output files; API key ref in `PROJECT_PROFILE.json`
 - *⊕Workspace*: stale report HTMLs (>30d); proof artifacts (>60d); token files — never delete, flag expired by name
+- *ΣCapital*: never touch `data/secrets/`; flag stale worktrees same as other projects; PRIVATE repo push guards apply (see `repo_visibility.json`)
+
+## Phase 1a — F:\ Drive Root Sweep
+
+The drive root (`F:\`) accumulates cross-project scratch outside any single project's `tmp/`. Audit and clean each run:
+- `F:\tmp\`, `F:\temp\` — scratch/debug dirs from completed investigations; delete once the underlying work is confirmed merged/documented (check repo memory first)
+- `F:\worktrees\`, `F:\wt\` — legacy worktree locations (superseded by per-project `.worktrees/`); apply the same merged+age rule as Phase 1c
+- Stray project clones/dirs at root not matching `REPOS.md` (e.g. a project's `catalog/`, `sheet_music/`, or a `<Project>-feature-*` clone sitting outside `.worktrees/`) — cross-check against the project's real catalog location before deleting (scope-creep check); if a duplicate output already exists in the correct project path, delete the root copy
+- Root-level `tmp_*.py` / `tmp_*.txt` one-off debug scripts >7d old with no active FR reference → delete
 
 ## Phase 1b — tmp/ Audit (all projects)
 
