@@ -12,6 +12,7 @@ erDiagram
     BANDS ||--o{ BAND_SONG_ARRANGEMENTS : arranges
     CATALOG_SONGS ||--o{ BAND_SONG_ARRANGEMENTS : arranged_for
     CATALOG_SONGS ||--o{ CATALOG_SONG_ALIASES : aliased_by
+    CATALOG_SONGS ||--o{ GUITAR_TONE_PROFILES : tone_profiled
     ALBUMS ||--o{ RELEASES : released_as
     VAULT_LINES ||--o{ PHONETIC_GROUPS : "grouped_via vault_line_groups"
 
@@ -222,4 +223,14 @@ erDiagram
         text sha256
         text status
         text created_at
+    }
+    GUITAR_TONE_PROFILES {
+        integer id PK
+        integer catalog_song_id FK
+        text persona
+        text rationale
+        text hlx_filename
+        text status
+        text created_at
+        text updated_at
     }

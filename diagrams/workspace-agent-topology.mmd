@@ -48,6 +48,7 @@ graph LR
         MusicPerf["❤ performance"]
         MusicProd["❤ production"]
         MusicSig["❤ signatures"]
+        MusicGuitarTech["❤ guitar-tech"]
     end
 
     subgraph QUANTUM["⟨ψ⟩Quantum"]
@@ -91,7 +92,7 @@ graph LR
 
     %% ── Project routing ──
     LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
-    MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig
+    MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
     QuantumOrch --> QuantumResearch
     CapitalOrch --> CapitalResearch
 
@@ -104,7 +105,7 @@ graph LR
 
     LifeBase -.-> LifeOrch & LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
     HealthEval -.-> LifeRisk
-    MusicBase -.-> MusicOrch & MusicCatalog & MusicPerf & MusicProd & MusicSig
+    MusicBase -.-> MusicOrch & MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
     QuantumBase -.-> QuantumOrch & QuantumResearch
 
     %% ── Class assignments ──
@@ -112,7 +113,7 @@ graph LR
     class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
     class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
     class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
-    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig music
+    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
     class QuantumOrch,QuantumResearch quantum
     class ManifestOrch manifest
     class CapitalOrch capital
