@@ -1,6 +1,9 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
 erDiagram
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
+    PORTFOLIO ||--o{ EXITS : has_exit
+    EXITS ||--o{ EXITS : supersedes
     TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
 
     PORTFOLIO {
@@ -82,7 +85,27 @@ erDiagram
         text created_at
         text model
     }
+    EXITS {
+        integer id PK
+        integer position_id FK
+        text symbol
+        text account_ref
+        text direction "long|short"
+        real entry_price
+        real atr
+        real stop_loss_price
+        real take_profit_price
+        real quantity
+        text status "active|superseded|triggered|cancelled"
+        integer supersedes_id FK
+        integer version
+        text reason
+        text created_at
+    }
 
+    %% EXITS (FR-20260704): per-position exit strategy rows — ATR-based stop/target,
+    %% short-mirror direction support, supersede chain for re-evaluated thresholds,
+    %% max-hold forced exit and partial/tranche closes tracked via version+status
     REAL_MONEY_CONFIRMATIONS {
         integer id PK
         integer candidate_id

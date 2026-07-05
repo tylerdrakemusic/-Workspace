@@ -32,9 +32,27 @@ graph TB
     Compliance -.governs.-> AccountsTrading
     Hook[.git/hooks/pre-push<br/>mirrors ∞Life PROTECTION_HOOK]:::state
     Hook -.blocks.-> DB
+    %% Exit strategy lifecycle (FR-20260704-sigmacapital-exit-strategy)
+    ExitStrategy[exit_strategy.py<br/>ATR threshold calc · short-mirror logic<br/>supersede/partial exit CRUD]
+    TradeApprovalGate -->|approved candidate| ExitStrategy
+    ExitStrategy -->|creates entry exit row| DB
+    ExitReeval["exit_reevaluation<br/>src/agents/exit_reevaluation.py<br/>(daily scheduled job)"]
+    DB -->|active exits| ExitReeval
+    ExitReeval -->|live price/ATR| YFinance
+    ExitReeval -->|sentiment| Perplexity
+    ExitReeval -->|supersede/trigger/partial-close<br/>max-hold forced exit| DB
+    GtcOrder[gtc_order.py<br/>construct-only GTC payloads<br/>never live-submits]
+    ExitReeval -->|triggered exits| GtcOrder
+    GtcOrder -.gated by.-> Compliance
+    Technicals[technicals.py<br/>src/utils/technicals.py<br/>ATR/quote-based indicator calc]
+    Technicals -->|ATR| ExitStrategy
+    Backfill[backfill_exits.py<br/>tools/backfill_exits.py<br/>one-time backfill for<br/>positions lacking exit rows]
+    Technicals -->|ATR at entry| Backfill
+    Backfill -->|backfilled exit rows| DB
     class Signals,Manual state
     class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
+    class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
     class OAuthLoop,TokenStore state
     class DB db
     class Perplexity,YFinance,Anthropic,Schwab ext
