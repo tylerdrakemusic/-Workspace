@@ -44,6 +44,28 @@ conn = sqlite3.connect("f:/❤Music/src/data/heartmusic.db")
 - **NEVER delete records** — flag issues, let Tyler decide
 - **NEVER drop tables** without confirmation
 
+### Worktree-Aware DB Access (tools/*.py scripts)
+Any `tools/*.py` script that touches `heartmusic.db` directly (not via a test
+fixture) MUST be worktree-aware. Git worktrees under `.worktrees/<branch>/`
+have their own empty `data/` dir, so `init_db.DB_PATH`'s default resolution
+finds no DB there and the script fails with "heartmusic.db not found."
+
+Use the shared helper instead of re-implementing path-walking per script:
+
+```python
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT / "src"))
+import utils.init_db as _init_db_module  # noqa: E402
+
+_init_db_module.use_worktree_aware_db_path(_ROOT)
+
+from utils.init_db import get_connection  # noqa: E402
+```
+
+`use_worktree_aware_db_path()` walks up from `_ROOT` looking for
+`src/data/heartmusic.db` and repoints `DB_PATH` at the main project's live DB
+when found; it's a no-op when already running from the main tree.
+
 ---
 
 ## Catalog Source Locations (Read-Only External Sources)
