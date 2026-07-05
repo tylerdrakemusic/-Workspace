@@ -55,6 +55,13 @@ graph TB
         StudioPanel[studio_panel.py]
         StudioDB[(studio_equipment)]
     end
+    subgraph GuitarTech["src/guitar_tech/ · Guitar Tech Persona"]
+        GuitarTechCLI[tools/generate_guitar_tech_pilot.py]
+        PersonaEngine["persona_rubric.py -> hlx_generator.py -> hlx_validator.py"]
+        GuitarToneDB[(guitar_tone_profiles)]
+    end
+    HelixRef[(catalog/helix_reference/ HX Edit model snapshot)]
+    HelixFilesOut["HelixFiles/*.hlx + TODO.md"]
     subgraph Reports["reports/"]
         Portal[portal.html]
         Dash[band-mgmt dashboard]
@@ -106,6 +113,12 @@ graph TB
     RhymeUtils --> RhymeDB
     Dashboard --> StudioPanel
     StudioPanel --> StudioDB
+    DB -->|catalog_songs + HelixFiles scan| GuitarTechCLI
+    GuitarTechCLI --> PersonaEngine
+    PersonaEngine -.->|read-only| HelixRef
+    PersonaEngine --> HelixFilesOut
+    GuitarTechCLI -->|proposed rows| GuitarToneDB
+    GuitarToneDB -.->|FK catalog_song_id| DB
     class Inputs,Reports io
     class Catalog,Trainer core
     class Services,Tools svc
@@ -115,9 +128,10 @@ graph TB
     class ArchiveNote deprecated
     class GDriveSheetMusic ext
     class IngestScript svc
-    class Radio,ChordSheet,ArtistLinksMod,ReleaseOps,BandMgmt,RhymeGrouper,Studio core
+    class Radio,ChordSheet,ArtistLinksMod,ReleaseOps,BandMgmt,RhymeGrouper,Studio,GuitarTech core
     class Dashboard svc
     class Ollama,GetSongBPM ext
+    class HelixFilesOut out
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
