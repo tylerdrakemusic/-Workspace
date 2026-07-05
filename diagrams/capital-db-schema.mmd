@@ -4,6 +4,7 @@ erDiagram
     TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
     PORTFOLIO ||--o{ EXITS : has_exit
     EXITS ||--o{ EXITS : supersedes
+    TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
 
     PORTFOLIO {
         integer id PK
@@ -105,6 +106,14 @@ erDiagram
     %% EXITS (FR-20260704): per-position exit strategy rows — ATR-based stop/target,
     %% short-mirror direction support, supersede chain for re-evaluated thresholds,
     %% max-hold forced exit and partial/tranche closes tracked via version+status
+    REAL_MONEY_CONFIRMATIONS {
+        integer id PK
+        integer candidate_id
+        text account_ref
+        text context
+        text confirmed_at
+    }
+
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
     %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
     %% mode='real' reserved for future FR after broker-API compliance review

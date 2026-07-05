@@ -55,3 +55,62 @@ At end of every run, output a self-regen summary:
 ```
 Self-regen: X paths checked (Y updated), Z agent refs checked (W updated)
 ```
+
+---
+
+## Feedback Capture (MANDATORY at end of every run)
+
+Any agent or prompt may hit friction mid-run: a stale instruction, missing
+detail, unclear branching logic, a broken cross-reference not already caught
+by the Self-Regeneration checks above. Capture it so it can be fixed once
+instead of re-discovered every run.
+
+### 1. Opt-in capture during the run
+If friction is actually encountered, append a line to a session-scoped tmp
+file — do NOT create this file preemptively if no friction occurs:
+```
+<workspace-root>/tmp/feedback.md
+```
+Each line/entry should capture: artifact type (`agent|instructions|prompt|skill|reference`),
+target file path, and a short finding description.
+
+### 2. End-of-run processing
+Alongside the self-audit above, check whether `tmp/feedback.md` exists for
+this session. If it does, for each finding insert a row via:
+```
+C:\G\python.exe f:\⊕Workspace\src\utils\feedback_cli.py log "<agent-name>" <artifact_type> "<target_file>" "<finding_text>" <severity> [--fr-id <FR-ID>]
+```
+- `severity=trivial` — same class of issue already handled by the Self-Regeneration
+  auto-repair above (typo, stale path, broken cross-ref).
+- `severity=substantive` — anything requiring judgment or design changes.
+
+### 3. Trivial findings — auto-apply
+Trivial findings are auto-applied via the tiered approval gate:
+```
+C:\G\python.exe f:\⊕Workspace\src\utils\feedback_cli.py auto-apply-trivial
+```
+This marks matching rows `auto_applied`. It does not itself edit files —
+if the underlying fix requires a file edit, perform it inline as part of the
+existing Self-Regeneration step (Section 4 above) before or after logging.
+
+### 4. Substantive findings — Tyler approval required
+Substantive findings must NOT be applied automatically. Leave them
+`status=pending` and surface them in the final chat summary for Tyler's
+explicit approval. Once Tyler approves:
+1. The calling agent edits the target file directly.
+2. Record the decision: `feedback_cli.py apply <id> --applied-by "<agent-or-tyler>"`.
+
+### 5. Fold-in behavior
+- If an FR is currently active/in-flight for the calling session, pass
+  `--fr-id <FR-ID>` when logging so the eventual fix commit lands on that
+  FR's existing branch.
+- If no FR is active, an approved substantive fix should go through the
+  standard intake → CI flow (`⊕workspace-intake` → `⊕workspace-ci`) to create
+  a dedicated fix branch/PR rather than being applied ad hoc.
+
+### 6. Report
+Surface findings inline in the final chat summary, e.g.:
+```
+Feedback: 2 trivial (auto-applied), 1 substantive (pending Tyler approval — id=17)
+```
+
