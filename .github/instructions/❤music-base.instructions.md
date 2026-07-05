@@ -112,6 +112,7 @@ Discover available agents by scanning `f:\.github\agents\❤music-*.agent.md`. R
 | `❤music-catalog` | File indexing, dedup, track linking, DB imports |
 | `❤music-production` | Bloom album tracking, track status, studio sessions |
 | `❤music-performance` | Gigs, practice log, CopperCreek, setlists |
+| `❤music-guitar-tech` | Guitar-legend persona matching, HX Stomp `.hlx` preset generation/validation, `guitar_tone_profiles` |
 | `⊕workspace-hygiene` | File cleanup, TODO archiving, DB housekeeping, agent audit |
 | `❤music-orchestrator` | Top-level coordinator for multi-domain tasks |
 
