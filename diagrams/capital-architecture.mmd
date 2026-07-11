@@ -49,10 +49,21 @@ graph TB
     Backfill[backfill_exits.py<br/>tools/backfill_exits.py<br/>one-time backfill for<br/>positions lacking exit rows]
     Technicals -->|ATR at entry| Backfill
     Backfill -->|backfilled exit rows| DB
+    %% Real-trade audit logging + compliance trail (FR-20260711-sigmacapital-real-trade-audit-logging)
+    LogRealTrade[log_real_trade.py<br/>Tyler-invoked audit CLI<br/>NOT part of picker/approval pipeline]
+    Tyler --> LogRealTrade
+    LogRealTrade -->|writes audit row<br/>mode=real| DB
+    LogRealTrade -->|read-only verify only<br/>never places orders| AccountsTrading
+    Agents -->|read-only get_account/get_positions<br/>gates mode=real @ min confidence 0.85| AccountsTrading
+    TradeApprovalGate -->|re-verify pending real trades<br/>on dashboard load| LogRealTrade
+    WSFrCli[⊕ Workspace<br/>fr_cli.py record-event]:::ws
+    LogRealTrade -.->|subprocess: fr_cli.py record-event<br/>(compliance audit)| WSFrCli
+    TradeApprovalGate -.->|subprocess: fr_cli.py record-event<br/>(compliance audit)| WSFrCli
     class Signals,Manual state
     class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
+    class LogRealTrade orch
     class OAuthLoop,TokenStore state
     class DB db
     class Perplexity,YFinance,Anthropic,Schwab ext

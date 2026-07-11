@@ -87,6 +87,8 @@ graph LR
     Capital --> CapitalDB
     Capital -.->|capital research via ⊕Workspace integration| Perplexity
     Capital -->|OAuth + market data| Schwab
+    %% FR-20260711-sigmacapital-real-trade-audit-logging — compliance audit subprocess call
+    Capital -.->|subprocess: fr_cli.py record-event (compliance audit)| Workspace
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
