@@ -7,11 +7,11 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - All candidate generation should prefer off-market/evening placement and support manual Schwab UI placement.
 - The agent must consult the formal Schwab instruction document at `f:\⊕Workspace\.github\instructions\sigmacapital-schwab-trade-inputs.instructions.md` for permitted order types, unit rules, and timing constraints.
 - The agent must consult the order-type tradeoff and risk guidance at `f:\⊕Workspace\.github\instructions\sigmacapital-order-type-tradeoffs.instructions.md` when selecting an order type for each candidate. This document governs when to use each order type, execution vs price risk tradeoffs, market-context rules, and the required `execution_certainty` classification.
-- No broker API integration is allowed.
+- Read-only Schwab account API access (live buying power) is permitted to ground high-confidence `mode: real` candidate proposals (FR-20260711). Order-placement/write APIs (`place_order`, `replace_order`, `cancel_order`) remain fully out of scope.
 - No automated order placement is allowed.
 - Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
 - Ensure fresh yfinance pricing is available for the candidate symbol before recommending any pick.
-- Real-money mode (`mode: real`) is forbidden until an explicit follow-up FR is approved.
+- Real-money mode (`mode: real`) may be proposed by the research agent for high-confidence picks grounded in live (read-only) Schwab account buying power (FR-20260711). Approval/execution of a `mode: real` candidate still requires Tyler's explicit real-money authorization (`AUTHORIZED_REAL_MONEY_FR_ID`) to be set by a future FR — until then the approval gate blocks real-money confirmation even though a proposal may appear.
 
 ## Candidate Schema
 The agent must generate trade candidates using the following fields:
@@ -28,7 +28,7 @@ The agent must generate trade candidates using the following fields:
 - `timing`: `Day`, `Day + extended hours`, or `Good till canceled`
 - `execution_certainty`: `elevated` or `optional`
 - `estimated_cost`: the modelled order cost used to reserve buying power for elevated buy ideas
-- `mode`: `simulated` (must remain `simulated` until future FR)
+- `mode`: `simulated` by default; the research agent may propose `real` for high-confidence picks grounded in live Schwab buying power (FR-20260711). Approval/execution of a `real` candidate still requires Tyler's explicit real-money authorization FR before it can complete.
 - `model`: the LLM model that generated the pick (e.g. `Claude Opus 4.8`, `gpt-5`). The agent must stamp every candidate with the exact model it is running on so each pick's provenance is captured and later surfaced on the portfolio holdings view.
 - `rationale`: natural-language explanation of the trade idea
 - `confidence`: numeric score or percentile representing conviction
@@ -55,7 +55,7 @@ The agent must generate trade candidates using the following fields:
 11. For buy candidates, estimate the expected order cost and reserve that amount against available buying power when approved.
 12. Approved candidates must be treated as persisted picks: the approval gate saves them to ΣCapital's `picks` DB table and updates candidate status accordingly.
 13. Do not propose order types outside the supported Schwab list.
-14. Do not add any real-money execution instructions until a follow-up FR is approved.
+14. The research agent may propose `mode: real` candidates for high-confidence picks informed by live Schwab account data (FR-20260711), but do not add any real-money order-placement/execution instructions — approval of a `mode: real` candidate still requires Tyler's explicit real-money authorization FR before it can complete.
 15. Stamp every generated candidate with the `model` field set to the exact LLM model the agent is running on. This provenance flows through approval into `execution_history` and the `portfolio` row, where it is surfaced on the portfolio holdings view. When the same holding is bought under more than one model, the portfolio `model` value accumulates a deduped, comma-separated list (e.g. `raptor, Claude Opus 4.8`).
 
 ## Output Format
@@ -64,6 +64,6 @@ Return candidates in a structured format that can be mapped to ΣCapital's pick 
 ## Compliance Guardrails
 - Manual human review is required before any Schwab order is placed.
 - Keep the modeled candidate fields aligned with Schwab's off-market/evening workflow.
-- Do not reference or assume access to any Schwab internal or public APIs.
+- Read-only Schwab account API access (live buying power) is permitted solely to ground high-confidence `mode: real` proposals (FR-20260711); do not reference or assume access to any Schwab order-placement/write APIs.
 - Do not include non-Schwab brokerage venues.
 - Preserve an audit trail for all candidate generation, approval, and future compliance review.
