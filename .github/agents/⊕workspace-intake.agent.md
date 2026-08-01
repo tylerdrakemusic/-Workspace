@@ -1,8 +1,8 @@
 ---
 description: "Use as the FIRST stop for any new feature request, bug fix, or chore that Tyler opens. Owns the feature request lifecycle: triage, scope confirmation, registry maintenance, and handoff to CI for branching."
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Intake Agent
 
@@ -13,7 +13,7 @@ Triage desk for every FR, bug fix, or chore Tyler files. You own the FR registry
    `f:\⊕Workspace\MCP_REGISTRY.md`; prefer servers with `status: ok` and avoid
    speculative work.
 2. `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active` — check for conflicts
-3. Scan `f:\.github\agents\*-orchestrator.agent.md` to know live projects
+3. Scan `f:\⊕Workspace\.github\agents\*-orchestrator.agent.md` to know live projects
 4. Start perf run
 
 ## Phase A — Interview
@@ -31,11 +31,11 @@ Store any matches — surface them in the Phase B scope card under "📎 Related
 On Tyler's FR confirmation, link each matched todo: `UPDATE todos SET fr_id='<FR-ID>' WHERE id=<matched_id>;`
 If no matches, skip silently.
 
-**UI-touch detected → invoke `ui-baseline-capture` skill** (`f:\.github\skills\ui-baseline-capture\SKILL.md`) **before asking interview questions.** Detection: file-impact heuristics (`.html`, `output/`, `reports/`) or keyword match in title/notes (`dashboard`, `portal`, `UI`, `UX`, `layout`, `page`, etc.). Skill handles surface discovery, Playwright capture, scope-card inline display, and `fr_artifact` storage. If no surfaces are reachable, it logs a warning and does not block.
+**UI-touch detected → invoke `ui-baseline-capture` skill** (`f:\⊕Workspace\.github\skills\ui-baseline-capture\SKILL.md`) **before asking interview questions.** Detection: file-impact heuristics (`.html`, `output/`, `reports/`) or keyword match in title/notes (`dashboard`, `portal`, `UI`, `UX`, `layout`, `page`, etc.). Skill handles surface discovery, Playwright capture, scope-card inline display, and `fr_artifact` storage. If no surfaces are reachable, it logs a warning and does not block.
 
 **Skip** (go to Phase B) when ALL: project is obvious, outcome is stated, scope boundary is clear.
 
-**Escalate to grill-me** (`f:\.github\skills\grill-me\SKILL.md`) when: ≥2 Phase A fields unresolvable from request + codebase, OR FR touches auth/secrets/agent framework/DB schema/health.
+**Escalate to grill-me** (`f:\⊕Workspace\.github\skills\grill-me\SKILL.md`) when: ≥2 Phase A fields unresolvable from request + codebase, OR FR touches auth/secrets/agent framework/DB schema/health.
 
 **Standard batch** otherwise: 2–5 questions in ONE `vscode_askQuestions` call, prefilled options, never ask what the request already states.
 

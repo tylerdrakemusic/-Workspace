@@ -3,8 +3,8 @@ description: "Reviewer agent — STANDARD tier (Gemini 2.5 Pro, Google, 1x). Use
 model: gemini-2.5-pro
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Reviewer Agent
 
@@ -27,7 +27,7 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 3.5: Architecture Diagrams (HARD BLOCK)** — FR must have a `PASS` or `PASS_WITH_UPDATES` result from `⊕workspace-architecture-reviewer` in the ledger. If STALE or MISSING for any `.mmd` → REQUEST_CHANGES, require beautifier to update, re-run reviewer until PASS recorded.
 
-> **Topology completeness sub-check (always run):** Count `.agent.md` files in `f:\.github\agents\` and compare against nodes in `workspace-agent-topology.mmd`. Any agent file absent from the diagram = STALE, even if that agent is not new in this diff. This catches pre-existing drift before it compounds.
+> **Topology completeness sub-check (always run):** Count `.agent.md` files in `f:\⊕Workspace\.github\agents\` and compare against nodes in `f:\⊕Workspace\diagrams\workspace-agent-topology.mmd`. Any agent file absent from the diagram = STALE, even if that agent is not new in this diff. This catches pre-existing drift before it compounds.
 
 **Gate 3.6: Worktree Path Audit (HARD BLOCK)** — scan full diff for `.worktrees/` paths. If found → REQUEST_CHANGES: "`.worktrees/` must never be committed — ensure gitignore + pre-commit hook installed."
 

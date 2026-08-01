@@ -38,7 +38,7 @@ Scan every file path hardcoded in this agent file. For each:
 
 ### 2. Agent Reference Check
 For every agent name listed in this file (e.g. in "Known specialists" tables or routing logic):
-- Verify `f:\.github\agents\<name>.agent.md` exists
+- Verify `f:\⊕Workspace\.github\agents\<name>.agent.md` exists
 - If an agent has been renamed or deleted → remove or update the reference in this file
 
 ### 3. Schema / DB Check (if applicable)
@@ -46,7 +46,7 @@ If this agent queries a database, verify the tables it references still exist in
 
 ### 4. Self-Edit Protocol
 To update this agent's own file:
-1. Use the `edit` tool directly on `f:\.github\agents\<this-agent-name>.agent.md`
+1. Use the `edit` tool directly on `f:\⊕Workspace\.github\agents\<this-agent-name>.agent.md`
 2. Make only the minimum targeted fix (stale path, renamed agent, etc.)
 3. Log what was changed in the perf run detail: `--detail "self-regen: updated path X → Y"`
 
