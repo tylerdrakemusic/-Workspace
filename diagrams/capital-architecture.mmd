@@ -13,7 +13,7 @@ graph TB
     TradeApprovalGate --> DB
     ResearchAgent["Σcapital-research<br/>.agent.md"] --> Agents
     DB --> Picks[picks table<br/>weekly recommendations]
-    DB --> Portfolio[portfolio + trades<br/>paper-DB sim only]
+    DB --> Portfolio[portfolio + trades<br/>simulated + human-confirmed live]
     Picks --> Tyler
     %% Schwab API M1 — OAuth + Market Data ingestion (FR-20260628-sigmacapital-schwab-api)
     Schwab[(Charles Schwab API<br/>OAuth 2.0)] --> OAuthLoop[HTTPS loopback<br/>port 8182 market data<br/>port 8183 trading]
@@ -25,8 +25,8 @@ graph TB
     Reauth -.refreshes.-> TokenStore
     TokenStore --> AccountsTrading[AccountsTradingClient<br/>src/integrations/schwab/accounts_trading.py]
     AccountsTrading -->|account/trading endpoints| Schwab
-    Compliance[COMPLIANCE.md<br/>Schwab API authorized<br/>M1: market data + re-auth<br/>M2 order placement gated on funding]:::state
-    Compliance -.enforces.-> Manual
+    Compliance[COMPLIANCE.md<br/>Schwab API authorized<br/>M1: market data + re-auth<br/>M2 live order placement AUTHORIZED + ACTIVE<br/>FR-20260801-sigmacapital-real-order-placement]:::state
+    Compliance -.permits as one option.-> Manual
     Compliance -.enforces.-> Research
     Compliance -.governs.-> Schwab
     Compliance -.governs.-> AccountsTrading
@@ -53,17 +53,30 @@ graph TB
     LogRealTrade[log_real_trade.py<br/>Tyler-invoked audit CLI<br/>NOT part of picker/approval pipeline]
     Tyler --> LogRealTrade
     LogRealTrade -->|writes audit row<br/>mode=real| DB
-    LogRealTrade -->|read-only verify only<br/>never places orders| AccountsTrading
-    Agents -->|read-only get_account/get_positions<br/>gates mode=real @ min confidence 0.85| AccountsTrading
+    LogRealTrade -->|verify only — does not place orders| AccountsTrading
+    Agents -->|get_account/get_positions<br/>gates mode=real @ min confidence 0.85| AccountsTrading
+    %% M2 live order placement (FR-20260801-sigmacapital-real-order-placement)
+    TradeGate -->|POST /api/approve-real/&lt;id&gt;<br/>human-confirmed — SOLE real-mode entry point| ApproveCandidate["approve_candidate(id, *, real_money_confirmed=False)<br/>src/utils/candidate_glue.py"]
+    RealGate["REAL-MONEY AUTHORIZATION GATE<br/>AUTHORIZED_REAL_MONEY_FR_ID (module-level code constant)<br/>AND real_money_confirmed=True (kwarg, defaults False)<br/>⚠ code constant — NOT runtime-toggleable;<br/>revocation requires process restart"]:::state
+    ApproveCandidate --> RealGate
+    RealGate -->|both conditions satisfied| SubmitRealOrder["submit_real_order()<br/>src/utils/candidate_glue.py"]
+    RealGate -.fails closed.-> DB
+    SubmitRealOrder -->|place_order LIVE| AccountsTrading
+    SubmitRealOrder -->|broker_order_id on success| DB
+    SubmitRealOrder -.->|broker_error · placement_warnings<br/>on failure| DB
+    LegacyRoute["POST /approve/&lt;candidate_id&gt;<br/>DELETED — legacy unguarded route"]:::state
+    LegacyRoute -.removed.-> TradeGate
+    TradeGate -->|POST /api/approve<br/>inverse guard: refuses mode=real candidates| ApproveCandidate
     TradeApprovalGate -->|re-verify pending real trades<br/>on dashboard load| LogRealTrade
     WSFrCli[⊕ Workspace<br/>fr_cli.py record-event]:::ws
-    LogRealTrade -.->|subprocess: fr_cli.py record-event<br/>(compliance audit)| WSFrCli
-    TradeApprovalGate -.->|subprocess: fr_cli.py record-event<br/>(compliance audit)| WSFrCli
+    LogRealTrade -.->|"subprocess: fr_cli.py record-event<br/>(compliance audit)"| WSFrCli
+    TradeApprovalGate -.->|"subprocess: fr_cli.py record-event<br/>(compliance audit)"| WSFrCli
     class Signals,Manual state
     class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
     class LogRealTrade orch
+    class ApproveCandidate,SubmitRealOrder orch
     class OAuthLoop,TokenStore state
     class DB db
     class Perplexity,YFinance,Anthropic,Schwab ext

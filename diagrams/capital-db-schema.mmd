@@ -42,6 +42,9 @@ erDiagram
         real estimated_cost
         text model
         text scoring_method
+        text broker_order_id
+        text broker_error
+        text placement_warnings "JSON array"
     }
     MARKET_DATA_CACHE {
         integer id PK
@@ -119,4 +122,6 @@ erDiagram
     %% mode='real' reserved for future FR after broker-API compliance review
     %% model column (FR-20260627): per-pick LLM provenance — legacy portfolio/execution rows backfilled to 'raptor', legacy candidates left NULL
     %% mode='real' authorized (charter amended, broker-API compliance review complete)
-    %% for the single dedicated low-risk account; M2 order placement gated on funding
+    %% for the single dedicated low-risk account; M2 live order placement ACTIVE
+    %% (FR-20260801-sigmacapital-real-order-placement): broker_order_id / broker_error /
+    %% placement_warnings capture the Schwab placement outcome per execution row
