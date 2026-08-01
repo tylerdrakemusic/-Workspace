@@ -3,8 +3,8 @@ description: "Reviewer agent — HEAVY tier (Gemini 3.1 Pro, Google, 1x preview)
 model: gemini-3.1-pro
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Reviewer Agent — Heavy Tier
 

@@ -1,7 +1,7 @@
 ---
 description: "Use for git operations across the workspace — auto-committing uncommitted work, running test suites before commit, checking dirty status across all projects, managing branches, or setting up pre-commit hooks. Use for CI-like workflows: test → commit → report."
 ---
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace CI Agent
 
@@ -10,6 +10,10 @@ Git operations and CI workflows for all workspace repos.
 ## Startup Check
 Verify hook path: `git -C <repo> config core.hooksPath` → expect `f:/.github/hooks/scripts`.
 If missing for any repo: `pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1`
+> Exception: ΣCapital and ∞Life intentionally use a repo-local `.git/hooks/pre-push`
+> (bespoke direct-push-to-main guard for private repos) instead of the shared
+> hooksPath — an empty `core.hooksPath` for these two repos is by design, not drift.
+> Confirm via `Test-Path <repo>\.git\hooks\pre-push` before treating it as missing.
 
 ## 1. Auto-Commit Workflow
 1. Confirm active session branch/worktree (create one if still on `main`)

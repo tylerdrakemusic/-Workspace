@@ -2,8 +2,8 @@
 description: "Use during the FR cycle (after IN_PROGRESS, before REVIEW_REQUESTED) to detect architectural impact of a PR diff. Scans for new agents, new files in src/integrations/, new dependencies in requirements.txt, new DB tables, new cross-project imports, and identifies which .mmd diagrams in f:\\⊕Workspace\\diagrams\\ need to be updated. Produces a structured impact report. Hard-blocks merge when stale diagrams are detected."
 user-invocable: true
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Architecture Reviewer Agent
 
@@ -33,7 +33,7 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 For each affected diagram: read `.mmd` source → search for new element name as string → STALE if absent, MISSING if diagram doesn't exist.
 
 **Topology completeness check (always run, regardless of diff):**
-1. List all files matching `f:\.github\agents\*.agent.md` — extract agent short-names
+1. List all files matching `f:\⊕Workspace\.github\agents\*.agent.md` — extract agent short-names
 2. Read `workspace-agent-topology.mmd` — extract all node labels
 3. Any agent file with no corresponding node in the topology → mark `workspace-agent-topology.mmd` as **STALE** and include the missing agents in the remediation list
 
