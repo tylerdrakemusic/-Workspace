@@ -71,6 +71,12 @@ graph TB
     WSFrCli[⊕ Workspace<br/>fr_cli.py record-event]:::ws
     LogRealTrade -.->|"subprocess: fr_cli.py record-event<br/>(compliance audit)"| WSFrCli
     TradeApprovalGate -.->|"subprocess: fr_cli.py record-event<br/>(compliance audit)"| WSFrCli
+    %% Nightly order reconciliation (FR-20260803-sigmacapital-order-reconciliation)
+    ReconcileOrders["reconcile_orders.py<br/>tools/reconcile_orders.py<br/>nightly cron — Windows Task Scheduler<br/>schedule_order_sync.xml"]
+    ReconcileOrders -->|GET /accounts/{hash}/orders| AccountsTrading
+    AccountsTrading -->|order status per broker_order_id| ReconcileOrders
+    ReconcileOrders -->|update execution_history.status<br/>+ broker_status| DB
+    class ReconcileOrders orch
     class Signals,Manual state
     class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
