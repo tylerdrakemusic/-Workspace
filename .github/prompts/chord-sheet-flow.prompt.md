@@ -1,3 +1,6 @@
+---
+mode: ❤music-orchestrator
+---
 # ❤Music Agentic Chord Sheet Flow Prompt
 
 Use this prompt to invoke the agentic chord-sheet generation workflow for ❤Music.
