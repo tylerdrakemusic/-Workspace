@@ -1,3 +1,6 @@
+---
+mode: ⊕workspace-overseer
+---
 # New Bugfix Request
 
 **Title:** 

@@ -1,3 +1,6 @@
+---
+mode: Σcapital-orchestrator
+---
 # ΣCapital Off-Market Trade Picker Flow Prompt
 
 Use this prompt as the canonical instruction set for ΣCapital's off-market/evening trade candidate generation and approval workflow.
