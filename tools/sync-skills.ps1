@@ -28,18 +28,22 @@ Write-Log "=== skill-sync start ==="
 foreach ($repo in $config.repos) {
     Write-Log "--- $($repo.name) ---"
 
-    # Clone if not present, otherwise pull
-    if (-not (Test-Path $repo.path)) {
-        Write-Log "Cloning $($repo.remote) -> $($repo.path)"
-        git clone $repo.remote $repo.path 2>&1 | ForEach-Object { Write-Log $_ }
-    } else {
-        Push-Location $repo.path
-        try {
-            Write-Log "git pull origin main"
-            git pull origin main 2>&1 | ForEach-Object { Write-Log $_ }
-        } finally {
-            Pop-Location
+    # Clone if not present, otherwise pull (skip if remote is null — shared path)
+    if ($null -ne $repo.remote -and $repo.remote -ne "") {
+        if (-not (Test-Path $repo.path)) {
+            Write-Log "Cloning $($repo.remote) -> $($repo.path)"
+            git clone $repo.remote $repo.path 2>&1 | ForEach-Object { Write-Log $_ }
+        } else {
+            Push-Location $repo.path
+            try {
+                Write-Log "git pull origin main"
+                git pull origin main 2>&1 | ForEach-Object { Write-Log $_ }
+            } finally {
+                Pop-Location
+            }
         }
+    } else {
+        Write-Log "Skipping pull (shared repo path, already pulled by sibling entry)"
     }
 
     # Copy each registered skill's SKILL.md
