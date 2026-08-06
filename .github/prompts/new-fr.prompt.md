@@ -1,3 +1,6 @@
+---
+mode: ⊕workspace-overseer
+---
 # New Feature Request
 
 **Title:** 
@@ -40,6 +43,9 @@
      7. On confirmation → proceed to Phase B triage (ledger + registry + cycle timer).
      8. On amendments → update the draft and re-confirm.
 
+     0. MODE CHECK: Confirm you are running as ⊕workspace-overseer. If not,
+        hand off to that agent now — it provides MCP pre-flight, agent discovery,
+        and the full workspace routing context required for accurate triage.
      ⚠️  DB-ONLY RULE: Register the FR in the DB via `fr_cli.py open` — do NOT
      create a `.md` file in `.github/fr/`. The DB is the sole source of truth.
      (See feature-request-flow.instructions.md § FR Identifier) -->

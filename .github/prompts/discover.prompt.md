@@ -1,3 +1,6 @@
+---
+mode: ⊕workspace-overseer
+---
 # Discover TODO Opportunities
 
 Run the `⊕workspace-discovery` agent to find epic/story-level opportunities across projects and optionally insert approved items into the shared todo DB.
