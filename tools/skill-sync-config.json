@@ -42,6 +42,17 @@
       "remote": "https://github.com/multica-ai/andrej-karpathy-skills",
       "skill_root": "skills",
       "skills": ["karpathy-guidelines"]
+    },
+    {
+      "name": "davidondrej-skills",
+      "path": "f:\\davidondrej-skills",
+      "remote": "https://github.com/davidondrej/skills",
+      "skill_root": "skills",
+      "skills": [
+        "agent-orchestration/git-worktree",
+        "thinking-and-docs/before-building",
+        "thinking-and-docs/decisions"
+      ]
     }
   ]
 }
