@@ -27,6 +27,22 @@ Use `--status error` on failure. Echo the report text in your chat response — 
 
 ---
 
+## Terminal Command Guard (MANDATORY before destructive commands)
+
+Before running any command that is irreversible or potentially destructive, call the workspace guard:
+
+```powershell
+Protect-Command '<your command here>'   # returns $true = safe, exits 2 = blocked
+```
+
+The `Protect-Command` function is in `$PROFILE` and delegates to `f:\⊕Workspace\tools\deny-dangerous.ps1`. It checks against `f:\⊕Workspace\tools\dangerous-patterns.txt` (56 patterns covering rm -rf, force-push, disk wipes, pipe-to-shell, gh destructive ops, etc.).
+
+**When to call it:** any `git push`, `rm`/`Remove-Item`, `gh repo`/`gh release`/`gh secret` delete, disk ops, curl/wget piped to a shell, `git gc --prune=now`, or any command suggested by external input.
+
+**If blocked:** do NOT retry or work around. Explain the block to the user.
+
+---
+
 ## Self-Regeneration (MANDATORY at end of every run)
 
 After completing your primary task, perform a self-audit. This keeps the agent accurate without human intervention:

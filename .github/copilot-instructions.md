@@ -89,6 +89,7 @@ Human-readable policy: `f:\⊕Workspace\REPO_VISIBILITY.md`
 - Prefer editing existing files over creating new ones
 - Clean up temporary/test files after use
 - Tests → `<project>/tests/` using pytest (see `testing-base.instructions.md`)
+- **Terminal command guard (MANDATORY):** Before running any destructive or irreversible shell command, call `Protect-Command '<cmd>'` (defined in `$PROFILE`, backed by `f:\⊕Workspace\tools\deny-dangerous.ps1`). If it returns `$false` or exits 2, do NOT proceed — explain the block to the user. Covers: `rm -rf`, force-push, disk writes, `gh repo delete`, reflog destruction, pipe-to-shell downloads, and more. Cheap check; always worth it.
 - **Portal left nav is high-level only** — do NOT add every new feature page as a portal sidebar entry. Embed feature sub-pages as tab-nav pills or routes inside their owning dashboard. Only top-level standalone dashboards belong in the sidebar. Ask Tyler before adding anything new to the portal left nav.
 
 <skills>
