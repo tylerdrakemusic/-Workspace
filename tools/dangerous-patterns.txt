@@ -1,0 +1,55 @@
+# Global agent command guard — dangerous command denylist.
+# One .NET regex (Select-String -Pattern) per line. Blank lines and # comments are ignored.
+# Shared across all agent sessions on this machine via PowerShell profile.
+# Edit this file to tune; changes apply immediately (no restart needed).
+# Ported from https://github.com/davidondrej/skills/blob/main/hooks/dangerous-patterns.txt
+# Windows adaptations: $HOME -> $env:USERPROFILE / C:\Users, raw disk paths changed to \\.\PhysicalDrive
+
+# 1. rm / Remove-Item aimed at root, home, or entire drive
+(^|[;&|`\s])rm\s+((-[a-zA-Z]+|--[a-z-]+)\s+)*["']?/["']?\s*($|[;&|])
+(^|[;&|`\s])rm\s+((-[a-zA-Z]+|--[a-z-]+)\s+)*["']?/\*
+(^|[;&|`\s])rm\s+((-[a-zA-Z]+|--[a-z-]+)\s+)*["']?(~|\$HOME|\$\{HOME\}|\$env:USERPROFILE)[/\\]?["']?\s*($|[;&|])
+(^|[;&|`\s])Remove-Item\s+.*-Recurse.*-Force.*[A-Za-z]:\\["']?\s*($|[;&|`])
+(^|[;&|`\s])Remove-Item\s+.*-Recurse.*-Force.*\$env:USERPROFILE["']?\s*($|[;&|`])
+--no-preserve-root
+
+# 2. Disk destroyers (writing to raw disks, formatting)
+(^|[;&|`\s])dd\s+.*of=["']?\\\\\.\\(PhysicalDrive|HardDisk)
+(^|[;&|`\s])Format-Volume\s+
+(^|[;&|`\s])diskpart(\s|$)
+(^|[;&|`\s])Clear-Disk\s+.*-RemoveData
+
+# 3. Deleting with admin power (elevated rm)
+(^|[;&|`\s])sudo\s+(-[a-zA-Z]+\s+)*rm(\s|$)
+
+# 4. Fork bomb
+:\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:
+
+# 5. Piping the internet straight into a shell
+(^|[;&|`\s])(curl|wget|Invoke-WebRequest|iwr)\s+[^;&|]*\|\s*(sudo\s+)?(ba|z|da)?sh(\s|$)
+(^|[;&|`\s])(curl|wget|Invoke-WebRequest|iwr)\s+[^;&|]*\|\s*(sudo\s+)?pwsh(\s|$)
+(^|[;&|`\s])(curl|wget|Invoke-WebRequest|iwr)\s+[^;&|]*\|\s*(sudo\s+)?powershell(\s|$)
+
+# 6. Rewriting remote git history (--force-with-lease stays allowed)
+(^|[;&|`\s])git\s+push[^;&|]*\s(-f|--force)(\s|$)
+(^|[;&|`\s])git\s+push[^;&|]*\s\+[A-Za-z0-9._/-]
+
+# 6b. Deleting remote branches/tags
+(^|[;&|`\s])git\s+push[^;&|]*\s(--delete|-d)(\s|$)
+(^|[;&|`\s])git\s+push[^;&|]*\s:[A-Za-z0-9._/-]
+
+# 7. Breaking permissions/ownership on the whole system
+(^|[;&|`\s])icacls\s+[A-Za-z]:\\["']?\s*(/grant|/deny|/remove).*Everyone
+(^|[;&|`\s])takeown\s+/f\s+[A-Za-z]:\\["']?\s*($|[;&|`\s])
+
+# 8. Destroying the reflog safety net
+(^|[;&|`\s])git\s+reflog\s+expire[^;&|]*--expire(-unreachable)?(=|\s+)now
+(^|[;&|`\s])git\s+gc[^;&|]*--prune(=|\s+)(now|all)
+
+# 9. GitHub CLI irreversible/destructive operations + token exfil
+(^|[;&|`\s])gh\s+repo\s+delete(\s|$)
+(^|[;&|`\s])gh\s+release\s+delete(\s|$)
+(^|[;&|`\s])gh\s+(secret|ssh-key|gpg-key)\s+delete(\s|$)
+(^|[;&|`\s])gh\s+api\s+[^;&|]*(-X|--method)(=|\s+)(DELETE|delete)
+(^|[;&|`\s])gh\s+repo\s+edit[^;&|]*--visibility(=|\s+)public
+(^|[;&|`\s])gh\s+auth\s+token(\s|$)
