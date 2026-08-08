@@ -96,6 +96,14 @@ graph LR
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
     Life -.->|nova_portrait lazy-import| Workspace
     Music -.->|vera_portrait lazy-import| Workspace
+    %% FR-20260807-tech-debt-scanner — direct cross-repo Python import: a NEW coupling
+    %% class, distinct from the subprocess/file-read edges above (sys.path insert +
+    %% bare "import tech_debt_scanner" / "import init_db", not subprocess.run or a file read).
+    %% Merge-order dependency: Workspace's tech_debt_scanner.py + init_db.py must exist
+    %% (on main or in a local worktree) before Manifest's discover_todos.py --mode
+    %% tech-debt can run.
+    Manifest -->|"direct import (sys.path insert): tech_debt_scanner.py + init_db.py"| Workspace
+    linkStyle 51 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
 
 
 
