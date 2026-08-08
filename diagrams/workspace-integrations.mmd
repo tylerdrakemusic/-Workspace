@@ -20,6 +20,7 @@ graph LR
     Perplexity[(Perplexity.ai<br/>Sonar + Reasoning)]:::ext
     Schwab[(Charles Schwab API)]:::ext
     GetSongBPM[(GetSongBPM API)]:::ext
+    FlyIO[(Fly.io)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -57,6 +58,7 @@ graph LR
     Music --> MusicDB
     Music -.->|sheet_music ingest| GDrive
     Music -->|BPM autolookup| GetSongBPM
+    Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
     %% ⟨ψ⟩Quantum → external + DB
     Quantum -->|qiskit jobs| IBMQ
     Quantum -->|model hub| HF
@@ -88,7 +90,7 @@ graph LR
     Capital -.->|capital research via ⊕Workspace integration| Perplexity
     Capital -->|OAuth · market data| Schwab
     Capital ==>|LIVE order placement — only external<br/>financial-institution WRITE in the workspace| Schwab
-    linkStyle 44 stroke:#ff2a2a,stroke-width:4px,color:#ff9a9a
+    linkStyle 45 stroke:#ff2a2a,stroke-width:4px,color:#ff9a9a
     %% FR-20260711-sigmacapital-real-trade-audit-logging — compliance audit subprocess call
     Capital -.->|"subprocess: fr_cli.py record-event (compliance audit)"| Workspace
     Manifest -.->|executive briefs| Life
@@ -103,7 +105,7 @@ graph LR
     %% (on main or in a local worktree) before Manifest's discover_todos.py --mode
     %% tech-debt can run.
     Manifest -->|"direct import (sys.path insert): tech_debt_scanner.py + init_db.py"| Workspace
-    linkStyle 51 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
+    linkStyle 52 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
 
 
 

@@ -13,10 +13,11 @@ graph LR
     Web[HTML · CSS · JS] --> Tone[Tone.js<br/>Strudel]
     Python -.->|lazy cross-project import| WSOllama[(⊕Workspace<br/>src/integrations/ollama)]
     WSOllama -.-> Ollama[(Ollama LLM<br/>local server)]
+    Python -->|Dockerfile| Docker[Docker<br/>python:3.11-slim image] -->|"flyctl deploy (CI, main-only)"| FlyIO[(Fly.io<br/>guitartrainer.fly.dev)]
     class Python,Web lang
     class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone,PythonDocx,Pypdf,Pronouncing,Demucs,Requests lib
     class WSOllama ws
-    class Ollama ext
+    class Ollama,FlyIO ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
