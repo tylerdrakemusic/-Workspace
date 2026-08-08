@@ -15,7 +15,7 @@ graph TB
             UtilsCore[core<br/>perf_cli · proof_cli<br/>init_db]
             UtilsFR[FR lifecycle<br/>fr_cli · fr_server<br/>init_fr_db · migrate_fr_target_quarter<br/>seed_target_quarters]
             UtilsSec[security<br/>security_scan · security_scan_nightly<br/>agent_frontmatter_integrity]
-            UtilsDiscovery[discovery/gen<br/>workspace_discovery · roadmap_generator<br/>gen_qee · complexity_router]
+            UtilsDiscovery[discovery/gen<br/>workspace_discovery · roadmap_generator<br/>gen_qee · complexity_router · tech_debt_scanner]
             UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
             UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
         end
@@ -35,6 +35,7 @@ graph TB
     UtilsCore --> Data
     UtilsFR --> Data
     UtilsSec --> Data
+    UtilsDiscovery --> Data
     UtilsPerf --> Data
     UtilsData --> Data
     class Tools tool
