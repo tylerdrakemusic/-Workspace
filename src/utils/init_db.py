@@ -318,6 +318,21 @@ def init_db() -> None:
 
     CREATE INDEX IF NOT EXISTS idx_agent_feedback_status ON agent_feedback(status);
     CREATE INDEX IF NOT EXISTS idx_agent_feedback_severity ON agent_feedback(severity);
+
+    CREATE TABLE IF NOT EXISTS tech_debt (
+        finding_id  TEXT PRIMARY KEY,
+        project     TEXT NOT NULL,
+        category    TEXT NOT NULL CHECK(category IN ('complexity','monolith','coupling','filesystem')),
+        file_path   TEXT NOT NULL,
+        severity    INTEGER NOT NULL CHECK(severity BETWEEN 1 AND 10),
+        detail      TEXT,
+        action      TEXT,
+        status      TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','resolved','dismissed')),
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tech_debt_severity ON tech_debt(severity);
+    CREATE INDEX IF NOT EXISTS idx_tech_debt_project ON tech_debt(project, status);
     """)
     conn.commit()
     _run_migrations(conn)
