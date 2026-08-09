@@ -20,10 +20,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 from shutil import which
 
-APPDATA_PATH = os.environ.get("APPDATA")
-if APPDATA_PATH is None:
-    APPDATA_PATH = Path.home() / ".config" / "Code"
-MCP_JSON_PATH = Path(APPDATA_PATH) / "User" / "mcp.json"
+def _resolve_mcp_json_path(
+    appdata: str | None, home: Path, is_windows: bool
+) -> Path:
+    """Resolve the VS Code user MCP configuration path for the host OS."""
+    if is_windows and appdata:
+        return Path(appdata) / "Code" / "User" / "mcp.json"
+    if appdata:
+        return Path(appdata) / "User" / "mcp.json"
+    return home / ".config" / "Code" / "User" / "mcp.json"
+
+
+MCP_JSON_PATH = _resolve_mcp_json_path(
+    os.environ.get("APPDATA"),
+    Path.home(),
+    os.name == "nt",
+)
 OUTPUT_PATH = Path(__file__).parent.parent / "config" / "mcp_status.json"
 
 # HTTP servers are always-on (managed by VS Code / GitHub Copilot extension).

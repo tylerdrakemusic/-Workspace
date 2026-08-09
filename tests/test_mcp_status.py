@@ -1,8 +1,21 @@
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import Mock
 
-from src.utils.mcp_status import _probe_command_server
+from src.utils.mcp_status import _probe_command_server, _resolve_mcp_json_path
+
+
+def test_mcp_json_path_uses_vscode_user_directory_on_windows():
+    path = _resolve_mcp_json_path(
+        appdata=r"C:\Users\tyler\AppData\Roaming",
+        home=Path(r"C:\Users\tyler"),
+        is_windows=True,
+    )
+
+    assert path.as_posix().replace("\\", "/") == (
+        "C:/Users/tyler/AppData/Roaming/Code/User/mcp.json"
+    )
 
 
 def test_probe_npx_uses_npm_fallback_when_npx_missing(monkeypatch):
