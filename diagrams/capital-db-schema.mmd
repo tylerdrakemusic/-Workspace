@@ -5,6 +5,7 @@ erDiagram
     PORTFOLIO ||--o{ EXITS : has_exit
     EXITS ||--o{ EXITS : supersedes
     TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
+    TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves_candidate_account
 
     PORTFOLIO {
         integer id PK
@@ -46,6 +47,15 @@ erDiagram
         text broker_status "nightly-synced from Schwab"
         text broker_error
         text placement_warnings "JSON array"
+        text account_ref
+        text margin_label "cash|overnight-margin"
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged "0|1"
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
     }
     MARKET_DATA_CACHE {
         integer id PK
@@ -88,6 +98,15 @@ erDiagram
         text mode "simulated|real"
         text created_at
         text model
+        text approval_account_ref "selected account persisted at approval"
+        text margin_label "cash|overnight-margin"
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged "0|1"
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
     }
     EXITS {
         integer id PK
@@ -116,6 +135,24 @@ erDiagram
         text account_ref
         text context
         text confirmed_at
+        text margin_label "cash|overnight-margin"
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged "0|1"
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+
+    MARGIN_RESERVATIONS {
+        integer id PK
+        integer candidate_id FK "UNIQUE per candidate"
+        text account_ref "selected/persisted Schwab account"
+        real borrowed_amount "CHECK >= 0"
+        text status "CHECK pending|consumed|released"
+        text created_at "lifecycle timestamp"
+        text released_at "lifecycle timestamp"
     }
 
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
@@ -126,3 +163,6 @@ erDiagram
     %% for the single dedicated low-risk account; M2 live order placement ACTIVE
     %% (FR-20260801-sigmacapital-real-order-placement): broker_order_id / broker_error /
     %% placement_warnings capture the Schwab placement outcome per execution row
+    %% (FR-20260808-sigmacapital-margin-aware-picker): margin columns are copied
+    %% across candidate, execution, and confirmation audit rows; reservations are
+    %% unique per candidate and retain release history instead of deleting rows.
