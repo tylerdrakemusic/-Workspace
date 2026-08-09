@@ -1,0 +1,36 @@
+{
+  "_comment": "Discoverable capability descriptor for the dedicated service-email (Gmail) mailbox. FR-20260808-dedicated-service-email. Any workspace agent or project may read this file (or call integrations.gmail.describe_capability()) to learn what the mailbox can do and how it is governed.",
+  "name": "dedicated-service-email",
+  "vendor": "Gmail",
+  "fr": "FR-20260808-dedicated-service-email",
+  "summary": "Sequestered service mailbox for the workspace ecosystem: autonomous service sign-ups, operator-gated outbound notifications (compose a local draft, deliver only on explicit operator approval), and confirmation-email reading — governed by an action-scoped policy.",
+  "identity_env": "GMAIL_SERVICE_ADDRESS",
+  "credential_env": "GMAIL_SERVICE_TOKEN",
+  "import_path": "integrations.gmail",
+  "actions": ["read", "search", "send", "signup"],
+  "action_scopes": {
+    "read": "https://www.googleapis.com/auth/gmail.readonly",
+    "search": "https://www.googleapis.com/auth/gmail.readonly",
+    "send": "https://www.googleapis.com/auth/gmail.send",
+    "signup": "https://www.googleapis.com/auth/gmail.send"
+  },
+  "raw_retention_days": 30,
+  "outbound_model": "operator-gated draft + explicit approval",
+  "outbound_default": "disabled by default (allow_outbound=false); even when enabled, delivery requires an explicit operator_approved=True argument",
+  "outbound_api": {
+    "create_draft": "Compose and validate a local EmailDraft (recipient syntax + CR/LF header-injection rejection). No network I/O; delivers nothing.",
+    "send_draft": "Deliver a draft. Sends only when operator_approved is exactly True; any other value is refused with no Gmail API call.",
+    "send_message": "Convenience wrapper that stages a draft then delivers under the same operator approval gate; never delivers directly from a bare agent call.",
+    "connectivity_test": "Rides the same operator-gated draft path; sends only with an explicit test-only operator_approved=True."
+  },
+  "autonomous_signups": "allowed by policy decision (allow_autonomous_signups)",
+  "residual_risk": "The mailbox has full-inbox visibility. Sensitive-content filtering (financial/PII/medical heuristics) is best-effort pattern matching applied before any message body is returned to an agent; it can miss novel or obfuscated sensitive content (false negatives) and may over-redact benign text (false positives). Treat the mailbox as a low-trust, service-only inbox: never route health, financial, or identity-critical mail here, and always re-review before forwarding externally.",
+  "setup_requirements": [
+    "Human creates the Gmail account out-of-band (never by an agent).",
+    "Human completes OAuth consent out-of-band and stores the base64 authorized-user token in the GMAIL_SERVICE_TOKEN system environment variable. The local, human-only helper tools/gmail_oauth_bootstrap.py mints this token: it reads a Desktop OAuth client from --client-json or the GMAIL_OAUTH_CLIENT_ID/GMAIL_OAUTH_CLIENT_SECRET env vars, requests only the gmail.readonly + gmail.send scopes, runs the consent flow, and transfers the token via --set-user-env or --clipboard without printing or writing it. Agents must never run this tool.",
+    "Set GMAIL_SERVICE_ADDRESS to the mailbox address.",
+    "Connectivity-test recipient is supplied at run time only and is never stored."
+  ],
+  "bootstrap_tool": "tools/gmail_oauth_bootstrap.py",
+  "bootstrap_env": ["GMAIL_OAUTH_CLIENT_ID", "GMAIL_OAUTH_CLIENT_SECRET"]
+}

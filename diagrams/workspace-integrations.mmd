@@ -17,6 +17,7 @@ graph LR
     PollinationsExt[(Pollinations.AI<br/>image.pollinations.ai)]:::ext
     HFSpacesExt[(HF Spaces<br/>FLUX.1-schnell<br/>Gradio REST)]:::ext
     GDrive[(Google Drive)]:::ext
+    Gmail[(Google Gmail API)]:::ext
     Perplexity[(Perplexity.ai<br/>Sonar + Reasoning)]:::ext
     Schwab[(Charles Schwab API)]:::ext
     GetSongBPM[(GetSongBPM API)]:::ext
@@ -98,6 +99,7 @@ graph LR
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
     Life -.->|nova_portrait lazy-import| Workspace
     Music -.->|vera_portrait lazy-import| Workspace
+    Workspace -->|GmailServiceClient OAuth| Gmail
     %% FR-20260807-tech-debt-scanner — direct cross-repo Python import: a NEW coupling
     %% class, distinct from the subprocess/file-read edges above (sys.path insert +
     %% bare "import tech_debt_scanner" / "import init_db", not subprocess.run or a file read).
