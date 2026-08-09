@@ -7,7 +7,27 @@ import sqlcipher3
 
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
-DB_PATH = Path(__file__).parent.parent / "data" / "fr_ledgers.db"
+
+def _workspace_root() -> Path:
+    """Return the checkout root that owns the canonical FR ledger."""
+    checkout_root = Path(__file__).resolve().parents[2]
+    git_entry = checkout_root / ".git"
+    if not git_entry.is_file():
+        return checkout_root
+
+    gitdir_line = git_entry.read_text(encoding="utf-8").splitlines()[0]
+    prefix, separator, gitdir_value = gitdir_line.partition(":")
+    if prefix.lower() != "gitdir" or not separator or not gitdir_value.strip():
+        return checkout_root
+
+    worktree_gitdir = Path(gitdir_value.strip())
+    if not worktree_gitdir.is_absolute():
+        worktree_gitdir = (git_entry.parent / worktree_gitdir).resolve()
+    common_gitdir = worktree_gitdir.parent.parent
+    return common_gitdir.parent if common_gitdir.name == ".git" else checkout_root
+
+
+DB_PATH = _workspace_root() / "src" / "data" / "fr_ledgers.db"
 
 
 def _apply_cipher_pragmas(conn: sqlcipher3.Connection) -> None:

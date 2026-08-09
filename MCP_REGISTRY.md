@@ -21,6 +21,37 @@ Already active in this workspace:
 
 This registry is now framed as optimization and standardization on top of that baseline.
 
+## Governed Coordination Servers
+
+The FR-20260809 coordination surface is intentionally separate from the
+generic SQLCipher server:
+
+Coordination invocation policy is deterministic MCP-first invocation: use the
+coordination MCP when it is available, and call only the fixed allowlisted
+operations documented below. If the coordination MCP is unavailable, use the
+explicit local fallback path (the canonical `fr_cli.py` or Manifest todo
+utility) and report that the coordination MCP is unavailable; do not silently
+substitute an arbitrary database or SQL call.
+
+- `workspace-coordination` → `src/utils/coordination_mcp_server.py`
+- `get_fr`
+- `record_fr_event`
+- `record_fr_artifact`
+- Delegates FR writes to `fr_cli.py`, which remains the canonical state
+	mutation path.
+- `manifest-coordination` →
+	`👁AI-Manifest/src/integrations/coordination/mcp_server.py`
+- `list_open_todos`
+- `link_confirmed_todo_to_fr`
+- Requires explicit confirmation before setting `todos.fr_id`.
+
+These tools do not accept database names or SQL. They must not be implemented
+by expanding the five-database `sqlcipher_mcp_server.py` contract, and they do
+not add access for ∞Life, ❤Music, ⟨ψ⟩Quantum, or ΣCapital.
+
+The user-level VS Code `mcp.json` is outside the approved isolated worktrees;
+registration there is a deployment step and is not changed by this FR.
+
 ## Weighted Scoring Rubric
 
 Each candidate is scored 0-10 per criterion, then multiplied by the weight.

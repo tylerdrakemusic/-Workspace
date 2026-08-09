@@ -3,66 +3,66 @@ graph LR
     Tyler([Tyler]) --> Overseer
 
     subgraph WS["⊕ Workspace Agents"]
-        Overseer["⊕ overseer"]
-        Intake["⊕ intake"]
-        CI["⊕ ci"]
-        Reviewer["⊕ reviewer"]
-        Doer["⊕ doer"]
-        Security["⊕ security"]
-        Hygiene["⊕ hygiene"]
-        ArchRev["⊕ arch-reviewer"]
-        ArchBeaut["⊕ arch-beautifier"]
-        GenQEE["⊕ gen-qee"]
-        Discovery["⊕ discovery"]
-        Dashboards["⊕ dashboards"]
-        BenchAnalyzer["⊕ bench-analyzer"]
-        Protector["⊕ protector"]
-        QA["⊕ qa"]
+        Overseer(["⊕ overseer"])
+        Intake(["⊕ intake"])
+        CI(["⊕ ci"])
+        Reviewer(["⊕ reviewer"])
+        Doer(["⊕ doer"])
+        Security(["⊕ security"])
+        Hygiene(["⊕ hygiene"])
+        ArchRev(["⊕ architecture-reviewer"])
+        ArchBeaut(["⊕ architecture-beautifier"])
+        GenQEE(["⊕ gen-qee"])
+        Discovery(["⊕ discovery"])
+        Dashboards(["⊕ dashboards"])
+        BenchAnalyzer(["⊕ bench-analyzer"])
+        Protector(["⊕ protector"])
+        QA(["⊕ qa"])
         subgraph TDD_TIER["TDD Tier Variants"]
-            TDDLight["⊕ tdd-light"]
-            TDDStd["⊕ tdd-standard"]
-            TDDHeavy["⊕ tdd-heavy"]
+            TDDLight(["⊕ tdd-light"])
+            TDDStd(["⊕ tdd-standard"])
+            TDDHeavy(["⊕ tdd-heavy"])
         end
         subgraph QA_TIER["QA Tier Variants"]
-            QALight["⊕ qa-light"]
-            QAHeavy["⊕ qa-heavy"]
+            QALight(["⊕ qa-light"])
+            QAHeavy(["⊕ qa-heavy"])
         end
         subgraph REV_TIER["Reviewer Tier Variants"]
-            ReviewerLight["⊕ reviewer-light"]
-            ReviewerHeavy["⊕ reviewer-heavy"]
+            ReviewerLight(["⊕ reviewer-light"])
+            ReviewerHeavy(["⊕ reviewer-heavy"])
         end
     end
 
     subgraph LIFE["∞Life"]
-        LifeOrch["∞ orchestrator"]
-        LifeBrainstorm["∞ brainstorm"]
-        LifeBudget["∞ budget"]
-        LifeDA["∞ data-analytics"]
-        LifeResearch["∞ research"]
-        LifeRisk["∞ risk"]
+        LifeOrch(["∞ orchestrator"])
+        LifeBrainstorm(["∞ brainstorm"])
+        LifeBudget(["∞ budget"])
+        LifeDA(["∞ data-analytics"])
+        LifeResearch(["∞ research"])
+        LifeRisk(["∞ risk"])
     end
 
     subgraph MUSIC["❤Music"]
-        MusicOrch["❤ orchestrator"]
-        MusicCatalog["❤ catalog"]
-        MusicPerf["❤ performance"]
-        MusicProd["❤ production"]
-        MusicSig["❤ signatures"]
-        MusicGuitarTech["❤ guitar-tech"]
+        MusicOrch(["❤ orchestrator"])
+        MusicCatalog(["❤ catalog"])
+        MusicPerf(["❤ performance"])
+        MusicProd(["❤ production"])
+        MusicSig(["❤ signatures"])
+        MusicGuitarTech(["❤ guitar-tech"])
     end
 
     subgraph QUANTUM["⟨ψ⟩Quantum"]
-        QuantumOrch["⟨ψ⟩ orchestrator"]
-        QuantumResearch["⟨ψ⟩ research"]
+        QuantumOrch(["⟨ψ⟩ orchestrator"])
+        QuantumResearch(["⟨ψ⟩ research"])
     end
 
     subgraph MANIFEST["👁AI-Manifest"]
-        ManifestOrch["👁 orchestrator"]
+        ManifestOrch(["👁 orchestrator"])
     end
 
     subgraph CAPITAL["ΣCapital"]
-        CapitalOrch["Σ orchestrator (stub)"]
-        CapitalResearch["Σ research"]
+        CapitalOrch(["Σ orchestrator (stub)"])
+        CapitalResearch(["Σ research"])
     end
 
     subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]

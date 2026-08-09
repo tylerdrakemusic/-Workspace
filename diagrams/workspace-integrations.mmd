@@ -1,9 +1,6 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
-    %% Cross-project integration points across the ⊕Workspace
-    %% Updated when new src/integrations/ modules or cross-project wiring is added.
-    %% Maintained by ⊕workspace-architecture-beautifier (FR-20260425-architecture-review-agents)
-    %% External services
+    %% Cross-project integration points and governed coordination boundaries.
     GitHub[(GitHub)]:::ext
     IBMQ[(IBM Quantum)]:::ext
     OpenAI[(OpenAI)]:::ext
@@ -29,12 +26,18 @@ graph LR
     Quantum[⟨ψ⟩ Quantum]:::orch
     Manifest[👁 AI-Manifest]:::orch
     Capital[Σ Capital]:::orch
+    WorkspaceCoord[⊕ coordination MCP]:::ws
+    ManifestCoord[👁 coordination MCP]:::manifest
+    CoordinationBoundary{Allowlisted FR / todo ops}:::state
+    NoGenericSQL[No generic SQL / arbitrary routing]:::state
     %% Databases
     WSDB[(workspace.db)]:::db
     LifeDB[(infinitelife.db)]:::db
     MusicDB[(heartmusic.db)]:::db
     QDB[(quantumpsi.db)]:::db
     CapitalDB[(sigmacapital.db)]:::db
+    FRLedger[(fr_ledgers.db)]:::db
+    ManifestTodoDB[(manifest_todos.db)]:::db
     %% Workspace → external
     Workspace -->|mcp_github| GitHub
     Workspace -->|diagrams render| Mermaid
@@ -43,6 +46,10 @@ graph LR
     Workspace -->|pollinations image gen| PollinationsExt
     Workspace -->|hf spaces FLUX| HFSpacesExt
     Workspace --> WSDB
+    Workspace --> WorkspaceCoord
+    WorkspaceCoord -->|FR operations| FRLedger
+    WorkspaceCoord --> CoordinationBoundary
+    WorkspaceCoord -.->|rejects| NoGenericSQL
     Workspace -->|health ping| ElevenLabs
     Workspace -->|health ping| Ollama
     Workspace -->|health ping| HF
@@ -68,45 +75,42 @@ graph LR
     Manifest -->|tts synthesis| ElevenLabs
     Manifest -->|llm orchestration| OpenAI
     Manifest -->|model hub| HF
-    ManifestTodoDB[(manifest_todos.db)]:::db
     Manifest --> ManifestTodoDB
+    Manifest --> ManifestCoord
+    ManifestCoord -->|todo operations| ManifestTodoDB
+    ManifestCoord --> CoordinationBoundary
+    ManifestCoord -.->|rejects| NoGenericSQL
     Manifest -.->|migrate_todos.py reads TODO_*.md| Life
     Manifest -.->|migrate_todos.py reads TODO_*.md| Music
     Manifest -.->|migrate_todos.py reads TODO_*.md| Quantum
     Manifest -.->|migrate_todos.py reads TODO_*.md| Workspace
-    %% FR-20260630-cross-project-roadmap-generator
+    %% Roadmap generation
     RoadmapJSON[(roadmap.json)]:::db
     Workspace -->|roadmap_generator.py| RoadmapJSON
     Manifest -->|subprocess: invokes roadmap_generator.py| Workspace
     Manifest -.->|reads roadmap.json| Workspace
-    %% Cross-project integrations (the workspace's connective tissue)
+    %% Cross-project integrations
     Quantum -.->|QRNG entropy| Workspace
     Workspace -.->|gen-qee passwords| Life
     Workspace -.->|gen-qee passwords| Music
     Workspace -.->|gen-qee passwords| Quantum
     Workspace -.->|gen-qee passwords| Manifest
     Workspace -.->|gen-qee passwords| Capital
-    %% ΣCapital → DB + Perplexity research (FR-20260601-perplexity-integration)
+    %% ΣCapital → DB + Perplexity
     Capital --> CapitalDB
     Capital -.->|capital research via ⊕Workspace integration| Perplexity
     Capital -->|OAuth · market data| Schwab
     Capital ==>|LIVE order placement — only external<br/>financial-institution WRITE in the workspace| Schwab
     linkStyle 45 stroke:#ff2a2a,stroke-width:4px,color:#ff9a9a
-    %% FR-20260711-sigmacapital-real-trade-audit-logging — compliance audit subprocess call
-    Capital -.->|"subprocess: fr_cli.py record-event (compliance audit)"| Workspace
+    Capital -.->|"fr_cli.py audit event"| Workspace
     Manifest -.->|executive briefs| Life
     Music -.->|signature generation| Quantum
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
     Life -.->|nova_portrait lazy-import| Workspace
     Music -.->|vera_portrait lazy-import| Workspace
     Workspace -->|GmailServiceClient OAuth| Gmail
-    %% FR-20260807-tech-debt-scanner — direct cross-repo Python import: a NEW coupling
-    %% class, distinct from the subprocess/file-read edges above (sys.path insert +
-    %% bare "import tech_debt_scanner" / "import init_db", not subprocess.run or a file read).
-    %% Merge-order dependency: Workspace's tech_debt_scanner.py + init_db.py must exist
-    %% (on main or in a local worktree) before Manifest's discover_todos.py --mode
-    %% tech-debt can run.
-    Manifest -->|"direct import (sys.path insert): tech_debt_scanner.py + init_db.py"| Workspace
+    %% Direct cross-repo import coupling
+    Manifest -->|"direct import: tech debt scanner"| Workspace
     linkStyle 52 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
 
 
