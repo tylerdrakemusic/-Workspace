@@ -1,0 +1,20 @@
+{
+  "_comment": "Policy boundaries for the dedicated service-email (Gmail) capability. FR-20260808-dedicated-service-email. Secrets are NEVER stored here — only policy toggles. The connectivity-test recipient is supplied at runtime and is never persisted to this file, logs, or the FR ledger.",
+  "fr": "FR-20260808-dedicated-service-email",
+  "allow_outbound": false,
+  "allow_autonomous_signups": true,
+  "raw_retention_days": 30,
+  "disabled_actions": [],
+  "sensitive_patterns": [
+    "\\brouting number\\b",
+    "\\baccount number\\b",
+    "\\bssn\\b",
+    "\\bsocial security\\b",
+    "\\b\\d{9}\\b",
+    "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+    "\\b(?:\\d[ -]*?){13,16}\\b",
+    "\\bpassword\\b",
+    "\\bmedical record\\b",
+    "\\bdiagnosis\\b"
+  ]
+}
