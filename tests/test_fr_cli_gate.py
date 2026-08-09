@@ -49,7 +49,10 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
             signed_off_at TEXT,
             closed_at TEXT,
             final_state TEXT,
-            cycle_timer_run_id TEXT
+            cycle_timer_run_id TEXT,
+            cost_status TEXT,
+            cost_source TEXT,
+            cost_reconciliation_status TEXT
         );
         CREATE TABLE fr_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,8 +67,10 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
         """
     )
     conn.execute(
-        "INSERT INTO feature_requests (id, title, state, opened_at, updated_at) "
-        "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', '2026-07-03', '2026-07-03')"
+        "INSERT INTO feature_requests "
+        "(id, title, state, opened_at, updated_at, cost_status, cost_source) "
+        "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', '2026-07-03', "
+        "'2026-07-03', 'estimated', 'test')"
     )
     conn.commit()
     return conn

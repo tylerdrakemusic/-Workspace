@@ -49,14 +49,16 @@ def finalize_cost(
     ).fetchone()
     baseline = json.loads(row[0]) if row and row[0] else {"model": model, "usage": {}}
     result = calculate_copilot_cost(model, _delta_usage(baseline.get("usage", {}), usage))
+    reason = f"Pricing unavailable for model {result.model}" if result.status == "unavailable" else None
     conn.execute(
         "UPDATE feature_requests SET ai_credits_estimated=?, usd_cost_estimated=?, "
         "cost_status=?, cost_source=?, cost_finalized_at=?, "
+        "cost_reconciliation_status=?, "
         "cost_pricing_source_url=?, cost_pricing_version=?, cost_pricing_effective_date=?, "
         "cost_rate_snapshot_json=? WHERE id=?",
         (float(result.ai_credits) if result.ai_credits is not None else None,
          float(result.usd) if result.usd is not None else None,
-         result.status, source, _now(), result.pricing_source_url,
+         result.status, source, _now(), reason, result.pricing_source_url,
          result.pricing_version, result.pricing_effective_date,
          json.dumps(result.rate_snapshot, sort_keys=True) if result.rate_snapshot else None,
          fr_id),
