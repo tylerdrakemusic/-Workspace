@@ -59,6 +59,21 @@ git branch -d <branch>
    C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-ci state-transition "Merged"
    ```
 
+### Cost Gate under merge
+Before invoking the merge API or recording `MERGED`, read the FR ledger and
+confirm `cost_status` is `estimated` or `unavailable`.
+
+- `estimated`: continue and report `ai_credits_estimated`,
+   `usd_cost_estimated`, `cost_source`, and `cost_finalized_at`.
+- `unavailable`: continue only when `cost_reconciliation_status` contains the
+   reason and `cost_source` identifies the source; report both fields with the
+   final status.
+- `NULL` or `pending`: stop. Reconcile telemetry or finalize an explicit
+   outcome before retrying the merge.
+
+The `fr_cli.py update-state <FR-ID> MERGED` command is the final enforcement
+point; a blocked transition must leave the FR state unchanged.
+
 ## 6. Post-Merge Server Auto-Restart
 After merging, check `f:\⊕Workspace\tools\portal_servers.json` for servers whose `cwd`/`source_dir` overlaps with changed files (`git diff --name-only HEAD~1 HEAD`). For each affected server:
 1. Find + kill running Python process by script name

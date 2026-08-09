@@ -104,6 +104,10 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
 ### Hard merge rules
 - **Direct pushes / merges to `main` are forbidden** in every repo. All work
   flows: feature branch → PR → green `test` check → merge.
+- **FRs MUST NOT transition to `MERGED` while `cost_status` is `NULL` or
+  `pending`.** Before merge, persist either a calculated `estimated` result or
+  an explicit `unavailable` result with a non-empty reason in
+  `cost_reconciliation_status` and a non-empty source in `cost_source`.
 - Agents MUST wait for the `test` status check to be green before invoking
   the merge API. Attempting merge on a red PR will be rejected by GitHub
   (public repos) or fail review (∞Life).

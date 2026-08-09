@@ -60,6 +60,28 @@ def _has_architecture_review_pass(conn, fr_id: str) -> bool:
     return False
 
 
+def _has_mergeable_cost_outcome(conn, fr_id: str) -> bool:
+    row = conn.execute(
+        "SELECT cost_status, cost_source, cost_reconciliation_status "
+        "FROM feature_requests WHERE id=?",
+        (fr_id,),
+    ).fetchone()
+    status = (row["cost_status"] or "").lower() if row else ""
+    source = row["cost_source"] if row else None
+    reason = row["cost_reconciliation_status"] if row else None
+    if status == "estimated" and source:
+        return True
+    if status == "unavailable" and source and reason:
+        return True
+    print(
+        f"[fr_cli] BLOCKED: cannot transition {fr_id} to MERGED — "
+        "cost_status must be estimated or unavailable with a cost source and "
+        "unavailable reason. Reconcile or finalize cost before merging.",
+        file=sys.stderr,
+    )
+    return False
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -161,6 +183,9 @@ def cmd_update_state(args: argparse.Namespace) -> None:
                 conn, args.fr_id, args.cost_model, usage,
                 source=getattr(args, "cost_source", None) or "telemetry", reporter=print,
             )
+    if args.new_state.upper() == "MERGED" and not _has_mergeable_cost_outcome(conn, args.fr_id):
+        conn.close()
+        sys.exit(1)
     updates: list[tuple] = [("state", args.new_state), ("updated_at", now)]
     if getattr(args, "branch", None):
         updates.append(("branch", args.branch))
@@ -302,6 +327,8 @@ def cmd_get(args: argparse.Namespace) -> None:
     print(f"USD cost:   {fr['usd_cost_estimated']}")
     print(f"Cost status: {fr['cost_status']}")
     print(f"Cost source: {fr['cost_source']}")
+    print(f"Cost reason: {fr['cost_reconciliation_status']}")
+    print(f"Cost finalized: {fr['cost_finalized_at']}")
     events = conn.execute(
         "SELECT ts, agent, event_type, summary FROM fr_events WHERE fr_id=? ORDER BY ts",
         (args.fr_id,),
