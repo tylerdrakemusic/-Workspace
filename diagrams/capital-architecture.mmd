@@ -11,6 +11,26 @@ graph TB
     TradeApprovalGate -->|AI reasoning| Anthropic[(Anthropic<br/>Claude API)]
     TradeApprovalGate -->|news| Perplexity
     TradeApprovalGate --> DB
+    MarginPolicy[margin_policy.py<br/>overnight margin policy<br/>caps · proof freshness · drawdown · composite score]
+    MarginStore[margin_store.py<br/>exposure + reservation persistence]
+    MarginGate[Overnight-margin hard gate<br/>fail-closed policy decision]:::state
+    MarginProof[Schwab margin proof/recheck<br/>AccountsTradingClient.get_account<br/>explicit margin fields + observed date]
+    MarginUI[Independent UI margin acknowledgment<br/>Tyler confirms margin use separately]:::state
+    SelectedAccount[Selected account ref<br/>Trade Approval Gate UI]
+    PersistedAccount[Persisted approval_account_ref<br/>candidate → execution account binding]
+    MarginReservation[Margin reservation<br/>pending → consumed / released]
+    TradeApprovalGate --> MarginUI
+    TradeApprovalGate --> SelectedAccount
+    SelectedAccount --> MarginProof
+    MarginProof --> MarginPolicy
+    MarginUI --> MarginPolicy
+    MarginPolicy --> MarginGate
+    MarginGate -->|allowed only after proof, recheck, caps, and composite checks| MarginStore
+    SelectedAccount --> PersistedAccount
+    PersistedAccount ==> DB
+    MarginStore --> MarginReservation
+    MarginReservation ==> DB
+    MarginProof -->|live proof and recheck| DB
     ResearchAgent["Σcapital-research<br/>.agent.md"] --> Agents
     DB --> Picks[picks table<br/>weekly recommendations]
     DB --> Portfolio[portfolio + trades<br/>simulated + human-confirmed live]
@@ -56,7 +76,10 @@ graph TB
     LogRealTrade -->|verify only — does not place orders| AccountsTrading
     Agents -->|get_account/get_positions<br/>gates mode=real @ min confidence 0.85| AccountsTrading
     %% M2 live order placement (FR-20260801-sigmacapital-real-order-placement)
-    TradeGate -->|POST /api/approve-real/&lt;id&gt;<br/>human-confirmed — SOLE real-mode entry point| ApproveCandidate["approve_candidate(id, *, real_money_confirmed=False)<br/>src/utils/candidate_glue.py"]
+    TradeGate -->|POST /api/approve-real/&lt;id&gt;<br/>human-confirmed — SOLE real-mode entry point| ApproveCandidate["approve_candidate(candidate_id, *, real_money_confirmed=False,<br/>margin_ui_acknowledged=False, selected_account_ref=None)<br/>src/utils/candidate_glue.py"]
+    ApproveCandidate -->|selected account| PersistedAccount
+    ApproveCandidate -->|overnight-margin candidates| MarginGate
+    MarginGate -->|reserve atomically before execution row| MarginStore
     RealGate["REAL-MONEY AUTHORIZATION GATE<br/>AUTHORIZED_REAL_MONEY_FR_ID (module-level code constant)<br/>AND real_money_confirmed=True (kwarg, defaults False)<br/>⚠ code constant — NOT runtime-toggleable;<br/>revocation requires process restart"]:::state
     ApproveCandidate --> RealGate
     RealGate -->|both conditions satisfied| SubmitRealOrder["submit_real_order()<br/>src/utils/candidate_glue.py"]
@@ -64,6 +87,10 @@ graph TB
     SubmitRealOrder -->|place_order LIVE| AccountsTrading
     SubmitRealOrder -->|broker_order_id on success| DB
     SubmitRealOrder -.->|broker_error · placement_warnings<br/>on failure| DB
+    SubmitRealOrder -->|consume reservation on successful execution| MarginStore
+    SubmitRealOrder -->|release pending reservation on failure| MarginStore
+    MarginStore -->|consume| MarginReservation
+    MarginStore -->|release with released_at audit timestamp| MarginReservation
     LegacyRoute["POST /approve/&lt;candidate_id&gt;<br/>DELETED — legacy unguarded route"]:::state
     LegacyRoute -.removed.-> TradeGate
     TradeGate -->|POST /api/approve<br/>inverse guard: refuses mode=real candidates| ApproveCandidate
@@ -82,7 +109,8 @@ graph TB
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
     class LogRealTrade orch
-    class ApproveCandidate,SubmitRealOrder orch
+    class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
+    class MarginGate,MarginUI state
     class OAuthLoop,TokenStore state
     class DB db
     class Perplexity,YFinance,Anthropic,Schwab ext
