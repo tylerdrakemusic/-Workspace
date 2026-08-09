@@ -11,7 +11,13 @@ stateDiagram-v2
     ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES
     REVIEW_REQUESTED --> AUTO_REVIEWED: ⊕workspace-reviewer
     AUTO_REVIEWED --> TYLER_APPROVED: Tyler approves PR
-    TYLER_APPROVED --> MERGED: ⊕workspace-ci merges
+    TYLER_APPROVED --> COST_GATE: ⊕workspace-ci validates cost outcome
+    COST_GATE --> COST_ESTIMATED: estimated
+    COST_GATE --> COST_UNAVAILABLE: unavailable + reason/source recorded
+    COST_GATE --> MERGE_BLOCKED: NULL or pending
+    COST_ESTIMATED --> MERGED: ⊕workspace-ci merges
+    COST_UNAVAILABLE --> MERGED: ⊕workspace-ci merges
+    MERGE_BLOCKED --> COST_GATE: outcome recorded
     MERGED --> SOAKING: post-merge soak window
     SOAKING --> SIGNED_OFF: signoff verified
     SIGNED_OFF --> [*]

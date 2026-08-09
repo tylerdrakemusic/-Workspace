@@ -159,7 +159,10 @@ def _cost_conn() -> sqlite3.Connection:
         "projects TEXT, state TEXT, branch TEXT, prs TEXT, owner TEXT, opened_at TEXT, updated_at TEXT, "
         "merged_at TEXT, signed_off_at TEXT, closed_at TEXT, cycle_timer_run_id TEXT)"
     )
-    conn.execute("INSERT INTO feature_requests (id, title, type) VALUES ('FR-1', 'test', 'feature')")
+    conn.execute(
+        "INSERT INTO feature_requests (id, title, type, state) "
+        "VALUES ('FR-1', 'test', 'feature', 'IN_PROGRESS')"
+    )
     conn.execute(
         "CREATE TABLE fr_events (fr_id TEXT, ts TEXT, agent TEXT, event_type TEXT, "
         "summary TEXT, details TEXT, next_action TEXT)"
@@ -284,6 +287,69 @@ def test_cli_get_displays_persisted_cost_fields(monkeypatch, capsys) -> None:
     assert "Cost source: github" in output
 
 
+def test_cli_get_displays_unavailable_cost_reason_and_finalization(monkeypatch, capsys) -> None:
+    conn = _cost_conn()
+    conn.execute(
+        "UPDATE feature_requests SET cost_status='unavailable', cost_source='telemetry-unavailable', "
+        "cost_reconciliation_status='GitHub telemetry unavailable', cost_finalized_at="
+        "'2026-08-09T00:00:00Z' WHERE id='FR-1'"
+    )
+    conn.commit()
+    monkeypatch.setattr(fr_cli, "_conn", lambda: conn)
+
+    fr_cli.cmd_get(Namespace(fr_id="FR-1"))
+
+    output = capsys.readouterr().out
+    assert "Cost status: unavailable" in output
+    assert "Cost source: telemetry-unavailable" in output
+    assert "Cost reason: GitHub telemetry unavailable" in output
+    assert "Cost finalized: 2026-08-09T00:00:00Z" in output
+
+
+def test_merge_transition_blocks_null_cost_status(monkeypatch) -> None:
+    conn = _cost_conn()
+    conn.execute(
+        "INSERT INTO fr_events VALUES ('FR-1', '2026-08-08T00:00:00Z', 'reviewer', "
+        "'review', 'ARCHITECTURE_REVIEW:PASS', NULL, NULL)"
+    )
+    conn.commit()
+    monkeypatch.setattr(fr_cli, "_conn", lambda: conn)
+
+    with pytest.raises(SystemExit) as exc_info:
+        fr_cli.cmd_update_state(
+            Namespace(
+                fr_id="FR-1", new_state="MERGED", branch=None, prs=None, merged_at=None,
+                signed_off_at=None, owner=None, cycle_timer=None,
+            )
+        )
+
+    assert exc_info.value.code != 0
+    assert conn.execute("SELECT state FROM feature_requests WHERE id='FR-1'").fetchone()[0] == "IN_PROGRESS"
+
+
+def test_merge_transition_allows_explicit_unavailable_cost(monkeypatch) -> None:
+    conn = _cost_conn()
+    conn.execute(
+        "UPDATE feature_requests SET cost_status='unavailable', cost_source='operator', "
+        "cost_reconciliation_status='Telemetry unavailable; operator confirmed' WHERE id='FR-1'"
+    )
+    conn.execute(
+        "INSERT INTO fr_events VALUES ('FR-1', '2026-08-08T00:00:00Z', 'reviewer', "
+        "'review', 'ARCHITECTURE_REVIEW:PASS', NULL, NULL)"
+    )
+    conn.commit()
+    monkeypatch.setattr(fr_cli, "_conn", lambda: conn)
+
+    fr_cli.cmd_update_state(
+        Namespace(
+            fr_id="FR-1", new_state="MERGED", branch=None, prs=None, merged_at=None,
+            signed_off_at=None, owner=None, cycle_timer=None,
+        )
+    )
+
+    assert conn.execute("SELECT state FROM feature_requests WHERE id='FR-1'").fetchone()[0] == "MERGED"
+
+
 def test_merge_transition_finalizes_cost_when_usage_is_supplied(monkeypatch, capsys) -> None:
     conn = _cost_conn()
     capture_baseline(conn, "FR-1", "claude-sonnet-4-6", {"input_tokens": 100})
@@ -323,19 +389,22 @@ def test_async_merge_does_not_finalize_from_supplied_usage_without_reconciliatio
     conn.commit()
     monkeypatch.setattr(fr_cli, "_conn", lambda: conn)
 
-    fr_cli.cmd_update_state(
-        Namespace(
-            fr_id="FR-1", new_state="MERGED", branch=None, prs=None, merged_at=None,
-            signed_off_at=None, owner=None, cycle_timer=None,
-            cost_model="claude-sonnet-4-6",
-            cost_usage_json='{"input_tokens": 1100, "output_tokens": 1000}',
-            cost_source="github", cost_async=True,
-            cost_github_usage_json=None, cost_operator_confirmed=False,
+    with pytest.raises(SystemExit) as exc_info:
+        fr_cli.cmd_update_state(
+            Namespace(
+                fr_id="FR-1", new_state="MERGED", branch=None, prs=None, merged_at=None,
+                signed_off_at=None, owner=None, cycle_timer=None,
+                cost_model="claude-sonnet-4-6",
+                cost_usage_json='{"input_tokens": 1100, "output_tokens": 1000}',
+                cost_source="github", cost_async=True,
+                cost_github_usage_json=None, cost_operator_confirmed=False,
+            )
         )
-    )
+
+    assert exc_info.value.code != 0
 
     row = conn.execute(
         "SELECT state, cost_status, cost_source FROM feature_requests WHERE id='FR-1'"
     ).fetchone()
-    assert tuple(row) == ("MERGED", "pending", None)
+    assert tuple(row) == ("IN_PROGRESS", "pending", None)
     assert "reconciliation" in capsys.readouterr().out.lower()
