@@ -3,7 +3,10 @@ stateDiagram-v2
     [*] --> TRIAGED: Tyler opens FR
     TRIAGED --> BRANCHED: Tyler approves scope
     BRANCHED --> COMPLEXITY_ASSESSED: complexity_router.py
-    COMPLEXITY_ASSESSED --> IN_PROGRESS: tier selected · TDD/QA/Review routed
+    COMPLEXITY_ASSESSED --> MCP_FIRST: deterministic MCP-first invocation
+    MCP_FIRST --> IN_PROGRESS: governed coordination MCP available
+    MCP_FIRST --> LOCAL_FALLBACK: MCP unavailable
+    LOCAL_FALLBACK --> IN_PROGRESS: canonical local utilities only
     IN_PROGRESS --> FUNCTIONAL_QA: implementation done
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
@@ -23,3 +26,5 @@ stateDiagram-v2
     SIGNED_OFF --> [*]
 
     AUTO_REVIEWED --> IN_PROGRESS: changes requested
+
+    class MCP_FIRST,LOCAL_FALLBACK state

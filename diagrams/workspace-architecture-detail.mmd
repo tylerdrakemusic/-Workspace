@@ -18,10 +18,14 @@ graph TB
             UtilsDiscovery[discovery/gen<br/>workspace_discovery · roadmap_generator<br/>gen_qee · complexity_router · tech_debt_scanner]
             UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
             UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
+            CoordinationMCP[coordination_mcp_server.py]
+            FRCLI[fr_cli.py]
+            Allowlist{Fixed allowlisted<br/>operation boundary}
         end
         Integrations[integrations/<br/>elevenlabs · mermaid<br/>dalle3 · huggingface<br/>gdrive · gmail<br/>ollama · pollinations<br/>perplexity]
         Config[config/<br/>repo_visibility · playwright_servers<br/>service_email]
         Data[(data/<br/>workspace.db)]
+        FRLedger[(data/<br/>fr_ledgers.db)]
     end
     subgraph Reports["reports/"]
         PortalHtml[portal.html]
@@ -38,6 +42,9 @@ graph TB
     UtilsDiscovery --> Data
     UtilsPerf --> Data
     UtilsData --> Data
+    CoordinationMCP --> Allowlist
+    Allowlist -->|FR operations only| FRCLI
+    FRCLI ==> FRLedger
     class Tools tool
     class Src src
     class Reports out

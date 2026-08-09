@@ -38,6 +38,9 @@ graph TB
     MigrateScript[tools/<br/>migrate_todos.py]
     AllProjects([∞Life · ❤Music · ⟨ψ⟩Quantum<br/>· 👁Manifest · ⊕Workspace · ΣCapital])
     TodoDoneAPI[POST /api/todo/done]
+    CoordinationMCP[src/integrations/coordination/<br/>mcp_server.py]
+    CoordinationTodos[src/integrations/coordination/<br/>todos_db.py]
+    FrLinkGate{Tyler confirmation<br/>required for fr_id linkage}
     Tools --> TodosUtil
     TodosUtil --> TodosDB
     MigrateScript -.->|reads TODO_*.md| AllProjects
@@ -46,6 +49,10 @@ graph TB
     Tools -->|gather_project_status| TodosDB
     Portal --- TodoDoneAPI
     TodoDoneAPI -->|mark_done| TodosDB
+    CoordinationMCP -->|governed todo operations| CoordinationTodos
+    CoordinationTodos ==> TodosDB
+    CoordinationMCP -->|fr_id linkage request| FrLinkGate
+    FrLinkGate -->|confirmed only| CoordinationTodos
     %% FR-20260524 – priority auto-rescorer
     RescorerTool[tools/<br/>weekly_priority_rescore.py]
     PriorityScorer[src/utils/<br/>priority_scorer.py]
@@ -88,6 +95,8 @@ graph TB
     class TtsQueueWorker,VocalSynthesis,OllamaIntegration util
     class TtsQueueDB db
     class OllamaServer ext
+    class CoordinationMCP,CoordinationTodos util
+    class FrLinkGate state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

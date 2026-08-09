@@ -24,6 +24,12 @@ exactly where Tyler acts as the human gateway.
 Every workspace agent MUST prefer MCP tool inspection and existing workspace
 context before generating outputs or taking action.
 
+Coordination invocation is deterministic MCP-first invocation. When the
+coordination MCP is available, use only its fixed allowlisted operations. If
+the coordination MCP is unavailable, use the explicit local fallback path
+through the canonical local utility and report that the coordination MCP is
+unavailable; never silently replace it with an arbitrary database or SQL call.
+
 - If MCP servers are available, use them first to inspect the relevant repo,
   code, or artifact state.
 - Prefer `file_search`, `grep_search`, `read_file`, and other available tools
