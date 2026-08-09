@@ -13,8 +13,11 @@ Auth:
 
 Governance:
     Every action is gated by :class:`integrations.gmail.policy.ServiceEmailPolicy`.
-    Outbound sending is guarded (disabled by default). Reads are filtered for
-    sensitive content. Raw messages are retained for 30 days.
+    Outbound delivery is operator-gated: an agent composes a local draft, but a
+    message is sent only when an explicit operator-approval argument is
+    ``True`` (and the ``allow_outbound`` policy switch, disabled by default, is
+    enabled). Reads are filtered for sensitive content. Raw messages are
+    retained for 30 days.
 
 Usage::
 
@@ -30,6 +33,7 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
+from .draft import EmailDraft
 from .policy import ALL_SCOPES, Action, ServiceEmailPolicy
 
 _SERVICE_ADDRESS_ENV = "GMAIL_SERVICE_ADDRESS"
@@ -127,28 +131,60 @@ class GmailServiceClient:
         return results
 
     # ------------------------------------------------------------------
-    # Outbound (guarded)
+    # Outbound (staged draft + explicit operator approval)
     # ------------------------------------------------------------------
 
-    def _build_raw(self, to: str, subject: str, body: str) -> str:
-        from email.message import EmailMessage  # noqa: PLC0415
+    def create_draft(self, to: str, subject: str, body: str) -> EmailDraft:
+        """Compose and validate a local outbound draft — no network delivery.
 
-        msg = EmailMessage()
-        msg["To"] = to
-        if self._address:
-            msg["From"] = self._address
-        msg["Subject"] = subject
-        msg.set_content(body)
-        return base64.urlsafe_b64encode(msg.as_bytes()).decode()
-
-    def send_message(self, to: str, subject: str, body: str) -> dict:
-        """Send an outbound message. Guarded: raises unless policy allows
-        outbound and the recipient is valid. Never logs the recipient."""
+        Enforces the outbound policy guard (recipient syntax + the
+        ``allow_outbound`` master switch) and rejects CR/LF header injection in
+        the subject, then returns an inert :class:`EmailDraft`. Nothing is sent:
+        the Gmail API is never contacted here. Delivery is a separate,
+        operator-gated step (:meth:`send_draft`).
+        """
         self._policy.guard_outbound(to)
         _reject_header_injection(subject, "subject")
+        return EmailDraft(to=to, subject=subject, body=body, from_address=self._address)
+
+    def send_draft(self, draft: EmailDraft, *, operator_approved: bool = False) -> dict:
+        """Deliver a previously-created draft — only on explicit approval.
+
+        The message reaches Gmail **only** when *operator_approved* is exactly
+        ``True``. Any other value (the default ``False``, ``None``, or a truthy
+        proxy such as ``1``/``"yes"``) is refused with ``PermissionError`` and
+        no Gmail API call is made. The recipient/subject are re-validated at
+        delivery time so a tampered draft still cannot inject headers or reach
+        an invalid address. The recipient is never logged.
+        """
+        if operator_approved is not True:
+            # Refuse before any network I/O: an unapproved send never reaches Gmail.
+            raise PermissionError(
+                "Outbound delivery requires explicit operator approval "
+                "(operator_approved=True). The draft was not sent."
+            )
+        self._policy.guard_outbound(draft.to)
+        _reject_header_injection(draft.subject, "subject")
         self._policy.authorize(Action.SEND)
-        raw = self._build_raw(to, subject, body)
-        return self._messages().send(userId="me", body={"raw": raw}).execute()
+        return self._messages().send(userId="me", body={"raw": draft.as_raw()}).execute()
+
+    def send_message(
+        self,
+        to: str,
+        subject: str,
+        body: str,
+        *,
+        operator_approved: bool = False,
+    ) -> dict:
+        """Convenience wrapper: stage a draft then deliver it under approval.
+
+        This never delivers directly from a bare agent call: without
+        ``operator_approved=True`` it stages the draft and then refuses at the
+        approval gate, so the Gmail API is never reached. Prefer the explicit
+        :meth:`create_draft` + :meth:`send_draft` flow for auditability.
+        """
+        draft = self.create_draft(to, subject, body)
+        return self.send_draft(draft, operator_approved=operator_approved)
 
     def authorize_signup(self, service: str) -> str:
         """Authorize an autonomous sign-up (policy decision). Returns the
@@ -161,16 +197,20 @@ class GmailServiceClient:
     # Connectivity test (runtime-only recipient — never stored or logged)
     # ------------------------------------------------------------------
 
-    def connectivity_test(self, recipient: str) -> dict:
+    def connectivity_test(
+        self, recipient: str, *, operator_approved: bool = False
+    ) -> dict:
         """Round-trip read/write check against a Tyler-approved recipient
-        supplied at call time. The recipient is never persisted or logged."""
+        supplied at call time. Rides the same operator-gated draft path as any
+        other outbound message: it stages a draft and delivers it only when
+        *operator_approved* is explicitly ``True`` (the test-only approval).
+        The recipient is never persisted or logged."""
         if not recipient:
             raise ValueError("connectivity_test requires a runtime recipient")
-        # guard_outbound validates format + injection and enforces the guard.
-        self._policy.guard_outbound(recipient)
 
         marker = f"service-email-connectivity-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
-        send_result = self.send_message(recipient, "connectivity", marker)
+        draft = self.create_draft(recipient, "connectivity", marker)
+        send_result = self.send_draft(draft, operator_approved=operator_approved)
 
         read_back = False
         try:

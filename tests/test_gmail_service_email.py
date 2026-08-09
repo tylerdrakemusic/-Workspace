@@ -278,7 +278,7 @@ def test_list_messages_applies_content_policy():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Client: guarded outbound send
+# Client: operator-gated outbound (draft + explicit approval)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -292,7 +292,20 @@ def test_send_message_blocked_by_default_policy():
     service.users.return_value.messages.return_value.send.assert_not_called()
 
 
-def test_send_message_allowed_calls_api_once():
+def test_send_message_without_approval_does_not_send():
+    """Even with outbound enabled, a plain agent send_message() call (no
+    operator approval) must be refused and must never reach the Gmail API."""
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+    with pytest.raises(PermissionError):
+        client.send_message("dest@example.com", "Hi", "Body")
+    send.assert_not_called()
+
+
+def test_send_message_with_approval_calls_api_once():
     from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
 
     policy = ServiceEmailPolicy.default().with_outbound(True)
@@ -301,7 +314,9 @@ def test_send_message_allowed_calls_api_once():
     send = service.users.return_value.messages.return_value.send
     send.return_value.execute.return_value = {"id": "sent1"}
 
-    result = client.send_message("dest@example.com", "Hi", "Body")
+    result = client.send_message(
+        "dest@example.com", "Hi", "Body", operator_approved=True
+    )
     assert result["id"] == "sent1"
     send.assert_called_once()
 
@@ -318,8 +333,117 @@ def test_send_message_does_not_log_recipient():
     secret_recipient = "runtime.only.person@example.com"
     buf = io.StringIO()
     with redirect_stdout(buf):
-        client.send_message(secret_recipient, "Hi", "Body")
+        client.send_message(secret_recipient, "Hi", "Body", operator_approved=True)
     assert secret_recipient not in buf.getvalue()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Client: staged draft creation (no network delivery)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_create_draft_returns_typed_draft_without_api_call():
+    from integrations.gmail import EmailDraft, ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+
+    draft = client.create_draft("dest@example.com", "Hi", "Body")
+    assert isinstance(draft, EmailDraft)
+    assert draft.to == "dest@example.com"
+    assert draft.subject == "Hi"
+    assert draft.body == "Body"
+    # Draft creation is local-only: the Gmail send API is never contacted.
+    send.assert_not_called()
+
+
+def test_create_draft_blocked_when_outbound_disabled():
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    client, service = _mock_client(policy=ServiceEmailPolicy.default())
+    with pytest.raises(PermissionError):
+        client.create_draft("dest@example.com", "Hi", "Body")
+    service.users.return_value.messages.return_value.send.assert_not_called()
+
+
+def test_create_draft_rejects_invalid_recipient():
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, _ = _mock_client(policy=policy)
+    with pytest.raises(ValueError):
+        client.create_draft("not-an-email", "Hi", "Body")
+
+
+def test_create_draft_rejects_header_injection():
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, _ = _mock_client(policy=policy)
+    with pytest.raises(ValueError):
+        client.create_draft("dest@example.com", "Hi\r\nBcc: evil@example.com", "Body")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Client: send_draft requires explicit operator approval
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_send_draft_without_approval_raises_and_makes_no_api_call():
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+
+    draft = client.create_draft("dest@example.com", "Hi", "Body")
+    with pytest.raises(PermissionError):
+        client.send_draft(draft)  # operator_approved defaults to False
+    send.assert_not_called()
+
+
+def test_send_draft_rejects_false_approval():
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+
+    draft = client.create_draft("dest@example.com", "Hi", "Body")
+    with pytest.raises(PermissionError):
+        client.send_draft(draft, operator_approved=False)
+    send.assert_not_called()
+
+
+def test_send_draft_rejects_non_true_truthy_approval():
+    """Approval must be *explicitly* True — truthy proxies (1, 'yes') are
+    rejected so an accidental non-boolean can never authorize delivery."""
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+
+    draft = client.create_draft("dest@example.com", "Hi", "Body")
+    for sneaky in (1, "yes", "true", [True]):
+        with pytest.raises(PermissionError):
+            client.send_draft(draft, operator_approved=sneaky)  # type: ignore[arg-type]
+    send.assert_not_called()
+
+
+def test_send_draft_with_approval_sends_once():
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+    send.return_value.execute.return_value = {"id": "sent1"}
+
+    draft = client.create_draft("dest@example.com", "Hi", "Body")
+    result = client.send_draft(draft, operator_approved=True)
+    assert result["id"] == "sent1"
+    send.assert_called_once()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -333,9 +457,22 @@ def test_connectivity_test_requires_runtime_recipient():
     policy = ServiceEmailPolicy.default().with_outbound(True)
     client, _ = _mock_client(policy=policy)
     with pytest.raises(ValueError):
-        client.connectivity_test("")
+        client.connectivity_test("", operator_approved=True)
     with pytest.raises(ValueError):
-        client.connectivity_test(None)  # type: ignore[arg-type]
+        client.connectivity_test(None, operator_approved=True)  # type: ignore[arg-type]
+
+
+def test_connectivity_test_without_approval_does_not_send():
+    """connectivity_test rides the same operator-gated path: without an
+    explicit test-only approval it refuses and never contacts the send API."""
+    from integrations.gmail import ServiceEmailPolicy  # noqa: PLC0415
+
+    policy = ServiceEmailPolicy.default().with_outbound(True)
+    client, service = _mock_client(policy=policy)
+    send = service.users.return_value.messages.return_value.send
+    with pytest.raises(PermissionError):
+        client.connectivity_test("runtime.person@example.com")
+    send.assert_not_called()
 
 
 def test_connectivity_test_read_write_roundtrip():
@@ -355,7 +492,9 @@ def test_connectivity_test_read_write_roundtrip():
         },
     }
 
-    result = client.connectivity_test("runtime.person@example.com")
+    result = client.connectivity_test(
+        "runtime.person@example.com", operator_approved=True
+    )
     assert result["sent"] is True
     assert result["read_back"] is True
 
@@ -376,7 +515,7 @@ def test_connectivity_test_does_not_log_recipient():
     recipient = "do.not.log@example.com"
     buf = io.StringIO()
     with redirect_stdout(buf):
-        client.connectivity_test(recipient)
+        client.connectivity_test(recipient, operator_approved=True)
     assert recipient not in buf.getvalue()
 
 

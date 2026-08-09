@@ -5,14 +5,17 @@ FR-20260808-dedicated-service-email.
 Discoverable, importable from every project::
 
     from integrations.gmail import (
-        GmailServiceClient, ServiceEmailPolicy, Action, describe_capability,
+        GmailServiceClient, ServiceEmailPolicy, Action, EmailDraft,
+        describe_capability,
     )
 
 The capability is governed by :class:`ServiceEmailPolicy`: action-scoped
-authorization, guarded outbound sending, a policy-level autonomous-sign-up
-decision, best-effort sensitive-content filtering over a full-visibility
-mailbox, and a 30-day raw-retention window. Credentials and the connectivity
-test recipient are supplied at run time and are never stored here.
+authorization, operator-gated outbound sending (compose a local
+:class:`EmailDraft`, deliver only on explicit operator approval), a
+policy-level autonomous-sign-up decision, best-effort sensitive-content
+filtering over a full-visibility mailbox, and a 30-day raw-retention window.
+Credentials and the connectivity test recipient are supplied at run time and
+are never stored here.
 """
 from __future__ import annotations
 
@@ -20,6 +23,7 @@ import json
 from pathlib import Path
 
 from .client import GmailServiceClient, build_service
+from .draft import EmailDraft
 from .policy import ALL_SCOPES, RAW_RETENTION_DAYS, Action, ServiceEmailPolicy
 
 _CAPABILITY_PATH = (
@@ -29,6 +33,7 @@ _CAPABILITY_PATH = (
 __all__ = [
     "GmailServiceClient",
     "ServiceEmailPolicy",
+    "EmailDraft",
     "Action",
     "ALL_SCOPES",
     "RAW_RETENTION_DAYS",

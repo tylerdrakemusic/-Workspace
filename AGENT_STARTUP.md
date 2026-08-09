@@ -10,7 +10,7 @@ Workspace-level tools shared by all sigil projects (∞Life, ❤Music, ⟨ψ⟩Q
 - `src/utils/workspace_discovery.py` — Project/agent discovery, routing, alignment audit
 - `src/utils/gen_qee.py` — Quantum Entropy Engine (password/key generation)
 - `src/utils/proof_cli.py` — Proof-in-the-Pudding CLI (agent proof artifact recording + verification)
-- `src/integrations/gmail/` — Dedicated service-email (Gmail) capability. Import `from integrations.gmail import GmailServiceClient, ServiceEmailPolicy, describe_capability`; call `describe_capability()` (or read `src/config/service_email_capability.json`) to discover actions, governance, and residual risk. Governed by `src/config/service_email_policy.json`. Credentials via `GMAIL_SERVICE_TOKEN` env var only.
+- `src/integrations/gmail/` — Dedicated service-email (Gmail) capability. Import `from integrations.gmail import GmailServiceClient, ServiceEmailPolicy, EmailDraft, describe_capability`; call `describe_capability()` (or read `src/config/service_email_capability.json`) to discover actions, governance, and residual risk. Outbound is operator-gated: `create_draft()` composes a local draft with no delivery, and `send_draft(draft, operator_approved=True)` delivers only on explicit operator approval (default is disabled and refuses with no Gmail API call). Governed by `src/config/service_email_policy.json`. Credentials via `GMAIL_SERVICE_TOKEN` env var only.
 - `tests/` — Test suites for workspace-level utilities
 
 ## Database
