@@ -114,6 +114,8 @@ def init_db() -> None:
     # Additive, idempotent migration — see migrate_fr_target_quarter.py
     from migrate_fr_target_quarter import migrate as _migrate_target_quarter  # noqa: E402
     _migrate_target_quarter(conn)
+    from migrate_fr_cost import migrate as _migrate_cost  # noqa: E402
+    _migrate_cost(conn)
 
     conn.close()
 

@@ -16,6 +16,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import asyncio
+import json
 import re
 import sys
 from datetime import datetime, timezone
@@ -23,6 +25,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
+from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
+from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -132,6 +136,31 @@ def cmd_update_state(args: argparse.Namespace) -> None:
         conn.close()
         sys.exit(1)
     now = _now()
+    if args.new_state.upper() == "MERGED" and getattr(args, "cost_model", None) and getattr(args, "cost_usage_json", None):
+        usage = _parse_usage(args.cost_usage_json)
+        if getattr(args, "cost_async", False):
+            github_json = getattr(args, "cost_github_usage_json", None)
+            github_usage = (lambda: _parse_usage(github_json)) if github_json else (lambda: {})
+            source, reconciled_usage = asyncio.run(
+                reconcile_cost(
+                    github_usage,
+                    operator_confirmation=getattr(args, "cost_operator_confirmed", False),
+                )
+            )
+            if source == "github":
+                usage = reconciled_usage
+            elif source == "operator":
+                source = "operator"
+            else:
+                print(f"[FR cost] {args.fr_id}: reconciliation unavailable; cost not finalized.")
+                usage = None
+            if usage is not None:
+                finalize_cost(conn, args.fr_id, args.cost_model, usage, source=source, reporter=print)
+        else:
+            finalize_cost(
+                conn, args.fr_id, args.cost_model, usage,
+                source=getattr(args, "cost_source", None) or "telemetry", reporter=print,
+            )
     updates: list[tuple] = [("state", args.new_state), ("updated_at", now)]
     if getattr(args, "branch", None):
         updates.append(("branch", args.branch))
@@ -170,6 +199,40 @@ def cmd_record_artifact(args: argparse.Namespace) -> None:
     conn.commit()
     conn.close()
     print(f"[fr_cli] artifact recorded → {args.fr_id}")
+
+
+def _parse_usage(value: str) -> dict:
+    usage = json.loads(value)
+    if not isinstance(usage, dict):
+        raise ValueError("usage JSON must be an object")
+    return usage
+
+
+def cmd_cost_baseline(args: argparse.Namespace) -> None:
+    conn = _conn()
+    capture_baseline(conn, args.fr_id, args.model, _parse_usage(args.usage_json))
+    conn.close()
+    print(f"[fr_cli] cost baseline recorded → {args.fr_id}")
+
+
+def cmd_cost_finalize(args: argparse.Namespace) -> None:
+    conn = _conn()
+    result = finalize_cost(
+        conn, args.fr_id, args.model, _parse_usage(args.usage_json),
+        source=args.source, reporter=print,
+    )
+    conn.close()
+    print(f"[fr_cli] cost persisted → {args.fr_id} ({result.status})")
+
+
+def cmd_cost_refresh(args: argparse.Namespace) -> None:
+    """Refresh the persisted GitHub Copilot pricing snapshot explicitly."""
+    path = Path(getattr(args, "snapshot_path", None) or DEFAULT_SNAPSHOT_PATH)
+    snapshot = refresh_pricing(path=path)
+    print(
+        f"[fr_cli] Copilot pricing refreshed → {path} "
+        f"({len(snapshot['models'])} models, {snapshot['retrieved_at']})"
+    )
 
 
 def cmd_close(args: argparse.Namespace) -> None:
@@ -235,6 +298,10 @@ def cmd_get(args: argparse.Namespace) -> None:
     print(f"Signed off:  {fr['signed_off_at']}")
     print(f"Closed:      {fr['closed_at']}")
     print(f"Cycle timer: {fr['cycle_timer_run_id']}")
+    print(f"AI credits: {fr['ai_credits_estimated']}")
+    print(f"USD cost:   {fr['usd_cost_estimated']}")
+    print(f"Cost status: {fr['cost_status']}")
+    print(f"Cost source: {fr['cost_source']}")
     events = conn.execute(
         "SELECT ts, agent, event_type, summary FROM fr_events WHERE fr_id=? ORDER BY ts",
         (args.fr_id,),
@@ -285,6 +352,12 @@ def main() -> None:
     p_st.add_argument("--signed-off-at", dest="signed_off_at", default=None)
     p_st.add_argument("--owner", default=None)
     p_st.add_argument("--cycle-timer", dest="cycle_timer", default=None)
+    p_st.add_argument("--cost-model", dest="cost_model", default=None)
+    p_st.add_argument("--cost-usage-json", dest="cost_usage_json", default=None)
+    p_st.add_argument("--cost-source", dest="cost_source", default=None)
+    p_st.add_argument("--cost-async", dest="cost_async", action="store_true")
+    p_st.add_argument("--cost-github-usage-json", dest="cost_github_usage_json", default=None)
+    p_st.add_argument("--cost-operator-confirmed", dest="cost_operator_confirmed", action="store_true")
 
     # record-artifact
     p_art = sub.add_parser("record-artifact", help="Record a proof/artifact link for an FR")
@@ -292,6 +365,21 @@ def main() -> None:
     p_art.add_argument("artifact_type")
     p_art.add_argument("label")
     p_art.add_argument("--path", default=None)
+
+    # cost lifecycle
+    p_base = sub.add_parser("cost-baseline", help="Capture the current-session AI usage baseline")
+    p_base.add_argument("fr_id")
+    p_base.add_argument("--model", required=True)
+    p_base.add_argument("--usage-json", required=True)
+
+    p_final = sub.add_parser("cost-finalize", help="Persist final current-session AI cost")
+    p_final.add_argument("fr_id")
+    p_final.add_argument("--model", required=True)
+    p_final.add_argument("--usage-json", required=True)
+    p_final.add_argument("--source", default="telemetry")
+
+    p_refresh = sub.add_parser("cost-refresh", help="Refresh the persisted Copilot pricing snapshot")
+    p_refresh.add_argument("--path", dest="snapshot_path", default=None)
 
     # close
     p_cl = sub.add_parser("close", help="Close/archive an FR")
@@ -317,6 +405,9 @@ def main() -> None:
         "record-event": cmd_record_event,
         "update-state": cmd_update_state,
         "record-artifact": cmd_record_artifact,
+        "cost-baseline": cmd_cost_baseline,
+        "cost-finalize": cmd_cost_finalize,
+        "cost-refresh": cmd_cost_refresh,
         "close": cmd_close,
         "list": cmd_list,
         "get": cmd_get,
