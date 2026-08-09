@@ -13,8 +13,8 @@ def test_mcp_json_path_uses_vscode_user_directory_on_windows():
         is_windows=True,
     )
 
-    assert path == Path(
-        r"C:\Users\tyler\AppData\Roaming\Code\User\mcp.json"
+    assert path.as_posix().replace("\\", "/") == (
+        "C:/Users/tyler/AppData/Roaming/Code/User/mcp.json"
     )
 
 
