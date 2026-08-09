@@ -26,6 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
 from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
+from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -224,6 +225,16 @@ def cmd_cost_finalize(args: argparse.Namespace) -> None:
     print(f"[fr_cli] cost persisted → {args.fr_id} ({result.status})")
 
 
+def cmd_cost_refresh(args: argparse.Namespace) -> None:
+    """Refresh the persisted GitHub Copilot pricing snapshot explicitly."""
+    path = Path(getattr(args, "snapshot_path", None) or DEFAULT_SNAPSHOT_PATH)
+    snapshot = refresh_pricing(path=path)
+    print(
+        f"[fr_cli] Copilot pricing refreshed → {path} "
+        f"({len(snapshot['models'])} models, {snapshot['retrieved_at']})"
+    )
+
+
 def cmd_close(args: argparse.Namespace) -> None:
     conn = _conn()
     fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
@@ -367,6 +378,9 @@ def main() -> None:
     p_final.add_argument("--usage-json", required=True)
     p_final.add_argument("--source", default="telemetry")
 
+    p_refresh = sub.add_parser("cost-refresh", help="Refresh the persisted Copilot pricing snapshot")
+    p_refresh.add_argument("--path", dest="snapshot_path", default=None)
+
     # close
     p_cl = sub.add_parser("close", help="Close/archive an FR")
     p_cl.add_argument("fr_id")
@@ -393,6 +407,7 @@ def main() -> None:
         "record-artifact": cmd_record_artifact,
         "cost-baseline": cmd_cost_baseline,
         "cost-finalize": cmd_cost_finalize,
+        "cost-refresh": cmd_cost_refresh,
         "close": cmd_close,
         "list": cmd_list,
         "get": cmd_get,

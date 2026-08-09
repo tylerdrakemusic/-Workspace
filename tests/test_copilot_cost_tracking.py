@@ -2,8 +2,18 @@ from decimal import Decimal
 import sqlite3
 import asyncio
 from argparse import Namespace
+import json
 
-from copilot_cost import calculate_copilot_cost
+import pytest
+
+from copilot_cost import (
+    PRICING_SOURCE_URL,
+    PricingRefreshError,
+    calculate_copilot_cost,
+    load_pricing_snapshot,
+    parse_pricing_html,
+    refresh_pricing,
+)
 from migrate_fr_cost import COST_COLUMNS, migrate
 from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
 import fr_cli
@@ -23,6 +33,85 @@ def test_calculate_copilot_cost_includes_cached_input_and_write_tokens() -> None
     assert result.status == "estimated"
     assert result.ai_credits == result.usd / Decimal("0.01")
     assert result.usd == Decimal("10.95")
+
+
+def test_parse_pricing_html_supports_provider_rows_and_cache_rates() -> None:
+    html = """
+    <table>
+      <tr><th>Provider</th><th>Model</th><th>Input</th><th>Output</th>
+          <th>Cache read</th><th>Cache write</th></tr>
+      <tr><td>OpenAI</td><td>GPT-4.1</td><td>$2</td><td>$8</td><td>$0.50</td><td>$2</td></tr>
+      <tr><td>Anthropic</td><td>Claude Sonnet 4.6</td><td>$3</td><td>$15</td><td>$0.30</td><td>$3.75</td></tr>
+      <tr><td>Google</td><td>Gemini 2.5 Pro</td><td>$1.25</td><td>$10</td><td>$0.31</td><td>$1.25</td></tr>
+      <tr><td>Microsoft</td><td>MAI-DS-R1</td><td>$1</td><td>$4</td><td></td><td></td></tr>
+      <tr><td>xAI</td><td>Grok Code Fast 1</td><td>$0.20</td><td>$1.50</td><td></td><td></td></tr>
+      <tr><td>Moonshot</td><td>Kimi K2</td><td>$0.60</td><td>$2.50</td><td></td><td></td></tr>
+    </table>
+    """
+
+    snapshot = parse_pricing_html(html, effective_date="2026-08-08")
+
+    assert set(snapshot["models"]) == {
+        "GPT-4.1", "Claude Sonnet 4.6", "Gemini 2.5 Pro", "MAI-DS-R1",
+        "Grok Code Fast 1", "Kimi K2",
+    }
+    assert snapshot["models"]["Claude Sonnet 4.6"]["cache_write"] == "3.75"
+    assert snapshot["source_url"] == PRICING_SOURCE_URL
+
+
+def test_refresh_pricing_persists_provenance_and_keeps_last_snapshot_on_failure(tmp_path) -> None:
+    path = tmp_path / "copilot-pricing.json"
+    html = """
+    <table><tr><th>Provider</th><th>Model</th><th>Input</th><th>Output</th></tr>
+    <tr><td>OpenAI</td><td>GPT-4.1</td><td>$2</td><td>$8</td></tr></table>
+    """
+
+    refresh_pricing(lambda: html, path, effective_date="2026-08-08")
+    previous = path.read_text(encoding="utf-8")
+
+    with pytest.raises(PricingRefreshError, match="pricing table"):
+        refresh_pricing(lambda: "<html>not a pricing table</html>", path)
+
+    assert path.read_text(encoding="utf-8") == previous
+    loaded = load_pricing_snapshot(path)
+    assert loaded["source_url"] == PRICING_SOURCE_URL
+    assert loaded["retrieved_at"]
+    assert json.loads(previous)["models"]["GPT-4.1"]["input"] == "2"
+
+
+def test_calculate_copilot_cost_uses_persisted_snapshot_without_network(tmp_path) -> None:
+    path = tmp_path / "copilot-pricing.json"
+    html = """
+    <table><tr><th>Provider</th><th>Model</th><th>Input</th><th>Output</th></tr>
+    <tr><td>OpenAI</td><td>GPT-4.1</td><td>$2</td><td>$8</td></tr></table>
+    """
+    refresh_pricing(lambda: html, path, effective_date="2026-08-08")
+
+    result = calculate_copilot_cost(
+        "gpt-4.1", {"input_tokens": 1_000_000, "output_tokens": 500_000},
+        snapshot_path=path,
+    )
+
+    assert result.status == "estimated"
+    assert result.model == "GPT-4.1"
+    assert result.usd == Decimal("6.00")
+    assert result.ai_credits == Decimal("600")
+    assert result.pricing_source_url == PRICING_SOURCE_URL
+
+
+def test_cli_cost_refresh_exposes_explicit_snapshot_refresh(monkeypatch, capsys, tmp_path) -> None:
+    snapshot_path = tmp_path / "pricing.json"
+
+    def fake_refresh(fetcher=None, path=None, *, effective_date=None):
+        assert fetcher is None
+        assert path == snapshot_path
+        return {"retrieved_at": "2026-08-08T00:00:00Z", "models": {"GPT-4.1": {}}}
+
+    monkeypatch.setattr(fr_cli, "refresh_pricing", fake_refresh)
+
+    fr_cli.cmd_cost_refresh(Namespace(snapshot_path=str(snapshot_path)))
+
+    assert str(snapshot_path) in capsys.readouterr().out
 
 
 def test_calculate_copilot_cost_marks_unknown_model_unavailable() -> None:

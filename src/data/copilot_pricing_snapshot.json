@@ -1,0 +1,24 @@
+{
+  "currency": "USD",
+  "effective_date": "2026-08-08",
+  "models": {
+    "Claude Sonnet 4.6": {
+      "cache_read": "0.30",
+      "cache_write": "3.75",
+      "input": "3",
+      "output": "15",
+      "provider": "Anthropic"
+    },
+    "GPT-4.1": {
+      "cache_read": "0.50",
+      "cache_write": "0",
+      "input": "2",
+      "output": "8",
+      "provider": "OpenAI"
+    }
+  },
+  "retrieved_at": "2026-08-08T00:00:00Z",
+  "schema_version": 1,
+  "source_url": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing#pricing-tables",
+  "unit": "USD per 1 million tokens"
+}
