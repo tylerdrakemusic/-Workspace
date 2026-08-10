@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """⊕ Diagrams Dashboard Generator
 
-Scans `diagrams/*.mmd`, renders each to `reports/diagrams/*.svg` via the
+Scans canonical Mermaid sources under `diagrams/` and `proof/`, renders each to `reports/diagrams/*.svg` via the
 mermaid integration (local mmdc CLI preferred, mermaid.ink HTTP fallback),
 and writes a `reports/diagrams_dashboard.html` index.
 
@@ -25,6 +25,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DIAGRAMS_DIR = PROJECT_ROOT / "diagrams"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 SVG_OUT_DIR = REPORTS_DIR / "diagrams"
+HTML_OUT_DIR = REPORTS_DIR / "diagrams"
 INDEX_PATH = REPORTS_DIR / "diagrams_dashboard.html"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -42,9 +43,76 @@ PROJECT_LABELS = {
 
 
 def discover_diagrams() -> list[Path]:
-    if not DIAGRAMS_DIR.exists():
-        return []
-    return sorted(DIAGRAMS_DIR.glob("*.mmd"))
+  roots = [DIAGRAMS_DIR, DIAGRAMS_DIR.parent / "proof"]
+  return sorted({path for root in roots if root.exists() for path in root.rglob("*.mmd")})
+
+
+def _source_rel_path(source_path: Path) -> str:
+  """Return the project-relative source path used for provenance."""
+  return source_path.relative_to(DIAGRAMS_DIR.parent).as_posix()
+
+
+def _artifact_stem(source_path: Path) -> str:
+  """Return a stable flat artifact stem derived from the source path."""
+  relative = Path(_source_rel_path(source_path))
+  parts = relative.with_suffix("").parts
+  if parts[0] == DIAGRAMS_DIR.name:
+    parts = parts[1:]
+  return "--".join(parts)
+
+
+def build_html_artifact(source_path: Path, source: str | None = None) -> str:
+    """Build a deterministic standalone Mermaid HTML artifact with provenance."""
+    if source is None:
+      source = source_path.read_text(encoding="utf-8")
+    source_rel = _source_rel_path(source_path)
+    title = html.escape(source_path.stem.replace("-", " ").title())
+    escaped_source = html.escape(source)
+    escaped_source_rel = html.escape(source_rel, quote=True)
+    return f'''<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="{escaped_source_rel}">
+  <title>{title} | Mermaid Diagram</title>
+  <style>body {{ margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }}
+  .mermaid {{ min-height: 120px; }} details {{ margin-top: 24px; }} pre {{ overflow: auto; padding: 12px; background: #f4f4f4; }}</style>
+  </head>
+  <body>
+  <main>
+  <h1>{title}</h1>
+  <div class="mermaid">{escaped_source}</div>
+  <details><summary>Source: <code>{escaped_source_rel}</code></summary>
+  <pre data-source="{escaped_source_rel}">{escaped_source}</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({{ startOnLoad: true, securityLevel: "strict" }});
+  </script>
+  </body>
+  </html>
+  '''.strip() + "\n"
+
+
+def publish_html_artifact(source_path: Path, output_dir: Path | None = None) -> Path:
+    """Publish one stable HTML artifact for a Mermaid source file."""
+    destination_dir = output_dir or HTML_OUT_DIR
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    destination = destination_dir / f"{_artifact_stem(source_path)}.html"
+    destination.write_text(build_html_artifact(source_path), encoding="utf-8", newline="\n")
+    return destination
+
+
+def publish_all_html() -> dict[str, Path]:
+    """Publish deterministic HTML artifacts for every canonical diagram source."""
+    return {_artifact_stem(path): publish_html_artifact(path) for path in discover_diagrams()}
+
+
+def discover_html_artifacts() -> dict[str, Path]:
+  """Discover existing canonical HTML artifacts by Mermaid source stem."""
+  if not HTML_OUT_DIR.exists():
+    return {}
+  return {path.stem: path for path in sorted(HTML_OUT_DIR.glob("*.html"))}
 
 
 def _fallback_svg_bytes(title: str, source: str, error: str) -> bytes:
@@ -81,8 +149,9 @@ def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
         client = MermaidClient()
     results: dict[str, dict] = {}
     for mmd_path in discover_diagrams():
-        stem = mmd_path.stem
+        stem = _artifact_stem(mmd_path)
         source = mmd_path.read_text(encoding="utf-8")
+        artifact_path = publish_html_artifact(mmd_path)
         try:
             svg_bytes = client.render(source, fmt="svg")
             out_path = SVG_OUT_DIR / f"{stem}.svg"
@@ -92,6 +161,7 @@ def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
                 "path": out_path,
                 "source": source,
                 "mmd_path": mmd_path,
+                "artifact_path": artifact_path,
             }
         except MermaidRenderError as exc:
             fallback_path = SVG_OUT_DIR / f"{stem}.svg"
@@ -102,6 +172,7 @@ def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
                 "path": fallback_path,
                 "source": source,
                 "mmd_path": mmd_path,
+                "artifact_path": artifact_path,
                 "fallback_error": str(exc),
             }
     return results
@@ -161,9 +232,9 @@ def build_index(results: dict[str, dict]) -> str:
         cards.append('<div class="grid">')
         for stem, info in items:
             title = stem.replace(f"{proj}-", "").replace("-", " ").title()
+            source_rel = _source_rel_path(info["mmd_path"])
             if info["ok"]:
-                rel = info["path"].relative_to(REPORTS_DIR).as_posix()
-                w, h = _svg_dims(info["path"])
+                rel = info["artifact_path"].relative_to(REPORTS_DIR).as_posix()
                 fallback_note = ""
                 fallback_details = ""
                 if info.get("fallback_error"):
@@ -179,17 +250,12 @@ def build_index(results: dict[str, dict]) -> str:
                     f'<div class="card">'
                     f'<div class="card-title">{html.escape(title)}'
                     f'{fallback_note}'
-                    f'<button class="zoom-btn" data-svg="{html.escape(rel)}" '
-                    f'data-title="{html.escape(title)}" '
-                    f'data-w="{w:.0f}" data-h="{h:.0f}" title="Zoom">⛶</button>'
+                    f'<a href="{html.escape(rel)}" target="_blank" rel="noopener">Open HTML</a>'
                     f'</div>'
-                    f'<div class="svg-wrap" data-svg="{html.escape(rel)}" '
-                    f'data-title="{html.escape(title)}" '
-                    f'data-w="{w:.0f}" data-h="{h:.0f}">'
-                    f'<object type="image/svg+xml" data="{html.escape(rel)}">'
-                    f'<a href="{html.escape(rel)}">View SVG</a></object></div>'
+                    f'<div class="svg-wrap"><iframe title="{html.escape(title)}" '
+                    f'src="{html.escape(rel)}" loading="lazy"></iframe></div>'
                     f'{fallback_details}'
-                    f'<details><summary>source</summary>'
+                    f'<details><summary>source: <code>{html.escape(source_rel)}</code></summary>'
                     f'<pre>{html.escape(info["source"])}</pre></details>'
                     f'</div>'
                 )
@@ -198,7 +264,7 @@ def build_index(results: dict[str, dict]) -> str:
                     f'<div class="card error">'
                     f'<div class="card-title">{html.escape(title)} ⚠️</div>'
                     f'<pre class="err">{html.escape(info["error"])}</pre>'
-                    f'<details><summary>source</summary>'
+                    f'<details><summary>source: <code>{html.escape(source_rel)}</code></summary>'
                     f'<pre>{html.escape(info["source"])}</pre></details>'
                     f'</div>'
                 )
@@ -448,23 +514,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Generate ⊕ Diagrams Dashboard")
     parser.add_argument("--no-open", action="store_true", help="Do not open the dashboard in a browser")
     parser.add_argument("--no-render", action="store_true",
-                        help="Skip rendering — rebuild index from existing SVGs only")
+                        help="Skip rendering — rebuild index from existing HTML artifacts only")
     args = parser.parse_args()
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     SVG_OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     if args.no_render:
-        # Build results from existing SVGs
+        # Build results from existing canonical HTML artifacts.
         results: dict[str, dict] = {}
+        artifacts = discover_html_artifacts()
         for mmd_path in discover_diagrams():
-            stem = mmd_path.stem
-            svg_path = SVG_OUT_DIR / f"{stem}.svg"
+            stem = _artifact_stem(mmd_path)
             source = mmd_path.read_text(encoding="utf-8")
-            if svg_path.exists():
-                results[stem] = {"ok": True, "path": svg_path, "source": source, "mmd_path": mmd_path}
+            artifact_path = artifacts.get(stem)
+            if artifact_path:
+                results[stem] = {"ok": True, "path": artifact_path, "artifact_path": artifact_path,
+                                 "source": source, "mmd_path": mmd_path}
             else:
-                results[stem] = {"ok": False, "error": "Not rendered yet", "source": source, "mmd_path": mmd_path}
+                results[stem] = {"ok": False, "error": "Not published yet", "source": source,
+                                 "mmd_path": mmd_path}
     else:
         client = MermaidClient()
         backend = "mmdc CLI" if client.cli_available() else "mermaid.ink HTTP"

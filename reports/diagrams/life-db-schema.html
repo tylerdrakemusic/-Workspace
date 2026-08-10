@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/life-db-schema.mmd">
+  <title>Life Db Schema | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Life Db Schema</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    RESEARCH_NOTES ||--o{ LITERATURE_ENTRIES : indexes
+    BLOODWORK_VISITS ||--o{ BIOMARKERS : contains
+    EPIGENETIC_TESTS ||--o{ EPIGENETIC_CLOCKS : contains
+    EPIGENETIC_TESTS ||--o{ SYMPHONY_ORGAN_AGES : contains
+    WORKOUT_SESSIONS ||--o{ WORKOUT_EXERCISES : contains
+
+    SUPPLEMENTS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    EXPERIMENTS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    PROTOCOLS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    WEIGHT_LOG {
+        integer id PK
+        text date
+        real weight_kg
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    SLEEP_LOG {
+        integer id PK
+        text date
+        integer sleep_score
+        real total_sleep_min
+        real deep_min
+        real light_min
+        real rem_min
+        real awake_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    RESTING_HR_LOG {
+        integer id PK
+        text date
+        integer resting_hr
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    HRV_LOG {
+        integer id PK
+        text date
+        real hrv_ms
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    STRESS_LOG {
+        integer id PK
+        text date
+        integer avg_stress
+        integer max_stress
+        real rest_stress_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    BODY_BATTERY_LOG {
+        integer id PK
+        text date
+        integer min_level
+        integer max_level
+        integer end_level
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    ACTIVITY_LOG {
+        integer id PK
+        text date
+        integer steps
+        real active_calories
+        real total_calories
+        text source
+    }
+    SYNC_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+    }
+    MEDICATIONS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    BLOODWORK_VISITS {
+        integer id PK
+        text visit_date
+        text lab
+        text notes
+    }
+    BIOMARKERS {
+        integer id PK
+        integer visit_id FK
+        text marker
+        real value
+        text unit
+        real target_low
+        real target_high
+    }
+    RESEARCH_NOTES {
+        integer id PK
+        text title
+        text date
+        text summary
+    }
+    LITERATURE_ENTRIES {
+        integer id PK
+        integer note_id FK
+        text citation
+        text doi
+        text tags
+    }
+    WGS_PROVIDER_ORDERS {
+        integer id PK
+        text provider
+        text status
+        text ordered_at
+        text notes
+    }
+    ETL_AUDIT_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    EPIGENETIC_TESTS {
+        integer id PK
+        text test_date
+        text provider
+    }
+    EPIGENETIC_CLOCKS {
+        integer id PK
+        integer test_id FK
+        text clock_name
+        real age_estimate
+    }
+    SYMPHONY_ORGAN_AGES {
+        integer id PK
+        integer test_id FK
+        text organ
+        real age_estimate
+    }
+    NUTRITION_LOG {
+        integer id PK
+        text date
+        text meal
+        real calories
+        real protein_g
+        text source
+    }
+    VITALS {
+        integer id PK
+        text date
+        text metric
+        real value
+        text source
+    }
+    BUDGET {
+        text category PK
+        real monthly_target
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
+    }
+    WORKOUT_SESSIONS {
+        integer id PK
+        text date
+        text source
+        text title
+        real duration_min
+        real calories
+    }
+    WORKOUT_EXERCISES {
+        integer id PK
+        integer session_id FK
+        text date
+        text exercise_name
+        integer sets
+        integer reps
+        real weight_kg
+        real duration_sec
+    }
+
+    %% --- Monitoring ---
+    SYNC_HEALTH {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    SYNC_ALERTS {
+        integer id PK
+        text source
+        text triggered_at
+        text reason
+        text resolved_at
+    }
+    TOKEN_REFRESH_LOG {
+        integer id PK
+        text provider
+        text triggered_at
+        text status
+        integer expires_at
+        real days_until_expiry
+        text error_msg
+    }
+</div>
+  <details><summary>Source: <code>diagrams/life-db-schema.mmd</code></summary>
+  <pre data-source="diagrams/life-db-schema.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    RESEARCH_NOTES ||--o{ LITERATURE_ENTRIES : indexes
+    BLOODWORK_VISITS ||--o{ BIOMARKERS : contains
+    EPIGENETIC_TESTS ||--o{ EPIGENETIC_CLOCKS : contains
+    EPIGENETIC_TESTS ||--o{ SYMPHONY_ORGAN_AGES : contains
+    WORKOUT_SESSIONS ||--o{ WORKOUT_EXERCISES : contains
+
+    SUPPLEMENTS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    EXPERIMENTS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    PROTOCOLS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    WEIGHT_LOG {
+        integer id PK
+        text date
+        real weight_kg
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    SLEEP_LOG {
+        integer id PK
+        text date
+        integer sleep_score
+        real total_sleep_min
+        real deep_min
+        real light_min
+        real rem_min
+        real awake_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    RESTING_HR_LOG {
+        integer id PK
+        text date
+        integer resting_hr
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    HRV_LOG {
+        integer id PK
+        text date
+        real hrv_ms
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    STRESS_LOG {
+        integer id PK
+        text date
+        integer avg_stress
+        integer max_stress
+        real rest_stress_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    BODY_BATTERY_LOG {
+        integer id PK
+        text date
+        integer min_level
+        integer max_level
+        integer end_level
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    ACTIVITY_LOG {
+        integer id PK
+        text date
+        integer steps
+        real active_calories
+        real total_calories
+        text source
+    }
+    SYNC_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+    }
+    MEDICATIONS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    BLOODWORK_VISITS {
+        integer id PK
+        text visit_date
+        text lab
+        text notes
+    }
+    BIOMARKERS {
+        integer id PK
+        integer visit_id FK
+        text marker
+        real value
+        text unit
+        real target_low
+        real target_high
+    }
+    RESEARCH_NOTES {
+        integer id PK
+        text title
+        text date
+        text summary
+    }
+    LITERATURE_ENTRIES {
+        integer id PK
+        integer note_id FK
+        text citation
+        text doi
+        text tags
+    }
+    WGS_PROVIDER_ORDERS {
+        integer id PK
+        text provider
+        text status
+        text ordered_at
+        text notes
+    }
+    ETL_AUDIT_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    EPIGENETIC_TESTS {
+        integer id PK
+        text test_date
+        text provider
+    }
+    EPIGENETIC_CLOCKS {
+        integer id PK
+        integer test_id FK
+        text clock_name
+        real age_estimate
+    }
+    SYMPHONY_ORGAN_AGES {
+        integer id PK
+        integer test_id FK
+        text organ
+        real age_estimate
+    }
+    NUTRITION_LOG {
+        integer id PK
+        text date
+        text meal
+        real calories
+        real protein_g
+        text source
+    }
+    VITALS {
+        integer id PK
+        text date
+        text metric
+        real value
+        text source
+    }
+    BUDGET {
+        text category PK
+        real monthly_target
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
+    }
+    WORKOUT_SESSIONS {
+        integer id PK
+        text date
+        text source
+        text title
+        real duration_min
+        real calories
+    }
+    WORKOUT_EXERCISES {
+        integer id PK
+        integer session_id FK
+        text date
+        text exercise_name
+        integer sets
+        integer reps
+        real weight_kg
+        real duration_sec
+    }
+
+    %% --- Monitoring ---
+    SYNC_HEALTH {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    SYNC_ALERTS {
+        integer id PK
+        text source
+        text triggered_at
+        text reason
+        text resolved_at
+    }
+    TOKEN_REFRESH_LOG {
+        integer id PK
+        text provider
+        text triggered_at
+        text status
+        integer expires_at
+        real days_until_expiry
+        text error_msg
+    }
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

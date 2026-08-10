@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/workspace-db-schema.mmd">
+  <title>Workspace Db Schema | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Workspace Db Schema</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    PERF_RUNS ||--o{ PROOF_ARTIFACTS : has
+    PERF_RUNS ||--o{ PERF_STEPS : has
+    PERF_RUNS {
+        text run_id PK
+        text task
+        text agent
+        text status
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PERF_STEPS {
+        integer id PK
+        text run_id FK
+        text step_name
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PROOF_ARTIFACTS {
+        integer id PK
+        text run_id FK
+        text agent
+        text proof_type
+        text title
+        text path
+        text detail
+        real ts
+    }
+    API_HEALTH {
+        integer id PK
+        text endpoint
+        text status
+        real latency_ms
+        text error_msg
+        real checked_at
+    }
+    VULNERABILITIES {
+        integer id PK
+        text scan_id
+        text project
+        text severity
+        text finding
+        text file_path
+        real detected_at
+    }
+    SCAN_RUN_LOG {
+        integer id PK
+        text scan_id
+        text scan_type
+        text status
+        real started_at
+        real finished_at
+    }
+    SCAN_RUN_LOG ||--o{ VULNERABILITIES : produces
+    AGENT_FEEDBACK {
+        integer id PK
+        text timestamp
+        text agent_or_prompt_name
+        text artifact_type
+        text target_file_path
+        text finding_text
+        text severity
+        text status
+        text fr_id &quot;idx_agent_feedback_status, idx_agent_feedback_severity&quot;
+        text applied_at
+        text applied_by
+    }
+    TECH_DEBT {
+        text finding_id PK
+        text project
+        text category
+        text file_path
+        integer severity
+        text detail
+        text action
+        text status
+        text created_at
+    }</div>
+  <details><summary>Source: <code>diagrams/workspace-db-schema.mmd</code></summary>
+  <pre data-source="diagrams/workspace-db-schema.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    PERF_RUNS ||--o{ PROOF_ARTIFACTS : has
+    PERF_RUNS ||--o{ PERF_STEPS : has
+    PERF_RUNS {
+        text run_id PK
+        text task
+        text agent
+        text status
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PERF_STEPS {
+        integer id PK
+        text run_id FK
+        text step_name
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PROOF_ARTIFACTS {
+        integer id PK
+        text run_id FK
+        text agent
+        text proof_type
+        text title
+        text path
+        text detail
+        real ts
+    }
+    API_HEALTH {
+        integer id PK
+        text endpoint
+        text status
+        real latency_ms
+        text error_msg
+        real checked_at
+    }
+    VULNERABILITIES {
+        integer id PK
+        text scan_id
+        text project
+        text severity
+        text finding
+        text file_path
+        real detected_at
+    }
+    SCAN_RUN_LOG {
+        integer id PK
+        text scan_id
+        text scan_type
+        text status
+        real started_at
+        real finished_at
+    }
+    SCAN_RUN_LOG ||--o{ VULNERABILITIES : produces
+    AGENT_FEEDBACK {
+        integer id PK
+        text timestamp
+        text agent_or_prompt_name
+        text artifact_type
+        text target_file_path
+        text finding_text
+        text severity
+        text status
+        text fr_id &quot;idx_agent_feedback_status, idx_agent_feedback_severity&quot;
+        text applied_at
+        text applied_by
+    }
+    TECH_DEBT {
+        text finding_id PK
+        text project
+        text category
+        text file_path
+        integer severity
+        text detail
+        text action
+        text status
+        text created_at
+    }</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

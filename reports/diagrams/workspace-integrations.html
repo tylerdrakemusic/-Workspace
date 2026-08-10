@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/workspace-integrations.mmd">
+  <title>Workspace Integrations | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Workspace Integrations</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    %% Cross-project integration points and governed coordination boundaries.
+    GitHub[(GitHub)]:::ext
+    IBMQ[(IBM Quantum)]:::ext
+    OpenAI[(OpenAI)]:::ext
+    ElevenLabs[(ElevenLabs)]:::ext
+    HF[(Hugging Face)]:::ext
+    Suno[(Suno)]:::ext
+    MFP[(MyFitnessPal)]:::ext
+    TZ[(TrainingZones)]:::ext
+    Mermaid[(mermaid.ink)]:::ext
+    Ollama[(Ollama)]:::ext
+    PollinationsExt[(Pollinations.AI&lt;br/&gt;image.pollinations.ai)]:::ext
+    HFSpacesExt[(HF Spaces&lt;br/&gt;FLUX.1-schnell&lt;br/&gt;Gradio REST)]:::ext
+    GDrive[(Google Drive)]:::ext
+    Gmail[(Google Gmail API)]:::ext
+    Perplexity[(Perplexity.ai&lt;br/&gt;Sonar + Reasoning)]:::ext
+    Schwab[(Charles Schwab API)]:::ext
+    GetSongBPM[(GetSongBPM API)]:::ext
+    FlyIO[(Fly.io)]:::ext
+    %% Project sigils
+    Workspace[⊕ Workspace]:::ws
+    Life[∞ Life]:::orch
+    Music[❤ Music]:::orch
+    Quantum[⟨ψ⟩ Quantum]:::orch
+    Manifest[👁 AI-Manifest]:::orch
+    Capital[Σ Capital]:::orch
+    WorkspaceCoord[⊕ coordination MCP]:::ws
+    ManifestCoord[👁 coordination MCP]:::manifest
+    CoordinationBoundary{Allowlisted FR / todo ops}:::state
+    NoGenericSQL[No generic SQL / arbitrary routing]:::state
+    %% Databases
+    WSDB[(workspace.db)]:::db
+    LifeDB[(infinitelife.db)]:::db
+    MusicDB[(heartmusic.db)]:::db
+    QDB[(quantumpsi.db)]:::db
+    CapitalDB[(sigmacapital.db)]:::db
+    FRLedger[(fr_ledgers.db)]:::db
+    ManifestTodoDB[(manifest_todos.db)]:::db
+    %% Workspace → external
+    Workspace --&gt;|mcp_github| GitHub
+    Workspace --&gt;|diagrams render| Mermaid
+    Workspace --&gt;|dalle3 image gen| OpenAI
+    Workspace --&gt;|huggingface inference| HF
+    Workspace --&gt;|pollinations image gen| PollinationsExt
+    Workspace --&gt;|hf spaces FLUX| HFSpacesExt
+    Workspace --&gt; WSDB
+    Workspace --&gt; WorkspaceCoord
+    WorkspaceCoord --&gt;|FR operations| FRLedger
+    WorkspaceCoord --&gt; CoordinationBoundary
+    WorkspaceCoord -.-&gt;|rejects| NoGenericSQL
+    Workspace --&gt;|health ping| ElevenLabs
+    Workspace --&gt;|health ping| Ollama
+    Workspace --&gt;|health ping| HF
+    Workspace --&gt;|health ping| Perplexity
+    Workspace --&gt;|sonar search + reasoning| Perplexity
+    Workspace --&gt;|gdrive client SA auth| GDrive
+    %% ∞Life → external + DB
+    Life --&gt;|nutrition sync| MFP
+    Life --&gt;|workout sync| TZ
+    Life --&gt;|llm research| OpenAI
+    Life --&gt; LifeDB
+    %% ❤Music → external + DB
+    Music --&gt;|catalog import| Suno
+    Music --&gt; MusicDB
+    Music -.-&gt;|sheet_music ingest| GDrive
+    Music --&gt;|BPM autolookup| GetSongBPM
+    Music --&gt;|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
+    %% ⟨ψ⟩Quantum → external + DB
+    Quantum --&gt;|qiskit jobs| IBMQ
+    Quantum --&gt;|model hub| HF
+    Quantum --&gt; QDB
+    %% 👁AI-Manifest → external
+    Manifest --&gt;|tts synthesis| ElevenLabs
+    Manifest --&gt;|llm orchestration| OpenAI
+    Manifest --&gt;|model hub| HF
+    Manifest --&gt; ManifestTodoDB
+    Manifest --&gt; ManifestCoord
+    ManifestCoord --&gt;|todo operations| ManifestTodoDB
+    ManifestCoord --&gt; CoordinationBoundary
+    ManifestCoord -.-&gt;|rejects| NoGenericSQL
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Life
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Music
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Quantum
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Workspace
+    %% Roadmap generation
+    RoadmapJSON[(roadmap.json)]:::db
+    Workspace --&gt;|roadmap_generator.py| RoadmapJSON
+    Manifest --&gt;|subprocess: invokes roadmap_generator.py| Workspace
+    Manifest -.-&gt;|reads roadmap.json| Workspace
+    %% Cross-project integrations
+    Quantum -.-&gt;|QRNG entropy| Workspace
+    Workspace -.-&gt;|gen-qee passwords| Life
+    Workspace -.-&gt;|gen-qee passwords| Music
+    Workspace -.-&gt;|gen-qee passwords| Quantum
+    Workspace -.-&gt;|gen-qee passwords| Manifest
+    Workspace -.-&gt;|gen-qee passwords| Capital
+    %% ΣCapital → DB + Perplexity
+    Capital --&gt; CapitalDB
+    Capital -.-&gt;|capital research via ⊕Workspace integration| Perplexity
+    Capital --&gt;|OAuth · market data| Schwab
+    Capital ==&gt;|LIVE order placement — only external&lt;br/&gt;financial-institution WRITE in the workspace| Schwab
+    linkStyle 45 stroke:#ff2a2a,stroke-width:4px,color:#ff9a9a
+    Capital -.-&gt;|&quot;fr_cli.py audit event&quot;| Workspace
+    Manifest -.-&gt;|executive briefs| Life
+    Music -.-&gt;|signature generation| Quantum
+    Workspace -.-&gt;|dalle3 + hf + pollinations image clients| Manifest
+    Life -.-&gt;|nova_portrait lazy-import| Workspace
+    Music -.-&gt;|vera_portrait lazy-import| Workspace
+    Workspace --&gt;|GmailServiceClient OAuth| Gmail
+    %% Direct cross-repo import coupling
+    Manifest --&gt;|&quot;direct import: tech debt scanner&quot;| Workspace
+    linkStyle 52 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
+
+
+
+    subgraph Legend[&quot; Legend &quot;]
+        direction LR
+    L_ws([⊕ Workspace]):::ws
+    L_db[(DB)]:::db
+    L_ext{{Ext}}:::ext
+    end
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div>
+  <details><summary>Source: <code>diagrams/workspace-integrations.mmd</code></summary>
+  <pre data-source="diagrams/workspace-integrations.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    %% Cross-project integration points and governed coordination boundaries.
+    GitHub[(GitHub)]:::ext
+    IBMQ[(IBM Quantum)]:::ext
+    OpenAI[(OpenAI)]:::ext
+    ElevenLabs[(ElevenLabs)]:::ext
+    HF[(Hugging Face)]:::ext
+    Suno[(Suno)]:::ext
+    MFP[(MyFitnessPal)]:::ext
+    TZ[(TrainingZones)]:::ext
+    Mermaid[(mermaid.ink)]:::ext
+    Ollama[(Ollama)]:::ext
+    PollinationsExt[(Pollinations.AI&lt;br/&gt;image.pollinations.ai)]:::ext
+    HFSpacesExt[(HF Spaces&lt;br/&gt;FLUX.1-schnell&lt;br/&gt;Gradio REST)]:::ext
+    GDrive[(Google Drive)]:::ext
+    Gmail[(Google Gmail API)]:::ext
+    Perplexity[(Perplexity.ai&lt;br/&gt;Sonar + Reasoning)]:::ext
+    Schwab[(Charles Schwab API)]:::ext
+    GetSongBPM[(GetSongBPM API)]:::ext
+    FlyIO[(Fly.io)]:::ext
+    %% Project sigils
+    Workspace[⊕ Workspace]:::ws
+    Life[∞ Life]:::orch
+    Music[❤ Music]:::orch
+    Quantum[⟨ψ⟩ Quantum]:::orch
+    Manifest[👁 AI-Manifest]:::orch
+    Capital[Σ Capital]:::orch
+    WorkspaceCoord[⊕ coordination MCP]:::ws
+    ManifestCoord[👁 coordination MCP]:::manifest
+    CoordinationBoundary{Allowlisted FR / todo ops}:::state
+    NoGenericSQL[No generic SQL / arbitrary routing]:::state
+    %% Databases
+    WSDB[(workspace.db)]:::db
+    LifeDB[(infinitelife.db)]:::db
+    MusicDB[(heartmusic.db)]:::db
+    QDB[(quantumpsi.db)]:::db
+    CapitalDB[(sigmacapital.db)]:::db
+    FRLedger[(fr_ledgers.db)]:::db
+    ManifestTodoDB[(manifest_todos.db)]:::db
+    %% Workspace → external
+    Workspace --&gt;|mcp_github| GitHub
+    Workspace --&gt;|diagrams render| Mermaid
+    Workspace --&gt;|dalle3 image gen| OpenAI
+    Workspace --&gt;|huggingface inference| HF
+    Workspace --&gt;|pollinations image gen| PollinationsExt
+    Workspace --&gt;|hf spaces FLUX| HFSpacesExt
+    Workspace --&gt; WSDB
+    Workspace --&gt; WorkspaceCoord
+    WorkspaceCoord --&gt;|FR operations| FRLedger
+    WorkspaceCoord --&gt; CoordinationBoundary
+    WorkspaceCoord -.-&gt;|rejects| NoGenericSQL
+    Workspace --&gt;|health ping| ElevenLabs
+    Workspace --&gt;|health ping| Ollama
+    Workspace --&gt;|health ping| HF
+    Workspace --&gt;|health ping| Perplexity
+    Workspace --&gt;|sonar search + reasoning| Perplexity
+    Workspace --&gt;|gdrive client SA auth| GDrive
+    %% ∞Life → external + DB
+    Life --&gt;|nutrition sync| MFP
+    Life --&gt;|workout sync| TZ
+    Life --&gt;|llm research| OpenAI
+    Life --&gt; LifeDB
+    %% ❤Music → external + DB
+    Music --&gt;|catalog import| Suno
+    Music --&gt; MusicDB
+    Music -.-&gt;|sheet_music ingest| GDrive
+    Music --&gt;|BPM autolookup| GetSongBPM
+    Music --&gt;|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
+    %% ⟨ψ⟩Quantum → external + DB
+    Quantum --&gt;|qiskit jobs| IBMQ
+    Quantum --&gt;|model hub| HF
+    Quantum --&gt; QDB
+    %% 👁AI-Manifest → external
+    Manifest --&gt;|tts synthesis| ElevenLabs
+    Manifest --&gt;|llm orchestration| OpenAI
+    Manifest --&gt;|model hub| HF
+    Manifest --&gt; ManifestTodoDB
+    Manifest --&gt; ManifestCoord
+    ManifestCoord --&gt;|todo operations| ManifestTodoDB
+    ManifestCoord --&gt; CoordinationBoundary
+    ManifestCoord -.-&gt;|rejects| NoGenericSQL
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Life
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Music
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Quantum
+    Manifest -.-&gt;|migrate_todos.py reads TODO_*.md| Workspace
+    %% Roadmap generation
+    RoadmapJSON[(roadmap.json)]:::db
+    Workspace --&gt;|roadmap_generator.py| RoadmapJSON
+    Manifest --&gt;|subprocess: invokes roadmap_generator.py| Workspace
+    Manifest -.-&gt;|reads roadmap.json| Workspace
+    %% Cross-project integrations
+    Quantum -.-&gt;|QRNG entropy| Workspace
+    Workspace -.-&gt;|gen-qee passwords| Life
+    Workspace -.-&gt;|gen-qee passwords| Music
+    Workspace -.-&gt;|gen-qee passwords| Quantum
+    Workspace -.-&gt;|gen-qee passwords| Manifest
+    Workspace -.-&gt;|gen-qee passwords| Capital
+    %% ΣCapital → DB + Perplexity
+    Capital --&gt; CapitalDB
+    Capital -.-&gt;|capital research via ⊕Workspace integration| Perplexity
+    Capital --&gt;|OAuth · market data| Schwab
+    Capital ==&gt;|LIVE order placement — only external&lt;br/&gt;financial-institution WRITE in the workspace| Schwab
+    linkStyle 45 stroke:#ff2a2a,stroke-width:4px,color:#ff9a9a
+    Capital -.-&gt;|&quot;fr_cli.py audit event&quot;| Workspace
+    Manifest -.-&gt;|executive briefs| Life
+    Music -.-&gt;|signature generation| Quantum
+    Workspace -.-&gt;|dalle3 + hf + pollinations image clients| Manifest
+    Life -.-&gt;|nova_portrait lazy-import| Workspace
+    Music -.-&gt;|vera_portrait lazy-import| Workspace
+    Workspace --&gt;|GmailServiceClient OAuth| Gmail
+    %% Direct cross-repo import coupling
+    Manifest --&gt;|&quot;direct import: tech debt scanner&quot;| Workspace
+    linkStyle 52 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
+
+
+
+    subgraph Legend[&quot; Legend &quot;]
+        direction LR
+    L_ws([⊕ Workspace]):::ws
+    L_db[(DB)]:::db
+    L_ext{{Ext}}:::ext
+    end
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

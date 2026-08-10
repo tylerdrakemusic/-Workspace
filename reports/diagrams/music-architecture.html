@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/music-architecture.mmd">
+  <title>Music Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Music Architecture</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Inputs
+        Suno[Suno releases]
+        Audius[Audius catalog]
+        SheetMusic[Sheet Music PDFs]
+        GDriveSheetMusic[(Google Drive PDFs · DOCX · Docs)]
+        Setlists[Band setlists]
+        AudioFiles[&quot;MP3 / FLAC / M4A&lt;br/&gt;G:\\Muzic · f:\\Masters · f:\\recordings&quot;]
+    end
+    subgraph Catalog[&quot;catalog/&quot;]
+        Export[export_catalog.py]
+        Songs[(songs · setlists&lt;br/&gt;sheet_music · audio)]
+    end
+    subgraph Services[&quot;src/services/&quot;]
+        AudioTagger[&quot;audio_tagger.py\nBPM + key detection\n(librosa · mutagen)&quot;]
+    end
+    subgraph Tools[&quot;tools/&quot;]
+        AutoTagger[&quot;auto_tagger.py\n--smoke-test N\n--dry-run / --apply&quot;]
+        SyncCC[&quot;sync_cc_charts_catalog.py\n--dry-run&quot;]
+        ArchiveNote[&quot;archive/\ndetect_bpm.py ⚑\nbpm_verify.py ⚑&quot;]
+    end
+    subgraph Trainer[&quot;Guitar Trainer&quot;]
+        TrainerApp[Flask app:5055]
+        TrainerDB[(exercises&lt;br/&gt;cards)]
+    end
+    subgraph Radio[&quot;src/radio/&quot;]
+        RadioApp[&quot;tjd_radio.py&lt;br/&gt;TJD Radio :8100&quot;]
+        RadioProxy[&quot;/api/radio/*&lt;br/&gt;now_playing · playlist&quot;]
+    end
+    subgraph ChordSheet[&quot;Chord Sheet Generation&quot;]
+        ChordSheetTool[tools/make_chord_sheet.py]
+        ChordSheetRoutes[&quot;/chord-sheet/&lt;br/&gt;parse · generate · merge&quot;]
+        BpmLookup[src/utils/&lt;br/&gt;bpm_lookup.py]
+    end
+    subgraph ArtistLinksMod[&quot;src/artist_links/&quot;]
+        ArtistLinksPanel[generate_artist_links_panel.py]
+        ArtistLinksRoutes[&quot;/api/links CRUD&quot;]
+        ArtistLinksDB[(artist_links)]
+    end
+    subgraph ReleaseOps[&quot;Release Ops&quot;]
+        ReleaseOpsRoutes[&quot;/api/release_ops&quot;]
+        ReleasesDB[(releases)]
+    end
+    subgraph BandMgmt[&quot;src/band_mgmt/&quot;]
+        BandMgmtPanel[generate_band_mgmt_panel.py]
+        BandMgmtDB[(bands · band_song_arrangements&lt;br/&gt;catalog_song_aliases)]
+    end
+    subgraph RhymeGrouper[&quot;Rhyme Grouper&quot;]
+        RhymeUtils[src/analysis/rhyme_utils.py]
+        RhymeRoute[&quot;/rhymes&quot;]
+        RhymeDB[(vault_lines · phonetic_groups)]
+    end
+    subgraph Studio[&quot;src/studio/&quot;]
+        StudioPanel[studio_panel.py]
+        StudioDB[(studio_equipment)]
+    end
+    subgraph GuitarTech[&quot;src/guitar_tech/ · Guitar Tech Persona&quot;]
+        GuitarTechCLI[tools/generate_guitar_tech_pilot.py]
+        PersonaEngine[&quot;persona_rubric.py -&gt; hlx_generator.py -&gt; hlx_validator.py&quot;]
+        GuitarToneDB[(guitar_tone_profiles)]
+    end
+    HelixRef[(catalog/helix_reference/ HX Edit model snapshot)]
+    HelixFilesOut[&quot;HelixFiles/*.hlx + TODO.md&quot;]
+    subgraph Reports[&quot;reports/&quot;]
+        Portal[portal.html]
+        Dash[band-mgmt dashboard]
+        TaggerReport[auto_tagger_*.html]
+    end
+    DB[(heartmusic.db&lt;br/&gt;tracks · catalog_songs&lt;br/&gt;recordings)]
+    Dashboard[music_dashboard.py]
+    Inputs --&gt; Catalog
+    Catalog --&gt; Songs
+    Songs --&gt; Export
+    Export --&gt; Portal
+    Export --&gt; Dash
+    TrainerApp --&gt; TrainerDB
+    Songs -.shared db.-&gt; TrainerDB
+    AudioFiles --&gt;|scan| AutoTagger
+    DB --&gt;|source_file · file_path| AutoTagger
+    AutoTagger --&gt; AudioTagger
+    AudioTagger --&gt;|tempo_bpm · key_signature| DB
+    AudioTagger --&gt;|ID3 write-back TBPM/TKEY| AudioFiles
+    AutoTagger --&gt; TaggerReport
+    SyncCC --&gt;|INSERT missing songs| DB
+    SyncCC --&gt;|link band_song_arrangements| DB
+    ImagesOut[output/images/]
+    WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    VeraPortrait[src/utils/&lt;br/&gt;vera_portrait.py]
+    VeraPortrait --&gt;|daily portrait PNG| ImagesOut
+    VeraPortrait -.-&gt;|lazy import HFSpaces+Pollinations| WSIntegrations
+    IngestScript[&quot;ingest_sheet_music_gdrive.py ⚑spike&quot;]
+    GDriveSheetMusic --&gt;|pull PDFs· DOCX· Docs| IngestScript
+    IngestScript -.-&gt;|gdrive client SA auth| WSIntegrations
+    IngestScript --&gt;|upsert rows| DB
+    Dashboard --&gt; RadioProxy
+    RadioProxy --&gt;|forward :8100| RadioApp
+    Dashboard --&gt; ChordSheetRoutes
+    ChordSheetRoutes --&gt; ChordSheetTool
+    ChordSheetTool -.-&gt;|lazy cross-project import| WSIntegrations
+    WSIntegrations -.-&gt;|Ollama client| Ollama[(Ollama LLM&lt;br/&gt;local)]
+    ChordSheetTool --&gt; BpmLookup
+    BpmLookup -.-&gt;|title+artist query| GetSongBPM[(GetSongBPM API)]
+    Dashboard --&gt; ArtistLinksRoutes
+    ArtistLinksRoutes --&gt; ArtistLinksPanel
+    ArtistLinksPanel --&gt; ArtistLinksDB
+    Dashboard --&gt; ReleaseOpsRoutes
+    ReleaseOpsRoutes --&gt; ReleasesDB
+    Dashboard --&gt; BandMgmtPanel
+    BandMgmtPanel --&gt; BandMgmtDB
+    Dashboard --&gt; RhymeRoute
+    RhymeRoute --&gt; RhymeUtils
+    RhymeUtils --&gt; RhymeDB
+    Dashboard --&gt; StudioPanel
+    StudioPanel --&gt; StudioDB
+    DB --&gt;|catalog_songs + HelixFiles scan| GuitarTechCLI
+    GuitarTechCLI --&gt; PersonaEngine
+    PersonaEngine -.-&gt;|read-only| HelixRef
+    PersonaEngine --&gt; HelixFilesOut
+    GuitarTechCLI --&gt;|proposed rows| GuitarToneDB
+    GuitarToneDB -.-&gt;|FK catalog_song_id| DB
+    class Inputs,Reports io
+    class Catalog,Trainer core
+    class Services,Tools svc
+    class VeraPortrait util
+    class ImagesOut out
+    class WSIntegrations ws
+    class ArchiveNote deprecated
+    class GDriveSheetMusic ext
+    class IngestScript svc
+    class Radio,ChordSheet,ArtistLinksMod,ReleaseOps,BandMgmt,RhymeGrouper,Studio,GuitarTech core
+    class Dashboard svc
+    class Ollama,GetSongBPM ext
+    class HelixFilesOut out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
+</div>
+  <details><summary>Source: <code>diagrams/music-architecture.mmd</code></summary>
+  <pre data-source="diagrams/music-architecture.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Inputs
+        Suno[Suno releases]
+        Audius[Audius catalog]
+        SheetMusic[Sheet Music PDFs]
+        GDriveSheetMusic[(Google Drive PDFs · DOCX · Docs)]
+        Setlists[Band setlists]
+        AudioFiles[&quot;MP3 / FLAC / M4A&lt;br/&gt;G:\\Muzic · f:\\Masters · f:\\recordings&quot;]
+    end
+    subgraph Catalog[&quot;catalog/&quot;]
+        Export[export_catalog.py]
+        Songs[(songs · setlists&lt;br/&gt;sheet_music · audio)]
+    end
+    subgraph Services[&quot;src/services/&quot;]
+        AudioTagger[&quot;audio_tagger.py\nBPM + key detection\n(librosa · mutagen)&quot;]
+    end
+    subgraph Tools[&quot;tools/&quot;]
+        AutoTagger[&quot;auto_tagger.py\n--smoke-test N\n--dry-run / --apply&quot;]
+        SyncCC[&quot;sync_cc_charts_catalog.py\n--dry-run&quot;]
+        ArchiveNote[&quot;archive/\ndetect_bpm.py ⚑\nbpm_verify.py ⚑&quot;]
+    end
+    subgraph Trainer[&quot;Guitar Trainer&quot;]
+        TrainerApp[Flask app:5055]
+        TrainerDB[(exercises&lt;br/&gt;cards)]
+    end
+    subgraph Radio[&quot;src/radio/&quot;]
+        RadioApp[&quot;tjd_radio.py&lt;br/&gt;TJD Radio :8100&quot;]
+        RadioProxy[&quot;/api/radio/*&lt;br/&gt;now_playing · playlist&quot;]
+    end
+    subgraph ChordSheet[&quot;Chord Sheet Generation&quot;]
+        ChordSheetTool[tools/make_chord_sheet.py]
+        ChordSheetRoutes[&quot;/chord-sheet/&lt;br/&gt;parse · generate · merge&quot;]
+        BpmLookup[src/utils/&lt;br/&gt;bpm_lookup.py]
+    end
+    subgraph ArtistLinksMod[&quot;src/artist_links/&quot;]
+        ArtistLinksPanel[generate_artist_links_panel.py]
+        ArtistLinksRoutes[&quot;/api/links CRUD&quot;]
+        ArtistLinksDB[(artist_links)]
+    end
+    subgraph ReleaseOps[&quot;Release Ops&quot;]
+        ReleaseOpsRoutes[&quot;/api/release_ops&quot;]
+        ReleasesDB[(releases)]
+    end
+    subgraph BandMgmt[&quot;src/band_mgmt/&quot;]
+        BandMgmtPanel[generate_band_mgmt_panel.py]
+        BandMgmtDB[(bands · band_song_arrangements&lt;br/&gt;catalog_song_aliases)]
+    end
+    subgraph RhymeGrouper[&quot;Rhyme Grouper&quot;]
+        RhymeUtils[src/analysis/rhyme_utils.py]
+        RhymeRoute[&quot;/rhymes&quot;]
+        RhymeDB[(vault_lines · phonetic_groups)]
+    end
+    subgraph Studio[&quot;src/studio/&quot;]
+        StudioPanel[studio_panel.py]
+        StudioDB[(studio_equipment)]
+    end
+    subgraph GuitarTech[&quot;src/guitar_tech/ · Guitar Tech Persona&quot;]
+        GuitarTechCLI[tools/generate_guitar_tech_pilot.py]
+        PersonaEngine[&quot;persona_rubric.py -&gt; hlx_generator.py -&gt; hlx_validator.py&quot;]
+        GuitarToneDB[(guitar_tone_profiles)]
+    end
+    HelixRef[(catalog/helix_reference/ HX Edit model snapshot)]
+    HelixFilesOut[&quot;HelixFiles/*.hlx + TODO.md&quot;]
+    subgraph Reports[&quot;reports/&quot;]
+        Portal[portal.html]
+        Dash[band-mgmt dashboard]
+        TaggerReport[auto_tagger_*.html]
+    end
+    DB[(heartmusic.db&lt;br/&gt;tracks · catalog_songs&lt;br/&gt;recordings)]
+    Dashboard[music_dashboard.py]
+    Inputs --&gt; Catalog
+    Catalog --&gt; Songs
+    Songs --&gt; Export
+    Export --&gt; Portal
+    Export --&gt; Dash
+    TrainerApp --&gt; TrainerDB
+    Songs -.shared db.-&gt; TrainerDB
+    AudioFiles --&gt;|scan| AutoTagger
+    DB --&gt;|source_file · file_path| AutoTagger
+    AutoTagger --&gt; AudioTagger
+    AudioTagger --&gt;|tempo_bpm · key_signature| DB
+    AudioTagger --&gt;|ID3 write-back TBPM/TKEY| AudioFiles
+    AutoTagger --&gt; TaggerReport
+    SyncCC --&gt;|INSERT missing songs| DB
+    SyncCC --&gt;|link band_song_arrangements| DB
+    ImagesOut[output/images/]
+    WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    VeraPortrait[src/utils/&lt;br/&gt;vera_portrait.py]
+    VeraPortrait --&gt;|daily portrait PNG| ImagesOut
+    VeraPortrait -.-&gt;|lazy import HFSpaces+Pollinations| WSIntegrations
+    IngestScript[&quot;ingest_sheet_music_gdrive.py ⚑spike&quot;]
+    GDriveSheetMusic --&gt;|pull PDFs· DOCX· Docs| IngestScript
+    IngestScript -.-&gt;|gdrive client SA auth| WSIntegrations
+    IngestScript --&gt;|upsert rows| DB
+    Dashboard --&gt; RadioProxy
+    RadioProxy --&gt;|forward :8100| RadioApp
+    Dashboard --&gt; ChordSheetRoutes
+    ChordSheetRoutes --&gt; ChordSheetTool
+    ChordSheetTool -.-&gt;|lazy cross-project import| WSIntegrations
+    WSIntegrations -.-&gt;|Ollama client| Ollama[(Ollama LLM&lt;br/&gt;local)]
+    ChordSheetTool --&gt; BpmLookup
+    BpmLookup -.-&gt;|title+artist query| GetSongBPM[(GetSongBPM API)]
+    Dashboard --&gt; ArtistLinksRoutes
+    ArtistLinksRoutes --&gt; ArtistLinksPanel
+    ArtistLinksPanel --&gt; ArtistLinksDB
+    Dashboard --&gt; ReleaseOpsRoutes
+    ReleaseOpsRoutes --&gt; ReleasesDB
+    Dashboard --&gt; BandMgmtPanel
+    BandMgmtPanel --&gt; BandMgmtDB
+    Dashboard --&gt; RhymeRoute
+    RhymeRoute --&gt; RhymeUtils
+    RhymeUtils --&gt; RhymeDB
+    Dashboard --&gt; StudioPanel
+    StudioPanel --&gt; StudioDB
+    DB --&gt;|catalog_songs + HelixFiles scan| GuitarTechCLI
+    GuitarTechCLI --&gt; PersonaEngine
+    PersonaEngine -.-&gt;|read-only| HelixRef
+    PersonaEngine --&gt; HelixFilesOut
+    GuitarTechCLI --&gt;|proposed rows| GuitarToneDB
+    GuitarToneDB -.-&gt;|FK catalog_song_id| DB
+    class Inputs,Reports io
+    class Catalog,Trainer core
+    class Services,Tools svc
+    class VeraPortrait util
+    class ImagesOut out
+    class WSIntegrations ws
+    class ArchiveNote deprecated
+    class GDriveSheetMusic ext
+    class IngestScript svc
+    class Radio,ChordSheet,ArtistLinksMod,ReleaseOps,BandMgmt,RhymeGrouper,Studio,GuitarTech core
+    class Dashboard svc
+    class Ollama,GetSongBPM ext
+    class HelixFilesOut out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

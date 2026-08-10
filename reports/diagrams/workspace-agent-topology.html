@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/workspace-agent-topology.mmd">
+  <title>Workspace Agent Topology | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Workspace Agent Topology</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Tyler([Tyler]) --&gt; Overseer
+
+    subgraph WS[&quot;⊕ Workspace Agents&quot;]
+        Overseer([&quot;⊕ overseer&quot;])
+        Intake([&quot;⊕ intake&quot;])
+        CI([&quot;⊕ ci&quot;])
+        Reviewer([&quot;⊕ reviewer&quot;])
+        Doer([&quot;⊕ doer&quot;])
+        Security([&quot;⊕ security&quot;])
+        Hygiene([&quot;⊕ hygiene&quot;])
+        ArchRev([&quot;⊕ architecture-reviewer&quot;])
+        ArchBeaut([&quot;⊕ architecture-beautifier&quot;])
+        GenQEE([&quot;⊕ gen-qee&quot;])
+        Discovery([&quot;⊕ discovery&quot;])
+        Dashboards([&quot;⊕ dashboards&quot;])
+        BenchAnalyzer([&quot;⊕ bench-analyzer&quot;])
+        Protector([&quot;⊕ protector&quot;])
+        QA([&quot;⊕ qa&quot;])
+        subgraph TDD_TIER[&quot;TDD Tier Variants&quot;]
+            TDDLight([&quot;⊕ tdd-light&quot;])
+            TDDStd([&quot;⊕ tdd-standard&quot;])
+            TDDHeavy([&quot;⊕ tdd-heavy&quot;])
+        end
+        subgraph QA_TIER[&quot;QA Tier Variants&quot;]
+            QALight([&quot;⊕ qa-light&quot;])
+            QAHeavy([&quot;⊕ qa-heavy&quot;])
+        end
+        subgraph REV_TIER[&quot;Reviewer Tier Variants&quot;]
+            ReviewerLight([&quot;⊕ reviewer-light&quot;])
+            ReviewerHeavy([&quot;⊕ reviewer-heavy&quot;])
+        end
+    end
+
+    subgraph LIFE[&quot;∞Life&quot;]
+        LifeOrch([&quot;∞ orchestrator&quot;])
+        LifeBrainstorm([&quot;∞ brainstorm&quot;])
+        LifeBudget([&quot;∞ budget&quot;])
+        LifeDA([&quot;∞ data-analytics&quot;])
+        LifeResearch([&quot;∞ research&quot;])
+        LifeRisk([&quot;∞ risk&quot;])
+    end
+
+    subgraph MUSIC[&quot;❤Music&quot;]
+        MusicOrch([&quot;❤ orchestrator&quot;])
+        MusicCatalog([&quot;❤ catalog&quot;])
+        MusicPerf([&quot;❤ performance&quot;])
+        MusicProd([&quot;❤ production&quot;])
+        MusicSig([&quot;❤ signatures&quot;])
+        MusicGuitarTech([&quot;❤ guitar-tech&quot;])
+    end
+
+    subgraph QUANTUM[&quot;⟨ψ⟩Quantum&quot;]
+        QuantumOrch([&quot;⟨ψ⟩ orchestrator&quot;])
+        QuantumResearch([&quot;⟨ψ⟩ research&quot;])
+    end
+
+    subgraph MANIFEST[&quot;👁AI-Manifest&quot;]
+        ManifestOrch([&quot;👁 orchestrator&quot;])
+    end
+
+    subgraph CAPITAL[&quot;ΣCapital&quot;]
+        CapitalOrch([&quot;Σ orchestrator (stub)&quot;])
+        CapitalResearch([&quot;Σ research&quot;])
+    end
+
+    subgraph INSTR[&quot;Shared Instructions · all agents inherit agent-self-regen&quot;]
+        FRFlow[&quot;feature-request-flow&quot;]
+        HygBase[&quot;hygiene-base&quot;]
+        OrcClean[&quot;orchestrator-cleanup&quot;]
+        DbKeys[&quot;db-api-keys&quot;]
+        PlayPreflight[&quot;playwright-server-preflight&quot;]
+    end
+
+    subgraph PINSTR[&quot;Project Base Instructions&quot;]
+        LifeBase[&quot;∞life-base&quot;]
+        HealthEval[&quot;∞life-health-evaluation&quot;]
+        MusicBase[&quot;❤music-base&quot;]
+        QuantumBase[&quot;⟨ψ⟩quantum-base&quot;]
+    end
+
+    %% ── Overseer routing ──
+    Overseer --&gt; Intake &amp; CI &amp; Reviewer &amp; Doer &amp; Security
+    Overseer --&gt; Hygiene &amp; ArchRev &amp; ArchBeaut &amp; GenQEE &amp; Discovery
+    Overseer --&gt; Dashboards &amp; BenchAnalyzer &amp; Protector &amp; QA
+    Overseer --&gt; LifeOrch &amp; MusicOrch &amp; QuantumOrch &amp; ManifestOrch &amp; CapitalOrch
+    Overseer --&gt; TDDLight &amp; TDDStd &amp; TDDHeavy
+    ArchRev -.-&gt;|STALE → delegates| ArchBeaut
+    QA --&gt; QALight &amp; QAHeavy
+    Reviewer --&gt; ReviewerLight &amp; ReviewerHeavy
+
+    %% ── Project routing ──
+    LifeOrch --&gt; LifeBrainstorm &amp; LifeBudget &amp; LifeDA &amp; LifeResearch &amp; LifeRisk
+    MusicOrch --&gt; MusicCatalog &amp; MusicPerf &amp; MusicProd &amp; MusicSig &amp; MusicGuitarTech
+    QuantumOrch --&gt; QuantumResearch
+    CapitalOrch --&gt; CapitalResearch
+
+    %% ── Instruction inheritance (dashed) ──
+    FRFlow -.-&gt; Intake &amp; Reviewer &amp; ArchRev &amp; ArchBeaut
+    HygBase -.-&gt; Hygiene
+    OrcClean -.-&gt; LifeOrch &amp; MusicOrch &amp; QuantumOrch &amp; CapitalOrch
+    DbKeys -.-&gt; Overseer &amp; GenQEE &amp; LifeOrch &amp; QuantumOrch &amp; ManifestOrch &amp; CapitalOrch
+    PlayPreflight -.-&gt; QA &amp; QALight &amp; QAHeavy
+
+    LifeBase -.-&gt; LifeOrch &amp; LifeBrainstorm &amp; LifeBudget &amp; LifeDA &amp; LifeResearch &amp; LifeRisk
+    HealthEval -.-&gt; LifeRisk
+    MusicBase -.-&gt; MusicOrch &amp; MusicCatalog &amp; MusicPerf &amp; MusicProd &amp; MusicSig &amp; MusicGuitarTech
+    QuantumBase -.-&gt; QuantumOrch &amp; QuantumResearch
+
+    %% ── Class assignments ──
+    class Overseer,Intake,CI,Reviewer,Doer,Security,Hygiene,ArchRev,ArchBeaut ws
+    class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
+    class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
+    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
+    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
+    class QuantumOrch,QuantumResearch quantum
+    class ManifestOrch manifest
+    class CapitalOrch capital
+    class CapitalResearch capital
+    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
+    class Tyler tyler
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
+</div>
+  <details><summary>Source: <code>diagrams/workspace-agent-topology.mmd</code></summary>
+  <pre data-source="diagrams/workspace-agent-topology.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Tyler([Tyler]) --&gt; Overseer
+
+    subgraph WS[&quot;⊕ Workspace Agents&quot;]
+        Overseer([&quot;⊕ overseer&quot;])
+        Intake([&quot;⊕ intake&quot;])
+        CI([&quot;⊕ ci&quot;])
+        Reviewer([&quot;⊕ reviewer&quot;])
+        Doer([&quot;⊕ doer&quot;])
+        Security([&quot;⊕ security&quot;])
+        Hygiene([&quot;⊕ hygiene&quot;])
+        ArchRev([&quot;⊕ architecture-reviewer&quot;])
+        ArchBeaut([&quot;⊕ architecture-beautifier&quot;])
+        GenQEE([&quot;⊕ gen-qee&quot;])
+        Discovery([&quot;⊕ discovery&quot;])
+        Dashboards([&quot;⊕ dashboards&quot;])
+        BenchAnalyzer([&quot;⊕ bench-analyzer&quot;])
+        Protector([&quot;⊕ protector&quot;])
+        QA([&quot;⊕ qa&quot;])
+        subgraph TDD_TIER[&quot;TDD Tier Variants&quot;]
+            TDDLight([&quot;⊕ tdd-light&quot;])
+            TDDStd([&quot;⊕ tdd-standard&quot;])
+            TDDHeavy([&quot;⊕ tdd-heavy&quot;])
+        end
+        subgraph QA_TIER[&quot;QA Tier Variants&quot;]
+            QALight([&quot;⊕ qa-light&quot;])
+            QAHeavy([&quot;⊕ qa-heavy&quot;])
+        end
+        subgraph REV_TIER[&quot;Reviewer Tier Variants&quot;]
+            ReviewerLight([&quot;⊕ reviewer-light&quot;])
+            ReviewerHeavy([&quot;⊕ reviewer-heavy&quot;])
+        end
+    end
+
+    subgraph LIFE[&quot;∞Life&quot;]
+        LifeOrch([&quot;∞ orchestrator&quot;])
+        LifeBrainstorm([&quot;∞ brainstorm&quot;])
+        LifeBudget([&quot;∞ budget&quot;])
+        LifeDA([&quot;∞ data-analytics&quot;])
+        LifeResearch([&quot;∞ research&quot;])
+        LifeRisk([&quot;∞ risk&quot;])
+    end
+
+    subgraph MUSIC[&quot;❤Music&quot;]
+        MusicOrch([&quot;❤ orchestrator&quot;])
+        MusicCatalog([&quot;❤ catalog&quot;])
+        MusicPerf([&quot;❤ performance&quot;])
+        MusicProd([&quot;❤ production&quot;])
+        MusicSig([&quot;❤ signatures&quot;])
+        MusicGuitarTech([&quot;❤ guitar-tech&quot;])
+    end
+
+    subgraph QUANTUM[&quot;⟨ψ⟩Quantum&quot;]
+        QuantumOrch([&quot;⟨ψ⟩ orchestrator&quot;])
+        QuantumResearch([&quot;⟨ψ⟩ research&quot;])
+    end
+
+    subgraph MANIFEST[&quot;👁AI-Manifest&quot;]
+        ManifestOrch([&quot;👁 orchestrator&quot;])
+    end
+
+    subgraph CAPITAL[&quot;ΣCapital&quot;]
+        CapitalOrch([&quot;Σ orchestrator (stub)&quot;])
+        CapitalResearch([&quot;Σ research&quot;])
+    end
+
+    subgraph INSTR[&quot;Shared Instructions · all agents inherit agent-self-regen&quot;]
+        FRFlow[&quot;feature-request-flow&quot;]
+        HygBase[&quot;hygiene-base&quot;]
+        OrcClean[&quot;orchestrator-cleanup&quot;]
+        DbKeys[&quot;db-api-keys&quot;]
+        PlayPreflight[&quot;playwright-server-preflight&quot;]
+    end
+
+    subgraph PINSTR[&quot;Project Base Instructions&quot;]
+        LifeBase[&quot;∞life-base&quot;]
+        HealthEval[&quot;∞life-health-evaluation&quot;]
+        MusicBase[&quot;❤music-base&quot;]
+        QuantumBase[&quot;⟨ψ⟩quantum-base&quot;]
+    end
+
+    %% ── Overseer routing ──
+    Overseer --&gt; Intake &amp; CI &amp; Reviewer &amp; Doer &amp; Security
+    Overseer --&gt; Hygiene &amp; ArchRev &amp; ArchBeaut &amp; GenQEE &amp; Discovery
+    Overseer --&gt; Dashboards &amp; BenchAnalyzer &amp; Protector &amp; QA
+    Overseer --&gt; LifeOrch &amp; MusicOrch &amp; QuantumOrch &amp; ManifestOrch &amp; CapitalOrch
+    Overseer --&gt; TDDLight &amp; TDDStd &amp; TDDHeavy
+    ArchRev -.-&gt;|STALE → delegates| ArchBeaut
+    QA --&gt; QALight &amp; QAHeavy
+    Reviewer --&gt; ReviewerLight &amp; ReviewerHeavy
+
+    %% ── Project routing ──
+    LifeOrch --&gt; LifeBrainstorm &amp; LifeBudget &amp; LifeDA &amp; LifeResearch &amp; LifeRisk
+    MusicOrch --&gt; MusicCatalog &amp; MusicPerf &amp; MusicProd &amp; MusicSig &amp; MusicGuitarTech
+    QuantumOrch --&gt; QuantumResearch
+    CapitalOrch --&gt; CapitalResearch
+
+    %% ── Instruction inheritance (dashed) ──
+    FRFlow -.-&gt; Intake &amp; Reviewer &amp; ArchRev &amp; ArchBeaut
+    HygBase -.-&gt; Hygiene
+    OrcClean -.-&gt; LifeOrch &amp; MusicOrch &amp; QuantumOrch &amp; CapitalOrch
+    DbKeys -.-&gt; Overseer &amp; GenQEE &amp; LifeOrch &amp; QuantumOrch &amp; ManifestOrch &amp; CapitalOrch
+    PlayPreflight -.-&gt; QA &amp; QALight &amp; QAHeavy
+
+    LifeBase -.-&gt; LifeOrch &amp; LifeBrainstorm &amp; LifeBudget &amp; LifeDA &amp; LifeResearch &amp; LifeRisk
+    HealthEval -.-&gt; LifeRisk
+    MusicBase -.-&gt; MusicOrch &amp; MusicCatalog &amp; MusicPerf &amp; MusicProd &amp; MusicSig &amp; MusicGuitarTech
+    QuantumBase -.-&gt; QuantumOrch &amp; QuantumResearch
+
+    %% ── Class assignments ──
+    class Overseer,Intake,CI,Reviewer,Doer,Security,Hygiene,ArchRev,ArchBeaut ws
+    class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
+    class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
+    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
+    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
+    class QuantumOrch,QuantumResearch quantum
+    class ManifestOrch manifest
+    class CapitalOrch capital
+    class CapitalResearch capital
+    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
+    class Tyler tyler
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

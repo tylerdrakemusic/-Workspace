@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/workspace-tech-stack.mmd">
+  <title>Workspace Tech Stack | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Workspace Tech Stack</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11&lt;br/&gt;C:\\G\\python.exe] --&gt; SQLCipher[sqlcipher3&lt;br/&gt;encrypted SQLite]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Flask[Flask&lt;br/&gt;portal servers]
+    Python --&gt; Playwright[playwright&lt;br/&gt;portal checks]
+    Python --&gt; Dotenv[python-dotenv]
+    Python --&gt; GoogleAPI[google-api-python-client&lt;br/&gt;google-auth-httplib2&lt;br/&gt;google-auth-oauthlib]
+    Python --&gt; Httpx[httpx&lt;br/&gt;API health checks]
+    Python --&gt; Pillow[Pillow&lt;br/&gt;image integrations]
+    Python --&gt; Bandit[bandit&lt;br/&gt;security scan]
+    Python --&gt; Safety[safety&lt;br/&gt;security scan]
+    Python --&gt; Radon[radon&lt;br/&gt;complexity scan]
+    Node[Node.js] --&gt; Mmdc[mermaid-cli&lt;br/&gt;mmdc]
+    PowerShell[PowerShell 7] --&gt; LaunchScripts[open_portal.ps1&lt;br/&gt;start_*.ps1]
+    GitHub[GitHub Actions] --&gt; CI_Tests[test workflow]
+    class Python,Node,PowerShell lang
+    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,Radon tool
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div>
+  <details><summary>Source: <code>diagrams/workspace-tech-stack.mmd</code></summary>
+  <pre data-source="diagrams/workspace-tech-stack.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11&lt;br/&gt;C:\\G\\python.exe] --&gt; SQLCipher[sqlcipher3&lt;br/&gt;encrypted SQLite]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Flask[Flask&lt;br/&gt;portal servers]
+    Python --&gt; Playwright[playwright&lt;br/&gt;portal checks]
+    Python --&gt; Dotenv[python-dotenv]
+    Python --&gt; GoogleAPI[google-api-python-client&lt;br/&gt;google-auth-httplib2&lt;br/&gt;google-auth-oauthlib]
+    Python --&gt; Httpx[httpx&lt;br/&gt;API health checks]
+    Python --&gt; Pillow[Pillow&lt;br/&gt;image integrations]
+    Python --&gt; Bandit[bandit&lt;br/&gt;security scan]
+    Python --&gt; Safety[safety&lt;br/&gt;security scan]
+    Python --&gt; Radon[radon&lt;br/&gt;complexity scan]
+    Node[Node.js] --&gt; Mmdc[mermaid-cli&lt;br/&gt;mmdc]
+    PowerShell[PowerShell 7] --&gt; LaunchScripts[open_portal.ps1&lt;br/&gt;start_*.ps1]
+    GitHub[GitHub Actions] --&gt; CI_Tests[test workflow]
+    class Python,Node,PowerShell lang
+    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,Radon tool
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

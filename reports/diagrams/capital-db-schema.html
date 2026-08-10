@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/capital-db-schema.mmd">
+  <title>Capital Db Schema | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Capital Db Schema</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+erDiagram
+    TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
+    PORTFOLIO ||--o{ EXITS : has_exit
+    EXITS ||--o{ EXITS : supersedes
+    TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
+    TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves_candidate_account
+
+    PORTFOLIO {
+        integer id PK
+        text symbol
+        real shares
+        real avg_cost
+        text opened_at
+        text model
+    }
+    ACCOUNT_STATE {
+        text key PK
+        real value
+        text updated_at
+    }
+    EXECUTION_HISTORY {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        text rationale
+        real confidence
+        text created_at
+        text status
+        text risk_reason
+        text unit
+        real quantity
+        text order_type
+        real limit_price
+        real stop_price
+        real trailing_amount
+        text trailing_amount_type
+        text timing
+        text execution_certainty
+        text mode &quot;simulated|real&quot;
+        real estimated_cost
+        text model
+        text scoring_method
+        text broker_order_id
+        text broker_status &quot;nightly-synced from Schwab&quot;
+        text broker_error
+        text placement_warnings &quot;JSON array&quot;
+        text account_ref
+        text margin_label &quot;cash|overnight-margin&quot;
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged &quot;0|1&quot;
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+    MARKET_DATA_CACHE {
+        integer id PK
+        text symbol
+        text data_type
+        text payload
+        text fetched_at
+    }
+    PORTFOLIO_VALUE_HISTORY {
+        integer id PK
+        text captured_at
+        real portfolio_value
+        real buying_power
+        real total_value
+    }
+    SIGNALS {
+        integer id PK
+        text source
+        text symbol
+        text payload
+        text captured_at
+        text category
+        text batch_id
+    }
+    RISK_THRESHOLDS {
+        integer id PK
+        text dimension
+        real threshold
+        text updated_at
+    }
+    TRADE_CANDIDATES {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        real entry_target
+        real exit_target
+        text ai_reason
+        real scoring
+        text mode &quot;simulated|real&quot;
+        text created_at
+        text model
+        text approval_account_ref &quot;selected account persisted at approval&quot;
+        text margin_label &quot;cash|overnight-margin&quot;
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged &quot;0|1&quot;
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+    EXITS {
+        integer id PK
+        integer position_id FK
+        text symbol
+        text account_ref
+        text direction &quot;long|short&quot;
+        real entry_price
+        real atr
+        real stop_loss_price
+        real take_profit_price
+        real quantity
+        text status &quot;active|superseded|triggered|cancelled&quot;
+        integer supersedes_id FK
+        integer version
+        text reason
+        text created_at
+    }
+
+    %% EXITS (FR-20260704): per-position exit strategy rows — ATR-based stop/target,
+    %% short-mirror direction support, supersede chain for re-evaluated thresholds,
+    %% max-hold forced exit and partial/tranche closes tracked via version+status
+    REAL_MONEY_CONFIRMATIONS {
+        integer id PK
+        integer candidate_id
+        text account_ref
+        text context
+        text confirmed_at
+        text margin_label &quot;cash|overnight-margin&quot;
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged &quot;0|1&quot;
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+
+    MARGIN_RESERVATIONS {
+        integer id PK
+        integer candidate_id FK &quot;UNIQUE per candidate&quot;
+        text account_ref &quot;selected/persisted Schwab account&quot;
+        real borrowed_amount &quot;CHECK &gt;= 0&quot;
+        text status &quot;CHECK pending|consumed|released&quot;
+        text created_at &quot;lifecycle timestamp&quot;
+        text released_at &quot;lifecycle timestamp&quot;
+    }
+
+    %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
+    %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
+    %% mode=&#x27;real&#x27; reserved for future FR after broker-API compliance review
+    %% model column (FR-20260627): per-pick LLM provenance — legacy portfolio/execution rows backfilled to &#x27;raptor&#x27;, legacy candidates left NULL
+    %% mode=&#x27;real&#x27; authorized (charter amended, broker-API compliance review complete)
+    %% for the single dedicated low-risk account; M2 live order placement ACTIVE
+    %% (FR-20260801-sigmacapital-real-order-placement): broker_order_id / broker_error /
+    %% placement_warnings capture the Schwab placement outcome per execution row
+    %% (FR-20260808-sigmacapital-margin-aware-picker): margin columns are copied
+    %% across candidate, execution, and confirmation audit rows; reservations are
+    %% unique per candidate and retain release history instead of deleting rows.
+</div>
+  <details><summary>Source: <code>diagrams/capital-db-schema.mmd</code></summary>
+  <pre data-source="diagrams/capital-db-schema.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+erDiagram
+    TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
+    PORTFOLIO ||--o{ EXITS : has_exit
+    EXITS ||--o{ EXITS : supersedes
+    TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
+    TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves_candidate_account
+
+    PORTFOLIO {
+        integer id PK
+        text symbol
+        real shares
+        real avg_cost
+        text opened_at
+        text model
+    }
+    ACCOUNT_STATE {
+        text key PK
+        real value
+        text updated_at
+    }
+    EXECUTION_HISTORY {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        text rationale
+        real confidence
+        text created_at
+        text status
+        text risk_reason
+        text unit
+        real quantity
+        text order_type
+        real limit_price
+        real stop_price
+        real trailing_amount
+        text trailing_amount_type
+        text timing
+        text execution_certainty
+        text mode &quot;simulated|real&quot;
+        real estimated_cost
+        text model
+        text scoring_method
+        text broker_order_id
+        text broker_status &quot;nightly-synced from Schwab&quot;
+        text broker_error
+        text placement_warnings &quot;JSON array&quot;
+        text account_ref
+        text margin_label &quot;cash|overnight-margin&quot;
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged &quot;0|1&quot;
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+    MARKET_DATA_CACHE {
+        integer id PK
+        text symbol
+        text data_type
+        text payload
+        text fetched_at
+    }
+    PORTFOLIO_VALUE_HISTORY {
+        integer id PK
+        text captured_at
+        real portfolio_value
+        real buying_power
+        real total_value
+    }
+    SIGNALS {
+        integer id PK
+        text source
+        text symbol
+        text payload
+        text captured_at
+        text category
+        text batch_id
+    }
+    RISK_THRESHOLDS {
+        integer id PK
+        text dimension
+        real threshold
+        text updated_at
+    }
+    TRADE_CANDIDATES {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        real entry_target
+        real exit_target
+        text ai_reason
+        real scoring
+        text mode &quot;simulated|real&quot;
+        text created_at
+        text model
+        text approval_account_ref &quot;selected account persisted at approval&quot;
+        text margin_label &quot;cash|overnight-margin&quot;
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged &quot;0|1&quot;
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+    EXITS {
+        integer id PK
+        integer position_id FK
+        text symbol
+        text account_ref
+        text direction &quot;long|short&quot;
+        real entry_price
+        real atr
+        real stop_loss_price
+        real take_profit_price
+        real quantity
+        text status &quot;active|superseded|triggered|cancelled&quot;
+        integer supersedes_id FK
+        integer version
+        text reason
+        text created_at
+    }
+
+    %% EXITS (FR-20260704): per-position exit strategy rows — ATR-based stop/target,
+    %% short-mirror direction support, supersede chain for re-evaluated thresholds,
+    %% max-hold forced exit and partial/tranche closes tracked via version+status
+    REAL_MONEY_CONFIRMATIONS {
+        integer id PK
+        integer candidate_id
+        text account_ref
+        text context
+        text confirmed_at
+        text margin_label &quot;cash|overnight-margin&quot;
+        real margin_borrowed_amount
+        real margin_composite_score
+        text margin_account_proof_at
+        integer margin_ui_acknowledged &quot;0|1&quot;
+        text margin_recheck_date
+        real margin_buying_power
+        real margin_cash_balance
+    }
+
+    MARGIN_RESERVATIONS {
+        integer id PK
+        integer candidate_id FK &quot;UNIQUE per candidate&quot;
+        text account_ref &quot;selected/persisted Schwab account&quot;
+        real borrowed_amount &quot;CHECK &gt;= 0&quot;
+        text status &quot;CHECK pending|consumed|released&quot;
+        text created_at &quot;lifecycle timestamp&quot;
+        text released_at &quot;lifecycle timestamp&quot;
+    }
+
+    %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
+    %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
+    %% mode=&#x27;real&#x27; reserved for future FR after broker-API compliance review
+    %% model column (FR-20260627): per-pick LLM provenance — legacy portfolio/execution rows backfilled to &#x27;raptor&#x27;, legacy candidates left NULL
+    %% mode=&#x27;real&#x27; authorized (charter amended, broker-API compliance review complete)
+    %% for the single dedicated low-risk account; M2 live order placement ACTIVE
+    %% (FR-20260801-sigmacapital-real-order-placement): broker_order_id / broker_error /
+    %% placement_warnings capture the Schwab placement outcome per execution row
+    %% (FR-20260808-sigmacapital-margin-aware-picker): margin columns are copied
+    %% across candidate, execution, and confirmation audit rows; reservations are
+    %% unique per candidate and retain release history instead of deleting rows.
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

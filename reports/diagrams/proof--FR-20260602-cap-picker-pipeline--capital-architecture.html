@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="proof/FR-20260602-cap-picker-pipeline/capital-architecture.mmd">
+  <title>Capital Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Capital Architecture</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Manual[Manual placement&lt;br/&gt;Schwab personal account&lt;br/&gt;weekend window only]
+    Signals[Public market signals&lt;br/&gt;news · filings · sentiment] --&gt; Ingest[src/ingest/&lt;br/&gt;signal fetchers — future]
+    Ingest --&gt; DB[(sigmacapital.db&lt;br/&gt;SQLCipher)]
+    Research[src/research/&lt;br/&gt;weekend pick generation — future] --&gt; DB
+    Agents[src/agents/&lt;br/&gt;research, risk] --&gt; DB
+    Agents --&gt;|news/sentiment batch| Perplexity[(Perplexity.ai&lt;br/&gt;Sonar)]
+    Agents --&gt;|pricing/volatility| YFinance[(yfinance&lt;br/&gt;Yahoo Finance)]
+    TradeApprovalGate[&quot;Trade Approval Gate&quot;] --&gt;|pricing| YFinance
+    TradeApprovalGate --&gt;|AI reasoning| Anthropic[(Anthropic&lt;br/&gt;Claude API)]
+    TradeApprovalGate --&gt;|news| Perplexity
+    TradeApprovalGate --&gt; DB
+    ResearchAgent[&quot;Σcapital-research&lt;br/&gt;.agent.md&quot;] --&gt; Agents
+    DB --&gt; Picks[picks table&lt;br/&gt;weekly recommendations]
+    DB --&gt; Portfolio[portfolio + trades&lt;br/&gt;paper-DB sim only]
+    Picks --&gt; Tyler
+    Compliance[COMPLIANCE.md&lt;br/&gt;weekend-only · no broker API&lt;br/&gt;no automated orders]:::state
+    Compliance -.enforces.-&gt; Manual
+    Compliance -.enforces.-&gt; Research
+    Hook[.git/hooks/pre-push&lt;br/&gt;mirrors ∞Life PROTECTION_HOOK]:::state
+    Hook -.blocks.-&gt; DB
+    class Signals,Manual state
+    class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
+    class Agents,ResearchAgent orch
+    class DB db
+    class Perplexity,YFinance,Anthropic ext
+    class Tyler tyler
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+</div>
+  <details><summary>Source: <code>proof/FR-20260602-cap-picker-pipeline/capital-architecture.mmd</code></summary>
+  <pre data-source="proof/FR-20260602-cap-picker-pipeline/capital-architecture.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Manual[Manual placement&lt;br/&gt;Schwab personal account&lt;br/&gt;weekend window only]
+    Signals[Public market signals&lt;br/&gt;news · filings · sentiment] --&gt; Ingest[src/ingest/&lt;br/&gt;signal fetchers — future]
+    Ingest --&gt; DB[(sigmacapital.db&lt;br/&gt;SQLCipher)]
+    Research[src/research/&lt;br/&gt;weekend pick generation — future] --&gt; DB
+    Agents[src/agents/&lt;br/&gt;research, risk] --&gt; DB
+    Agents --&gt;|news/sentiment batch| Perplexity[(Perplexity.ai&lt;br/&gt;Sonar)]
+    Agents --&gt;|pricing/volatility| YFinance[(yfinance&lt;br/&gt;Yahoo Finance)]
+    TradeApprovalGate[&quot;Trade Approval Gate&quot;] --&gt;|pricing| YFinance
+    TradeApprovalGate --&gt;|AI reasoning| Anthropic[(Anthropic&lt;br/&gt;Claude API)]
+    TradeApprovalGate --&gt;|news| Perplexity
+    TradeApprovalGate --&gt; DB
+    ResearchAgent[&quot;Σcapital-research&lt;br/&gt;.agent.md&quot;] --&gt; Agents
+    DB --&gt; Picks[picks table&lt;br/&gt;weekly recommendations]
+    DB --&gt; Portfolio[portfolio + trades&lt;br/&gt;paper-DB sim only]
+    Picks --&gt; Tyler
+    Compliance[COMPLIANCE.md&lt;br/&gt;weekend-only · no broker API&lt;br/&gt;no automated orders]:::state
+    Compliance -.enforces.-&gt; Manual
+    Compliance -.enforces.-&gt; Research
+    Hook[.git/hooks/pre-push&lt;br/&gt;mirrors ∞Life PROTECTION_HOOK]:::state
+    Hook -.blocks.-&gt; DB
+    class Signals,Manual state
+    class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
+    class Agents,ResearchAgent orch
+    class DB db
+    class Perplexity,YFinance,Anthropic ext
+    class Tyler tyler
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

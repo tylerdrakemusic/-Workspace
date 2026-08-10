@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/manifest-db-schema.mmd">
+  <title>Manifest Db Schema | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Manifest Db Schema</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BRIEFS ||--o{ BRIEF_AUDIO : has
+    BRIEFS {
+        text brief_id PK
+        text title
+        text source_topic
+        text content_md
+        text generated_at
+    }
+    BRIEF_AUDIO {
+        integer id PK
+        text brief_id FK
+        text voice_id
+        text mp3_path
+        real duration_sec
+    }
+    VOICES {
+        text voice_id PK
+        text label
+        text provider
+    }
+    TODOS ||--o{ PRIORITY_HISTORY : has
+    TODOS {
+        integer id PK
+        text project
+        text source &quot;AI|TYLER|SCAN&quot;
+        text text
+        integer done
+        text created_at
+        text closed_at
+        integer priority &quot;default 5&quot;
+        text autonomy_level &quot;full|supervised|human&quot;
+        text fr_id &quot;nullable — links to active FR&quot;
+        text rationale &quot;nullable — LLM-generated rationale&quot;
+        text implementation_hints &quot;nullable — LLM-generated hints&quot;
+        text context_snapshot &quot;nullable — project context at discovery&quot;
+        text estimated_effort &quot;nullable — XS|S|M|L|XL&quot;
+        text dependencies &quot;nullable — todo IDs / FR IDs (comma-sep)&quot;
+    }
+    PRIORITY_HISTORY {
+        integer id PK
+        integer todo_id FK
+        integer priority
+        text scored_at
+    }</div>
+  <details><summary>Source: <code>diagrams/manifest-db-schema.mmd</code></summary>
+  <pre data-source="diagrams/manifest-db-schema.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BRIEFS ||--o{ BRIEF_AUDIO : has
+    BRIEFS {
+        text brief_id PK
+        text title
+        text source_topic
+        text content_md
+        text generated_at
+    }
+    BRIEF_AUDIO {
+        integer id PK
+        text brief_id FK
+        text voice_id
+        text mp3_path
+        real duration_sec
+    }
+    VOICES {
+        text voice_id PK
+        text label
+        text provider
+    }
+    TODOS ||--o{ PRIORITY_HISTORY : has
+    TODOS {
+        integer id PK
+        text project
+        text source &quot;AI|TYLER|SCAN&quot;
+        text text
+        integer done
+        text created_at
+        text closed_at
+        integer priority &quot;default 5&quot;
+        text autonomy_level &quot;full|supervised|human&quot;
+        text fr_id &quot;nullable — links to active FR&quot;
+        text rationale &quot;nullable — LLM-generated rationale&quot;
+        text implementation_hints &quot;nullable — LLM-generated hints&quot;
+        text context_snapshot &quot;nullable — project context at discovery&quot;
+        text estimated_effort &quot;nullable — XS|S|M|L|XL&quot;
+        text dependencies &quot;nullable — todo IDs / FR IDs (comma-sep)&quot;
+    }
+    PRIORITY_HISTORY {
+        integer id PK
+        integer todo_id FK
+        integer priority
+        text scored_at
+    }</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

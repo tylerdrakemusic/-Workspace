@@ -1,5 +1,5 @@
 ---
-description: "Use to update or rewrite Mermaid (.mmd) diagrams in f:\\⊕Workspace\\diagrams\\ when the architecture-reviewer flags STALE or MISSING diagrams. Applies consistent styling, layout, color, and node-naming conventions across all workspace diagrams. Can update an existing .mmd in place or create a new one from a topic + textual description."
+description: "Use to update or rewrite Mermaid (.mmd) diagrams in f:\\⊕Workspace\\diagrams\\ when the architecture-reviewer flags STALE or MISSING diagrams. Publishes deterministic HTML artifacts with source provenance and proof for every source."
 user-invocable: true
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
@@ -7,7 +7,7 @@ user-invocable: true
 
 # ⊕ Workspace Architecture Beautifier Agent
 
-Writes and maintains Mermaid `.mmd` files. Triggered by `⊕workspace-architecture-reviewer` STALE/MISSING report, or invoked directly by Tyler/overseer.
+Writes and maintains Mermaid `.mmd` files and publishes deterministic HTML artifacts. Triggered by `⊕workspace-architecture-reviewer` STALE/MISSING report, or invoked directly by Tyler/overseer.
 
 ## Context Bootstrap
 1. List `f:\⊕Workspace\diagrams\*.mmd` to match existing style
@@ -38,8 +38,10 @@ classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 - **Mode 3 — Beautify Only:** re-apply house style, do NOT change semantic content
 
 ## Render Verification
-After writing: `C:\G\python.exe f:\⊕Workspace\tools\diagrams_dashboard.py --no-open`
-If render fails, fix syntax and retry. Do not hand off until SVG generated successfully.
+After writing: `C:\G\python.exe f:\⊕Workspace\tools\diagram_beautifier.py --publish-html`
+The one-time migration pass must process every `diagrams/*.mmd` source and publish `reports/diagrams/<stem>.html`.
+Each artifact must retain the exact escaped source and `diagrams/<stem>.mmd` provenance. SVG rendering remains a compatibility fallback; HTML is canonical.
+If render fails, preserve the HTML artifact, record the failure, and do not silently omit the source.
 
 ## Constraints
 - DO NOT change diagram semantics in beautify mode
@@ -47,5 +49,6 @@ If render fails, fix syntax and retry. Do not hand off until SVG generated succe
 - DO NOT skip render verification
 - DO NOT touch `.mmd` files outside `f:\⊕Workspace\diagrams\`
 - ALWAYS use the house classDef block
-- ALWAYS record FR event: `fr_cli.py record-event <FR-ID> ⊕workspace-architecture-beautifier artifact "Updated: <filename>.mmd"`
-- ALWAYS record proof for each file written
+- ALWAYS record FR event for publication and migration count.
+- ALWAYS record proof for each HTML artifact and the source-to-artifact mapping.
+- The one-time migration is idempotent and must not change Mermaid source semantics.

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/manifest-architecture.mmd">
+  <title>Manifest Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Manifest Architecture</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Triggers[Task Scheduler · CLI · Manual] --&gt; Tools[tools/&lt;br/&gt;executive_audio_brief.py]
+    Tools --&gt; Briefs[brief generators]
+    Tools --&gt; LilyPortrait[src/utils/&lt;br/&gt;lily_portrait.py]
+    Tools --&gt; RoadmapPanel[src/utils/&lt;br/&gt;roadmap_panel.py]
+    Briefs --&gt; OpenAI[OpenAI&lt;br/&gt;OPENAPI_TOKEN]
+    Briefs --&gt; ElevenLabs[ElevenLabs&lt;br/&gt;ELEVENLABS_API_KEY]
+    LilyPortrait --&gt;|1st try| DallE3[DallE3Client&lt;br/&gt;⊕Workspace integration]
+    LilyPortrait --&gt;|2nd try| HFImage[HuggingFaceImageClient&lt;br/&gt;⊕Workspace integration]
+    LilyPortrait --&gt;|3rd try| HFSpaces[HFSpacesClient&lt;br/&gt;FLUX.1-schnell Gradio REST]
+    LilyPortrait --&gt;|4th try| Pollinations[PollinationsClient&lt;br/&gt;image.pollinations.ai]
+    LilyPortrait --&gt;|5th fallback| SVGFallback[SVG silhouette]
+    DallE3 --&gt;|importlib cross-project| WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    HFImage --&gt;|importlib cross-project| WSIntegrations
+    HFSpaces --&gt;|importlib cross-project| WSIntegrations
+    Pollinations --&gt;|importlib cross-project| WSIntegrations
+    DallE3 --&gt; ImagesOut[output/images/*.png]
+    HFImage --&gt; ImagesOut
+    HFSpaces --&gt; ImagesOut
+    Pollinations --&gt; ImagesOut
+    SVGFallback --&gt; ImagesOut
+    ImagesOut --&gt; Portal[output/&lt;br/&gt;executive_brief_portal.html]
+    OpenAI --&gt; TextOut[output/briefs/*.md]
+    ElevenLabs --&gt; AudioOut[output/tts/*.mp3]
+    TextOut --&gt; Portal
+    AudioOut --&gt; Portal
+    %% FR-20260630-cross-project-roadmap-generator
+    RoadmapGen[⊕Workspace&lt;br/&gt;roadmap_generator.py]
+    RoadmapJSON[(⊕Workspace&lt;br/&gt;roadmap.json)]:::db
+    Tools --&gt;|subprocess: shells out| RoadmapGen
+    RoadmapGen --&gt; RoadmapJSON
+    RoadmapPanel -.-&gt;|reads roadmap.json| RoadmapJSON
+    RoadmapPanel --&gt;|Roadmap tab| Portal
+    %% PR#12 – todos DB
+    TodosUtil[src/utils/&lt;br/&gt;todos_db.py]
+    TodosDB[(src/data/&lt;br/&gt;manifest_todos.db)]
+    MigrateScript[tools/&lt;br/&gt;migrate_todos.py]
+    AllProjects([∞Life · ❤Music · ⟨ψ⟩Quantum&lt;br/&gt;· 👁Manifest · ⊕Workspace · ΣCapital])
+    TodoDoneAPI[POST /api/todo/done]
+    CoordinationMCP[src/integrations/coordination/&lt;br/&gt;mcp_server.py]
+    CoordinationTodos[src/integrations/coordination/&lt;br/&gt;todos_db.py]
+    FrLinkGate{Tyler confirmation&lt;br/&gt;required for fr_id linkage}
+    Tools --&gt; TodosUtil
+    TodosUtil --&gt; TodosDB
+    MigrateScript -.-&gt;|reads TODO_*.md| AllProjects
+    MigrateScript --&gt;|inserts| TodosDB
+    Tools --&gt;|auto_migrate on startup| MigrateScript
+    Tools --&gt;|gather_project_status| TodosDB
+    Portal --- TodoDoneAPI
+    TodoDoneAPI --&gt;|mark_done| TodosDB
+    CoordinationMCP --&gt;|governed todo operations| CoordinationTodos
+    CoordinationTodos ==&gt; TodosDB
+    CoordinationMCP --&gt;|fr_id linkage request| FrLinkGate
+    FrLinkGate --&gt;|confirmed only| CoordinationTodos
+    %% FR-20260524 – priority auto-rescorer
+    RescorerTool[tools/&lt;br/&gt;weekly_priority_rescore.py]
+    PriorityScorer[src/utils/&lt;br/&gt;priority_scorer.py]
+    RescorerLog[logs/&lt;br/&gt;priority_rescore.jsonl]
+    Triggers --&gt; RescorerTool
+    RescorerTool --&gt; TodosUtil
+    RescorerTool --&gt; PriorityScorer
+    RescorerTool --&gt; RescorerLog
+    %% FR-20260703-tts-queue-vocal-ollama
+    TtsQueueWorker[src/services/&lt;br/&gt;tts_queue_worker.py]
+    TtsQueueDB[(src/data/&lt;br/&gt;tts_queue.db)]
+    VocalSynthesis[src/integrations/&lt;br/&gt;vocal_synthesis.py]
+    OllamaIntegration[src/integrations/ollama/&lt;br/&gt;client.py]
+    OllamaServer[[Ollama local server&lt;br/&gt;localhost:11434]]
+    Triggers --&gt;|background thread pool| TtsQueueWorker
+    TtsQueueWorker --&gt; TtsQueueDB
+    TtsQueueWorker --&gt; ElevenLabs
+    TtsQueueWorker --&gt; AudioOut
+    VocalSynthesis --&gt; ElevenLabs
+    VocalSynthesis --&gt; AudioOut
+    OllamaIntegration --&gt;|importlib cross-project| WSIntegrations
+    OllamaIntegration --&gt; OllamaServer
+    Tools --&gt; OllamaIntegration
+    class TodosDB db
+    class TodosUtil,MigrateScript util
+    class AllProjects ws
+    class TodoDoneAPI manifest
+    class Triggers trig
+    class OpenAI,ElevenLabs,DallE3,HFImage,HFSpaces,Pollinations api
+    class TextOut,AudioOut,Portal,ImagesOut out
+    class WSIntegrations ws
+    class LilyPortrait util
+    class SVGFallback fallback
+    class RescorerTool util
+    class PriorityScorer util
+    class RescorerLog out
+    class RoadmapPanel util
+    class RoadmapJSON db
+    class RoadmapGen ws
+    class TtsQueueWorker,VocalSynthesis,OllamaIntegration util
+    class TtsQueueDB db
+    class OllamaServer ext
+    class CoordinationMCP,CoordinationTodos util
+    class FrLinkGate state
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef api      fill:#2a1a3a,stroke:#9e7aff,color:#e8d0f8
+classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
+</div>
+  <details><summary>Source: <code>diagrams/manifest-architecture.mmd</code></summary>
+  <pre data-source="diagrams/manifest-architecture.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Triggers[Task Scheduler · CLI · Manual] --&gt; Tools[tools/&lt;br/&gt;executive_audio_brief.py]
+    Tools --&gt; Briefs[brief generators]
+    Tools --&gt; LilyPortrait[src/utils/&lt;br/&gt;lily_portrait.py]
+    Tools --&gt; RoadmapPanel[src/utils/&lt;br/&gt;roadmap_panel.py]
+    Briefs --&gt; OpenAI[OpenAI&lt;br/&gt;OPENAPI_TOKEN]
+    Briefs --&gt; ElevenLabs[ElevenLabs&lt;br/&gt;ELEVENLABS_API_KEY]
+    LilyPortrait --&gt;|1st try| DallE3[DallE3Client&lt;br/&gt;⊕Workspace integration]
+    LilyPortrait --&gt;|2nd try| HFImage[HuggingFaceImageClient&lt;br/&gt;⊕Workspace integration]
+    LilyPortrait --&gt;|3rd try| HFSpaces[HFSpacesClient&lt;br/&gt;FLUX.1-schnell Gradio REST]
+    LilyPortrait --&gt;|4th try| Pollinations[PollinationsClient&lt;br/&gt;image.pollinations.ai]
+    LilyPortrait --&gt;|5th fallback| SVGFallback[SVG silhouette]
+    DallE3 --&gt;|importlib cross-project| WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    HFImage --&gt;|importlib cross-project| WSIntegrations
+    HFSpaces --&gt;|importlib cross-project| WSIntegrations
+    Pollinations --&gt;|importlib cross-project| WSIntegrations
+    DallE3 --&gt; ImagesOut[output/images/*.png]
+    HFImage --&gt; ImagesOut
+    HFSpaces --&gt; ImagesOut
+    Pollinations --&gt; ImagesOut
+    SVGFallback --&gt; ImagesOut
+    ImagesOut --&gt; Portal[output/&lt;br/&gt;executive_brief_portal.html]
+    OpenAI --&gt; TextOut[output/briefs/*.md]
+    ElevenLabs --&gt; AudioOut[output/tts/*.mp3]
+    TextOut --&gt; Portal
+    AudioOut --&gt; Portal
+    %% FR-20260630-cross-project-roadmap-generator
+    RoadmapGen[⊕Workspace&lt;br/&gt;roadmap_generator.py]
+    RoadmapJSON[(⊕Workspace&lt;br/&gt;roadmap.json)]:::db
+    Tools --&gt;|subprocess: shells out| RoadmapGen
+    RoadmapGen --&gt; RoadmapJSON
+    RoadmapPanel -.-&gt;|reads roadmap.json| RoadmapJSON
+    RoadmapPanel --&gt;|Roadmap tab| Portal
+    %% PR#12 – todos DB
+    TodosUtil[src/utils/&lt;br/&gt;todos_db.py]
+    TodosDB[(src/data/&lt;br/&gt;manifest_todos.db)]
+    MigrateScript[tools/&lt;br/&gt;migrate_todos.py]
+    AllProjects([∞Life · ❤Music · ⟨ψ⟩Quantum&lt;br/&gt;· 👁Manifest · ⊕Workspace · ΣCapital])
+    TodoDoneAPI[POST /api/todo/done]
+    CoordinationMCP[src/integrations/coordination/&lt;br/&gt;mcp_server.py]
+    CoordinationTodos[src/integrations/coordination/&lt;br/&gt;todos_db.py]
+    FrLinkGate{Tyler confirmation&lt;br/&gt;required for fr_id linkage}
+    Tools --&gt; TodosUtil
+    TodosUtil --&gt; TodosDB
+    MigrateScript -.-&gt;|reads TODO_*.md| AllProjects
+    MigrateScript --&gt;|inserts| TodosDB
+    Tools --&gt;|auto_migrate on startup| MigrateScript
+    Tools --&gt;|gather_project_status| TodosDB
+    Portal --- TodoDoneAPI
+    TodoDoneAPI --&gt;|mark_done| TodosDB
+    CoordinationMCP --&gt;|governed todo operations| CoordinationTodos
+    CoordinationTodos ==&gt; TodosDB
+    CoordinationMCP --&gt;|fr_id linkage request| FrLinkGate
+    FrLinkGate --&gt;|confirmed only| CoordinationTodos
+    %% FR-20260524 – priority auto-rescorer
+    RescorerTool[tools/&lt;br/&gt;weekly_priority_rescore.py]
+    PriorityScorer[src/utils/&lt;br/&gt;priority_scorer.py]
+    RescorerLog[logs/&lt;br/&gt;priority_rescore.jsonl]
+    Triggers --&gt; RescorerTool
+    RescorerTool --&gt; TodosUtil
+    RescorerTool --&gt; PriorityScorer
+    RescorerTool --&gt; RescorerLog
+    %% FR-20260703-tts-queue-vocal-ollama
+    TtsQueueWorker[src/services/&lt;br/&gt;tts_queue_worker.py]
+    TtsQueueDB[(src/data/&lt;br/&gt;tts_queue.db)]
+    VocalSynthesis[src/integrations/&lt;br/&gt;vocal_synthesis.py]
+    OllamaIntegration[src/integrations/ollama/&lt;br/&gt;client.py]
+    OllamaServer[[Ollama local server&lt;br/&gt;localhost:11434]]
+    Triggers --&gt;|background thread pool| TtsQueueWorker
+    TtsQueueWorker --&gt; TtsQueueDB
+    TtsQueueWorker --&gt; ElevenLabs
+    TtsQueueWorker --&gt; AudioOut
+    VocalSynthesis --&gt; ElevenLabs
+    VocalSynthesis --&gt; AudioOut
+    OllamaIntegration --&gt;|importlib cross-project| WSIntegrations
+    OllamaIntegration --&gt; OllamaServer
+    Tools --&gt; OllamaIntegration
+    class TodosDB db
+    class TodosUtil,MigrateScript util
+    class AllProjects ws
+    class TodoDoneAPI manifest
+    class Triggers trig
+    class OpenAI,ElevenLabs,DallE3,HFImage,HFSpaces,Pollinations api
+    class TextOut,AudioOut,Portal,ImagesOut out
+    class WSIntegrations ws
+    class LilyPortrait util
+    class SVGFallback fallback
+    class RescorerTool util
+    class PriorityScorer util
+    class RescorerLog out
+    class RoadmapPanel util
+    class RoadmapJSON db
+    class RoadmapGen ws
+    class TtsQueueWorker,VocalSynthesis,OllamaIntegration util
+    class TtsQueueDB db
+    class OllamaServer ext
+    class CoordinationMCP,CoordinationTodos util
+    class FrLinkGate state
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef api      fill:#2a1a3a,stroke:#9e7aff,color:#e8d0f8
+classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

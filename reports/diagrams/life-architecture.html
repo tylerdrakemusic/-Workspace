@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/life-architecture.mmd">
+  <title>Life Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Life Architecture</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Inputs[MyFitnessPal · Trainerize&lt;br/&gt;Bloodwork · Genomics · Journal]
+    Inputs --&gt; ETL[src/etl/&lt;br/&gt;importers + sync]
+    ETL --&gt; Sync[src/sync/&lt;br/&gt;trainerize_sync.py&lt;br/&gt;fetch_upcoming_workouts&lt;br/&gt;supplement_archiver.py]
+    Sync --&gt; DB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+    Sync --&gt; Watchdog[tools/sync_watchdog.py&lt;br/&gt;health tracking · alerts]
+    Watchdog --&gt; DB
+    Scheduler([Windows Task Scheduler&lt;br/&gt;daily 22:50]) --&gt; WithingsWatcher
+    WithingsWatcher[tools/withings_token_watcher.py&lt;br/&gt;token check · refresh] --&gt; WithingsRefresh[tools/withings_refresh.py]
+    WithingsWatcher --&gt; DB
+    WithingsRefresh --&gt; TokenFile[withings_tokens.json]
+    DB --&gt; Analytics[src/analytics/&lt;br/&gt;longevity · risk · trends]
+    Analytics --&gt; Reports[reports/&lt;br/&gt;longevity dashboard]
+    DB --&gt; Dashboard[src/dashboard/&lt;br/&gt;gen_upcoming_workouts_dashboard.py]
+    Dashboard --&gt; Output[tmp/biomarker_dashboard.html&lt;br/&gt;upcoming workouts panel]
+    DB --&gt; Protocols[Protocols &amp; Experiments]
+    DB --&gt; Budget[Budget Ledger]
+    NovaPortrait[src/utils/&lt;br/&gt;nova_portrait.py]
+    WGSProvider[src/utils/&lt;br/&gt;wgs_provider.py&lt;br/&gt;WGS provider ordering]
+    ResearchIndex[src/utils/&lt;br/&gt;research_index.py&lt;br/&gt;literature_entries indexing]
+    NovaConfigDB[src/utils/&lt;br/&gt;nova_config_db.py]
+    TruDx[src/etl/&lt;br/&gt;trudiagnostic_import.py&lt;br/&gt;epigenetic clocks · organ ages]
+    MigrateFR[src/utils/&lt;br/&gt;migrate_fr20260426.py&lt;br/&gt;lab_panels]
+    WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    NovaPortrait --&gt;|daily portrait PNG| Output
+    NovaPortrait -.-&gt;|lazy import HFSpaces+Pollinations| WSIntegrations
+    WGSProvider --&gt; DB
+    ResearchIndex --&gt; DB
+    NovaConfigDB --&gt; DB
+    TruDx --&gt; DB
+    MigrateFR --&gt; DB
+    class Inputs,Reports,Scheduler,TokenFile io
+    class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh,TruDx core
+    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR util
+    class WSIntegrations ws
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+</div>
+  <details><summary>Source: <code>diagrams/life-architecture.mmd</code></summary>
+  <pre data-source="diagrams/life-architecture.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Inputs[MyFitnessPal · Trainerize&lt;br/&gt;Bloodwork · Genomics · Journal]
+    Inputs --&gt; ETL[src/etl/&lt;br/&gt;importers + sync]
+    ETL --&gt; Sync[src/sync/&lt;br/&gt;trainerize_sync.py&lt;br/&gt;fetch_upcoming_workouts&lt;br/&gt;supplement_archiver.py]
+    Sync --&gt; DB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+    Sync --&gt; Watchdog[tools/sync_watchdog.py&lt;br/&gt;health tracking · alerts]
+    Watchdog --&gt; DB
+    Scheduler([Windows Task Scheduler&lt;br/&gt;daily 22:50]) --&gt; WithingsWatcher
+    WithingsWatcher[tools/withings_token_watcher.py&lt;br/&gt;token check · refresh] --&gt; WithingsRefresh[tools/withings_refresh.py]
+    WithingsWatcher --&gt; DB
+    WithingsRefresh --&gt; TokenFile[withings_tokens.json]
+    DB --&gt; Analytics[src/analytics/&lt;br/&gt;longevity · risk · trends]
+    Analytics --&gt; Reports[reports/&lt;br/&gt;longevity dashboard]
+    DB --&gt; Dashboard[src/dashboard/&lt;br/&gt;gen_upcoming_workouts_dashboard.py]
+    Dashboard --&gt; Output[tmp/biomarker_dashboard.html&lt;br/&gt;upcoming workouts panel]
+    DB --&gt; Protocols[Protocols &amp; Experiments]
+    DB --&gt; Budget[Budget Ledger]
+    NovaPortrait[src/utils/&lt;br/&gt;nova_portrait.py]
+    WGSProvider[src/utils/&lt;br/&gt;wgs_provider.py&lt;br/&gt;WGS provider ordering]
+    ResearchIndex[src/utils/&lt;br/&gt;research_index.py&lt;br/&gt;literature_entries indexing]
+    NovaConfigDB[src/utils/&lt;br/&gt;nova_config_db.py]
+    TruDx[src/etl/&lt;br/&gt;trudiagnostic_import.py&lt;br/&gt;epigenetic clocks · organ ages]
+    MigrateFR[src/utils/&lt;br/&gt;migrate_fr20260426.py&lt;br/&gt;lab_panels]
+    WSIntegrations[(⊕Workspace&lt;br/&gt;src/integrations/)]
+    NovaPortrait --&gt;|daily portrait PNG| Output
+    NovaPortrait -.-&gt;|lazy import HFSpaces+Pollinations| WSIntegrations
+    WGSProvider --&gt; DB
+    ResearchIndex --&gt; DB
+    NovaConfigDB --&gt; DB
+    TruDx --&gt; DB
+    MigrateFR --&gt; DB
+    class Inputs,Reports,Scheduler,TokenFile io
+    class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh,TruDx core
+    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR util
+    class WSIntegrations ws
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

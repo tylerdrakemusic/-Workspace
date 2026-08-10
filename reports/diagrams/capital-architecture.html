@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/capital-architecture.mmd">
+  <title>Capital Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Capital Architecture</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Manual[Manual placement&lt;br/&gt;Schwab personal account&lt;br/&gt;off-market / evening preferred]
+    Signals[Public market signals&lt;br/&gt;news · filings · sentiment] --&gt; Ingest[src/ingest/&lt;br/&gt;signal fetchers — future]
+    Ingest --&gt; DB[(sigmacapital.db&lt;br/&gt;SQLCipher)]
+    Research[src/research/&lt;br/&gt;off-market pick generation — future] --&gt; DB
+    Agents[src/agents/&lt;br/&gt;research, risk] --&gt; DB
+    Agents --&gt;|news/sentiment batch| Perplexity[(Perplexity.ai&lt;br/&gt;Sonar)]
+    Agents --&gt;|pricing/volatility| YFinance[(yfinance&lt;br/&gt;Yahoo Finance)]
+    TradeApprovalGate[&quot;Trade Approval Gate&quot;] --&gt;|pricing| YFinance
+    TradeApprovalGate --&gt;|AI reasoning| Anthropic[(Anthropic&lt;br/&gt;Claude API)]
+    TradeApprovalGate --&gt;|news| Perplexity
+    TradeApprovalGate --&gt; DB
+    MarginPolicy[margin_policy.py&lt;br/&gt;overnight margin policy&lt;br/&gt;caps · proof freshness · drawdown · composite score]
+    MarginStore[margin_store.py&lt;br/&gt;exposure + reservation persistence]
+    MarginGate[Overnight-margin hard gate&lt;br/&gt;fail-closed policy decision]:::state
+    MarginProof[Schwab margin proof/recheck&lt;br/&gt;AccountsTradingClient.get_account&lt;br/&gt;explicit margin fields + observed date]
+    MarginUI[Independent UI margin acknowledgment&lt;br/&gt;Tyler confirms margin use separately]:::state
+    SelectedAccount[Selected account ref&lt;br/&gt;Trade Approval Gate UI]
+    PersistedAccount[Persisted approval_account_ref&lt;br/&gt;candidate → execution account binding]
+    MarginReservation[Margin reservation&lt;br/&gt;pending → consumed / released]
+    TradeApprovalGate --&gt; MarginUI
+    TradeApprovalGate --&gt; SelectedAccount
+    SelectedAccount --&gt; MarginProof
+    MarginProof --&gt; MarginPolicy
+    MarginUI --&gt; MarginPolicy
+    MarginPolicy --&gt; MarginGate
+    MarginGate --&gt;|allowed only after proof, recheck, caps, and composite checks| MarginStore
+    SelectedAccount --&gt; PersistedAccount
+    PersistedAccount ==&gt; DB
+    MarginStore --&gt; MarginReservation
+    MarginReservation ==&gt; DB
+    MarginProof --&gt;|live proof and recheck| DB
+    ResearchAgent[&quot;Σcapital-research&lt;br/&gt;.agent.md&quot;] --&gt; Agents
+    DB --&gt; Picks[picks table&lt;br/&gt;weekly recommendations]
+    DB --&gt; Portfolio[portfolio + trades&lt;br/&gt;simulated + human-confirmed live]
+    Picks --&gt; Tyler
+    %% Schwab API M1 — OAuth + Market Data ingestion (FR-20260628-sigmacapital-schwab-api)
+    Schwab[(Charles Schwab API&lt;br/&gt;OAuth 2.0)] --&gt; OAuthLoop[HTTPS loopback&lt;br/&gt;port 8182 market data&lt;br/&gt;port 8183 trading]
+    OAuthLoop --&gt; TokenStore[token_store&lt;br/&gt;data/secrets/ · encrypted via cryptography&lt;br/&gt;0600 perms · gitignored]
+    TokenStore --&gt; MarketData[MarketDataClient&lt;br/&gt;src/integrations/schwab/market_data.py]
+    MarketData --&gt;|source=schwab_marketdata&lt;br/&gt;category=quote| DB
+    TradeGate[Trade Gate&lt;br/&gt;port 7475] --&gt;|GET /api/schwab/status| Reauth[tools/schwab_reauth.py]
+    TradeGate --&gt;|POST /api/schwab/reauth| Reauth
+    Reauth -.refreshes.-&gt; TokenStore
+    TokenStore --&gt; AccountsTrading[AccountsTradingClient&lt;br/&gt;src/integrations/schwab/accounts_trading.py]
+    AccountsTrading --&gt;|account/trading endpoints| Schwab
+    Compliance[COMPLIANCE.md&lt;br/&gt;Schwab API authorized&lt;br/&gt;M1: market data + re-auth&lt;br/&gt;M2 live order placement AUTHORIZED + ACTIVE&lt;br/&gt;FR-20260801-sigmacapital-real-order-placement]:::state
+    Compliance -.permits as one option.-&gt; Manual
+    Compliance -.enforces.-&gt; Research
+    Compliance -.governs.-&gt; Schwab
+    Compliance -.governs.-&gt; AccountsTrading
+    Hook[.git/hooks/pre-push&lt;br/&gt;mirrors ∞Life PROTECTION_HOOK]:::state
+    Hook -.blocks.-&gt; DB
+    %% Exit strategy lifecycle (FR-20260704-sigmacapital-exit-strategy)
+    ExitStrategy[exit_strategy.py&lt;br/&gt;ATR threshold calc · short-mirror logic&lt;br/&gt;supersede/partial exit CRUD]
+    TradeApprovalGate --&gt;|approved candidate| ExitStrategy
+    ExitStrategy --&gt;|creates entry exit row| DB
+    ExitReeval[&quot;exit_reevaluation&lt;br/&gt;src/agents/exit_reevaluation.py&lt;br/&gt;(daily scheduled job)&quot;]
+    DB --&gt;|active exits| ExitReeval
+    ExitReeval --&gt;|live price/ATR| YFinance
+    ExitReeval --&gt;|sentiment| Perplexity
+    ExitReeval --&gt;|supersede/trigger/partial-close&lt;br/&gt;max-hold forced exit| DB
+    GtcOrder[gtc_order.py&lt;br/&gt;construct-only GTC payloads&lt;br/&gt;never live-submits]
+    ExitReeval --&gt;|triggered exits| GtcOrder
+    GtcOrder -.gated by.-&gt; Compliance
+    Technicals[technicals.py&lt;br/&gt;src/utils/technicals.py&lt;br/&gt;ATR/quote-based indicator calc]
+    Technicals --&gt;|ATR| ExitStrategy
+    Backfill[backfill_exits.py&lt;br/&gt;tools/backfill_exits.py&lt;br/&gt;one-time backfill for&lt;br/&gt;positions lacking exit rows]
+    Technicals --&gt;|ATR at entry| Backfill
+    Backfill --&gt;|backfilled exit rows| DB
+    %% Real-trade audit logging + compliance trail (FR-20260711-sigmacapital-real-trade-audit-logging)
+    LogRealTrade[log_real_trade.py&lt;br/&gt;Tyler-invoked audit CLI&lt;br/&gt;NOT part of picker/approval pipeline]
+    Tyler --&gt; LogRealTrade
+    LogRealTrade --&gt;|writes audit row&lt;br/&gt;mode=real| DB
+    LogRealTrade --&gt;|verify only — does not place orders| AccountsTrading
+    Agents --&gt;|get_account/get_positions&lt;br/&gt;gates mode=real @ min confidence 0.85| AccountsTrading
+    %% M2 live order placement (FR-20260801-sigmacapital-real-order-placement)
+    TradeGate --&gt;|POST /api/approve-real/&amp;lt;id&amp;gt;&lt;br/&gt;human-confirmed — SOLE real-mode entry point| ApproveCandidate[&quot;approve_candidate(candidate_id, *, real_money_confirmed=False,&lt;br/&gt;margin_ui_acknowledged=False, selected_account_ref=None)&lt;br/&gt;src/utils/candidate_glue.py&quot;]
+    ApproveCandidate --&gt;|selected account| PersistedAccount
+    ApproveCandidate --&gt;|overnight-margin candidates| MarginGate
+    MarginGate --&gt;|reserve atomically before execution row| MarginStore
+    RealGate[&quot;REAL-MONEY AUTHORIZATION GATE&lt;br/&gt;AUTHORIZED_REAL_MONEY_FR_ID (module-level code constant)&lt;br/&gt;AND real_money_confirmed=True (kwarg, defaults False)&lt;br/&gt;⚠ code constant — NOT runtime-toggleable;&lt;br/&gt;revocation requires process restart&quot;]:::state
+    ApproveCandidate --&gt; RealGate
+    RealGate --&gt;|both conditions satisfied| SubmitRealOrder[&quot;submit_real_order()&lt;br/&gt;src/utils/candidate_glue.py&quot;]
+    RealGate -.fails closed.-&gt; DB
+    SubmitRealOrder --&gt;|place_order LIVE| AccountsTrading
+    SubmitRealOrder --&gt;|broker_order_id on success| DB
+    SubmitRealOrder -.-&gt;|broker_error · placement_warnings&lt;br/&gt;on failure| DB
+    SubmitRealOrder --&gt;|consume reservation on successful execution| MarginStore
+    SubmitRealOrder --&gt;|release pending reservation on failure| MarginStore
+    MarginStore --&gt;|consume| MarginReservation
+    MarginStore --&gt;|release with released_at audit timestamp| MarginReservation
+    LegacyRoute[&quot;POST /approve/&amp;lt;candidate_id&amp;gt;&lt;br/&gt;DELETED — legacy unguarded route&quot;]:::state
+    LegacyRoute -.removed.-&gt; TradeGate
+    TradeGate --&gt;|POST /api/approve&lt;br/&gt;inverse guard: refuses mode=real candidates| ApproveCandidate
+    TradeApprovalGate --&gt;|re-verify pending real trades&lt;br/&gt;on dashboard load| LogRealTrade
+    WSFrCli[⊕ Workspace&lt;br/&gt;fr_cli.py record-event]:::ws
+    LogRealTrade -.-&gt;|&quot;subprocess: fr_cli.py record-event&lt;br/&gt;(compliance audit)&quot;| WSFrCli
+    TradeApprovalGate -.-&gt;|&quot;subprocess: fr_cli.py record-event&lt;br/&gt;(compliance audit)&quot;| WSFrCli
+    %% Nightly order reconciliation (FR-20260803-sigmacapital-order-reconciliation)
+    ReconcileOrders[&quot;reconcile_orders.py&lt;br/&gt;tools/reconcile_orders.py&lt;br/&gt;nightly cron — Windows Task Scheduler&lt;br/&gt;schedule_order_sync.xml&quot;]
+    ReconcileOrders --&gt;|GET /accounts/{hash}/orders| AccountsTrading
+    AccountsTrading --&gt;|order status per broker_order_id| ReconcileOrders
+    ReconcileOrders --&gt;|update execution_history.status&lt;br/&gt;+ broker_status| DB
+    class ReconcileOrders orch
+    class Signals,Manual state
+    class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
+    class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
+    class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
+    class LogRealTrade orch
+    class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
+    class MarginGate,MarginUI state
+    class OAuthLoop,TokenStore state
+    class DB db
+    class Perplexity,YFinance,Anthropic,Schwab ext
+    class Tyler tyler
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+</div>
+  <details><summary>Source: <code>diagrams/capital-architecture.mmd</code></summary>
+  <pre data-source="diagrams/capital-architecture.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+graph TB
+    Tyler([Tyler]) --&gt; Manual[Manual placement&lt;br/&gt;Schwab personal account&lt;br/&gt;off-market / evening preferred]
+    Signals[Public market signals&lt;br/&gt;news · filings · sentiment] --&gt; Ingest[src/ingest/&lt;br/&gt;signal fetchers — future]
+    Ingest --&gt; DB[(sigmacapital.db&lt;br/&gt;SQLCipher)]
+    Research[src/research/&lt;br/&gt;off-market pick generation — future] --&gt; DB
+    Agents[src/agents/&lt;br/&gt;research, risk] --&gt; DB
+    Agents --&gt;|news/sentiment batch| Perplexity[(Perplexity.ai&lt;br/&gt;Sonar)]
+    Agents --&gt;|pricing/volatility| YFinance[(yfinance&lt;br/&gt;Yahoo Finance)]
+    TradeApprovalGate[&quot;Trade Approval Gate&quot;] --&gt;|pricing| YFinance
+    TradeApprovalGate --&gt;|AI reasoning| Anthropic[(Anthropic&lt;br/&gt;Claude API)]
+    TradeApprovalGate --&gt;|news| Perplexity
+    TradeApprovalGate --&gt; DB
+    MarginPolicy[margin_policy.py&lt;br/&gt;overnight margin policy&lt;br/&gt;caps · proof freshness · drawdown · composite score]
+    MarginStore[margin_store.py&lt;br/&gt;exposure + reservation persistence]
+    MarginGate[Overnight-margin hard gate&lt;br/&gt;fail-closed policy decision]:::state
+    MarginProof[Schwab margin proof/recheck&lt;br/&gt;AccountsTradingClient.get_account&lt;br/&gt;explicit margin fields + observed date]
+    MarginUI[Independent UI margin acknowledgment&lt;br/&gt;Tyler confirms margin use separately]:::state
+    SelectedAccount[Selected account ref&lt;br/&gt;Trade Approval Gate UI]
+    PersistedAccount[Persisted approval_account_ref&lt;br/&gt;candidate → execution account binding]
+    MarginReservation[Margin reservation&lt;br/&gt;pending → consumed / released]
+    TradeApprovalGate --&gt; MarginUI
+    TradeApprovalGate --&gt; SelectedAccount
+    SelectedAccount --&gt; MarginProof
+    MarginProof --&gt; MarginPolicy
+    MarginUI --&gt; MarginPolicy
+    MarginPolicy --&gt; MarginGate
+    MarginGate --&gt;|allowed only after proof, recheck, caps, and composite checks| MarginStore
+    SelectedAccount --&gt; PersistedAccount
+    PersistedAccount ==&gt; DB
+    MarginStore --&gt; MarginReservation
+    MarginReservation ==&gt; DB
+    MarginProof --&gt;|live proof and recheck| DB
+    ResearchAgent[&quot;Σcapital-research&lt;br/&gt;.agent.md&quot;] --&gt; Agents
+    DB --&gt; Picks[picks table&lt;br/&gt;weekly recommendations]
+    DB --&gt; Portfolio[portfolio + trades&lt;br/&gt;simulated + human-confirmed live]
+    Picks --&gt; Tyler
+    %% Schwab API M1 — OAuth + Market Data ingestion (FR-20260628-sigmacapital-schwab-api)
+    Schwab[(Charles Schwab API&lt;br/&gt;OAuth 2.0)] --&gt; OAuthLoop[HTTPS loopback&lt;br/&gt;port 8182 market data&lt;br/&gt;port 8183 trading]
+    OAuthLoop --&gt; TokenStore[token_store&lt;br/&gt;data/secrets/ · encrypted via cryptography&lt;br/&gt;0600 perms · gitignored]
+    TokenStore --&gt; MarketData[MarketDataClient&lt;br/&gt;src/integrations/schwab/market_data.py]
+    MarketData --&gt;|source=schwab_marketdata&lt;br/&gt;category=quote| DB
+    TradeGate[Trade Gate&lt;br/&gt;port 7475] --&gt;|GET /api/schwab/status| Reauth[tools/schwab_reauth.py]
+    TradeGate --&gt;|POST /api/schwab/reauth| Reauth
+    Reauth -.refreshes.-&gt; TokenStore
+    TokenStore --&gt; AccountsTrading[AccountsTradingClient&lt;br/&gt;src/integrations/schwab/accounts_trading.py]
+    AccountsTrading --&gt;|account/trading endpoints| Schwab
+    Compliance[COMPLIANCE.md&lt;br/&gt;Schwab API authorized&lt;br/&gt;M1: market data + re-auth&lt;br/&gt;M2 live order placement AUTHORIZED + ACTIVE&lt;br/&gt;FR-20260801-sigmacapital-real-order-placement]:::state
+    Compliance -.permits as one option.-&gt; Manual
+    Compliance -.enforces.-&gt; Research
+    Compliance -.governs.-&gt; Schwab
+    Compliance -.governs.-&gt; AccountsTrading
+    Hook[.git/hooks/pre-push&lt;br/&gt;mirrors ∞Life PROTECTION_HOOK]:::state
+    Hook -.blocks.-&gt; DB
+    %% Exit strategy lifecycle (FR-20260704-sigmacapital-exit-strategy)
+    ExitStrategy[exit_strategy.py&lt;br/&gt;ATR threshold calc · short-mirror logic&lt;br/&gt;supersede/partial exit CRUD]
+    TradeApprovalGate --&gt;|approved candidate| ExitStrategy
+    ExitStrategy --&gt;|creates entry exit row| DB
+    ExitReeval[&quot;exit_reevaluation&lt;br/&gt;src/agents/exit_reevaluation.py&lt;br/&gt;(daily scheduled job)&quot;]
+    DB --&gt;|active exits| ExitReeval
+    ExitReeval --&gt;|live price/ATR| YFinance
+    ExitReeval --&gt;|sentiment| Perplexity
+    ExitReeval --&gt;|supersede/trigger/partial-close&lt;br/&gt;max-hold forced exit| DB
+    GtcOrder[gtc_order.py&lt;br/&gt;construct-only GTC payloads&lt;br/&gt;never live-submits]
+    ExitReeval --&gt;|triggered exits| GtcOrder
+    GtcOrder -.gated by.-&gt; Compliance
+    Technicals[technicals.py&lt;br/&gt;src/utils/technicals.py&lt;br/&gt;ATR/quote-based indicator calc]
+    Technicals --&gt;|ATR| ExitStrategy
+    Backfill[backfill_exits.py&lt;br/&gt;tools/backfill_exits.py&lt;br/&gt;one-time backfill for&lt;br/&gt;positions lacking exit rows]
+    Technicals --&gt;|ATR at entry| Backfill
+    Backfill --&gt;|backfilled exit rows| DB
+    %% Real-trade audit logging + compliance trail (FR-20260711-sigmacapital-real-trade-audit-logging)
+    LogRealTrade[log_real_trade.py&lt;br/&gt;Tyler-invoked audit CLI&lt;br/&gt;NOT part of picker/approval pipeline]
+    Tyler --&gt; LogRealTrade
+    LogRealTrade --&gt;|writes audit row&lt;br/&gt;mode=real| DB
+    LogRealTrade --&gt;|verify only — does not place orders| AccountsTrading
+    Agents --&gt;|get_account/get_positions&lt;br/&gt;gates mode=real @ min confidence 0.85| AccountsTrading
+    %% M2 live order placement (FR-20260801-sigmacapital-real-order-placement)
+    TradeGate --&gt;|POST /api/approve-real/&amp;lt;id&amp;gt;&lt;br/&gt;human-confirmed — SOLE real-mode entry point| ApproveCandidate[&quot;approve_candidate(candidate_id, *, real_money_confirmed=False,&lt;br/&gt;margin_ui_acknowledged=False, selected_account_ref=None)&lt;br/&gt;src/utils/candidate_glue.py&quot;]
+    ApproveCandidate --&gt;|selected account| PersistedAccount
+    ApproveCandidate --&gt;|overnight-margin candidates| MarginGate
+    MarginGate --&gt;|reserve atomically before execution row| MarginStore
+    RealGate[&quot;REAL-MONEY AUTHORIZATION GATE&lt;br/&gt;AUTHORIZED_REAL_MONEY_FR_ID (module-level code constant)&lt;br/&gt;AND real_money_confirmed=True (kwarg, defaults False)&lt;br/&gt;⚠ code constant — NOT runtime-toggleable;&lt;br/&gt;revocation requires process restart&quot;]:::state
+    ApproveCandidate --&gt; RealGate
+    RealGate --&gt;|both conditions satisfied| SubmitRealOrder[&quot;submit_real_order()&lt;br/&gt;src/utils/candidate_glue.py&quot;]
+    RealGate -.fails closed.-&gt; DB
+    SubmitRealOrder --&gt;|place_order LIVE| AccountsTrading
+    SubmitRealOrder --&gt;|broker_order_id on success| DB
+    SubmitRealOrder -.-&gt;|broker_error · placement_warnings&lt;br/&gt;on failure| DB
+    SubmitRealOrder --&gt;|consume reservation on successful execution| MarginStore
+    SubmitRealOrder --&gt;|release pending reservation on failure| MarginStore
+    MarginStore --&gt;|consume| MarginReservation
+    MarginStore --&gt;|release with released_at audit timestamp| MarginReservation
+    LegacyRoute[&quot;POST /approve/&amp;lt;candidate_id&amp;gt;&lt;br/&gt;DELETED — legacy unguarded route&quot;]:::state
+    LegacyRoute -.removed.-&gt; TradeGate
+    TradeGate --&gt;|POST /api/approve&lt;br/&gt;inverse guard: refuses mode=real candidates| ApproveCandidate
+    TradeApprovalGate --&gt;|re-verify pending real trades&lt;br/&gt;on dashboard load| LogRealTrade
+    WSFrCli[⊕ Workspace&lt;br/&gt;fr_cli.py record-event]:::ws
+    LogRealTrade -.-&gt;|&quot;subprocess: fr_cli.py record-event&lt;br/&gt;(compliance audit)&quot;| WSFrCli
+    TradeApprovalGate -.-&gt;|&quot;subprocess: fr_cli.py record-event&lt;br/&gt;(compliance audit)&quot;| WSFrCli
+    %% Nightly order reconciliation (FR-20260803-sigmacapital-order-reconciliation)
+    ReconcileOrders[&quot;reconcile_orders.py&lt;br/&gt;tools/reconcile_orders.py&lt;br/&gt;nightly cron — Windows Task Scheduler&lt;br/&gt;schedule_order_sync.xml&quot;]
+    ReconcileOrders --&gt;|GET /accounts/{hash}/orders| AccountsTrading
+    AccountsTrading --&gt;|order status per broker_order_id| ReconcileOrders
+    ReconcileOrders --&gt;|update execution_history.status&lt;br/&gt;+ broker_status| DB
+    class ReconcileOrders orch
+    class Signals,Manual state
+    class Ingest,Research,Picks,Portfolio,TradeApprovalGate orch
+    class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading orch
+    class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
+    class LogRealTrade orch
+    class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
+    class MarginGate,MarginUI state
+    class OAuthLoop,TokenStore state
+    class DB db
+    class Perplexity,YFinance,Anthropic,Schwab ext
+    class Tyler tyler
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

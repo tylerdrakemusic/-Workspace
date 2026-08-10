@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/music-icecast-primary-architecture.mmd">
+  <title>Music Icecast Primary Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Music Icecast Primary Architecture</h1>
+  <div class="mermaid">flowchart LR
+  subgraph UX[Local User Experience]
+    PANEL[TJD Local Panel :8100]
+    BROWSER[Browser Audio Player]
+  end
+
+  subgraph MUSIC[❤Music Runtime]
+    API[/api/now_playing]
+    STREAM[/stream]
+    SEL[Source Selector]
+    FALLBACK[Legacy Flask Broadcaster --backend local]
+  end
+
+  subgraph ICECAST[Icecast Runtime WSL]
+    MOUNT[(Icecast /stream)]
+    STATUS[(status-json.xsl)]
+    LIQ[Liquidsoap]
+  end
+
+  subgraph CATALOG[Catalog Policy]
+    MUZIC[G:/Muzic Primary]
+    TYLER[catalog/masters + catalog/ep Fallback]
+  end
+
+  PANEL --&gt; API
+  PANEL --&gt; STREAM
+  BROWSER --&gt; STREAM
+
+  API --&gt; STATUS
+  STREAM --&gt; MOUNT
+
+  LIQ --&gt; MOUNT
+  LIQ --&gt; SEL
+  SEL --&gt; MUZIC
+  SEL --&gt; TYLER
+
+  PANEL -. explicit fallback path only .-&gt; FALLBACK
+
+  classDef default fill:#d9f7e8,stroke:#1f7a4c,stroke-width:2px
+  classDef infra fill:#e7f0ff,stroke:#1e4fa1,stroke-width:2px
+  classDef fallback fill:#fff3d6,stroke:#a16a00,stroke-width:2px
+
+  class API,STREAM,SEL default
+  class MOUNT,STATUS,LIQ infra
+  class FALLBACK fallback
+</div>
+  <details><summary>Source: <code>diagrams/music-icecast-primary-architecture.mmd</code></summary>
+  <pre data-source="diagrams/music-icecast-primary-architecture.mmd">flowchart LR
+  subgraph UX[Local User Experience]
+    PANEL[TJD Local Panel :8100]
+    BROWSER[Browser Audio Player]
+  end
+
+  subgraph MUSIC[❤Music Runtime]
+    API[/api/now_playing]
+    STREAM[/stream]
+    SEL[Source Selector]
+    FALLBACK[Legacy Flask Broadcaster --backend local]
+  end
+
+  subgraph ICECAST[Icecast Runtime WSL]
+    MOUNT[(Icecast /stream)]
+    STATUS[(status-json.xsl)]
+    LIQ[Liquidsoap]
+  end
+
+  subgraph CATALOG[Catalog Policy]
+    MUZIC[G:/Muzic Primary]
+    TYLER[catalog/masters + catalog/ep Fallback]
+  end
+
+  PANEL --&gt; API
+  PANEL --&gt; STREAM
+  BROWSER --&gt; STREAM
+
+  API --&gt; STATUS
+  STREAM --&gt; MOUNT
+
+  LIQ --&gt; MOUNT
+  LIQ --&gt; SEL
+  SEL --&gt; MUZIC
+  SEL --&gt; TYLER
+
+  PANEL -. explicit fallback path only .-&gt; FALLBACK
+
+  classDef default fill:#d9f7e8,stroke:#1f7a4c,stroke-width:2px
+  classDef infra fill:#e7f0ff,stroke:#1e4fa1,stroke-width:2px
+  classDef fallback fill:#fff3d6,stroke:#a16a00,stroke-width:2px
+
+  class API,STREAM,SEL default
+  class MOUNT,STATUS,LIQ infra
+  class FALLBACK fallback
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

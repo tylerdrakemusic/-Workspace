@@ -9,6 +9,7 @@ Covers:
 from __future__ import annotations
 
 import sys
+import html
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -32,6 +33,7 @@ def diagrams_workspace(tmp_path, monkeypatch):
     monkeypatch.setattr(dd, "DIAGRAMS_DIR", diagrams)
     monkeypatch.setattr(dd, "REPORTS_DIR", reports)
     monkeypatch.setattr(dd, "SVG_OUT_DIR", svg_out)
+    monkeypatch.setattr(dd, "HTML_OUT_DIR", svg_out)
     monkeypatch.setattr(dd, "INDEX_PATH", reports / "diagrams_dashboard.html")
     return tmp_path
 
@@ -52,6 +54,49 @@ def test_discover_diagrams_finds_mmd(diagrams_workspace):
     found = dd.discover_diagrams()
     assert len(found) == 2
     assert all(p.suffix == ".mmd" for p in found)
+
+
+def test_discover_diagrams_recurses_into_proof_sources(diagrams_workspace):
+    root_source = _write_mmd(diagrams_workspace, "capital-architecture")
+    proof_dir = diagrams_workspace / "proof" / "FR-20260602-cap-picker-pipeline"
+    proof_dir.mkdir(parents=True)
+    proof_source = proof_dir / "capital-db-schema.mmd"
+    proof_source.write_text("erDiagram\n A ||--o{ B : has\n", encoding="utf-8")
+
+    assert dd.discover_diagrams() == [root_source, proof_source]
+
+
+def test_collision_safe_artifact_names_preserve_proof_provenance(diagrams_workspace):
+    root_source = _write_mmd(diagrams_workspace, "capital-architecture")
+    proof_dir = diagrams_workspace / "proof" / "FR-20260602-cap-picker-pipeline"
+    proof_dir.mkdir(parents=True)
+    proof_source = proof_dir / "capital-architecture.mmd"
+    proof_source.write_text("graph LR\n Proof --> Snapshot\n", encoding="utf-8")
+
+    root_artifact = dd.publish_html_artifact(root_source)
+    proof_artifact = dd.publish_html_artifact(proof_source)
+
+    assert root_artifact.name == "capital-architecture.html"
+    assert proof_artifact.name == "proof--FR-20260602-cap-picker-pipeline--capital-architecture.html"
+    assert root_artifact != proof_artifact
+    proof_html = proof_artifact.read_text(encoding="utf-8")
+    assert 'data-source="proof/FR-20260602-cap-picker-pipeline/capital-architecture.mmd"' in proof_html
+    assert html.escape("graph LR\n Proof --> Snapshot\n") in proof_html
+
+
+def test_publish_html_artifact_is_deterministic_and_traceable(diagrams_workspace):
+    source = "graph LR\n A --> B\n"
+    source_path = _write_mmd(diagrams_workspace, "workspace-architecture", source)
+
+    first = dd.publish_html_artifact(source_path)
+    first_bytes = first.read_bytes()
+    second = dd.publish_html_artifact(source_path)
+
+    assert first == diagrams_workspace / "reports" / "diagrams" / "workspace-architecture.html"
+    assert second.read_bytes() == first_bytes
+    html_text = first.read_text(encoding="utf-8")
+    assert html.escape(source) in html_text
+    assert 'data-source="diagrams/workspace-architecture.mmd"' in html_text
 
 
 def test_render_all_success(diagrams_workspace):
@@ -79,6 +124,57 @@ def test_render_all_handles_errors(diagrams_workspace):
     assert results["workspace-broken"]["path"].exists()
     assert "fallback_error" in results["workspace-broken"]
     assert "backend down" in results["workspace-broken"]["fallback_error"]
+    assert results["workspace-broken"]["artifact_path"].exists()
+
+
+def test_build_index_uses_html_artifacts_as_canonical_output(diagrams_workspace):
+    _write_mmd(diagrams_workspace, "workspace-architecture")
+    fake_client = MagicMock()
+    fake_client.render.return_value = b"<svg/>"
+
+    html_str = dd.build_index(dd.render_all(client=fake_client))
+
+    assert 'src="diagrams/workspace-architecture.html"' in html_str
+    assert "Open HTML" in html_str
+    assert 'type="image/svg+xml"' not in html_str
+
+
+def test_dashboard_includes_recursive_collision_safe_artifacts(diagrams_workspace):
+    _write_mmd(diagrams_workspace, "capital-architecture", "graph LR\n Root --> Diagram\n")
+    proof_dir = diagrams_workspace / "proof" / "FR-20260602-cap-picker-pipeline"
+    proof_dir.mkdir(parents=True)
+    (proof_dir / "capital-architecture.mmd").write_text(
+        "graph LR\n Proof --> Snapshot\n", encoding="utf-8"
+    )
+
+    fake_client = MagicMock()
+    fake_client.render.return_value = b"<svg/>"
+    results = dd.render_all(client=fake_client)
+    html_str = dd.build_index(results)
+
+    assert len(results) == 2
+    assert 'src="diagrams/capital-architecture.html"' in html_str
+    assert 'src="diagrams/proof--FR-20260602-cap-picker-pipeline--capital-architecture.html"' in html_str
+    assert "proof/FR-20260602-cap-picker-pipeline/capital-architecture.mmd" in html_str
+
+
+def test_publish_all_html_covers_every_canonical_source(diagrams_workspace):
+    for name in ["workspace-one", "workspace-two", "music-one"]:
+        _write_mmd(diagrams_workspace, name)
+
+    artifacts = dd.publish_all_html()
+
+    assert set(artifacts) == {"workspace-one", "workspace-two", "music-one"}
+    assert all(path.suffix == ".html" and path.exists() for path in artifacts.values())
+
+
+def test_discover_html_artifacts_finds_published_outputs(diagrams_workspace):
+    _write_mmd(diagrams_workspace, "workspace-architecture")
+    dd.publish_all_html()
+
+    found = dd.discover_html_artifacts()
+
+    assert found == {"workspace-architecture": diagrams_workspace / "reports" / "diagrams" / "workspace-architecture.html"}
 
 
 def test_build_index_excludes_live_editor(diagrams_workspace):

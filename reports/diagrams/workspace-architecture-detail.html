@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/workspace-architecture-detail.mmd">
+  <title>Workspace Architecture Detail | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Workspace Architecture Detail</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Tools[&quot;tools/&quot;]
+        Portal[dashboard_portal.py]
+        Registry[dashboard_registry.py]
+        Bench[bench_dashboard.py]
+        Diagrams[diagrams_dashboard.py]
+        FR[fr_dashboard.py]
+        Sec[security_dashboard.py]
+        Ops[agent_ops_monitor.py]
+    end
+    subgraph Src[&quot;src/&quot;]
+        subgraph UtilsGroup[&quot;utils/&quot;]
+            direction LR
+            UtilsCore[core&lt;br/&gt;perf_cli · proof_cli&lt;br/&gt;init_db]
+            UtilsFR[FR lifecycle&lt;br/&gt;fr_cli · fr_server&lt;br/&gt;init_fr_db · migrate_fr_target_quarter&lt;br/&gt;seed_target_quarters]
+            UtilsSec[security&lt;br/&gt;security_scan · security_scan_nightly&lt;br/&gt;agent_frontmatter_integrity]
+            UtilsDiscovery[discovery/gen&lt;br/&gt;workspace_discovery · roadmap_generator&lt;br/&gt;gen_qee · complexity_router · tech_debt_scanner]
+            UtilsPerf[perf/health&lt;br/&gt;perf_regression_alerter · api_health_monitor&lt;br/&gt;proof_health_verifier · record_overseer_perf]
+            UtilsData[data/infra&lt;br/&gt;mcp_status · sqlcipher_mcp_server&lt;br/&gt;ollama_model_inventory · migrate_ledgers_to_db]
+            CoordinationMCP[coordination_mcp_server.py]
+            FRCLI[fr_cli.py]
+            Allowlist{Fixed allowlisted&lt;br/&gt;operation boundary}
+        end
+        Integrations[integrations/&lt;br/&gt;elevenlabs · mermaid&lt;br/&gt;dalle3 · huggingface&lt;br/&gt;gdrive · gmail&lt;br/&gt;ollama · pollinations&lt;br/&gt;perplexity]
+        Config[config/&lt;br/&gt;repo_visibility · playwright_servers&lt;br/&gt;service_email]
+        Data[(data/&lt;br/&gt;workspace.db)]
+        FRLedger[(data/&lt;br/&gt;fr_ledgers.db)]
+    end
+    subgraph Reports[&quot;reports/&quot;]
+        PortalHtml[portal.html]
+        Dashes[*_dashboard.html]
+    end
+    Portal --&gt; Registry
+    Registry --&gt; PortalHtml
+    Bench --&gt; Dashes
+    Diagrams --&gt; Dashes
+    FR --&gt; Dashes
+    UtilsCore --&gt; Data
+    UtilsFR --&gt; Data
+    UtilsSec --&gt; Data
+    UtilsDiscovery --&gt; Data
+    UtilsPerf --&gt; Data
+    UtilsData --&gt; Data
+    CoordinationMCP --&gt; Allowlist
+    Allowlist --&gt;|FR operations only| FRCLI
+    FRCLI ==&gt; FRLedger
+    class Tools tool
+    class Src src
+    class Reports out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div>
+  <details><summary>Source: <code>diagrams/workspace-architecture-detail.mmd</code></summary>
+  <pre data-source="diagrams/workspace-architecture-detail.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Tools[&quot;tools/&quot;]
+        Portal[dashboard_portal.py]
+        Registry[dashboard_registry.py]
+        Bench[bench_dashboard.py]
+        Diagrams[diagrams_dashboard.py]
+        FR[fr_dashboard.py]
+        Sec[security_dashboard.py]
+        Ops[agent_ops_monitor.py]
+    end
+    subgraph Src[&quot;src/&quot;]
+        subgraph UtilsGroup[&quot;utils/&quot;]
+            direction LR
+            UtilsCore[core&lt;br/&gt;perf_cli · proof_cli&lt;br/&gt;init_db]
+            UtilsFR[FR lifecycle&lt;br/&gt;fr_cli · fr_server&lt;br/&gt;init_fr_db · migrate_fr_target_quarter&lt;br/&gt;seed_target_quarters]
+            UtilsSec[security&lt;br/&gt;security_scan · security_scan_nightly&lt;br/&gt;agent_frontmatter_integrity]
+            UtilsDiscovery[discovery/gen&lt;br/&gt;workspace_discovery · roadmap_generator&lt;br/&gt;gen_qee · complexity_router · tech_debt_scanner]
+            UtilsPerf[perf/health&lt;br/&gt;perf_regression_alerter · api_health_monitor&lt;br/&gt;proof_health_verifier · record_overseer_perf]
+            UtilsData[data/infra&lt;br/&gt;mcp_status · sqlcipher_mcp_server&lt;br/&gt;ollama_model_inventory · migrate_ledgers_to_db]
+            CoordinationMCP[coordination_mcp_server.py]
+            FRCLI[fr_cli.py]
+            Allowlist{Fixed allowlisted&lt;br/&gt;operation boundary}
+        end
+        Integrations[integrations/&lt;br/&gt;elevenlabs · mermaid&lt;br/&gt;dalle3 · huggingface&lt;br/&gt;gdrive · gmail&lt;br/&gt;ollama · pollinations&lt;br/&gt;perplexity]
+        Config[config/&lt;br/&gt;repo_visibility · playwright_servers&lt;br/&gt;service_email]
+        Data[(data/&lt;br/&gt;workspace.db)]
+        FRLedger[(data/&lt;br/&gt;fr_ledgers.db)]
+    end
+    subgraph Reports[&quot;reports/&quot;]
+        PortalHtml[portal.html]
+        Dashes[*_dashboard.html]
+    end
+    Portal --&gt; Registry
+    Registry --&gt; PortalHtml
+    Bench --&gt; Dashes
+    Diagrams --&gt; Dashes
+    FR --&gt; Dashes
+    UtilsCore --&gt; Data
+    UtilsFR --&gt; Data
+    UtilsSec --&gt; Data
+    UtilsDiscovery --&gt; Data
+    UtilsPerf --&gt; Data
+    UtilsData --&gt; Data
+    CoordinationMCP --&gt; Allowlist
+    Allowlist --&gt;|FR operations only| FRCLI
+    FRCLI ==&gt; FRLedger
+    class Tools tool
+    class Src src
+    class Reports out
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

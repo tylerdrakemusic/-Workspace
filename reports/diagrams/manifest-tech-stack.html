@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/manifest-tech-stack.mmd">
+  <title>Manifest Tech Stack | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Manifest Tech Stack</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; Requests[requests · httpx]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Flask[flask&gt;=3.0]
+    Python --&gt; Pydantic[pydantic&gt;=2.0]
+    Python --&gt; Sounddevice[sounddevice&gt;=0.4]
+    Python --&gt; Soundfile[soundfile&gt;=0.12]
+    Python --&gt; SQLite[SQLite 3]
+    SQLite --&gt; TodosDB[manifest_todos.db]
+    class SQLite lib
+    class TodosDB db
+    OpenAI[OpenAI API] --&gt; GPT[GPT models]
+    ElevenLabs[ElevenLabs API] --&gt; TTS[Voice synthesis]
+    HF[Hugging Face] --&gt; Models[hosted models]
+    class Python lang
+    class OpenAI,ElevenLabs,HF api
+    class Requests,Pytest,Flask,Pydantic,Sounddevice,Soundfile,GPT,TTS,Models lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div>
+  <details><summary>Source: <code>diagrams/manifest-tech-stack.mmd</code></summary>
+  <pre data-source="diagrams/manifest-tech-stack.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; Requests[requests · httpx]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Flask[flask&gt;=3.0]
+    Python --&gt; Pydantic[pydantic&gt;=2.0]
+    Python --&gt; Sounddevice[sounddevice&gt;=0.4]
+    Python --&gt; Soundfile[soundfile&gt;=0.12]
+    Python --&gt; SQLite[SQLite 3]
+    SQLite --&gt; TodosDB[manifest_todos.db]
+    class SQLite lib
+    class TodosDB db
+    OpenAI[OpenAI API] --&gt; GPT[GPT models]
+    ElevenLabs[ElevenLabs API] --&gt; TTS[Voice synthesis]
+    HF[Hugging Face] --&gt; Models[hosted models]
+    class Python lang
+    class OpenAI,ElevenLabs,HF api
+    class Requests,Pytest,Flask,Pydantic,Sounddevice,Soundfile,GPT,TTS,Models lib
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

@@ -62,7 +62,7 @@
     {
       "id": "diagrams",
       "title": "Architecture Diagrams",
-      "description": "Mermaid-rendered architecture, tech-stack, and DB schema diagrams for all 5 projects + workspace topology. Includes built-in live editor.",
+      "description": "Stable Mermaid HTML artifacts for architecture, tech-stack, and DB schema diagrams across all 5 projects + workspace topology, with source provenance.",
       "type": "static_html",
       "generator": "tools/diagrams_dashboard.py",
       "output": "reports/diagrams_dashboard.html",

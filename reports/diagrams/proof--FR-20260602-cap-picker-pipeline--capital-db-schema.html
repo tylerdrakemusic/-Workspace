@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="proof/FR-20260602-cap-picker-pipeline/capital-db-schema.mmd">
+  <title>Capital Db Schema | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Capital Db Schema</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+erDiagram
+    PICKS ||--o{ TRADES : generates
+
+    PORTFOLIO {
+        integer id PK
+        text symbol
+        real shares
+        real avg_cost
+        text opened_at
+    }
+    PICKS {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        text rationale
+        real confidence
+        text created_at
+        text status
+        text risk_reason
+    }
+    TRADES {
+        integer id PK
+        integer pick_id FK
+        text symbol
+        text side &quot;buy|sell&quot;
+        real shares
+        real price
+        text executed_at
+        text mode &quot;sim|real&quot;
+    }
+    SIGNALS {
+        integer id PK
+        text source
+        text symbol
+        text payload
+        text captured_at
+        text category
+        text batch_id
+    }
+    RISK_THRESHOLDS {
+        integer id PK
+        text dimension
+        real threshold
+        text updated_at
+    }
+    TRADE_CANDIDATES {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        real entry_target
+        real exit_target
+        text ai_reason
+        real scoring
+        text mode &quot;simulated|real&quot;
+        text created_at
+    }
+
+    %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
+    %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
+    %% mode=&#x27;real&#x27; reserved for future FR after broker-API compliance review
+</div>
+  <details><summary>Source: <code>proof/FR-20260602-cap-picker-pipeline/capital-db-schema.mmd</code></summary>
+  <pre data-source="proof/FR-20260602-cap-picker-pipeline/capital-db-schema.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+erDiagram
+    PICKS ||--o{ TRADES : generates
+
+    PORTFOLIO {
+        integer id PK
+        text symbol
+        real shares
+        real avg_cost
+        text opened_at
+    }
+    PICKS {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        text rationale
+        real confidence
+        text created_at
+        text status
+        text risk_reason
+    }
+    TRADES {
+        integer id PK
+        integer pick_id FK
+        text symbol
+        text side &quot;buy|sell&quot;
+        real shares
+        real price
+        text executed_at
+        text mode &quot;sim|real&quot;
+    }
+    SIGNALS {
+        integer id PK
+        text source
+        text symbol
+        text payload
+        text captured_at
+        text category
+        text batch_id
+    }
+    RISK_THRESHOLDS {
+        integer id PK
+        text dimension
+        real threshold
+        text updated_at
+    }
+    TRADE_CANDIDATES {
+        integer id PK
+        date week_of
+        text symbol
+        text side &quot;buy|sell&quot;
+        real entry_target
+        real exit_target
+        text ai_reason
+        real scoring
+        text mode &quot;simulated|real&quot;
+        text created_at
+    }
+
+    %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
+    %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
+    %% mode=&#x27;real&#x27; reserved for future FR after broker-API compliance review
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

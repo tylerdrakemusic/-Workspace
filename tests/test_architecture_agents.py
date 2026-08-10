@@ -128,3 +128,17 @@ def test_fr_flow_has_architecture_review_state():
     text = flow.read_text(encoding="utf-8")
     assert "ARCHITECTURE_REVIEW" in text, \
         "FR flow must define the ARCHITECTURE_REVIEW state"
+
+
+def test_beautifier_contract_requires_html_publication_provenance_and_proof():
+    beautifier = (AGENTS_DIR / "⊕workspace-architecture-beautifier.agent.md").read_text(encoding="utf-8")
+    for required in ("HTML", "provenance", "proof", "one-time"):
+        assert required.lower() in beautifier.lower(), \
+            f"beautifier contract must require {required}"
+
+
+def test_feature_flow_requires_published_diagram_artifacts():
+    flow = (INSTRUCTIONS_DIR / "feature-request-flow.instructions.md").read_text(encoding="utf-8")
+    for required in ("published HTML", "provenance", "proof", "migration"):
+        assert required.lower() in flow.lower(), \
+            f"feature-request flow must require {required} for architecture diagrams"

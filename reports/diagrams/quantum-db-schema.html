@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/quantum-db-schema.mmd">
+  <title>Quantum Db Schema | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Quantum Db Schema</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BENCHMARKS {
+        integer id PK
+        text algorithm
+        integer n_value
+        integer required_qubits
+        integer order_r
+        integer factor1
+        integer factor2
+        real total_time_sec
+        text backend
+        text timestamp
+    }
+
+    %% --- Shor&#x27;s QPU benchmarking (FR-20260428-shors-monthly-qpu-bench) ---
+    SHORS_QPU_BENCH {
+        integer id PK
+        text run_date
+        integer n_value
+        integer n_qubits
+        integer success
+        text factor_found
+        real qpu_seconds
+        text backend
+        text notes
+    }
+
+    %% --- VQE molecular simulation runs (FR-20260430-vqe-aer-bench) ---
+    VQE_RUNS {
+        integer id PK
+        text run_date
+        text molecule
+        real bond_length_ang
+        integer n_qubits
+        integer n_pauli_terms
+        text ansatz
+        integer n_parameters
+        text optimizer
+        real final_energy
+        real fci_reference
+        real delta_ha
+        integer n_evals
+        real wall_clock_sec
+        text backend
+        text timestamp
+    }
+
+    %% --- Cache Monitoring ---
+    CACHE_HEALTH_LOG {
+        integer id PK
+        text ts
+        integer bits_remaining
+        integer capacity_bits
+        real pct_full
+        text action_taken
+    }
+
+    %% --- Backend availability monitor (FR-20260614) ---
+    BACKEND_HEALTH {
+        integer id PK
+        text provider
+        text status
+        real latency_ms
+        text error_msg
+        text checked_at
+    }
+
+    %% --- Execution policy events/audit (FR-20260527-execution-policy-auditor) ---
+    POLICY_EVENTS {
+        integer id PK
+        text event_time
+        text policy_id
+        text event_type
+        text status
+        text source
+        text detail
+        text next_run_at
+    }
+    POLICY_AUDIT_RUNS {
+        integer id PK
+        text run_ts
+        text status
+        text findings
+        text policy_file_hash
+    }
+
+    %% --- Batch job retry/backoff (FR-20260704-qiskit-aer-retry-supervisor) ---
+    JOB_RETRY_STATUS {
+        integer id PK
+        text job_id &quot;unique idx_job_retry_status_job_id&quot;
+        text backend
+        text status &quot;pending/running/succeeded/failed/retrying&quot;
+        integer attempt
+        integer max_attempts
+        text error_msg
+        text created_at
+        text updated_at
+    }</div>
+  <details><summary>Source: <code>diagrams/quantum-db-schema.mmd</code></summary>
+  <pre data-source="diagrams/quantum-db-schema.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BENCHMARKS {
+        integer id PK
+        text algorithm
+        integer n_value
+        integer required_qubits
+        integer order_r
+        integer factor1
+        integer factor2
+        real total_time_sec
+        text backend
+        text timestamp
+    }
+
+    %% --- Shor&#x27;s QPU benchmarking (FR-20260428-shors-monthly-qpu-bench) ---
+    SHORS_QPU_BENCH {
+        integer id PK
+        text run_date
+        integer n_value
+        integer n_qubits
+        integer success
+        text factor_found
+        real qpu_seconds
+        text backend
+        text notes
+    }
+
+    %% --- VQE molecular simulation runs (FR-20260430-vqe-aer-bench) ---
+    VQE_RUNS {
+        integer id PK
+        text run_date
+        text molecule
+        real bond_length_ang
+        integer n_qubits
+        integer n_pauli_terms
+        text ansatz
+        integer n_parameters
+        text optimizer
+        real final_energy
+        real fci_reference
+        real delta_ha
+        integer n_evals
+        real wall_clock_sec
+        text backend
+        text timestamp
+    }
+
+    %% --- Cache Monitoring ---
+    CACHE_HEALTH_LOG {
+        integer id PK
+        text ts
+        integer bits_remaining
+        integer capacity_bits
+        real pct_full
+        text action_taken
+    }
+
+    %% --- Backend availability monitor (FR-20260614) ---
+    BACKEND_HEALTH {
+        integer id PK
+        text provider
+        text status
+        real latency_ms
+        text error_msg
+        text checked_at
+    }
+
+    %% --- Execution policy events/audit (FR-20260527-execution-policy-auditor) ---
+    POLICY_EVENTS {
+        integer id PK
+        text event_time
+        text policy_id
+        text event_type
+        text status
+        text source
+        text detail
+        text next_run_at
+    }
+    POLICY_AUDIT_RUNS {
+        integer id PK
+        text run_ts
+        text status
+        text findings
+        text policy_file_hash
+    }
+
+    %% --- Batch job retry/backoff (FR-20260704-qiskit-aer-retry-supervisor) ---
+    JOB_RETRY_STATUS {
+        integer id PK
+        text job_id &quot;unique idx_job_retry_status_job_id&quot;
+        text backend
+        text status &quot;pending/running/succeeded/failed/retrying&quot;
+        integer attempt
+        integer max_attempts
+        text error_msg
+        text created_at
+        text updated_at
+    }</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

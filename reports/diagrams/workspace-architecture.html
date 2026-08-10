@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/workspace-architecture.mmd">
+  <title>Workspace Architecture | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Workspace Architecture</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Workspace[&quot;⊕ Workspace&quot;]
+        Portal[reports/portal.html&lt;br/&gt;Unified Dashboard Portal]
+        Registry[dashboard_registry.py&lt;br/&gt;Spec Discovery]
+        FRBoard[Feature Request Ledger&lt;br/&gt;FEATURE_REQUESTS.md]
+    end
+    subgraph Life[&quot;∞ Life&quot;]
+        LifeDB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+        LifeApp[Health &amp; Longevity&lt;br/&gt;Tracking]
+    end
+    subgraph Music[&quot;❤ Music&quot;]
+        MusicDB[(heartmusic.db&lt;br/&gt;SQLCipher)]
+        MusicApp[Catalog · Setlist&lt;br/&gt;Guitar Trainer]
+    end
+    subgraph Quantum[&quot;⟨ψ⟩ Quantum&quot;]
+        QDB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
+        QApp[Shor · QRNG&lt;br/&gt;IBM Quantum]
+    end
+    subgraph Manifest[&quot;👁 AI-Manifest&quot;]
+        MAPI[ElevenLabs · OpenAI&lt;br/&gt;Voice &amp; Briefs]
+    end
+    subgraph Capital[&quot;Σ Capital&quot;]
+        CapitalDB[(sigmacapital.db&lt;br/&gt;SQLCipher)]
+        CapitalApp[Weekend Picks · Signals&lt;br/&gt;Sim + human-confirmed LIVE execution]
+    end
+    Portal --&gt; Registry
+    Registry -.scans.-&gt; Life
+    Registry -.scans.-&gt; Music
+    Registry -.scans.-&gt; Quantum
+    Registry -.scans.-&gt; Manifest
+    Registry -.scans.-&gt; Capital
+    Registry -.scans.-&gt; Workspace
+    Life --&gt; LifeDB
+    Music --&gt; MusicDB
+    Quantum --&gt; QDB
+    Capital --&gt; CapitalDB
+    class Workspace workspace
+    class Life,Music,Quantum,Manifest,Capital project
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</div>
+  <details><summary>Source: <code>diagrams/workspace-architecture.mmd</code></summary>
+  <pre data-source="diagrams/workspace-architecture.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Workspace[&quot;⊕ Workspace&quot;]
+        Portal[reports/portal.html&lt;br/&gt;Unified Dashboard Portal]
+        Registry[dashboard_registry.py&lt;br/&gt;Spec Discovery]
+        FRBoard[Feature Request Ledger&lt;br/&gt;FEATURE_REQUESTS.md]
+    end
+    subgraph Life[&quot;∞ Life&quot;]
+        LifeDB[(infinitelife.db&lt;br/&gt;SQLCipher)]
+        LifeApp[Health &amp; Longevity&lt;br/&gt;Tracking]
+    end
+    subgraph Music[&quot;❤ Music&quot;]
+        MusicDB[(heartmusic.db&lt;br/&gt;SQLCipher)]
+        MusicApp[Catalog · Setlist&lt;br/&gt;Guitar Trainer]
+    end
+    subgraph Quantum[&quot;⟨ψ⟩ Quantum&quot;]
+        QDB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
+        QApp[Shor · QRNG&lt;br/&gt;IBM Quantum]
+    end
+    subgraph Manifest[&quot;👁 AI-Manifest&quot;]
+        MAPI[ElevenLabs · OpenAI&lt;br/&gt;Voice &amp; Briefs]
+    end
+    subgraph Capital[&quot;Σ Capital&quot;]
+        CapitalDB[(sigmacapital.db&lt;br/&gt;SQLCipher)]
+        CapitalApp[Weekend Picks · Signals&lt;br/&gt;Sim + human-confirmed LIVE execution]
+    end
+    Portal --&gt; Registry
+    Registry -.scans.-&gt; Life
+    Registry -.scans.-&gt; Music
+    Registry -.scans.-&gt; Quantum
+    Registry -.scans.-&gt; Manifest
+    Registry -.scans.-&gt; Capital
+    Registry -.scans.-&gt; Workspace
+    Life --&gt; LifeDB
+    Music --&gt; MusicDB
+    Quantum --&gt; QDB
+    Capital --&gt; CapitalDB
+    class Workspace workspace
+    class Life,Music,Quantum,Manifest,Capital project
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

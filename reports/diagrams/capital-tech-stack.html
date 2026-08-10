@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta name="source" content="diagrams/capital-tech-stack.mmd">
+  <title>Capital Tech Stack | Mermaid Diagram</title>
+  <style>body { margin: 0; padding: 24px; font-family: sans-serif; background: #fff; color: #111; }
+  .mermaid { min-height: 120px; } details { margin-top: 24px; } pre { overflow: auto; padding: 12px; background: #f4f4f4; }</style>
+  </head>
+  <body>
+  <main>
+  <h1>Capital Tech Stack</h1>
+  <div class="mermaid">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; SQLCipher[sqlcipher3-binary&lt;br/&gt;encrypted SQLite]
+    Python --&gt; Dotenv[python-dotenv]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Perplexity[&quot;perplexity-client&lt;br/&gt;(via ⊕Workspace/src/integrations)&quot;]
+    Python --&gt; Crypto[&quot;cryptography&lt;br/&gt;token encryption · self-signed loopback cert&quot;]
+    Python --&gt; Requests[&quot;requests&lt;br/&gt;OAuth · Schwab Market Data&lt;br/&gt;· Trading / LIVE order-placement HTTP&quot;]
+    Python --&gt; Flask[flask&lt;br/&gt;Trade Gate web UI]
+    Python --&gt; Keyring[&quot;keyring&lt;br/&gt;optional OS credential vault for OAuth tokens&quot;]
+    Python --&gt; YFinance[yfinance&lt;br/&gt;pricing/volatility]
+    class Python lang
+    class SQLCipher,Dotenv,Pytest,Crypto,Requests,Flask,Keyring,YFinance lib
+    class Perplexity ext
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef lang     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef lib      fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+</div>
+  <details><summary>Source: <code>diagrams/capital-tech-stack.mmd</code></summary>
+  <pre data-source="diagrams/capital-tech-stack.mmd">%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a3a1a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0f8d0&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a9a4a&#x27;}}}%%
+graph LR
+    Python[Python 3.11] --&gt; SQLCipher[sqlcipher3-binary&lt;br/&gt;encrypted SQLite]
+    Python --&gt; Dotenv[python-dotenv]
+    Python --&gt; Pytest[pytest]
+    Python --&gt; Perplexity[&quot;perplexity-client&lt;br/&gt;(via ⊕Workspace/src/integrations)&quot;]
+    Python --&gt; Crypto[&quot;cryptography&lt;br/&gt;token encryption · self-signed loopback cert&quot;]
+    Python --&gt; Requests[&quot;requests&lt;br/&gt;OAuth · Schwab Market Data&lt;br/&gt;· Trading / LIVE order-placement HTTP&quot;]
+    Python --&gt; Flask[flask&lt;br/&gt;Trade Gate web UI]
+    Python --&gt; Keyring[&quot;keyring&lt;br/&gt;optional OS credential vault for OAuth tokens&quot;]
+    Python --&gt; YFinance[yfinance&lt;br/&gt;pricing/volatility]
+    class Python lang
+    class SQLCipher,Dotenv,Pytest,Crypto,Requests,Flask,Keyring,YFinance lib
+    class Perplexity ext
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef lang     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
+classDef lib      fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+</pre></details>
+  </main>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });
+  </script>
+  </body>
+  </html>

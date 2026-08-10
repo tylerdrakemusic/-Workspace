@@ -402,6 +402,17 @@ def cmd_validate() -> None:
     print(f"\n  {ok_count}/{len(files)} passed")
 
 
+def cmd_publish_html() -> dict[str, Path]:
+    """Publish stable HTML artifacts for every canonical Mermaid source."""
+    from diagrams_dashboard import publish_all_html
+
+    artifacts = publish_all_html()
+    print(f"  Published {len(artifacts)} HTML artifacts")
+    for stem, path in artifacts.items():
+        print(f"  ✓ {stem}.mmd -> {path.relative_to(PROJECT_ROOT).as_posix()}")
+    return artifacts
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -417,6 +428,8 @@ def main() -> None:
                        help="Apply style guide to all diagrams/*.mmd")
     group.add_argument("--validate", action="store_true",
                        help="Validate all diagrams via mermaid CLI (mmdc)")
+    group.add_argument("--publish-html", "--migrate-html", dest="publish_html", action="store_true",
+                       help="Publish deterministic HTML artifacts for all diagrams (one-time migration-safe pass)")
 
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would change without writing")
@@ -443,6 +456,8 @@ def main() -> None:
         )
     elif args.validate:
         cmd_validate()
+    elif args.publish_html:
+        cmd_publish_html()
 
 
 if __name__ == "__main__":
