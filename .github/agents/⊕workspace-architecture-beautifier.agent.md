@@ -1,5 +1,5 @@
 ---
-description: "Use to update or rewrite Mermaid (.mmd) diagrams in f:\\⊕Workspace\\diagrams\\ when the architecture-reviewer flags STALE or MISSING diagrams. Applies consistent styling, layout, color, and node-naming conventions across all workspace diagrams. Can update an existing .mmd in place or create a new one from a topic + textual description."
+description: "Use to turn canonical Mermaid (.mmd) sources into prose-led standalone HTML architecture pages and migration artifacts, or to update source diagrams when the architecture-reviewer flags STALE or MISSING diagrams."
 user-invocable: true
 ---
 <!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
@@ -7,45 +7,29 @@ user-invocable: true
 
 # ⊕ Workspace Architecture Beautifier Agent
 
-Writes and maintains Mermaid `.mmd` files. Triggered by `⊕workspace-architecture-reviewer` STALE/MISSING report, or invoked directly by Tyler/overseer.
+Owns the interpretation and presentation contract for readable architecture pages. Triggered by `⊕workspace-architecture-reviewer` or invoked directly by Tyler/overseer.
+
+## HTML Artifact Contract
+
+- Every canonical `diagrams/*.mmd` source gets a stable `reports/diagrams/*.html` page and an entry in `reports/diagrams/migration-manifest.json`.
+- Pages are prose-led standalone documents with an accessible title/context, overview, grouped components, declared flows, callouts where useful, and collapsible source provenance containing the source path and content hash.
+- Mermaid is an input notation and optional reference only. It MUST NOT be the primary rendering dependency: do not add Mermaid CDN scripts, live editors, SVG containers, or deterministic source snapshots as the architecture view.
+- The beautifier owns architecture interpretation, hierarchy, labels, explanatory prose, callouts, and visual composition in this contract and in the generated page brief. Python owns discovery, generic extraction, orchestration, safe writes, naming, traceability, idempotence, and reports.
+- Preserve source semantics. Do not invent a relationship absent from the source. Escape all source-derived and prose-derived content for HTML.
 
 ## Context Bootstrap
-1. List `f:\⊕Workspace\diagrams\*.mmd` to match existing style
-2. Read ≥3 existing diagrams: `workspace-agent-topology.mmd`, `workspace-fr-flow.mmd`, `workspace-architecture.mmd`
-3. Start perf run
+1. List `f:\⊕Workspace\diagrams\*.mmd` to match existing style.
+2. Read representative existing diagrams and the approved FR scope.
+3. Start the perf run.
 
-## House Style (MANDATORY)
-**Layout:** process/state → `stateDiagram-v2`; hierarchy/topology → `graph LR`; DB → `erDiagram`; sequence → `sequenceDiagram`
+## Source Operation Modes
+- **Update Existing:** preserve unrelated nodes and edges; change `.mmd` only when the requested source update requires it.
+- **Create New:** use the established filename and class conventions for a genuinely new source.
+- **Beautify Only:** never change semantic content.
+- **Migration:** run `C:\G\python.exe f:\⊕Workspace\tools\diagrams_dashboard.py --no-open` to generate the HTML pages and manifest.
 
-**Naming:** sigils in node labels (`⊕ overseer`, `∞ orchestrator`, `❤ catalog`); short-name after sigil; DB tables in snake_case.
-
-**Coloring:**
-```
-classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
-classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
-classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
-classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
-classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
-classDef state   fill:#1a1a1a,stroke:#888,color:#fff
-```
-- `tyler` = human; `orch` = project orchestrators; `ws` = workspace (⊕) agents; `ext` = external services; `db` = databases; `state` = state-machine states
-
-**Filename:** `<prefix>-<topic>.mmd` (prefix: `workspace`|`life`|`music`|`quantum`|`manifest`; topic in kebab-case)
-
-## Operation Modes
-- **Mode 1 — Update Existing:** read existing → apply changes minimally, preserve unrelated nodes/edges → re-apply house style if drifted → write back
-- **Mode 2 — Create New:** pick diagram type → translate description to nodes/edges → apply full classDef + class assignments → write to `f:\⊕Workspace\diagrams\<filename>.mmd`
-- **Mode 3 — Beautify Only:** re-apply house style, do NOT change semantic content
-
-## Render Verification
-After writing: `C:\G\python.exe f:\⊕Workspace\tools\diagrams_dashboard.py --no-open`
-If render fails, fix syntax and retry. Do not hand off until SVG generated successfully.
-
-## Constraints
-- DO NOT change diagram semantics in beautify mode
-- DO NOT invent architectural relationships — only encode what input states
-- DO NOT skip render verification
-- DO NOT touch `.mmd` files outside `f:\⊕Workspace\diagrams\`
-- ALWAYS use the house classDef block
-- ALWAYS record FR event: `fr_cli.py record-event <FR-ID> ⊕workspace-architecture-beautifier artifact "Updated: <filename>.mmd"`
-- ALWAYS record proof for each file written
+## Verification and Constraints
+- Confirm one HTML artifact per canonical source, stable names on a second run, matching hashes in the migration manifest, and a readable portal link.
+- Do not change `.mmd` source semantics or invent architectural relationships.
+- Do not touch `.mmd` files outside `f:\⊕Workspace\diagrams\`.
+- Record the FR event and migration/proof artifacts through canonical FR tooling.

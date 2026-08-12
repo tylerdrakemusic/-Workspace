@@ -62,7 +62,7 @@
     {
       "id": "diagrams",
       "title": "Architecture Diagrams",
-      "description": "Mermaid-rendered architecture, tech-stack, and DB schema diagrams for all 5 projects + workspace topology. Includes built-in live editor.",
+      "description": "Prose-led architecture atlas for canonical diagrams, with grouped components, declared flows, and source provenance.",
       "type": "static_html",
       "generator": "tools/diagrams_dashboard.py",
       "output": "reports/diagrams_dashboard.html",
@@ -70,6 +70,50 @@
       "category": "performance",
       "icon": "📐",
       "priority": 55
+    },
+    {
+      "id": "music-dashboard",
+      "title": "Music Dashboard",
+      "description": "❤Music live dashboard",
+      "type": "flask_app",
+      "url": "http://localhost:5050",
+      "category": "music",
+      "icon": "🎵",
+      "portal_only": true,
+      "priority": 900
+    },
+    {
+      "id": "tjd-radio",
+      "title": "TJD Radio",
+      "description": "❤Music live radio dashboard",
+      "type": "flask_app",
+      "url": "http://localhost:8100",
+      "category": "music",
+      "icon": "📻",
+      "portal_only": true,
+      "priority": 901
+    },
+    {
+      "id": "guitar-trainer",
+      "title": "Guitar Trainer",
+      "description": "❤Music live guitar trainer",
+      "type": "flask_app",
+      "url": "http://localhost:5055",
+      "category": "music",
+      "icon": "🎸",
+      "portal_only": true,
+      "priority": 902
+    },
+    {
+      "id": "executive-audio-brief",
+      "title": "Executive Audio Brief",
+      "description": "Live executive audio brief",
+      "type": "flask_app",
+      "url": "http://localhost:8200",
+      "category": "operations",
+      "icon": "🔊",
+      "portal_only": true,
+      "priority": 903
     }
   ]
 }

@@ -1,110 +1,160 @@
 #!/usr/bin/env python3
-"""⊕ Diagrams Dashboard Generator
-
-Scans `diagrams/*.mmd`, renders each to `reports/diagrams/*.svg` via the
-mermaid integration (local mmdc CLI preferred, mermaid.ink HTTP fallback),
-and writes a `reports/diagrams_dashboard.html` index.
-
-Usage:
-    C:\\G\\python.exe tools/diagrams_dashboard.py              # render + open
-    C:\\G\\python.exe tools/diagrams_dashboard.py --no-open    # render only
-    C:\\G\\python.exe tools/diagrams_dashboard.py --no-render  # rebuild index only
-"""
-
+"""Generate source-backed architecture diagrams from canonical Mermaid text."""
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
-import os
+import json
+import re
 import sys
 import webbrowser
-from datetime import datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DIAGRAMS_DIR = PROJECT_ROOT / "diagrams"
 REPORTS_DIR = PROJECT_ROOT / "reports"
-SVG_OUT_DIR = REPORTS_DIR / "diagrams"
+HTML_OUT_DIR = REPORTS_DIR / "diagrams"
 INDEX_PATH = REPORTS_DIR / "diagrams_dashboard.html"
+MANIFEST_PATH = HTML_OUT_DIR / "migration-manifest.json"
+PROJECT_ORDER = ["workspace", "life", "music", "quantum", "manifest", "capital"]
+PROJECT_LABELS = {"workspace": "⊕ Workspace", "life": "∞ Life", "music": "❤ Music", "quantum": "⟨ψ⟩ Quantum", "manifest": "👁 AI-Manifest", "capital": "ΣCapital"}
 
-sys.path.insert(0, str(PROJECT_ROOT / "src"))
-from integrations.mermaid import MermaidClient, MermaidRenderError  # noqa: E402
-
-# Project sigil → display order
-PROJECT_ORDER = ["workspace", "life", "music", "quantum", "manifest"]
-PROJECT_LABELS = {
-    "workspace": "⊕ Workspace",
-    "life": "∞ Life",
-    "music": "❤ Music",
-    "quantum": "⟨ψ⟩ Quantum",
-    "manifest": "👁 AI-Manifest",
-}
+_DECLARATION_RE = re.compile(r"^\s*(graph|flowchart)\s+(?P<direction>\w+)", re.I)
+_SUBGRAPH_RE = re.compile(r'^\s*subgraph\s+(?P<id>[A-Za-z_][\w-]*)?(?:\[?["\']?(?P<label>[^\]"\']+)["\']?\]?)?\s*$', re.I)
+_NODE_RE = re.compile(r"(?<![/A-Za-z0-9_-])(?P<id>[A-Za-z_][\w-]*|\[\*\])\s*(?P<body>\[\(.*?\)\]|\(\[.*?\]\)|\[\[.*?\]\]|\[.*?\]|\(\(.*?\)\)|\{.*?\})")
+_EDGE_RE = re.compile(r"(?P<source>[A-Za-z_][\w-]*|\[\*\])\s*(?P<operator>(?:-{1,3}>|={1,3}>|-\.\->|-(?:\.[^>\n]*\.)?->))\s*(?:\|(?P<pipe_label>[^|]*)\|\s*)?(?P<target>[A-Za-z_][\w-]*|\[\*\])(?:\s*:\s*(?P<colon_label>[^\n]+))?")
+_ER_EDGE_RE = re.compile(r"(?P<source>[A-Za-z_][\w-]*)\s+(?P<operator>[^\s]+)\s+(?P<target>[A-Za-z_][\w-]*)\s*:\s*(?P<label>[^\n]+)")
+_ER_ENTITY_RE = re.compile(r"^\s*(?P<id>[A-Za-z_][\w-]*)\s*\{\s*$")
 
 
 def discover_diagrams() -> list[Path]:
-    if not DIAGRAMS_DIR.exists():
-        return []
-    return sorted(DIAGRAMS_DIR.glob("*.mmd"))
+    return sorted(DIAGRAMS_DIR.glob("*.mmd")) if DIAGRAMS_DIR.exists() else []
 
 
-def _fallback_svg_bytes(title: str, source: str, error: str) -> bytes:
-  """Build a minimal inline SVG fallback card when Mermaid rendering fails."""
-  safe_title = html.escape(title)
-  safe_error = html.escape(error)
-  source_lines = [html.escape(line) for line in source.splitlines()[:18]]
-  source_block = "\n".join(source_lines) if source_lines else "(empty diagram source)"
-  svg = (
-    '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">'
-    '<rect width="100%" height="100%" fill="#ffffff" />'
-    '<rect x="24" y="24" width="1152" height="712" rx="12" fill="#fff8f8" stroke="#f5c2c7" />'
-    f'<text x="48" y="72" font-size="28" font-family="Segoe UI, sans-serif" fill="#842029">'
-    f'Fallback Preview: {safe_title}</text>'
-    '<text x="48" y="112" font-size="18" font-family="Segoe UI, sans-serif" fill="#842029">'
-    'Mermaid backend unavailable; showing source snapshot.</text>'
-    f'<text x="48" y="148" font-size="14" font-family="Consolas, monospace" fill="#5c0011">'
-    f'Error: {safe_error}</text>'
-    '<foreignObject x="48" y="176" width="1104" height="536">'
-    '<div xmlns="http://www.w3.org/1999/xhtml" '
-    'style="font-family:Consolas,monospace;font-size:14px;color:#111;white-space:pre-wrap;line-height:1.4;">'
-    f'{source_block}'
-    '</div>'
-    '</foreignObject>'
-    '</svg>'
-  )
-  return svg.encode("utf-8")
+def _clean_label(label: str) -> str:
+    return re.sub(r"\s+", " ", label.replace("<br/>", " ").replace("<br>", " ").strip()).strip('"\'()[]{}')
 
 
-def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
-    """Render each .mmd to SVG. Returns {stem: {ok, path|error, source}}."""
-    SVG_OUT_DIR.mkdir(parents=True, exist_ok=True)
-    if client is None:
-        client = MermaidClient()
-    results: dict[str, dict] = {}
-    for mmd_path in discover_diagrams():
-        stem = mmd_path.stem
-        source = mmd_path.read_text(encoding="utf-8")
-        try:
-            svg_bytes = client.render(source, fmt="svg")
-            out_path = SVG_OUT_DIR / f"{stem}.svg"
-            out_path.write_bytes(svg_bytes)
-            results[stem] = {
-                "ok": True,
-                "path": out_path,
-                "source": source,
-                "mmd_path": mmd_path,
-            }
-        except MermaidRenderError as exc:
-            fallback_path = SVG_OUT_DIR / f"{stem}.svg"
-            fallback_svg = _fallback_svg_bytes(stem, source, str(exc))
-            fallback_path.write_bytes(fallback_svg)
-            results[stem] = {
-                "ok": True,
-                "path": fallback_path,
-                "source": source,
-                "mmd_path": mmd_path,
-                "fallback_error": str(exc),
-            }
-    return results
+def _add_node(nodes: dict[str, dict[str, str | None]], identifier: str, label: str | None = None, group: str | None = None) -> None:
+    if identifier == "[*]":
+        return
+    existing = nodes.get(identifier)
+    if existing is None:
+        nodes[identifier] = {"id": identifier, "label": _clean_label(label or identifier), "group": group}
+    else:
+        if label and existing["label"] == identifier:
+            existing["label"] = _clean_label(label)
+        if group and not existing["group"]:
+            existing["group"] = group
+
+
+def parse_mermaid_source(source: str) -> dict[str, list | str]:
+    """Parse graph, state, and ER relationships without inventing edges."""
+    nodes: dict[str, dict[str, str | None]] = {}
+    groups: list[dict[str, str | None]] = []
+    edges: list[dict[str, str]] = []
+    unsupported: list[dict[str, str | int]] = []
+    group_stack: list[str] = []
+    direction = "TB"
+    diagram_type = "unknown"
+    for line_number, raw_line in enumerate(source.splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("%%"):
+            continue
+        if declaration := _DECLARATION_RE.match(raw_line):
+            diagram_type, direction = declaration.group(1).lower(), declaration.group("direction").upper()
+            continue
+        if line.lower().startswith(("statediagram", "erdiagram")):
+            diagram_type = "state" if line.lower().startswith("state") else "er"
+            continue
+        if line.lower() == "end":
+            if group_stack:
+                group_stack.pop()
+            continue
+        if subgraph := _SUBGRAPH_RE.match(raw_line):
+            group_id = subgraph.group("id") or _clean_label(subgraph.group("label") or "group")
+            group_label = _clean_label(subgraph.group("label") or group_id)
+            groups.append({"id": group_id, "label": group_label, "parent": group_stack[-1] if group_stack else None})
+            group_stack.append(group_id)
+            continue
+        if line.startswith(("class ", "classDef ", "style ", "linkStyle ", "direction ")):
+            continue
+        if line.startswith("click "):
+            unsupported.append({"line": line_number, "text": raw_line.strip()})
+            continue
+        if diagram_type == "er" and (entity := _ER_ENTITY_RE.match(raw_line)):
+            _add_node(nodes, entity.group("id"), group=group_stack[-1] if group_stack else None)
+            continue
+        edge = _ER_EDGE_RE.match(line) if diagram_type == "er" else _EDGE_RE.search(line)
+        if edge:
+            source_id, target_id = edge.group("source"), edge.group("target")
+            label = edge.groupdict().get("pipe_label") or edge.groupdict().get("colon_label") or edge.groupdict().get("label") or ""
+            _add_node(nodes, source_id, group=group_stack[-1] if group_stack else None)
+            _add_node(nodes, target_id, group=group_stack[-1] if group_stack else None)
+            edge_data = {"source": source_id, "target": target_id, "label": _clean_label(label)}
+            if "." in edge.group("operator"):
+                edge_data["style"] = "dotted"
+            edges.append(edge_data)
+        node_matches = list(_NODE_RE.finditer(line))
+        for node_match in node_matches:
+            identifier = node_match.group("id")
+            if identifier not in {"graph", "flowchart", "subgraph", "class", "classDef", "style", "direction"}:
+                body = node_match.group("body")
+                label = body[2:-2] if body.startswith(("[[", "((", "[(")) else body[1:-1]
+                _add_node(nodes, identifier, label, group_stack[-1] if group_stack else None)
+        if not edge and not node_matches and diagram_type in {"graph", "flowchart", "state", "er"}:
+            unsupported.append({"line": line_number, "text": raw_line.strip()})
+        elif not edge and diagram_type not in {"graph", "flowchart", "state", "er"}:
+            unsupported.append({"line": line_number, "text": raw_line.strip()})
+    return {"type": diagram_type, "direction": direction, "nodes": list(nodes.values()), "groups": groups, "edges": edges, "flows": edges, "unsupported": unsupported}
+
+
+def _artifact_name(source_path: Path, source_bytes: bytes) -> str:
+    return f"{source_path.stem}--{hashlib.sha256(source_bytes).hexdigest()[:12]}.html"
+
+
+def _node_html(node: dict[str, str | None]) -> str:
+    return f'<div class="diagram-node" data-node-id="{html.escape(str(node["id"]))}" tabindex="0"><strong>{html.escape(str(node["label"]))}</strong><small>{html.escape(str(node["id"]))}</small></div>'
+
+
+def _edge_html(edge: dict[str, str]) -> str:
+    label = f'<span class="edge-label">{html.escape(edge["label"])}</span>' if edge["label"] else ""
+    edge_style = edge.get("style", "solid")
+    edge_class = " edge-line-dotted" if edge_style == "dotted" else ""
+    edge_marker = f' data-edge-style="{html.escape(edge_style)}"'
+    edge_glyph = "······▶" if edge_style == "dotted" else "──────▶"
+    return f'<div class="diagram-edge" data-source="{html.escape(edge["source"])}" data-target="{html.escape(edge["target"])}" role="img" aria-label="{html.escape(edge["source"])} to {html.escape(edge["target"])}"><span class="edge-endpoint">{html.escape(edge["source"])}</span><span class="edge-line{edge_class}"{edge_marker} aria-hidden="true">{edge_glyph}</span>{label}<span class="edge-endpoint">{html.escape(edge["target"])}</span></div>'
+
+
+def build_architecture_page(*, source_path: Path, source: str, model: dict, overview: str) -> str:
+    """Build an accessible native HTML architecture diagram."""
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+    title = source_path.stem.replace("-", " ").title()
+    grouped: dict[str | None, list[dict]] = {}
+    for node in model["nodes"]:
+        grouped.setdefault(node.get("group"), []).append(node)
+    groups_by_parent: dict[str | None, list[dict]] = {}
+    for group in model["groups"]:
+        groups_by_parent.setdefault(group.get("parent"), []).append(group)
+
+    def render_group(group: dict) -> str:
+        group_id = str(group["id"])
+        parent = group.get("parent")
+        parent_marker = f' data-parent-group-id="{html.escape(str(parent))}"' if parent else ""
+        nodes = "".join(_node_html(node) for node in grouped.get(group_id, []))
+        children = "".join(render_group(child) for child in groups_by_parent.get(group_id, []))
+        return f'<section class="diagram-group" data-group-id="{html.escape(group_id)}"{parent_marker}><h3>{html.escape(str(group["label"]))}</h3><div class="node-grid">{nodes}</div>{children}</section>'
+
+    regions = [render_group(group) for group in groups_by_parent.get(None, [])]
+    ungrouped = "".join(_node_html(node) for node in grouped.get(None, []))
+    if ungrouped:
+        regions.append(f'<section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid">{ungrouped}</div></section>')
+    edges = "".join(_edge_html(edge) for edge in model["edges"])
+    unsupported = "".join(f'<li>Line {item["line"]}: <code>{html.escape(str(item["text"]))}</code></li>' for item in model["unsupported"])
+    unsupported_section = f'<section class="unsupported"><h2>Unsupported source constructs</h2><p>These lines remain visible for review and were not interpreted as diagram semantics.</p><ul>{unsupported}</ul></section>' if unsupported else ""
+    style = ':root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}'
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)} architecture</title><style>{style}</style></head><body><main><p class="kicker">Architecture diagram / {html.escape(str(model["direction"]))}</p><h1>{html.escape(title)}</h1><p class="architecture-overview">{html.escape(overview)}</p><section class="architecture-diagram" aria-label="{html.escape(title)} architecture diagram" data-direction="{html.escape(str(model["direction"]))}"><div class="diagram-regions">{"".join(regions)}</div><section class="diagram-connections"><h2>Declared connections</h2>{edges or "<p>No directed connections declared.</p>"}</section></section>{unsupported_section}<details><summary>Source provenance</summary><p>Canonical source: <code>{html.escape(source_path.as_posix())}</code><br>sha256: <code>{digest}</code></p><pre>{html.escape(source)}</pre></details></main></body></html>'
 
 
 def _project_of(stem: str) -> str:
@@ -112,379 +162,54 @@ def _project_of(stem: str) -> str:
     return head if head in PROJECT_LABELS else "workspace"
 
 
-def _group_by_project(results: dict[str, dict]) -> dict[str, list[tuple[str, dict]]]:
-    groups: dict[str, list[tuple[str, dict]]] = {p: [] for p in PROJECT_ORDER}
-    for stem, info in sorted(results.items()):
-        proj = _project_of(stem)
-        groups.setdefault(proj, []).append((stem, info))
-    return groups
+def _overview_for(path: Path, model: dict) -> str:
+    return f"A source-backed view of {len(model['nodes'])} declared components and {len(model['edges'])} directed connections in {path.stem.replace('-', ' ')}."
 
 
-import re
-_VIEWBOX_RE = re.compile(r'viewBox="([^"]+)"')
-
-
-def _svg_dims(svg_path: Path) -> tuple[float, float]:
-    """Extract natural width/height from SVG viewBox. Returns (w, h) or (800, 600)."""
-    try:
-        head = svg_path.read_text(encoding="utf-8", errors="ignore")[:1024]
-    except OSError:
-        return (800.0, 600.0)
-    m = _VIEWBOX_RE.search(head)
-    if not m:
-        return (800.0, 600.0)
-    parts = m.group(1).replace(",", " ").split()
-    if len(parts) != 4:
-        return (800.0, 600.0)
-    try:
-        w = float(parts[2])
-        h = float(parts[3])
-        return (w if w > 0 else 800.0, h if h > 0 else 600.0)
-    except ValueError:
-        return (800.0, 600.0)
+def render_all() -> dict[str, dict]:
+    """Generate stable HTML artifacts and a raw-source hash manifest."""
+    HTML_OUT_DIR.mkdir(parents=True, exist_ok=True)
+    results: dict[str, dict] = {}
+    manifest: list[dict[str, str]] = []
+    for source_path in discover_diagrams():
+        source_bytes = source_path.read_bytes()
+        source = source_bytes.decode("utf-8")
+        model = parse_mermaid_source(source)
+        artifact = HTML_OUT_DIR / _artifact_name(source_path, source_bytes)
+        artifact.write_text(build_architecture_page(source_path=source_path, source=source, model=model, overview=_overview_for(source_path, model)), encoding="utf-8")
+        digest = hashlib.sha256(source_bytes).hexdigest()
+        entry = {"source": (Path("diagrams") / source_path.name).as_posix(), "sha256": digest, "artifact": artifact.relative_to(REPORTS_DIR).as_posix()}
+        manifest.append(entry)
+        results[source_path.stem] = {"ok": True, "path": artifact, "source": source, "mmd_path": source_path, "model": model, "manifest": entry}
+    MANIFEST_PATH.write_text(json.dumps({"diagrams": manifest}, indent=2), encoding="utf-8")
+    return results
 
 
 def build_index(results: dict[str, dict]) -> str:
-    """Build the dashboard HTML string."""
-    groups = _group_by_project(results)
-    generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    total = len(results)
-    ok_count = sum(1 for r in results.values() if r["ok"])
-    fallback_count = sum(1 for r in results.values() if r.get("fallback_error"))
-
-    cards = []
-    for proj in PROJECT_ORDER:
-        items = groups.get(proj, [])
-        if not items:
-            continue
-        cards.append(f'<h2 class="proj-header">{html.escape(PROJECT_LABELS[proj])}</h2>')
-        cards.append('<div class="grid">')
-        for stem, info in items:
-            title = stem.replace(f"{proj}-", "").replace("-", " ").title()
-            if info["ok"]:
-                rel = info["path"].relative_to(REPORTS_DIR).as_posix()
-                w, h = _svg_dims(info["path"])
-                fallback_note = ""
-                fallback_details = ""
-                if info.get("fallback_error"):
-                    fallback_note = (
-                        '<span class="fallback-pill" title="Rendered from fallback inline SVG">fallback</span>'
-                    )
-                    fallback_details = (
-                        '<details><summary>fallback details</summary><pre class="err">'
-                        + html.escape(info["fallback_error"])
-                        + "</pre></details>"
-                    )
-                cards.append(
-                    f'<div class="card">'
-                    f'<div class="card-title">{html.escape(title)}'
-                    f'{fallback_note}'
-                    f'<button class="zoom-btn" data-svg="{html.escape(rel)}" '
-                    f'data-title="{html.escape(title)}" '
-                    f'data-w="{w:.0f}" data-h="{h:.0f}" title="Zoom">⛶</button>'
-                    f'</div>'
-                    f'<div class="svg-wrap" data-svg="{html.escape(rel)}" '
-                    f'data-title="{html.escape(title)}" '
-                    f'data-w="{w:.0f}" data-h="{h:.0f}">'
-                    f'<object type="image/svg+xml" data="{html.escape(rel)}">'
-                    f'<a href="{html.escape(rel)}">View SVG</a></object></div>'
-                    f'{fallback_details}'
-                    f'<details><summary>source</summary>'
-                    f'<pre>{html.escape(info["source"])}</pre></details>'
-                    f'</div>'
-                )
-            else:
-                cards.append(
-                    f'<div class="card error">'
-                    f'<div class="card-title">{html.escape(title)} ⚠️</div>'
-                    f'<pre class="err">{html.escape(info["error"])}</pre>'
-                    f'<details><summary>source</summary>'
-                    f'<pre>{html.escape(info["source"])}</pre></details>'
-                    f'</div>'
-                )
-        cards.append('</div>')
-
-    body = "\n".join(cards) if cards else '<p class="muted">No diagrams found in <code>diagrams/</code>.</p>'
-
-    return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>⊕ Diagrams Dashboard</title>
-<style>
-  :root {{
-    --bg: #0d1117; --panel: #161b22; --border: #30363d;
-    --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --err: #f85149;
-  }}
-  * {{ box-sizing: border-box; }}
-  body {{ margin: 0; font-family: -apple-system, "Segoe UI", sans-serif;
-         background: var(--bg); color: var(--text); }}
-  header {{ padding: 16px 24px; border-bottom: 1px solid var(--border);
-           display: flex; align-items: baseline; gap: 16px; }}
-  header h1 {{ margin: 0; font-size: 20px; }}
-  header .meta {{ color: var(--muted); font-size: 13px; }}
-  main {{ padding: 16px 24px; }}
-  .proj-header {{ margin: 28px 0 12px; font-size: 16px; color: var(--accent);
-                  border-bottom: 1px solid var(--border); padding-bottom: 6px; }}
-  .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-           gap: 16px; }}
-  .card {{ background: var(--panel); border: 1px solid var(--border);
-           border-radius: 8px; padding: 12px; overflow: hidden; }}
-  .card.error {{ border-color: var(--err); }}
-  .card-title {{ font-weight: 600; margin-bottom: 8px;
-                 display: flex; align-items: center; justify-content: space-between; gap: 8px; }}
-  .zoom-btn {{ background: var(--panel); color: var(--accent);
-               border: 1px solid var(--border); border-radius: 4px;
-               padding: 2px 8px; cursor: pointer; font-size: 14px; line-height: 1; }}
-  .zoom-btn:hover {{ background: var(--accent); color: #fff; }}
-  .svg-wrap {{ background: #fff; border-radius: 4px; padding: 8px;
-               min-height: 200px; display: flex; align-items: center; justify-content: center;
-               cursor: zoom-in; }}
-  .svg-wrap object {{ width: 100%; max-height: 500px; pointer-events: none; }}
-  details {{ margin-top: 8px; }}
-  summary {{ color: var(--muted); cursor: pointer; font-size: 12px; }}
-  pre {{ background: #0a0e13; padding: 8px; border-radius: 4px; overflow: auto;
-         font-size: 11px; color: var(--text); margin: 6px 0 0; }}
-  .err {{ color: var(--err); }}
-  .muted {{ color: var(--muted); }}
-  .editor-section {{ margin-top: 32px; border-top: 2px solid var(--border); padding-top: 24px; }}
-  .editor-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
-  textarea#mmd-input {{ width: 100%; height: 360px; background: #0a0e13;
-                        color: var(--text); border: 1px solid var(--border);
-                        border-radius: 4px; padding: 12px; font-family: "Cascadia Code", monospace;
-                        font-size: 13px; resize: vertical; }}
-  #preview {{ background: #fff; border-radius: 4px; padding: 12px;
-              min-height: 360px; overflow: auto; }}
-  #preview-status {{ color: var(--muted); font-size: 12px; margin-bottom: 6px; }}
-  .badge {{ display: inline-block; padding: 2px 8px; border-radius: 10px;
-            background: var(--panel); border: 1px solid var(--border);
-            font-size: 12px; margin-left: 6px; }}
-
-  /* Lightbox / zoom modal */
-  .lightbox {{ position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-               display: none; flex-direction: column; z-index: 9999; }}
-  .lightbox.open {{ display: flex; }}
-  .lightbox-bar {{ display: flex; align-items: center; gap: 12px;
-                   padding: 10px 18px; background: var(--panel);
-                   border-bottom: 1px solid var(--border); color: var(--text); }}
-  .lightbox-bar .lb-title {{ font-weight: 600; flex: 1; }}
-  .lightbox-bar button {{ background: var(--bg); color: var(--text);
-                          border: 1px solid var(--border); border-radius: 4px;
-                          padding: 4px 12px; cursor: pointer; font-size: 14px; }}
-  .lightbox-bar button:hover {{ background: var(--accent); color: #fff; }}
-  .lightbox-bar .lb-zoom {{ color: var(--muted); font-variant-numeric: tabular-nums;
-                            min-width: 60px; text-align: right; }}
-  .lightbox-stage {{ flex: 1; overflow: hidden; position: relative;
-                     background: #fff; cursor: grab; }}
-  .lightbox-stage.dragging {{ cursor: grabbing; }}
-  .lightbox-stage .lb-content {{ position: absolute; top: 0; left: 0;
-                                 transform-origin: 0 0; transition: none; }}
-  .lightbox-stage .lb-content svg {{ display: block; }}
-  .lightbox-stage .lb-content object {{ display: block; pointer-events: none; }}
-</style>
-</head>
-<body>
-<header>
-  <h1>⊕ Diagrams Dashboard</h1>
-  <span class="meta">{total} diagrams · {ok_count} rendered · {fallback_count} fallback · generated {generated}</span>
-  <span class="badge">mermaid.js</span>
-</header>
-<main>
-{body}
-</main>
-
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="lightbox-bar">
-    <span class="lb-title" id="lb-title"></span>
-    <button id="lb-zoom-out" title="Zoom out (−)">−</button>
-    <span class="lb-zoom" id="lb-zoom">100%</span>
-    <button id="lb-zoom-in" title="Zoom in (+)">+</button>
-    <button id="lb-fit" title="Fit to window (0)">Fit</button>
-    <button id="lb-100" title="Actual size (1)">1:1</button>
-    <a id="lb-open" target="_blank" rel="noopener"><button>Open SVG</button></a>
-    <button id="lb-close" title="Close (Esc)">✕</button>
-  </div>
-  <div class="lightbox-stage" id="lb-stage">
-    <div class="lb-content" id="lb-content"></div>
-  </div>
-</div>
-
-<script>
-  // Lightbox: click thumb or zoom button → fullscreen pan/zoom view.
-  (function() {{
-    const lb = document.getElementById("lightbox");
-    const stage = document.getElementById("lb-stage");
-    const content = document.getElementById("lb-content");
-    const lbTitle = document.getElementById("lb-title");
-    const lbZoom = document.getElementById("lb-zoom");
-    const lbOpen = document.getElementById("lb-open");
-    let scale = 1, tx = 0, ty = 0;
-    let dragging = false, lastX = 0, lastY = 0;
-    let naturalW = 0, naturalH = 0;
-
-    function apply() {{
-      content.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
-      lbZoom.textContent = Math.round(scale * 100) + "%";
-    }}
-    function fit() {{
-      if (!naturalW || !naturalH) return;
-      const sw = stage.clientWidth, sh = stage.clientHeight;
-      scale = Math.min(sw / naturalW, sh / naturalH) * 0.95;
-      tx = (sw - naturalW * scale) / 2;
-      ty = (sh - naturalH * scale) / 2;
-      apply();
-    }}
-    function actual() {{
-      scale = 1;
-      tx = (stage.clientWidth - naturalW) / 2;
-      ty = (stage.clientHeight - naturalH) / 2;
-      apply();
-    }}
-    function open(svgPath, title, hintW, hintH) {{
-      lbTitle.textContent = title;
-      lbOpen.href = svgPath;
-      content.innerHTML = "";
-      const img = new Image();
-      img.onload = () => {{
-        // Prefer dimensions hint embedded at generation time (from viewBox)
-        // because mermaid SVGs use width="100%" which yields tiny naturalWidth.
-        naturalW = hintW || img.naturalWidth || img.width || 800;
-        naturalH = hintH || img.naturalHeight || img.height || 600;
-        img.style.display = "block";
-        img.style.width = naturalW + "px";
-        img.style.height = naturalH + "px";
-        content.appendChild(img);
-        fit();
-      }};
-      img.onerror = () => {{
-        content.innerHTML = "<div style='color:#c00;padding:20px'>Failed to load " + svgPath + "</div>";
-      }};
-      img.src = svgPath;
-      lb.classList.add("open");
-      lb.setAttribute("aria-hidden", "false");
-    }}
-    function close() {{
-      lb.classList.remove("open");
-      lb.setAttribute("aria-hidden", "true");
-      content.innerHTML = "";
-    }}
-    function zoomBy(factor, cx, cy) {{
-      const newScale = Math.max(0.05, Math.min(20, scale * factor));
-      // Zoom toward (cx, cy) in stage coordinates
-      const sx = (cx - tx) / scale;
-      const sy = (cy - ty) / scale;
-      scale = newScale;
-      tx = cx - sx * scale;
-      ty = cy - sy * scale;
-      apply();
-    }}
-
-    // Wire up triggers
-    document.querySelectorAll(".zoom-btn, .svg-wrap").forEach(el => {{
-      el.addEventListener("click", e => {{
-        e.preventDefault();
-        e.stopPropagation();
-        const svg = el.dataset.svg;
-        const title = el.dataset.title || "Diagram";
-        const w = parseFloat(el.dataset.w) || 0;
-        const h = parseFloat(el.dataset.h) || 0;
-        if (svg) open(svg, title, w, h);
-      }});
-    }});
-    document.getElementById("lb-close").addEventListener("click", close);
-    document.getElementById("lb-zoom-in").addEventListener("click", () =>
-      zoomBy(1.25, stage.clientWidth / 2, stage.clientHeight / 2));
-    document.getElementById("lb-zoom-out").addEventListener("click", () =>
-      zoomBy(0.8, stage.clientWidth / 2, stage.clientHeight / 2));
-    document.getElementById("lb-fit").addEventListener("click", fit);
-    document.getElementById("lb-100").addEventListener("click", actual);
-
-    // Wheel zoom
-    stage.addEventListener("wheel", e => {{
-      e.preventDefault();
-      const rect = stage.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      zoomBy(e.deltaY < 0 ? 1.15 : 0.87, cx, cy);
-    }}, {{ passive: false }});
-
-    // Pan
-    stage.addEventListener("mousedown", e => {{
-      dragging = true; lastX = e.clientX; lastY = e.clientY;
-      stage.classList.add("dragging");
-    }});
-    window.addEventListener("mousemove", e => {{
-      if (!dragging) return;
-      tx += e.clientX - lastX; ty += e.clientY - lastY;
-      lastX = e.clientX; lastY = e.clientY;
-      apply();
-    }});
-    window.addEventListener("mouseup", () => {{
-      dragging = false; stage.classList.remove("dragging");
-    }});
-
-    // Keyboard
-    window.addEventListener("keydown", e => {{
-      if (!lb.classList.contains("open")) return;
-      if (e.key === "Escape") close();
-      else if (e.key === "+" || e.key === "=")
-        zoomBy(1.25, stage.clientWidth / 2, stage.clientHeight / 2);
-      else if (e.key === "-" || e.key === "_")
-        zoomBy(0.8, stage.clientWidth / 2, stage.clientHeight / 2);
-      else if (e.key === "0") fit();
-      else if (e.key === "1") actual();
-    }});
-
-    // Click outside content (on backdrop) closes
-    lb.addEventListener("click", e => {{ if (e.target === lb) close(); }});
-  }})();
-</script>
-</body>
-</html>
-"""
+    """Build the architecture index with links to standalone pages."""
+    groups: dict[str, list[tuple[str, dict]]] = {project: [] for project in PROJECT_ORDER}
+    for stem, info in sorted(results.items()):
+        groups.setdefault(_project_of(stem), []).append((stem, info))
+    sections = []
+    for project in PROJECT_ORDER:
+        cards = "".join(f'<article><h3>{html.escape(stem.replace("-", " ").title())}</h3><p>Source-backed diagram with visible components, grouping, and declared connections.</p><a href="{html.escape(info["path"].relative_to(REPORTS_DIR).as_posix())}">Open architecture page</a></article>' for stem, info in groups.get(project, []))
+        if cards:
+            sections.append(f'<section><h2>{html.escape(PROJECT_LABELS[project])}</h2><div class="grid">{cards}</div></section>')
+    body = "".join(sections) or "<p>No canonical diagrams found.</p>"
+    style = 'body{margin:0;background:#172a31;color:#f7f0e5;font:16px/1.5 Georgia,serif}main{max-width:1100px;margin:auto;padding:clamp(24px,5vw,70px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif}h1{font-size:clamp(2.2rem,6vw,5rem);margin:.1em 0}h2{color:#e59c5f;border-bottom:1px solid #536467;padding-bottom:8px;margin-top:42px}.intro{color:#d2dad5;max-width:60em;font-size:1.1rem}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}article{background:#f7f0e5;color:#18252b;padding:18px;border-top:5px solid #bd4b31}article p{color:#536467}a{color:#9d3e2a;font-weight:700}'
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Architecture Atlas</title><style>{style}</style></head><body><main><small>⊕ WORKSPACE / ARCHITECTURE</small><h1>Architecture Atlas</h1><p class="intro">A navigable index of source-backed architecture diagrams. Each page keeps the canonical source and provenance alongside the visual structure.</p>{body}</main></body></html>'
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate ⊕ Diagrams Dashboard")
-    parser.add_argument("--no-open", action="store_true", help="Do not open the dashboard in a browser")
-    parser.add_argument("--no-render", action="store_true",
-                        help="Skip rendering — rebuild index from existing SVGs only")
+    parser = argparse.ArgumentParser(description="Generate readable architecture diagrams")
+    parser.add_argument("--no-open", action="store_true")
     args = parser.parse_args()
-
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    SVG_OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    if args.no_render:
-        # Build results from existing SVGs
-        results: dict[str, dict] = {}
-        for mmd_path in discover_diagrams():
-            stem = mmd_path.stem
-            svg_path = SVG_OUT_DIR / f"{stem}.svg"
-            source = mmd_path.read_text(encoding="utf-8")
-            if svg_path.exists():
-                results[stem] = {"ok": True, "path": svg_path, "source": source, "mmd_path": mmd_path}
-            else:
-                results[stem] = {"ok": False, "error": "Not rendered yet", "source": source, "mmd_path": mmd_path}
-    else:
-        client = MermaidClient()
-        backend = "mmdc CLI" if client.cli_available() else "mermaid.ink HTTP"
-        print(f"[diagrams] Backend: {backend}")
-        results = render_all(client)
-        ok = sum(1 for r in results.values() if r["ok"])
-        fallback = sum(1 for r in results.values() if r.get("fallback_error"))
-        print(f"[diagrams] Rendered {ok}/{len(results)} diagrams")
-        if fallback:
-            print(f"[diagrams] Fallback used for {fallback} diagram(s)")
-        for stem, info in results.items():
-            if info.get("fallback_error"):
-                print(f"  [FALLBACK] {stem}: {info['fallback_error']}", file=sys.stderr)
-
+    results = render_all()
     INDEX_PATH.write_text(build_index(results), encoding="utf-8")
-    print(f"[diagrams] Wrote {INDEX_PATH}")
-
+    print(f"[diagrams] Wrote {len(results)} architecture pages and {INDEX_PATH}")
     if not args.no_open:
         webbrowser.open(INDEX_PATH.as_uri())
-
     return 0
 
 

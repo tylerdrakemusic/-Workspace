@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Manifest Db Schema architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / TB</p><h1>Manifest Db Schema</h1><p class="architecture-overview">A source-backed view of 5 declared components and 2 directed connections in manifest db schema.</p><section class="architecture-diagram" aria-label="Manifest Db Schema architecture diagram" data-direction="TB"><div class="diagram-regions"><section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid"><div class="diagram-node" data-node-id="BRIEFS" tabindex="0"><strong>BRIEFS</strong><small>BRIEFS</small></div><div class="diagram-node" data-node-id="BRIEF_AUDIO" tabindex="0"><strong>BRIEF_AUDIO</strong><small>BRIEF_AUDIO</small></div><div class="diagram-node" data-node-id="VOICES" tabindex="0"><strong>VOICES</strong><small>VOICES</small></div><div class="diagram-node" data-node-id="TODOS" tabindex="0"><strong>TODOS</strong><small>TODOS</small></div><div class="diagram-node" data-node-id="PRIORITY_HISTORY" tabindex="0"><strong>PRIORITY_HISTORY</strong><small>PRIORITY_HISTORY</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="BRIEFS" data-target="BRIEF_AUDIO" role="img" aria-label="BRIEFS to BRIEF_AUDIO"><span class="edge-endpoint">BRIEFS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">has</span><span class="edge-endpoint">BRIEF_AUDIO</span></div><div class="diagram-edge" data-source="TODOS" data-target="PRIORITY_HISTORY" role="img" aria-label="TODOS to PRIORITY_HISTORY"><span class="edge-endpoint">TODOS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">has</span><span class="edge-endpoint">PRIORITY_HISTORY</span></div></section></section><section class="unsupported"><h2>Unsupported source constructs</h2><p>These lines remain visible for review and were not interpreted as diagram semantics.</p><ul><li>Line 5: <code>text brief_id PK</code></li><li>Line 6: <code>text title</code></li><li>Line 7: <code>text source_topic</code></li><li>Line 8: <code>text content_md</code></li><li>Line 9: <code>text generated_at</code></li><li>Line 10: <code>}</code></li><li>Line 12: <code>integer id PK</code></li><li>Line 13: <code>text brief_id FK</code></li><li>Line 14: <code>text voice_id</code></li><li>Line 15: <code>text mp3_path</code></li><li>Line 16: <code>real duration_sec</code></li><li>Line 17: <code>}</code></li><li>Line 19: <code>text voice_id PK</code></li><li>Line 20: <code>text label</code></li><li>Line 21: <code>text provider</code></li><li>Line 22: <code>}</code></li><li>Line 25: <code>integer id PK</code></li><li>Line 26: <code>text project</code></li><li>Line 27: <code>text source &quot;AI|TYLER|SCAN&quot;</code></li><li>Line 28: <code>text text</code></li><li>Line 29: <code>integer done</code></li><li>Line 30: <code>text created_at</code></li><li>Line 31: <code>text closed_at</code></li><li>Line 32: <code>integer priority &quot;default 5&quot;</code></li><li>Line 33: <code>text autonomy_level &quot;full|supervised|human&quot;</code></li><li>Line 34: <code>text fr_id &quot;nullable — links to active FR&quot;</code></li><li>Line 35: <code>text rationale &quot;nullable — LLM-generated rationale&quot;</code></li><li>Line 36: <code>text implementation_hints &quot;nullable — LLM-generated hints&quot;</code></li><li>Line 37: <code>text context_snapshot &quot;nullable — project context at discovery&quot;</code></li><li>Line 38: <code>text estimated_effort &quot;nullable — XS|S|M|L|XL&quot;</code></li><li>Line 39: <code>text dependencies &quot;nullable — todo IDs / FR IDs (comma-sep)&quot;</code></li><li>Line 40: <code>}</code></li><li>Line 42: <code>integer id PK</code></li><li>Line 43: <code>integer todo_id FK</code></li><li>Line 44: <code>integer priority</code></li><li>Line 45: <code>text scored_at</code></li><li>Line 46: <code>}</code></li></ul></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/manifest-db-schema.mmd</code><br>sha256: <code>ed4198c86aed2fe50123cf3795f73621e98f2cacb703562d076b1e5ba87e6b77</code></p><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    BRIEFS ||--o{ BRIEF_AUDIO : has
+    BRIEFS {
+        text brief_id PK
+        text title
+        text source_topic
+        text content_md
+        text generated_at
+    }
+    BRIEF_AUDIO {
+        integer id PK
+        text brief_id FK
+        text voice_id
+        text mp3_path
+        real duration_sec
+    }
+    VOICES {
+        text voice_id PK
+        text label
+        text provider
+    }
+    TODOS ||--o{ PRIORITY_HISTORY : has
+    TODOS {
+        integer id PK
+        text project
+        text source &quot;AI|TYLER|SCAN&quot;
+        text text
+        integer done
+        text created_at
+        text closed_at
+        integer priority &quot;default 5&quot;
+        text autonomy_level &quot;full|supervised|human&quot;
+        text fr_id &quot;nullable — links to active FR&quot;
+        text rationale &quot;nullable — LLM-generated rationale&quot;
+        text implementation_hints &quot;nullable — LLM-generated hints&quot;
+        text context_snapshot &quot;nullable — project context at discovery&quot;
+        text estimated_effort &quot;nullable — XS|S|M|L|XL&quot;
+        text dependencies &quot;nullable — todo IDs / FR IDs (comma-sep)&quot;
+    }
+    PRIORITY_HISTORY {
+        integer id PK
+        integer todo_id FK
+        integer priority
+        text scored_at
+    }</pre></details></main></body></html>

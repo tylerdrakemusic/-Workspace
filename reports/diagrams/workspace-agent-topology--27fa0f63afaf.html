@@ -1,0 +1,132 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Workspace Agent Topology architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / LR</p><h1>Workspace Agent Topology</h1><p class="architecture-overview">A source-backed view of 49 declared components and 21 directed connections in workspace agent topology.</p><section class="architecture-diagram" aria-label="Workspace Agent Topology architecture diagram" data-direction="LR"><div class="diagram-regions"><section class="diagram-group" data-group-id="WS"><h3>⊕ Workspace Agents</h3><div class="node-grid"><div class="diagram-node" data-node-id="Overseer" tabindex="0"><strong>⊕ overseer</strong><small>Overseer</small></div><div class="diagram-node" data-node-id="Intake" tabindex="0"><strong>⊕ intake</strong><small>Intake</small></div><div class="diagram-node" data-node-id="CI" tabindex="0"><strong>⊕ ci</strong><small>CI</small></div><div class="diagram-node" data-node-id="Reviewer" tabindex="0"><strong>⊕ reviewer</strong><small>Reviewer</small></div><div class="diagram-node" data-node-id="Doer" tabindex="0"><strong>⊕ doer</strong><small>Doer</small></div><div class="diagram-node" data-node-id="Security" tabindex="0"><strong>⊕ security</strong><small>Security</small></div><div class="diagram-node" data-node-id="Hygiene" tabindex="0"><strong>⊕ hygiene</strong><small>Hygiene</small></div><div class="diagram-node" data-node-id="ArchRev" tabindex="0"><strong>⊕ architecture-reviewer</strong><small>ArchRev</small></div><div class="diagram-node" data-node-id="ArchBeaut" tabindex="0"><strong>⊕ architecture-beautifier</strong><small>ArchBeaut</small></div><div class="diagram-node" data-node-id="GenQEE" tabindex="0"><strong>⊕ gen-qee</strong><small>GenQEE</small></div><div class="diagram-node" data-node-id="Discovery" tabindex="0"><strong>⊕ discovery</strong><small>Discovery</small></div><div class="diagram-node" data-node-id="Dashboards" tabindex="0"><strong>⊕ dashboards</strong><small>Dashboards</small></div><div class="diagram-node" data-node-id="BenchAnalyzer" tabindex="0"><strong>⊕ bench-analyzer</strong><small>BenchAnalyzer</small></div><div class="diagram-node" data-node-id="Protector" tabindex="0"><strong>⊕ protector</strong><small>Protector</small></div><div class="diagram-node" data-node-id="QA" tabindex="0"><strong>⊕ qa</strong><small>QA</small></div></div><section class="diagram-group" data-group-id="TDD_TIER" data-parent-group-id="WS"><h3>TDD Tier Variants</h3><div class="node-grid"><div class="diagram-node" data-node-id="TDDLight" tabindex="0"><strong>⊕ tdd-light</strong><small>TDDLight</small></div><div class="diagram-node" data-node-id="TDDStd" tabindex="0"><strong>⊕ tdd-standard</strong><small>TDDStd</small></div><div class="diagram-node" data-node-id="TDDHeavy" tabindex="0"><strong>⊕ tdd-heavy</strong><small>TDDHeavy</small></div></div></section><section class="diagram-group" data-group-id="QA_TIER" data-parent-group-id="WS"><h3>QA Tier Variants</h3><div class="node-grid"><div class="diagram-node" data-node-id="QALight" tabindex="0"><strong>⊕ qa-light</strong><small>QALight</small></div><div class="diagram-node" data-node-id="QAHeavy" tabindex="0"><strong>⊕ qa-heavy</strong><small>QAHeavy</small></div></div></section><section class="diagram-group" data-group-id="REV_TIER" data-parent-group-id="WS"><h3>Reviewer Tier Variants</h3><div class="node-grid"><div class="diagram-node" data-node-id="ReviewerLight" tabindex="0"><strong>⊕ reviewer-light</strong><small>ReviewerLight</small></div><div class="diagram-node" data-node-id="ReviewerHeavy" tabindex="0"><strong>⊕ reviewer-heavy</strong><small>ReviewerHeavy</small></div></div></section></section><section class="diagram-group" data-group-id="LIFE"><h3>∞Life</h3><div class="node-grid"><div class="diagram-node" data-node-id="LifeOrch" tabindex="0"><strong>∞ orchestrator</strong><small>LifeOrch</small></div><div class="diagram-node" data-node-id="LifeBrainstorm" tabindex="0"><strong>∞ brainstorm</strong><small>LifeBrainstorm</small></div><div class="diagram-node" data-node-id="LifeBudget" tabindex="0"><strong>∞ budget</strong><small>LifeBudget</small></div><div class="diagram-node" data-node-id="LifeDA" tabindex="0"><strong>∞ data-analytics</strong><small>LifeDA</small></div><div class="diagram-node" data-node-id="LifeResearch" tabindex="0"><strong>∞ research</strong><small>LifeResearch</small></div><div class="diagram-node" data-node-id="LifeRisk" tabindex="0"><strong>∞ risk</strong><small>LifeRisk</small></div></div></section><section class="diagram-group" data-group-id="MUSIC"><h3>❤Music</h3><div class="node-grid"><div class="diagram-node" data-node-id="MusicOrch" tabindex="0"><strong>❤ orchestrator</strong><small>MusicOrch</small></div><div class="diagram-node" data-node-id="MusicCatalog" tabindex="0"><strong>❤ catalog</strong><small>MusicCatalog</small></div><div class="diagram-node" data-node-id="MusicPerf" tabindex="0"><strong>❤ performance</strong><small>MusicPerf</small></div><div class="diagram-node" data-node-id="MusicProd" tabindex="0"><strong>❤ production</strong><small>MusicProd</small></div><div class="diagram-node" data-node-id="MusicSig" tabindex="0"><strong>❤ signatures</strong><small>MusicSig</small></div><div class="diagram-node" data-node-id="MusicGuitarTech" tabindex="0"><strong>❤ guitar-tech</strong><small>MusicGuitarTech</small></div></div></section><section class="diagram-group" data-group-id="QUANTUM"><h3>⟨ψ⟩Quantum</h3><div class="node-grid"><div class="diagram-node" data-node-id="QuantumOrch" tabindex="0"><strong>⟨ψ⟩ orchestrator</strong><small>QuantumOrch</small></div><div class="diagram-node" data-node-id="QuantumResearch" tabindex="0"><strong>⟨ψ⟩ research</strong><small>QuantumResearch</small></div></div></section><section class="diagram-group" data-group-id="MANIFEST"><h3>👁AI-Manifest</h3><div class="node-grid"><div class="diagram-node" data-node-id="ManifestOrch" tabindex="0"><strong>👁 orchestrator</strong><small>ManifestOrch</small></div></div></section><section class="diagram-group" data-group-id="CAPITAL"><h3>ΣCapital</h3><div class="node-grid"><div class="diagram-node" data-node-id="CapitalOrch" tabindex="0"><strong>Σ orchestrator (stub</strong><small>CapitalOrch</small></div><div class="diagram-node" data-node-id="CapitalResearch" tabindex="0"><strong>Σ research</strong><small>CapitalResearch</small></div></div></section><section class="diagram-group" data-group-id="INSTR"><h3>Shared Instructions · all agents inherit agent-self-regen</h3><div class="node-grid"><div class="diagram-node" data-node-id="FRFlow" tabindex="0"><strong>feature-request-flow</strong><small>FRFlow</small></div><div class="diagram-node" data-node-id="HygBase" tabindex="0"><strong>hygiene-base</strong><small>HygBase</small></div><div class="diagram-node" data-node-id="OrcClean" tabindex="0"><strong>orchestrator-cleanup</strong><small>OrcClean</small></div><div class="diagram-node" data-node-id="DbKeys" tabindex="0"><strong>db-api-keys</strong><small>DbKeys</small></div><div class="diagram-node" data-node-id="PlayPreflight" tabindex="0"><strong>playwright-server-preflight</strong><small>PlayPreflight</small></div></div></section><section class="diagram-group" data-group-id="PINSTR"><h3>Project Base Instructions</h3><div class="node-grid"><div class="diagram-node" data-node-id="LifeBase" tabindex="0"><strong>∞life-base</strong><small>LifeBase</small></div><div class="diagram-node" data-node-id="HealthEval" tabindex="0"><strong>∞life-health-evaluation</strong><small>HealthEval</small></div><div class="diagram-node" data-node-id="MusicBase" tabindex="0"><strong>❤music-base</strong><small>MusicBase</small></div><div class="diagram-node" data-node-id="QuantumBase" tabindex="0"><strong>⟨ψ⟩quantum-base</strong><small>QuantumBase</small></div></div></section><section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid"><div class="diagram-node" data-node-id="Tyler" tabindex="0"><strong>Tyler</strong><small>Tyler</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="Overseer" data-target="Intake" role="img" aria-label="Overseer to Intake"><span class="edge-endpoint">Overseer</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">Intake</span></div><div class="diagram-edge" data-source="Overseer" data-target="Hygiene" role="img" aria-label="Overseer to Hygiene"><span class="edge-endpoint">Overseer</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">Hygiene</span></div><div class="diagram-edge" data-source="Overseer" data-target="Dashboards" role="img" aria-label="Overseer to Dashboards"><span class="edge-endpoint">Overseer</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">Dashboards</span></div><div class="diagram-edge" data-source="Overseer" data-target="LifeOrch" role="img" aria-label="Overseer to LifeOrch"><span class="edge-endpoint">Overseer</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">LifeOrch</span></div><div class="diagram-edge" data-source="Overseer" data-target="TDDLight" role="img" aria-label="Overseer to TDDLight"><span class="edge-endpoint">Overseer</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">TDDLight</span></div><div class="diagram-edge" data-source="ArchRev" data-target="ArchBeaut" role="img" aria-label="ArchRev to ArchBeaut"><span class="edge-endpoint">ArchRev</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-label">STALE → delegates</span><span class="edge-endpoint">ArchBeaut</span></div><div class="diagram-edge" data-source="QA" data-target="QALight" role="img" aria-label="QA to QALight"><span class="edge-endpoint">QA</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">QALight</span></div><div class="diagram-edge" data-source="Reviewer" data-target="ReviewerLight" role="img" aria-label="Reviewer to ReviewerLight"><span class="edge-endpoint">Reviewer</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">ReviewerLight</span></div><div class="diagram-edge" data-source="LifeOrch" data-target="LifeBrainstorm" role="img" aria-label="LifeOrch to LifeBrainstorm"><span class="edge-endpoint">LifeOrch</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">LifeBrainstorm</span></div><div class="diagram-edge" data-source="MusicOrch" data-target="MusicCatalog" role="img" aria-label="MusicOrch to MusicCatalog"><span class="edge-endpoint">MusicOrch</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">MusicCatalog</span></div><div class="diagram-edge" data-source="QuantumOrch" data-target="QuantumResearch" role="img" aria-label="QuantumOrch to QuantumResearch"><span class="edge-endpoint">QuantumOrch</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">QuantumResearch</span></div><div class="diagram-edge" data-source="CapitalOrch" data-target="CapitalResearch" role="img" aria-label="CapitalOrch to CapitalResearch"><span class="edge-endpoint">CapitalOrch</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">CapitalResearch</span></div><div class="diagram-edge" data-source="FRFlow" data-target="Intake" role="img" aria-label="FRFlow to Intake"><span class="edge-endpoint">FRFlow</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">Intake</span></div><div class="diagram-edge" data-source="HygBase" data-target="Hygiene" role="img" aria-label="HygBase to Hygiene"><span class="edge-endpoint">HygBase</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">Hygiene</span></div><div class="diagram-edge" data-source="OrcClean" data-target="LifeOrch" role="img" aria-label="OrcClean to LifeOrch"><span class="edge-endpoint">OrcClean</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">LifeOrch</span></div><div class="diagram-edge" data-source="DbKeys" data-target="Overseer" role="img" aria-label="DbKeys to Overseer"><span class="edge-endpoint">DbKeys</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">Overseer</span></div><div class="diagram-edge" data-source="PlayPreflight" data-target="QA" role="img" aria-label="PlayPreflight to QA"><span class="edge-endpoint">PlayPreflight</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">QA</span></div><div class="diagram-edge" data-source="LifeBase" data-target="LifeOrch" role="img" aria-label="LifeBase to LifeOrch"><span class="edge-endpoint">LifeBase</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">LifeOrch</span></div><div class="diagram-edge" data-source="HealthEval" data-target="LifeRisk" role="img" aria-label="HealthEval to LifeRisk"><span class="edge-endpoint">HealthEval</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">LifeRisk</span></div><div class="diagram-edge" data-source="MusicBase" data-target="MusicOrch" role="img" aria-label="MusicBase to MusicOrch"><span class="edge-endpoint">MusicBase</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">MusicOrch</span></div><div class="diagram-edge" data-source="QuantumBase" data-target="QuantumOrch" role="img" aria-label="QuantumBase to QuantumOrch"><span class="edge-endpoint">QuantumBase</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">QuantumOrch</span></div></section></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/workspace-agent-topology.mmd</code><br>sha256: <code>27fa0f63afaf83e6391f4bfa8ab98e0afa121c5cc77af653502fc5b7368afdfd</code></p><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph LR
+    Tyler([Tyler]) --&gt; Overseer
+
+    subgraph WS[&quot;⊕ Workspace Agents&quot;]
+        Overseer([&quot;⊕ overseer&quot;])
+        Intake([&quot;⊕ intake&quot;])
+        CI([&quot;⊕ ci&quot;])
+        Reviewer([&quot;⊕ reviewer&quot;])
+        Doer([&quot;⊕ doer&quot;])
+        Security([&quot;⊕ security&quot;])
+        Hygiene([&quot;⊕ hygiene&quot;])
+        ArchRev([&quot;⊕ architecture-reviewer&quot;])
+        ArchBeaut([&quot;⊕ architecture-beautifier&quot;])
+        GenQEE([&quot;⊕ gen-qee&quot;])
+        Discovery([&quot;⊕ discovery&quot;])
+        Dashboards([&quot;⊕ dashboards&quot;])
+        BenchAnalyzer([&quot;⊕ bench-analyzer&quot;])
+        Protector([&quot;⊕ protector&quot;])
+        QA([&quot;⊕ qa&quot;])
+        subgraph TDD_TIER[&quot;TDD Tier Variants&quot;]
+            TDDLight([&quot;⊕ tdd-light&quot;])
+            TDDStd([&quot;⊕ tdd-standard&quot;])
+            TDDHeavy([&quot;⊕ tdd-heavy&quot;])
+        end
+        subgraph QA_TIER[&quot;QA Tier Variants&quot;]
+            QALight([&quot;⊕ qa-light&quot;])
+            QAHeavy([&quot;⊕ qa-heavy&quot;])
+        end
+        subgraph REV_TIER[&quot;Reviewer Tier Variants&quot;]
+            ReviewerLight([&quot;⊕ reviewer-light&quot;])
+            ReviewerHeavy([&quot;⊕ reviewer-heavy&quot;])
+        end
+    end
+
+    subgraph LIFE[&quot;∞Life&quot;]
+        LifeOrch([&quot;∞ orchestrator&quot;])
+        LifeBrainstorm([&quot;∞ brainstorm&quot;])
+        LifeBudget([&quot;∞ budget&quot;])
+        LifeDA([&quot;∞ data-analytics&quot;])
+        LifeResearch([&quot;∞ research&quot;])
+        LifeRisk([&quot;∞ risk&quot;])
+    end
+
+    subgraph MUSIC[&quot;❤Music&quot;]
+        MusicOrch([&quot;❤ orchestrator&quot;])
+        MusicCatalog([&quot;❤ catalog&quot;])
+        MusicPerf([&quot;❤ performance&quot;])
+        MusicProd([&quot;❤ production&quot;])
+        MusicSig([&quot;❤ signatures&quot;])
+        MusicGuitarTech([&quot;❤ guitar-tech&quot;])
+    end
+
+    subgraph QUANTUM[&quot;⟨ψ⟩Quantum&quot;]
+        QuantumOrch([&quot;⟨ψ⟩ orchestrator&quot;])
+        QuantumResearch([&quot;⟨ψ⟩ research&quot;])
+    end
+
+    subgraph MANIFEST[&quot;👁AI-Manifest&quot;]
+        ManifestOrch([&quot;👁 orchestrator&quot;])
+    end
+
+    subgraph CAPITAL[&quot;ΣCapital&quot;]
+        CapitalOrch([&quot;Σ orchestrator (stub)&quot;])
+        CapitalResearch([&quot;Σ research&quot;])
+    end
+
+    subgraph INSTR[&quot;Shared Instructions · all agents inherit agent-self-regen&quot;]
+        FRFlow[&quot;feature-request-flow&quot;]
+        HygBase[&quot;hygiene-base&quot;]
+        OrcClean[&quot;orchestrator-cleanup&quot;]
+        DbKeys[&quot;db-api-keys&quot;]
+        PlayPreflight[&quot;playwright-server-preflight&quot;]
+    end
+
+    subgraph PINSTR[&quot;Project Base Instructions&quot;]
+        LifeBase[&quot;∞life-base&quot;]
+        HealthEval[&quot;∞life-health-evaluation&quot;]
+        MusicBase[&quot;❤music-base&quot;]
+        QuantumBase[&quot;⟨ψ⟩quantum-base&quot;]
+    end
+
+    %% ── Overseer routing ──
+    Overseer --&gt; Intake &amp; CI &amp; Reviewer &amp; Doer &amp; Security
+    Overseer --&gt; Hygiene &amp; ArchRev &amp; ArchBeaut &amp; GenQEE &amp; Discovery
+    Overseer --&gt; Dashboards &amp; BenchAnalyzer &amp; Protector &amp; QA
+    Overseer --&gt; LifeOrch &amp; MusicOrch &amp; QuantumOrch &amp; ManifestOrch &amp; CapitalOrch
+    Overseer --&gt; TDDLight &amp; TDDStd &amp; TDDHeavy
+    ArchRev -.-&gt;|STALE → delegates| ArchBeaut
+    QA --&gt; QALight &amp; QAHeavy
+    Reviewer --&gt; ReviewerLight &amp; ReviewerHeavy
+
+    %% ── Project routing ──
+    LifeOrch --&gt; LifeBrainstorm &amp; LifeBudget &amp; LifeDA &amp; LifeResearch &amp; LifeRisk
+    MusicOrch --&gt; MusicCatalog &amp; MusicPerf &amp; MusicProd &amp; MusicSig &amp; MusicGuitarTech
+    QuantumOrch --&gt; QuantumResearch
+    CapitalOrch --&gt; CapitalResearch
+
+    %% ── Instruction inheritance (dashed) ──
+    FRFlow -.-&gt; Intake &amp; Reviewer &amp; ArchRev &amp; ArchBeaut
+    HygBase -.-&gt; Hygiene
+    OrcClean -.-&gt; LifeOrch &amp; MusicOrch &amp; QuantumOrch &amp; CapitalOrch
+    DbKeys -.-&gt; Overseer &amp; GenQEE &amp; LifeOrch &amp; QuantumOrch &amp; ManifestOrch &amp; CapitalOrch
+    PlayPreflight -.-&gt; QA &amp; QALight &amp; QAHeavy
+
+    LifeBase -.-&gt; LifeOrch &amp; LifeBrainstorm &amp; LifeBudget &amp; LifeDA &amp; LifeResearch &amp; LifeRisk
+    HealthEval -.-&gt; LifeRisk
+    MusicBase -.-&gt; MusicOrch &amp; MusicCatalog &amp; MusicPerf &amp; MusicProd &amp; MusicSig &amp; MusicGuitarTech
+    QuantumBase -.-&gt; QuantumOrch &amp; QuantumResearch
+
+    %% ── Class assignments ──
+    class Overseer,Intake,CI,Reviewer,Doer,Security,Hygiene,ArchRev,ArchBeaut ws
+    class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
+    class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
+    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
+    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
+    class QuantumOrch,QuantumResearch quantum
+    class ManifestOrch manifest
+    class CapitalOrch capital
+    class CapitalResearch capital
+    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
+    class Tyler tyler
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
+</pre></details></main></body></html>

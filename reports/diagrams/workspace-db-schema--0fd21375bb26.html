@@ -1,0 +1,81 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Workspace Db Schema architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / TB</p><h1>Workspace Db Schema</h1><p class="architecture-overview">A source-backed view of 8 declared components and 3 directed connections in workspace db schema.</p><section class="architecture-diagram" aria-label="Workspace Db Schema architecture diagram" data-direction="TB"><div class="diagram-regions"><section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid"><div class="diagram-node" data-node-id="PERF_RUNS" tabindex="0"><strong>PERF_RUNS</strong><small>PERF_RUNS</small></div><div class="diagram-node" data-node-id="PROOF_ARTIFACTS" tabindex="0"><strong>PROOF_ARTIFACTS</strong><small>PROOF_ARTIFACTS</small></div><div class="diagram-node" data-node-id="PERF_STEPS" tabindex="0"><strong>PERF_STEPS</strong><small>PERF_STEPS</small></div><div class="diagram-node" data-node-id="API_HEALTH" tabindex="0"><strong>API_HEALTH</strong><small>API_HEALTH</small></div><div class="diagram-node" data-node-id="VULNERABILITIES" tabindex="0"><strong>VULNERABILITIES</strong><small>VULNERABILITIES</small></div><div class="diagram-node" data-node-id="SCAN_RUN_LOG" tabindex="0"><strong>SCAN_RUN_LOG</strong><small>SCAN_RUN_LOG</small></div><div class="diagram-node" data-node-id="AGENT_FEEDBACK" tabindex="0"><strong>AGENT_FEEDBACK</strong><small>AGENT_FEEDBACK</small></div><div class="diagram-node" data-node-id="TECH_DEBT" tabindex="0"><strong>TECH_DEBT</strong><small>TECH_DEBT</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="PERF_RUNS" data-target="PROOF_ARTIFACTS" role="img" aria-label="PERF_RUNS to PROOF_ARTIFACTS"><span class="edge-endpoint">PERF_RUNS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">has</span><span class="edge-endpoint">PROOF_ARTIFACTS</span></div><div class="diagram-edge" data-source="PERF_RUNS" data-target="PERF_STEPS" role="img" aria-label="PERF_RUNS to PERF_STEPS"><span class="edge-endpoint">PERF_RUNS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">has</span><span class="edge-endpoint">PERF_STEPS</span></div><div class="diagram-edge" data-source="SCAN_RUN_LOG" data-target="VULNERABILITIES" role="img" aria-label="SCAN_RUN_LOG to VULNERABILITIES"><span class="edge-endpoint">SCAN_RUN_LOG</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">produces</span><span class="edge-endpoint">VULNERABILITIES</span></div></section></section><section class="unsupported"><h2>Unsupported source constructs</h2><p>These lines remain visible for review and were not interpreted as diagram semantics.</p><ul><li>Line 6: <code>text run_id PK</code></li><li>Line 7: <code>text task</code></li><li>Line 8: <code>text agent</code></li><li>Line 9: <code>text status</code></li><li>Line 10: <code>real start_ts</code></li><li>Line 11: <code>real end_ts</code></li><li>Line 12: <code>text detail</code></li><li>Line 13: <code>}</code></li><li>Line 15: <code>integer id PK</code></li><li>Line 16: <code>text run_id FK</code></li><li>Line 17: <code>text step_name</code></li><li>Line 18: <code>real start_ts</code></li><li>Line 19: <code>real end_ts</code></li><li>Line 20: <code>text detail</code></li><li>Line 21: <code>}</code></li><li>Line 23: <code>integer id PK</code></li><li>Line 24: <code>text run_id FK</code></li><li>Line 25: <code>text agent</code></li><li>Line 26: <code>text proof_type</code></li><li>Line 27: <code>text title</code></li><li>Line 28: <code>text path</code></li><li>Line 29: <code>text detail</code></li><li>Line 30: <code>real ts</code></li><li>Line 31: <code>}</code></li><li>Line 33: <code>integer id PK</code></li><li>Line 34: <code>text endpoint</code></li><li>Line 35: <code>text status</code></li><li>Line 36: <code>real latency_ms</code></li><li>Line 37: <code>text error_msg</code></li><li>Line 38: <code>real checked_at</code></li><li>Line 39: <code>}</code></li><li>Line 41: <code>integer id PK</code></li><li>Line 42: <code>text scan_id</code></li><li>Line 43: <code>text project</code></li><li>Line 44: <code>text severity</code></li><li>Line 45: <code>text finding</code></li><li>Line 46: <code>text file_path</code></li><li>Line 47: <code>real detected_at</code></li><li>Line 48: <code>}</code></li><li>Line 50: <code>integer id PK</code></li><li>Line 51: <code>text scan_id</code></li><li>Line 52: <code>text scan_type</code></li><li>Line 53: <code>text status</code></li><li>Line 54: <code>real started_at</code></li><li>Line 55: <code>real finished_at</code></li><li>Line 56: <code>}</code></li><li>Line 59: <code>integer id PK</code></li><li>Line 60: <code>text timestamp</code></li><li>Line 61: <code>text agent_or_prompt_name</code></li><li>Line 62: <code>text artifact_type</code></li><li>Line 63: <code>text target_file_path</code></li><li>Line 64: <code>text finding_text</code></li><li>Line 65: <code>text severity</code></li><li>Line 66: <code>text status</code></li><li>Line 67: <code>text fr_id &quot;idx_agent_feedback_status, idx_agent_feedback_severity&quot;</code></li><li>Line 68: <code>text applied_at</code></li><li>Line 69: <code>text applied_by</code></li><li>Line 70: <code>}</code></li><li>Line 72: <code>text finding_id PK</code></li><li>Line 73: <code>text project</code></li><li>Line 74: <code>text category</code></li><li>Line 75: <code>text file_path</code></li><li>Line 76: <code>integer severity</code></li><li>Line 77: <code>text detail</code></li><li>Line 78: <code>text action</code></li><li>Line 79: <code>text status</code></li><li>Line 80: <code>text created_at</code></li><li>Line 81: <code>}</code></li></ul></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/workspace-db-schema.mmd</code><br>sha256: <code>0fd21375bb2676d80bc3cfac759e8239dde4726ce78a36069567052e4ef0e98c</code></p><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    PERF_RUNS ||--o{ PROOF_ARTIFACTS : has
+    PERF_RUNS ||--o{ PERF_STEPS : has
+    PERF_RUNS {
+        text run_id PK
+        text task
+        text agent
+        text status
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PERF_STEPS {
+        integer id PK
+        text run_id FK
+        text step_name
+        real start_ts
+        real end_ts
+        text detail
+    }
+    PROOF_ARTIFACTS {
+        integer id PK
+        text run_id FK
+        text agent
+        text proof_type
+        text title
+        text path
+        text detail
+        real ts
+    }
+    API_HEALTH {
+        integer id PK
+        text endpoint
+        text status
+        real latency_ms
+        text error_msg
+        real checked_at
+    }
+    VULNERABILITIES {
+        integer id PK
+        text scan_id
+        text project
+        text severity
+        text finding
+        text file_path
+        real detected_at
+    }
+    SCAN_RUN_LOG {
+        integer id PK
+        text scan_id
+        text scan_type
+        text status
+        real started_at
+        real finished_at
+    }
+    SCAN_RUN_LOG ||--o{ VULNERABILITIES : produces
+    AGENT_FEEDBACK {
+        integer id PK
+        text timestamp
+        text agent_or_prompt_name
+        text artifact_type
+        text target_file_path
+        text finding_text
+        text severity
+        text status
+        text fr_id &quot;idx_agent_feedback_status, idx_agent_feedback_severity&quot;
+        text applied_at
+        text applied_by
+    }
+    TECH_DEBT {
+        text finding_id PK
+        text project
+        text category
+        text file_path
+        integer severity
+        text detail
+        text action
+        text status
+        text created_at
+    }</pre></details></main></body></html>

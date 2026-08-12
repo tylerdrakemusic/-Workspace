@@ -1,0 +1,235 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Life Db Schema architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / TB</p><h1>Life Db Schema</h1><p class="architecture-overview">A source-backed view of 30 declared components and 5 directed connections in life db schema.</p><section class="architecture-diagram" aria-label="Life Db Schema architecture diagram" data-direction="TB"><div class="diagram-regions"><section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid"><div class="diagram-node" data-node-id="RESEARCH_NOTES" tabindex="0"><strong>RESEARCH_NOTES</strong><small>RESEARCH_NOTES</small></div><div class="diagram-node" data-node-id="LITERATURE_ENTRIES" tabindex="0"><strong>LITERATURE_ENTRIES</strong><small>LITERATURE_ENTRIES</small></div><div class="diagram-node" data-node-id="BLOODWORK_VISITS" tabindex="0"><strong>BLOODWORK_VISITS</strong><small>BLOODWORK_VISITS</small></div><div class="diagram-node" data-node-id="BIOMARKERS" tabindex="0"><strong>BIOMARKERS</strong><small>BIOMARKERS</small></div><div class="diagram-node" data-node-id="EPIGENETIC_TESTS" tabindex="0"><strong>EPIGENETIC_TESTS</strong><small>EPIGENETIC_TESTS</small></div><div class="diagram-node" data-node-id="EPIGENETIC_CLOCKS" tabindex="0"><strong>EPIGENETIC_CLOCKS</strong><small>EPIGENETIC_CLOCKS</small></div><div class="diagram-node" data-node-id="SYMPHONY_ORGAN_AGES" tabindex="0"><strong>SYMPHONY_ORGAN_AGES</strong><small>SYMPHONY_ORGAN_AGES</small></div><div class="diagram-node" data-node-id="WORKOUT_SESSIONS" tabindex="0"><strong>WORKOUT_SESSIONS</strong><small>WORKOUT_SESSIONS</small></div><div class="diagram-node" data-node-id="WORKOUT_EXERCISES" tabindex="0"><strong>WORKOUT_EXERCISES</strong><small>WORKOUT_EXERCISES</small></div><div class="diagram-node" data-node-id="SUPPLEMENTS" tabindex="0"><strong>SUPPLEMENTS</strong><small>SUPPLEMENTS</small></div><div class="diagram-node" data-node-id="EXPERIMENTS" tabindex="0"><strong>EXPERIMENTS</strong><small>EXPERIMENTS</small></div><div class="diagram-node" data-node-id="PROTOCOLS" tabindex="0"><strong>PROTOCOLS</strong><small>PROTOCOLS</small></div><div class="diagram-node" data-node-id="WEIGHT_LOG" tabindex="0"><strong>WEIGHT_LOG</strong><small>WEIGHT_LOG</small></div><div class="diagram-node" data-node-id="SLEEP_LOG" tabindex="0"><strong>SLEEP_LOG</strong><small>SLEEP_LOG</small></div><div class="diagram-node" data-node-id="RESTING_HR_LOG" tabindex="0"><strong>RESTING_HR_LOG</strong><small>RESTING_HR_LOG</small></div><div class="diagram-node" data-node-id="HRV_LOG" tabindex="0"><strong>HRV_LOG</strong><small>HRV_LOG</small></div><div class="diagram-node" data-node-id="STRESS_LOG" tabindex="0"><strong>STRESS_LOG</strong><small>STRESS_LOG</small></div><div class="diagram-node" data-node-id="BODY_BATTERY_LOG" tabindex="0"><strong>BODY_BATTERY_LOG</strong><small>BODY_BATTERY_LOG</small></div><div class="diagram-node" data-node-id="ACTIVITY_LOG" tabindex="0"><strong>ACTIVITY_LOG</strong><small>ACTIVITY_LOG</small></div><div class="diagram-node" data-node-id="SYNC_LOG" tabindex="0"><strong>SYNC_LOG</strong><small>SYNC_LOG</small></div><div class="diagram-node" data-node-id="MEDICATIONS" tabindex="0"><strong>MEDICATIONS</strong><small>MEDICATIONS</small></div><div class="diagram-node" data-node-id="WGS_PROVIDER_ORDERS" tabindex="0"><strong>WGS_PROVIDER_ORDERS</strong><small>WGS_PROVIDER_ORDERS</small></div><div class="diagram-node" data-node-id="ETL_AUDIT_LOG" tabindex="0"><strong>ETL_AUDIT_LOG</strong><small>ETL_AUDIT_LOG</small></div><div class="diagram-node" data-node-id="NUTRITION_LOG" tabindex="0"><strong>NUTRITION_LOG</strong><small>NUTRITION_LOG</small></div><div class="diagram-node" data-node-id="VITALS" tabindex="0"><strong>VITALS</strong><small>VITALS</small></div><div class="diagram-node" data-node-id="BUDGET" tabindex="0"><strong>BUDGET</strong><small>BUDGET</small></div><div class="diagram-node" data-node-id="UPCOMING_WORKOUTS" tabindex="0"><strong>UPCOMING_WORKOUTS</strong><small>UPCOMING_WORKOUTS</small></div><div class="diagram-node" data-node-id="SYNC_HEALTH" tabindex="0"><strong>SYNC_HEALTH</strong><small>SYNC_HEALTH</small></div><div class="diagram-node" data-node-id="SYNC_ALERTS" tabindex="0"><strong>SYNC_ALERTS</strong><small>SYNC_ALERTS</small></div><div class="diagram-node" data-node-id="TOKEN_REFRESH_LOG" tabindex="0"><strong>TOKEN_REFRESH_LOG</strong><small>TOKEN_REFRESH_LOG</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="RESEARCH_NOTES" data-target="LITERATURE_ENTRIES" role="img" aria-label="RESEARCH_NOTES to LITERATURE_ENTRIES"><span class="edge-endpoint">RESEARCH_NOTES</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">indexes</span><span class="edge-endpoint">LITERATURE_ENTRIES</span></div><div class="diagram-edge" data-source="BLOODWORK_VISITS" data-target="BIOMARKERS" role="img" aria-label="BLOODWORK_VISITS to BIOMARKERS"><span class="edge-endpoint">BLOODWORK_VISITS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">contains</span><span class="edge-endpoint">BIOMARKERS</span></div><div class="diagram-edge" data-source="EPIGENETIC_TESTS" data-target="EPIGENETIC_CLOCKS" role="img" aria-label="EPIGENETIC_TESTS to EPIGENETIC_CLOCKS"><span class="edge-endpoint">EPIGENETIC_TESTS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">contains</span><span class="edge-endpoint">EPIGENETIC_CLOCKS</span></div><div class="diagram-edge" data-source="EPIGENETIC_TESTS" data-target="SYMPHONY_ORGAN_AGES" role="img" aria-label="EPIGENETIC_TESTS to SYMPHONY_ORGAN_AGES"><span class="edge-endpoint">EPIGENETIC_TESTS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">contains</span><span class="edge-endpoint">SYMPHONY_ORGAN_AGES</span></div><div class="diagram-edge" data-source="WORKOUT_SESSIONS" data-target="WORKOUT_EXERCISES" role="img" aria-label="WORKOUT_SESSIONS to WORKOUT_EXERCISES"><span class="edge-endpoint">WORKOUT_SESSIONS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">contains</span><span class="edge-endpoint">WORKOUT_EXERCISES</span></div></section></section><section class="unsupported"><h2>Unsupported source constructs</h2><p>These lines remain visible for review and were not interpreted as diagram semantics.</p><ul><li>Line 10: <code>text name PK</code></li><li>Line 11: <code>text dose</code></li><li>Line 12: <code>text frequency</code></li><li>Line 13: <code>text status</code></li><li>Line 14: <code>}</code></li><li>Line 16: <code>text protocol_id PK</code></li><li>Line 17: <code>text title</code></li><li>Line 18: <code>text status</code></li><li>Line 19: <code>}</code></li><li>Line 21: <code>text protocol_id PK</code></li><li>Line 22: <code>text title</code></li><li>Line 23: <code>text status</code></li><li>Line 24: <code>}</code></li><li>Line 26: <code>integer id PK</code></li><li>Line 27: <code>text date</code></li><li>Line 28: <code>real weight_kg</code></li><li>Line 29: <code>text source</code></li><li>Line 30: <code>}</code></li><li>Line 33: <code>integer id PK</code></li><li>Line 34: <code>text date</code></li><li>Line 35: <code>integer sleep_score</code></li><li>Line 36: <code>real total_sleep_min</code></li><li>Line 37: <code>real deep_min</code></li><li>Line 38: <code>real light_min</code></li><li>Line 39: <code>real rem_min</code></li><li>Line 40: <code>real awake_min</code></li><li>Line 41: <code>text source</code></li><li>Line 42: <code>}</code></li><li>Line 45: <code>integer id PK</code></li><li>Line 46: <code>text date</code></li><li>Line 47: <code>integer resting_hr</code></li><li>Line 48: <code>text source</code></li><li>Line 49: <code>}</code></li><li>Line 52: <code>integer id PK</code></li><li>Line 53: <code>text date</code></li><li>Line 54: <code>real hrv_ms</code></li><li>Line 55: <code>text source</code></li><li>Line 56: <code>}</code></li><li>Line 59: <code>integer id PK</code></li><li>Line 60: <code>text date</code></li><li>Line 61: <code>integer avg_stress</code></li><li>Line 62: <code>integer max_stress</code></li><li>Line 63: <code>real rest_stress_min</code></li><li>Line 64: <code>text source</code></li><li>Line 65: <code>}</code></li><li>Line 68: <code>integer id PK</code></li><li>Line 69: <code>text date</code></li><li>Line 70: <code>integer min_level</code></li><li>Line 71: <code>integer max_level</code></li><li>Line 72: <code>integer end_level</code></li><li>Line 73: <code>text source</code></li><li>Line 74: <code>}</code></li><li>Line 77: <code>integer id PK</code></li><li>Line 78: <code>text date</code></li><li>Line 79: <code>integer steps</code></li><li>Line 80: <code>real active_calories</code></li><li>Line 81: <code>real total_calories</code></li><li>Line 82: <code>text source</code></li><li>Line 83: <code>}</code></li><li>Line 85: <code>integer id PK</code></li><li>Line 86: <code>text source</code></li><li>Line 87: <code>text run_ts</code></li><li>Line 88: <code>text status</code></li><li>Line 89: <code>}</code></li><li>Line 91: <code>text name PK</code></li><li>Line 92: <code>text dose</code></li><li>Line 93: <code>text frequency</code></li><li>Line 94: <code>text status</code></li><li>Line 95: <code>}</code></li><li>Line 97: <code>integer id PK</code></li><li>Line 98: <code>text visit_date</code></li><li>Line 99: <code>text lab</code></li><li>Line 100: <code>text notes</code></li><li>Line 101: <code>}</code></li><li>Line 103: <code>integer id PK</code></li><li>Line 104: <code>integer visit_id FK</code></li><li>Line 105: <code>text marker</code></li><li>Line 106: <code>real value</code></li><li>Line 107: <code>text unit</code></li><li>Line 108: <code>real target_low</code></li><li>Line 109: <code>real target_high</code></li><li>Line 110: <code>}</code></li><li>Line 112: <code>integer id PK</code></li><li>Line 113: <code>text title</code></li><li>Line 114: <code>text date</code></li><li>Line 115: <code>text summary</code></li><li>Line 116: <code>}</code></li><li>Line 118: <code>integer id PK</code></li><li>Line 119: <code>integer note_id FK</code></li><li>Line 120: <code>text citation</code></li><li>Line 121: <code>text doi</code></li><li>Line 122: <code>text tags</code></li><li>Line 123: <code>}</code></li><li>Line 125: <code>integer id PK</code></li><li>Line 126: <code>text provider</code></li><li>Line 127: <code>text status</code></li><li>Line 128: <code>text ordered_at</code></li><li>Line 129: <code>text notes</code></li><li>Line 130: <code>}</code></li><li>Line 132: <code>integer id PK</code></li><li>Line 133: <code>text source</code></li><li>Line 134: <code>text run_ts</code></li><li>Line 135: <code>text status</code></li><li>Line 136: <code>integer records_written</code></li><li>Line 137: <code>text error_msg</code></li><li>Line 138: <code>}</code></li><li>Line 140: <code>integer id PK</code></li><li>Line 141: <code>text test_date</code></li><li>Line 142: <code>text provider</code></li><li>Line 143: <code>}</code></li><li>Line 145: <code>integer id PK</code></li><li>Line 146: <code>integer test_id FK</code></li><li>Line 147: <code>text clock_name</code></li><li>Line 148: <code>real age_estimate</code></li><li>Line 149: <code>}</code></li><li>Line 151: <code>integer id PK</code></li><li>Line 152: <code>integer test_id FK</code></li><li>Line 153: <code>text organ</code></li><li>Line 154: <code>real age_estimate</code></li><li>Line 155: <code>}</code></li><li>Line 157: <code>integer id PK</code></li><li>Line 158: <code>text date</code></li><li>Line 159: <code>text meal</code></li><li>Line 160: <code>real calories</code></li><li>Line 161: <code>real protein_g</code></li><li>Line 162: <code>text source</code></li><li>Line 163: <code>}</code></li><li>Line 165: <code>integer id PK</code></li><li>Line 166: <code>text date</code></li><li>Line 167: <code>text metric</code></li><li>Line 168: <code>real value</code></li><li>Line 169: <code>text source</code></li><li>Line 170: <code>}</code></li><li>Line 172: <code>text category PK</code></li><li>Line 173: <code>real monthly_target</code></li><li>Line 174: <code>}</code></li><li>Line 179: <code>integer id PK</code></li><li>Line 180: <code>text date</code></li><li>Line 181: <code>text week_start_date</code></li><li>Line 182: <code>text source</code></li><li>Line 183: <code>text name</code></li><li>Line 184: <code>text scheduled_time</code></li><li>Line 185: <code>real duration_min</code></li><li>Line 186: <code>text difficulty</code></li><li>Line 187: <code>text exercises_json</code></li><li>Line 188: <code>text notes</code></li><li>Line 189: <code>text synced_at</code></li><li>Line 190: <code>}</code></li><li>Line 192: <code>integer id PK</code></li><li>Line 193: <code>text date</code></li><li>Line 194: <code>text source</code></li><li>Line 195: <code>text title</code></li><li>Line 196: <code>real duration_min</code></li><li>Line 197: <code>real calories</code></li><li>Line 198: <code>}</code></li><li>Line 200: <code>integer id PK</code></li><li>Line 201: <code>integer session_id FK</code></li><li>Line 202: <code>text date</code></li><li>Line 203: <code>text exercise_name</code></li><li>Line 204: <code>integer sets</code></li><li>Line 205: <code>integer reps</code></li><li>Line 206: <code>real weight_kg</code></li><li>Line 207: <code>real duration_sec</code></li><li>Line 208: <code>}</code></li><li>Line 212: <code>integer id PK</code></li><li>Line 213: <code>text source</code></li><li>Line 214: <code>text run_ts</code></li><li>Line 215: <code>text status</code></li><li>Line 216: <code>integer records_written</code></li><li>Line 217: <code>text error_msg</code></li><li>Line 218: <code>}</code></li><li>Line 220: <code>integer id PK</code></li><li>Line 221: <code>text source</code></li><li>Line 222: <code>text triggered_at</code></li><li>Line 223: <code>text reason</code></li><li>Line 224: <code>text resolved_at</code></li><li>Line 225: <code>}</code></li><li>Line 227: <code>integer id PK</code></li><li>Line 228: <code>text provider</code></li><li>Line 229: <code>text triggered_at</code></li><li>Line 230: <code>text status</code></li><li>Line 231: <code>integer expires_at</code></li><li>Line 232: <code>real days_until_expiry</code></li><li>Line 233: <code>text error_msg</code></li><li>Line 234: <code>}</code></li></ul></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/life-db-schema.mmd</code><br>sha256: <code>6f71ee01d9731e3e0de228d1e684bd0fdaee206d1afd872aee69a90e67a944c2</code></p><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    RESEARCH_NOTES ||--o{ LITERATURE_ENTRIES : indexes
+    BLOODWORK_VISITS ||--o{ BIOMARKERS : contains
+    EPIGENETIC_TESTS ||--o{ EPIGENETIC_CLOCKS : contains
+    EPIGENETIC_TESTS ||--o{ SYMPHONY_ORGAN_AGES : contains
+    WORKOUT_SESSIONS ||--o{ WORKOUT_EXERCISES : contains
+
+    SUPPLEMENTS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    EXPERIMENTS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    PROTOCOLS {
+        text protocol_id PK
+        text title
+        text status
+    }
+    WEIGHT_LOG {
+        integer id PK
+        text date
+        real weight_kg
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    SLEEP_LOG {
+        integer id PK
+        text date
+        integer sleep_score
+        real total_sleep_min
+        real deep_min
+        real light_min
+        real rem_min
+        real awake_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    RESTING_HR_LOG {
+        integer id PK
+        text date
+        integer resting_hr
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    HRV_LOG {
+        integer id PK
+        text date
+        real hrv_ms
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    STRESS_LOG {
+        integer id PK
+        text date
+        integer avg_stress
+        integer max_stress
+        real rest_stress_min
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    BODY_BATTERY_LOG {
+        integer id PK
+        text date
+        integer min_level
+        integer max_level
+        integer end_level
+        text source
+    }
+    %% Constraint: UNIQUE(date, source)
+    ACTIVITY_LOG {
+        integer id PK
+        text date
+        integer steps
+        real active_calories
+        real total_calories
+        text source
+    }
+    SYNC_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+    }
+    MEDICATIONS {
+        text name PK
+        text dose
+        text frequency
+        text status
+    }
+    BLOODWORK_VISITS {
+        integer id PK
+        text visit_date
+        text lab
+        text notes
+    }
+    BIOMARKERS {
+        integer id PK
+        integer visit_id FK
+        text marker
+        real value
+        text unit
+        real target_low
+        real target_high
+    }
+    RESEARCH_NOTES {
+        integer id PK
+        text title
+        text date
+        text summary
+    }
+    LITERATURE_ENTRIES {
+        integer id PK
+        integer note_id FK
+        text citation
+        text doi
+        text tags
+    }
+    WGS_PROVIDER_ORDERS {
+        integer id PK
+        text provider
+        text status
+        text ordered_at
+        text notes
+    }
+    ETL_AUDIT_LOG {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    EPIGENETIC_TESTS {
+        integer id PK
+        text test_date
+        text provider
+    }
+    EPIGENETIC_CLOCKS {
+        integer id PK
+        integer test_id FK
+        text clock_name
+        real age_estimate
+    }
+    SYMPHONY_ORGAN_AGES {
+        integer id PK
+        integer test_id FK
+        text organ
+        real age_estimate
+    }
+    NUTRITION_LOG {
+        integer id PK
+        text date
+        text meal
+        real calories
+        real protein_g
+        text source
+    }
+    VITALS {
+        integer id PK
+        text date
+        text metric
+        real value
+        text source
+    }
+    BUDGET {
+        text category PK
+        real monthly_target
+    }
+
+    %% Constraints: UNIQUE(date, source, name)
+    %% Index: (date, week_start_date)
+    UPCOMING_WORKOUTS {
+        integer id PK
+        text date
+        text week_start_date
+        text source
+        text name
+        text scheduled_time
+        real duration_min
+        text difficulty
+        text exercises_json
+        text notes
+        text synced_at
+    }
+    WORKOUT_SESSIONS {
+        integer id PK
+        text date
+        text source
+        text title
+        real duration_min
+        real calories
+    }
+    WORKOUT_EXERCISES {
+        integer id PK
+        integer session_id FK
+        text date
+        text exercise_name
+        integer sets
+        integer reps
+        real weight_kg
+        real duration_sec
+    }
+
+    %% --- Monitoring ---
+    SYNC_HEALTH {
+        integer id PK
+        text source
+        text run_ts
+        text status
+        integer records_written
+        text error_msg
+    }
+    SYNC_ALERTS {
+        integer id PK
+        text source
+        text triggered_at
+        text reason
+        text resolved_at
+    }
+    TOKEN_REFRESH_LOG {
+        integer id PK
+        text provider
+        text triggered_at
+        text status
+        integer expires_at
+        real days_until_expiry
+        text error_msg
+    }
+</pre></details></main></body></html>

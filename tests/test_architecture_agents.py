@@ -128,3 +128,10 @@ def test_fr_flow_has_architecture_review_state():
     text = flow.read_text(encoding="utf-8")
     assert "ARCHITECTURE_REVIEW" in text, \
         "FR flow must define the ARCHITECTURE_REVIEW state"
+
+
+def test_beautifier_contract_requires_prose_led_html_and_traceability():
+    agent = AGENTS_DIR / "⊕workspace-architecture-beautifier.agent.md"
+    text = agent.read_text(encoding="utf-8").lower()
+    for required in ("prose-led", "standalone html", "source provenance", "migration manifest", "mermaid", "do not invent"):
+        assert required in text, f"beautifier contract missing {required!r}"

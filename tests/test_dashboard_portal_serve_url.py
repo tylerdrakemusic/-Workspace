@@ -40,6 +40,32 @@ def test_biomarker_entry_has_serve_url() -> None:
     )
 
 
+def test_workspace_spec_preserves_legacy_live_portal_registrations() -> None:
+    """Architecture regeneration must retain the Music and Executive live panes."""
+    spec = WORKSPACE_ROOT / "dashboard.json"
+    data = json.loads(spec.read_text(encoding="utf-8"))
+    entries = {dashboard["id"]: dashboard for dashboard in data["dashboards"]}
+
+    expected_live_panes = {
+        "music-dashboard": "http://localhost:5050",
+        "tjd-radio": "http://localhost:8100",
+        "guitar-trainer": "http://localhost:5055",
+        "executive-audio-brief": "http://localhost:8200",
+    }
+    for dashboard_id, url in expected_live_panes.items():
+        assert entries[dashboard_id]["type"] == "flask_app"
+        assert entries[dashboard_id]["url"] == url
+        assert entries[dashboard_id]["portal_only"] is True
+
+    html = dp._content_frames({"dashboards": list(entries.values()), "projects": []})
+    for url in expected_live_panes.values():
+        assert f'src="{url}"' in html
+
+    nav = dp._nav_items({"dashboards": list(entries.values())})
+    assert "Music Dashboard" not in nav
+    assert "Executive Audio Brief" not in nav
+
+
 # ---------------------------------------------------------------------------
 # _content_frames renders serve_url for living_html
 # ---------------------------------------------------------------------------

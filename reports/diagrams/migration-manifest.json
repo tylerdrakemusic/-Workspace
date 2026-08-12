@@ -1,0 +1,119 @@
+{
+  "diagrams": [
+    {
+      "source": "diagrams/capital-architecture.mmd",
+      "sha256": "4d77ea4454811bd5c36c2fb2b5e98efe64ea2cdfc480142be2867a320cbd1fce",
+      "artifact": "diagrams/capital-architecture--4d77ea445481.html"
+    },
+    {
+      "source": "diagrams/capital-db-schema.mmd",
+      "sha256": "801fe82a6aac85f83886e4178988ac8c1abf06905372c97ea39ffea7f8f8bf31",
+      "artifact": "diagrams/capital-db-schema--801fe82a6aac.html"
+    },
+    {
+      "source": "diagrams/capital-tech-stack.mmd",
+      "sha256": "8427cd5dd80eebeb0808492292c91bfa3a0aa0b6d3b872d0627a399e03f64d43",
+      "artifact": "diagrams/capital-tech-stack--8427cd5dd80e.html"
+    },
+    {
+      "source": "diagrams/life-architecture.mmd",
+      "sha256": "6496768b38af119fb154655e6872e70a597282d4e27439bc019ed190d5232557",
+      "artifact": "diagrams/life-architecture--6496768b38af.html"
+    },
+    {
+      "source": "diagrams/life-db-schema.mmd",
+      "sha256": "6f71ee01d9731e3e0de228d1e684bd0fdaee206d1afd872aee69a90e67a944c2",
+      "artifact": "diagrams/life-db-schema--6f71ee01d973.html"
+    },
+    {
+      "source": "diagrams/life-tech-stack.mmd",
+      "sha256": "e6dd01f79fc5bbe025bfb2f78c479cf86ce6b9e46a11e036226337a59af047f6",
+      "artifact": "diagrams/life-tech-stack--e6dd01f79fc5.html"
+    },
+    {
+      "source": "diagrams/manifest-architecture.mmd",
+      "sha256": "256843fbe1828204bc3e6482ed0dddcbd70d47fbb6e8d3f9e2df168b0222f986",
+      "artifact": "diagrams/manifest-architecture--256843fbe182.html"
+    },
+    {
+      "source": "diagrams/manifest-db-schema.mmd",
+      "sha256": "ed4198c86aed2fe50123cf3795f73621e98f2cacb703562d076b1e5ba87e6b77",
+      "artifact": "diagrams/manifest-db-schema--ed4198c86aed.html"
+    },
+    {
+      "source": "diagrams/manifest-tech-stack.mmd",
+      "sha256": "e3f3db28bc12778496d81fbc1fba7eeadf32e50f2acc08b51caa72099b9f7cfa",
+      "artifact": "diagrams/manifest-tech-stack--e3f3db28bc12.html"
+    },
+    {
+      "source": "diagrams/music-architecture.mmd",
+      "sha256": "4958c374ac5b5524c1197aa9820f47b12e6c0f78414b8e03e9890def98ed6f36",
+      "artifact": "diagrams/music-architecture--4958c374ac5b.html"
+    },
+    {
+      "source": "diagrams/music-db-schema.mmd",
+      "sha256": "243960c88baf468bd17c858dd104f51fa45cdccae8af2a908e6d0fc390db5a69",
+      "artifact": "diagrams/music-db-schema--243960c88baf.html"
+    },
+    {
+      "source": "diagrams/music-icecast-primary-architecture.mmd",
+      "sha256": "8158e93c30c000f334119dc6b13e3546f2fe89ea88f4a451dfa29e8cdac87313",
+      "artifact": "diagrams/music-icecast-primary-architecture--8158e93c30c0.html"
+    },
+    {
+      "source": "diagrams/music-tech-stack.mmd",
+      "sha256": "221bdcde8c908eb8d3cdc6a1068558b11ba9e2c42d51a4035923356253295ba2",
+      "artifact": "diagrams/music-tech-stack--221bdcde8c90.html"
+    },
+    {
+      "source": "diagrams/quantum-architecture.mmd",
+      "sha256": "eee25811f9d9ebdcefd4dc970a1efd29e1e82ca4a80d5002a0b394078766a834",
+      "artifact": "diagrams/quantum-architecture--eee25811f9d9.html"
+    },
+    {
+      "source": "diagrams/quantum-db-schema.mmd",
+      "sha256": "ce3b87713855f6aacd55a086caf0f2247a54e81813a8e610d8b75b2348828da3",
+      "artifact": "diagrams/quantum-db-schema--ce3b87713855.html"
+    },
+    {
+      "source": "diagrams/quantum-tech-stack.mmd",
+      "sha256": "a47559ee81c6b612c1f06b449066736b9ad24e4f07784511336a2de374571a6e",
+      "artifact": "diagrams/quantum-tech-stack--a47559ee81c6.html"
+    },
+    {
+      "source": "diagrams/workspace-agent-topology.mmd",
+      "sha256": "27fa0f63afaf83e6391f4bfa8ab98e0afa121c5cc77af653502fc5b7368afdfd",
+      "artifact": "diagrams/workspace-agent-topology--27fa0f63afaf.html"
+    },
+    {
+      "source": "diagrams/workspace-architecture-detail.mmd",
+      "sha256": "9effbafe52884d17ef09352bbe593c344b45ad9d30fabd3c287bdbe582ef2142",
+      "artifact": "diagrams/workspace-architecture-detail--9effbafe5288.html"
+    },
+    {
+      "source": "diagrams/workspace-architecture.mmd",
+      "sha256": "bd445d7eb4ff1cb01b895aab51531a584aa907aa3e6eaa3e063b175f2ff452d4",
+      "artifact": "diagrams/workspace-architecture--bd445d7eb4ff.html"
+    },
+    {
+      "source": "diagrams/workspace-db-schema.mmd",
+      "sha256": "0fd21375bb2676d80bc3cfac759e8239dde4726ce78a36069567052e4ef0e98c",
+      "artifact": "diagrams/workspace-db-schema--0fd21375bb26.html"
+    },
+    {
+      "source": "diagrams/workspace-fr-flow.mmd",
+      "sha256": "ed729d1a81681b7c08d1837df3289b61a0d1157d6a66d25f97546f7068dafc31",
+      "artifact": "diagrams/workspace-fr-flow--ed729d1a8168.html"
+    },
+    {
+      "source": "diagrams/workspace-integrations.mmd",
+      "sha256": "a1aeb02d2c512ec209e94ca8ec6691af2a8c25c799e3a7ec4857ca46747081b5",
+      "artifact": "diagrams/workspace-integrations--a1aeb02d2c51.html"
+    },
+    {
+      "source": "diagrams/workspace-tech-stack.mmd",
+      "sha256": "c3496996113eb3989caef56fc62b21e591ca06494d3000a8d8fa161ce486c210",
+      "artifact": "diagrams/workspace-tech-stack--c3496996113e.html"
+    }
+  ]
+}

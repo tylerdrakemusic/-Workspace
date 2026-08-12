@@ -1,0 +1,77 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quantum Architecture architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / TB</p><h1>Quantum Architecture</h1><p class="architecture-overview">A source-backed view of 23 declared components and 15 directed connections in quantum architecture.</p><section class="architecture-diagram" aria-label="Quantum Architecture architecture diagram" data-direction="TB"><div class="diagram-regions"><section class="diagram-group" data-group-id="Bench"><h3>tools/ — benchmark scripts</h3><div class="node-grid"><div class="diagram-node" data-node-id="Shor" tabindex="0"><strong>bench_shors_v2.py run_shors_bench.py</strong><small>Shor</small></div><div class="diagram-node" data-node-id="VQE" tabindex="0"><strong>bench_vqe.py run_vqe_bench.py</strong><small>VQE</small></div></div></section><section class="diagram-group" data-group-id="Backends"><h3>Backends</h3><div class="node-grid"><div class="diagram-node" data-node-id="IBM" tabindex="0"><strong>IBM Quantum QISKIT_TOKEN</strong><small>IBM</small></div><div class="diagram-node" data-node-id="Sim" tabindex="0"><strong>Aer Simulator local</strong><small>Sim</small></div></div></section><section class="diagram-group" data-group-id="Util"><h3>src/utils/</h3><div class="node-grid"><div class="diagram-node" data-node-id="Orion" tabindex="0"><strong>orion_portrait.py + orion_config_db.py</strong><small>Orion</small></div><div class="diagram-node" data-node-id="ExecPolicyMod" tabindex="0"><strong>execution_policy.py</strong><small>ExecPolicyMod</small></div></div></section><section class="diagram-group" data-group-id="WalkMusic"><h3>src/quantum_walk_music.py src/quantum_walk_music/</h3><div class="node-grid"><div class="diagram-node" data-node-id="Midi" tabindex="0"><strong>MIDI generation via midiutil FR-20260518-quantum-walk-music</strong><small>Midi</small></div></div></section><section class="diagram-group" data-group-id="Storage"><h3>Storage</h3><div class="node-grid"><div class="diagram-node" data-node-id="DB" tabindex="0"><strong>quantumpsi.db SQLCipher</strong><small>DB</small></div><div class="diagram-node" data-node-id="BenchTbl" tabindex="0"><strong>benchmarks shors_qpu_bench vqe_runs table</strong><small>BenchTbl</small></div><div class="diagram-node" data-node-id="CacheHealthLog" tabindex="0"><strong>cache_health_log table</strong><small>CacheHealthLog</small></div><div class="diagram-node" data-node-id="BackendHealthTbl" tabindex="0"><strong>backend_health table</strong><small>BackendHealthTbl</small></div><div class="diagram-node" data-node-id="PolicyTbl" tabindex="0"><strong>policy_events policy_audit_runs table</strong><small>PolicyTbl</small></div></div></section><section class="diagram-group" data-group-id="Outputs"><h3>Outputs</h3><div class="node-grid"><div class="diagram-node" data-node-id="Reports" tabindex="0"><strong>reports/ benchmark dashboard</strong><small>Reports</small></div><div class="diagram-node" data-node-id="CacheCapacity" tabindex="0"><strong>qbackups/ ty_string_cache_capacity.txt</strong><small>CacheCapacity</small></div></div></section><section class="diagram-group" data-group-id="Tools"><h3>tools/</h3><div class="node-grid"><div class="diagram-node" data-node-id="FillCache" tabindex="0"><strong>fill_cache.py</strong><small>FillCache</small></div><div class="diagram-node" data-node-id="CacheGuard" tabindex="0"><strong>cache_depletion_guard.py</strong><small>CacheGuard</small></div><div class="diagram-node" data-node-id="BackendMonitor" tabindex="0"><strong>backend_availability_monitor.py</strong><small>BackendMonitor</small></div><div class="diagram-node" data-node-id="AuditPolicy" tabindex="0"><strong>audit_policy.py</strong><small>AuditPolicy</small></div></div></section><section class="diagram-group" data-group-id="Config"><h3>src/config/</h3><div class="node-grid"><div class="diagram-node" data-node-id="PolicyJson" tabindex="0"><strong>execution_policy.json</strong><small>PolicyJson</small></div></div></section><section class="diagram-group" data-group-id="Scheduler"><h3>Windows Task Scheduler</h3><div class="node-grid"><div class="diagram-node" data-node-id="GuardTask" tabindex="0"><strong>QuantumCacheDepletionGuard_Daily</strong><small>GuardTask</small></div></div></section><section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid"><div class="diagram-node" data-node-id="Bench" tabindex="0"><strong>Bench</strong><small>Bench</small></div><div class="diagram-node" data-node-id="WSIntegrations" tabindex="0"><strong>⊕Workspace/src/integrations</strong><small>WSIntegrations</small></div><div class="diagram-node" data-node-id="WalkMusic" tabindex="0"><strong>WalkMusic</strong><small>WalkMusic</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="Bench" data-target="IBM" role="img" aria-label="Bench to IBM"><span class="edge-endpoint">Bench</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">IBM</span></div><div class="diagram-edge" data-source="Bench" data-target="Sim" role="img" aria-label="Bench to Sim"><span class="edge-endpoint">Bench</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">Sim</span></div><div class="diagram-edge" data-source="Bench" data-target="BenchTbl" role="img" aria-label="Bench to BenchTbl"><span class="edge-endpoint">Bench</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">BenchTbl</span></div><div class="diagram-edge" data-source="BenchTbl" data-target="Reports" role="img" aria-label="BenchTbl to Reports"><span class="edge-endpoint">BenchTbl</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">Reports</span></div><div class="diagram-edge" data-source="GuardTask" data-target="CacheGuard" role="img" aria-label="GuardTask to CacheGuard"><span class="edge-endpoint">GuardTask</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">CacheGuard</span></div><div class="diagram-edge" data-source="CacheGuard" data-target="CacheHealthLog" role="img" aria-label="CacheGuard to CacheHealthLog"><span class="edge-endpoint">CacheGuard</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">CacheHealthLog</span></div><div class="diagram-edge" data-source="CacheGuard" data-target="FillCache" role="img" aria-label="CacheGuard to FillCache"><span class="edge-endpoint">CacheGuard</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">FillCache</span></div><div class="diagram-edge" data-source="FillCache" data-target="CacheCapacity" role="img" aria-label="FillCache to CacheCapacity"><span class="edge-endpoint">FillCache</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">CacheCapacity</span></div><div class="diagram-edge" data-source="Orion" data-target="WSIntegrations" role="img" aria-label="Orion to WSIntegrations"><span class="edge-endpoint">Orion</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">WSIntegrations</span></div><div class="diagram-edge" data-source="Orion" data-target="DB" role="img" aria-label="Orion to DB"><span class="edge-endpoint">Orion</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">DB</span></div><div class="diagram-edge" data-source="BackendMonitor" data-target="BackendHealthTbl" role="img" aria-label="BackendMonitor to BackendHealthTbl"><span class="edge-endpoint">BackendMonitor</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">BackendHealthTbl</span></div><div class="diagram-edge" data-source="AuditPolicy" data-target="PolicyJson" role="img" aria-label="AuditPolicy to PolicyJson"><span class="edge-endpoint">AuditPolicy</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">PolicyJson</span></div><div class="diagram-edge" data-source="AuditPolicy" data-target="PolicyTbl" role="img" aria-label="AuditPolicy to PolicyTbl"><span class="edge-endpoint">AuditPolicy</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">PolicyTbl</span></div><div class="diagram-edge" data-source="ExecPolicyMod" data-target="PolicyJson" role="img" aria-label="ExecPolicyMod to PolicyJson"><span class="edge-endpoint">ExecPolicyMod</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">PolicyJson</span></div><div class="diagram-edge" data-source="WalkMusic" data-target="Midi" role="img" aria-label="WalkMusic to Midi"><span class="edge-endpoint">WalkMusic</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">Midi</span></div></section></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/quantum-architecture.mmd</code><br>sha256: <code>eee25811f9d9ebdcefd4dc970a1efd29e1e82ca4a80d5002a0b394078766a834</code></p><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+graph TB
+    subgraph Bench[&quot;tools/ — benchmark scripts&quot;]
+        Shor[bench_shors_v2.py&lt;br/&gt;run_shors_bench.py]
+        VQE[bench_vqe.py&lt;br/&gt;run_vqe_bench.py]
+    end
+    subgraph Backends
+        IBM[IBM Quantum&lt;br/&gt;QISKIT_TOKEN]
+        Sim[Aer Simulator&lt;br/&gt;local]
+    end
+    subgraph Util[&quot;src/utils/&quot;]
+        Orion[orion_portrait.py&lt;br/&gt;+ orion_config_db.py]
+        ExecPolicyMod[execution_policy.py]
+    end
+    subgraph WalkMusic[&quot;src/quantum_walk_music.py&lt;br/&gt;src/quantum_walk_music/&quot;]
+        Midi[MIDI generation&lt;br/&gt;via midiutil&lt;br/&gt;FR-20260518-quantum-walk-music]
+    end
+    subgraph Storage
+        DB[(quantumpsi.db&lt;br/&gt;SQLCipher)]
+        BenchTbl[benchmarks&lt;br/&gt;shors_qpu_bench&lt;br/&gt;vqe_runs table]
+        CacheHealthLog[cache_health_log table]
+        BackendHealthTbl[backend_health table]
+        PolicyTbl[policy_events&lt;br/&gt;policy_audit_runs table]
+    end
+    subgraph Outputs
+        Reports[reports/&lt;br/&gt;benchmark dashboard]
+        CacheCapacity[qbackups/&lt;br/&gt;ty_string_cache_capacity.txt]
+    end
+    subgraph Tools[&quot;tools/&quot;]
+        FillCache[fill_cache.py]
+        CacheGuard[cache_depletion_guard.py]
+        BackendMonitor[backend_availability_monitor.py]
+        AuditPolicy[audit_policy.py]
+    end
+    subgraph Config[&quot;src/config/&quot;]
+        PolicyJson[execution_policy.json]
+    end
+    subgraph Scheduler[&quot;Windows Task Scheduler&quot;]
+        GuardTask[QuantumCacheDepletionGuard_Daily]
+    end
+    Bench --&gt; IBM
+    Bench --&gt; Sim
+    Bench --&gt; BenchTbl
+    BenchTbl --&gt; Reports
+    GuardTask --&gt; CacheGuard
+    CacheGuard --&gt; CacheHealthLog
+    CacheGuard --&gt; FillCache
+    FillCache --&gt; CacheCapacity
+    Orion -.lazy import.-&gt; WSIntegrations[⊕Workspace/src/integrations]
+    Orion --&gt; DB
+    BackendMonitor --&gt; BackendHealthTbl
+    AuditPolicy --&gt; PolicyJson
+    AuditPolicy --&gt; PolicyTbl
+    ExecPolicyMod --&gt; PolicyJson
+    WalkMusic --&gt; Midi
+    class Bench alg
+    class Backends back
+    class Storage,Outputs store
+    class FillCache,CacheGuard,BackendMonitor,AuditPolicy quantum
+    class GuardTask ext
+    class CacheHealthLog,BenchTbl,BackendHealthTbl,PolicyTbl db
+    class CacheCapacity state
+    class WSIntegrations ws
+    class Orion,ExecPolicyMod quantum
+    class WalkMusic,Midi quantum
+    class PolicyJson state
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+</pre></details></main></body></html>

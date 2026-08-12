@@ -22,6 +22,7 @@ from typing import Any
 # inside one of the project repos; its parent.parent.parent is the root that
 # contains all sibling project directories.
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Known project roots — discovered dynamically via AGENT_STARTUP.md presence
 REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
@@ -45,6 +46,8 @@ def _is_git_worktree_root(project_root: Path) -> bool:
 
 def discover_projects() -> list[Path]:
     """Find all project directories containing AGENT_STARTUP.md."""
+    if WORKSPACE_ROOT == PROJECT_ROOT.parent and _is_git_worktree_root(PROJECT_ROOT):
+        return [PROJECT_ROOT]
     projects = []
     for child in sorted(WORKSPACE_ROOT.iterdir()):
         if not child.is_dir():

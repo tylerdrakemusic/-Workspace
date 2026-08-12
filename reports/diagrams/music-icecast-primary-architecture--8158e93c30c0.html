@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Music Icecast Primary Architecture architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / LR</p><h1>Music Icecast Primary Architecture</h1><p class="architecture-overview">A source-backed view of 11 declared components and 10 directed connections in music icecast primary architecture.</p><section class="architecture-diagram" aria-label="Music Icecast Primary Architecture architecture diagram" data-direction="LR"><div class="diagram-regions"><section class="diagram-group" data-group-id="UX"><h3>Local User Experience</h3><div class="node-grid"><div class="diagram-node" data-node-id="PANEL" tabindex="0"><strong>TJD Local Panel :8100</strong><small>PANEL</small></div><div class="diagram-node" data-node-id="BROWSER" tabindex="0"><strong>Browser Audio Player</strong><small>BROWSER</small></div></div></section><section class="diagram-group" data-group-id="MUSIC"><h3>❤Music Runtime</h3><div class="node-grid"><div class="diagram-node" data-node-id="API" tabindex="0"><strong>/api/now_playing</strong><small>API</small></div><div class="diagram-node" data-node-id="STREAM" tabindex="0"><strong>/stream</strong><small>STREAM</small></div><div class="diagram-node" data-node-id="SEL" tabindex="0"><strong>Source Selector</strong><small>SEL</small></div><div class="diagram-node" data-node-id="FALLBACK" tabindex="0"><strong>Legacy Flask Broadcaster --backend local</strong><small>FALLBACK</small></div></div></section><section class="diagram-group" data-group-id="ICECAST"><h3>Icecast Runtime WSL</h3><div class="node-grid"><div class="diagram-node" data-node-id="MOUNT" tabindex="0"><strong>Icecast /stream</strong><small>MOUNT</small></div><div class="diagram-node" data-node-id="STATUS" tabindex="0"><strong>status-json.xsl</strong><small>STATUS</small></div><div class="diagram-node" data-node-id="LIQ" tabindex="0"><strong>Liquidsoap</strong><small>LIQ</small></div></div></section><section class="diagram-group" data-group-id="CATALOG"><h3>Catalog Policy</h3><div class="node-grid"><div class="diagram-node" data-node-id="MUZIC" tabindex="0"><strong>G:/Muzic Primary</strong><small>MUZIC</small></div><div class="diagram-node" data-node-id="TYLER" tabindex="0"><strong>catalog/masters + catalog/ep Fallback</strong><small>TYLER</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="PANEL" data-target="API" role="img" aria-label="PANEL to API"><span class="edge-endpoint">PANEL</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">API</span></div><div class="diagram-edge" data-source="PANEL" data-target="STREAM" role="img" aria-label="PANEL to STREAM"><span class="edge-endpoint">PANEL</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">STREAM</span></div><div class="diagram-edge" data-source="BROWSER" data-target="STREAM" role="img" aria-label="BROWSER to STREAM"><span class="edge-endpoint">BROWSER</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">STREAM</span></div><div class="diagram-edge" data-source="API" data-target="STATUS" role="img" aria-label="API to STATUS"><span class="edge-endpoint">API</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">STATUS</span></div><div class="diagram-edge" data-source="STREAM" data-target="MOUNT" role="img" aria-label="STREAM to MOUNT"><span class="edge-endpoint">STREAM</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">MOUNT</span></div><div class="diagram-edge" data-source="LIQ" data-target="MOUNT" role="img" aria-label="LIQ to MOUNT"><span class="edge-endpoint">LIQ</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">MOUNT</span></div><div class="diagram-edge" data-source="LIQ" data-target="SEL" role="img" aria-label="LIQ to SEL"><span class="edge-endpoint">LIQ</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">SEL</span></div><div class="diagram-edge" data-source="SEL" data-target="MUZIC" role="img" aria-label="SEL to MUZIC"><span class="edge-endpoint">SEL</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">MUZIC</span></div><div class="diagram-edge" data-source="SEL" data-target="TYLER" role="img" aria-label="SEL to TYLER"><span class="edge-endpoint">SEL</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-endpoint">TYLER</span></div><div class="diagram-edge" data-source="PANEL" data-target="FALLBACK" role="img" aria-label="PANEL to FALLBACK"><span class="edge-endpoint">PANEL</span><span class="edge-line edge-line-dotted" data-edge-style="dotted" aria-hidden="true">······▶</span><span class="edge-endpoint">FALLBACK</span></div></section></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/music-icecast-primary-architecture.mmd</code><br>sha256: <code>8158e93c30c000f334119dc6b13e3546f2fe89ea88f4a451dfa29e8cdac87313</code></p><pre>flowchart LR
+  subgraph UX[Local User Experience]
+    PANEL[TJD Local Panel :8100]
+    BROWSER[Browser Audio Player]
+  end
+
+  subgraph MUSIC[❤Music Runtime]
+    API[/api/now_playing]
+    STREAM[/stream]
+    SEL[Source Selector]
+    FALLBACK[Legacy Flask Broadcaster --backend local]
+  end
+
+  subgraph ICECAST[Icecast Runtime WSL]
+    MOUNT[(Icecast /stream)]
+    STATUS[(status-json.xsl)]
+    LIQ[Liquidsoap]
+  end
+
+  subgraph CATALOG[Catalog Policy]
+    MUZIC[G:/Muzic Primary]
+    TYLER[catalog/masters + catalog/ep Fallback]
+  end
+
+  PANEL --&gt; API
+  PANEL --&gt; STREAM
+  BROWSER --&gt; STREAM
+
+  API --&gt; STATUS
+  STREAM --&gt; MOUNT
+
+  LIQ --&gt; MOUNT
+  LIQ --&gt; SEL
+  SEL --&gt; MUZIC
+  SEL --&gt; TYLER
+
+  PANEL -. explicit fallback path only .-&gt; FALLBACK
+
+  classDef default fill:#d9f7e8,stroke:#1f7a4c,stroke-width:2px
+  classDef infra fill:#e7f0ff,stroke:#1e4fa1,stroke-width:2px
+  classDef fallback fill:#fff3d6,stroke:#a16a00,stroke-width:2px
+
+  class API,STREAM,SEL default
+  class MOUNT,STATUS,LIQ infra
+  class FALLBACK fallback
+</pre></details></main></body></html>

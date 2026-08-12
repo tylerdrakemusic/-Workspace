@@ -30,6 +30,8 @@ def test_diagrams_entry_registered():
     assert entry["output"] == "reports/diagrams_dashboard.html"
     assert "category" in entry
     assert "icon" in entry
+    assert "Mermaid-rendered" not in entry["description"]
+    assert "provenance" in entry["description"]
 
 
 def test_other_dashboards_unchanged():

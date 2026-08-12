@@ -453,6 +453,8 @@ def _nav_items(manifest: dict) -> str:
     """Generate navigation sidebar items."""
     items = []
     for i, dash in enumerate(manifest["dashboards"]):
+        if dash.get("portal_only"):
+            continue
         icon = _esc(dash.get("icon", "📊"))
         title = _esc(dash["title"])
         project = _esc(dash.get("project", ""))

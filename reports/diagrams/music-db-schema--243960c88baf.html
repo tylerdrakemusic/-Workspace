@@ -1,0 +1,236 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Music Db Schema architecture</title><style>:root{--ink:#172a31;--muted:#536970;--paper:#eef3f0;--panel:#fff;--accent:#b44f3b;--group:#6a8f84}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Georgia,serif}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,72px) 20px}h1,h2,h3{font-family:"Trebuchet MS",sans-serif;line-height:1.15}h1{font-size:clamp(2rem,5vw,4rem);margin:.2em 0}.kicker{color:var(--accent);font:700 .75rem "Trebuchet MS",sans-serif;letter-spacing:.12em;text-transform:uppercase}.architecture-overview{max-width:72ch;color:var(--muted);font-size:1.15rem}.architecture-diagram{display:flex;flex-direction:column;gap:16px;margin:32px 0;padding:18px;border:2px solid #829b96;background:#ffffff73}.diagram-group{border:2px solid var(--group);border-radius:8px;padding:14px;background:#ffffffb3}.diagram-group h3{margin:0 0 12px;color:var(--group)}.node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.diagram-node{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px;border:2px solid var(--accent);border-radius:6px;background:var(--panel);box-shadow:3px 3px #172a311f;overflow-wrap:anywhere}.diagram-node small{color:var(--muted);font:12px Consolas,monospace}.diagram-edge{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:42px;padding:8px 12px;border-left:4px solid var(--accent);background:#fffaf4;overflow-wrap:anywhere}.edge-line{color:var(--accent);font:700 1.1rem Consolas,monospace;white-space:nowrap}.edge-line-dotted{letter-spacing:.18em;text-decoration:underline dotted}.edge-label{color:var(--accent);font-style:italic}.edge-endpoint{font-weight:700}.unsupported{margin-top:24px;padding:16px;border:2px solid var(--accent);background:#fff4ed}code,pre{overflow-wrap:anywhere}details{margin-top:28px;border-top:1px solid #b8c8c3;padding-top:16px}summary{cursor:pointer;font-weight:700}pre{max-height:420px;overflow:auto;white-space:pre-wrap;background:#172a31;color:#f4f0e8;padding:16px;font:13px/1.45 Consolas,monospace}@media(max-width:560px){main{padding:28px 14px}.architecture-diagram{padding:10px;margin-left:-4px;margin-right:-4px}.diagram-edge{display:block}.edge-line{display:block;margin:2px 0}}</style></head><body><main><p class="kicker">Architecture diagram / TB</p><h1>Music Db Schema</h1><p class="architecture-overview">A source-backed view of 26 declared components and 15 directed connections in music db schema.</p><section class="architecture-diagram" aria-label="Music Db Schema architecture diagram" data-direction="TB"><div class="diagram-regions"><section class="diagram-group diagram-ungrouped"><h3>Declared components</h3><div class="node-grid"><div class="diagram-node" data-node-id="TRACKS" tabindex="0"><strong>TRACKS</strong><small>TRACKS</small></div><div class="diagram-node" data-node-id="RECORDINGS" tabindex="0"><strong>RECORDINGS</strong><small>RECORDINGS</small></div><div class="diagram-node" data-node-id="ALBUMS" tabindex="0"><strong>ALBUMS</strong><small>ALBUMS</small></div><div class="diagram-node" data-node-id="CATALOG_SONGS" tabindex="0"><strong>CATALOG_SONGS</strong><small>CATALOG_SONGS</small></div><div class="diagram-node" data-node-id="SETLIST_SONGS" tabindex="0"><strong>SETLIST_SONGS</strong><small>SETLIST_SONGS</small></div><div class="diagram-node" data-node-id="SETLISTS" tabindex="0"><strong>SETLISTS</strong><small>SETLISTS</small></div><div class="diagram-node" data-node-id="BANDS" tabindex="0"><strong>BANDS</strong><small>BANDS</small></div><div class="diagram-node" data-node-id="EXERCISES" tabindex="0"><strong>EXERCISES</strong><small>EXERCISES</small></div><div class="diagram-node" data-node-id="EXERCISE_CARDS" tabindex="0"><strong>EXERCISE_CARDS</strong><small>EXERCISE_CARDS</small></div><div class="diagram-node" data-node-id="GUITAR_SCALE_TEMPLATES" tabindex="0"><strong>GUITAR_SCALE_TEMPLATES</strong><small>GUITAR_SCALE_TEMPLATES</small></div><div class="diagram-node" data-node-id="GUITAR_SCALE_POSITIONS" tabindex="0"><strong>GUITAR_SCALE_POSITIONS</strong><small>GUITAR_SCALE_POSITIONS</small></div><div class="diagram-node" data-node-id="RELEASE_SIGNATURES" tabindex="0"><strong>RELEASE_SIGNATURES</strong><small>RELEASE_SIGNATURES</small></div><div class="diagram-node" data-node-id="DUPLICATE_GROUPS" tabindex="0"><strong>DUPLICATE_GROUPS</strong><small>DUPLICATE_GROUPS</small></div><div class="diagram-node" data-node-id="BAND_SONG_ARRANGEMENTS" tabindex="0"><strong>BAND_SONG_ARRANGEMENTS</strong><small>BAND_SONG_ARRANGEMENTS</small></div><div class="diagram-node" data-node-id="CATALOG_SONG_ALIASES" tabindex="0"><strong>CATALOG_SONG_ALIASES</strong><small>CATALOG_SONG_ALIASES</small></div><div class="diagram-node" data-node-id="GUITAR_TONE_PROFILES" tabindex="0"><strong>GUITAR_TONE_PROFILES</strong><small>GUITAR_TONE_PROFILES</small></div><div class="diagram-node" data-node-id="RELEASES" tabindex="0"><strong>RELEASES</strong><small>RELEASES</small></div><div class="diagram-node" data-node-id="VAULT_LINES" tabindex="0"><strong>VAULT_LINES</strong><small>VAULT_LINES</small></div><div class="diagram-node" data-node-id="PHONETIC_GROUPS" tabindex="0"><strong>PHONETIC_GROUPS</strong><small>PHONETIC_GROUPS</small></div><div class="diagram-node" data-node-id="GIG_INVENTORY" tabindex="0"><strong>GIG_INVENTORY</strong><small>GIG_INVENTORY</small></div><div class="diagram-node" data-node-id="SHEET_MUSIC" tabindex="0"><strong>SHEET_MUSIC</strong><small>SHEET_MUSIC</small></div><div class="diagram-node" data-node-id="ARTIST_LINKS" tabindex="0"><strong>ARTIST_LINKS</strong><small>ARTIST_LINKS</small></div><div class="diagram-node" data-node-id="GUITAR_TRAINING_LOG" tabindex="0"><strong>GUITAR_TRAINING_LOG</strong><small>GUITAR_TRAINING_LOG</small></div><div class="diagram-node" data-node-id="SCALE_PRACTICE_LOG" tabindex="0"><strong>SCALE_PRACTICE_LOG</strong><small>SCALE_PRACTICE_LOG</small></div><div class="diagram-node" data-node-id="STUDIO_EQUIPMENT" tabindex="0"><strong>STUDIO_EQUIPMENT</strong><small>STUDIO_EQUIPMENT</small></div><div class="diagram-node" data-node-id="CATALOG_AUDIO_FILES" tabindex="0"><strong>CATALOG_AUDIO_FILES</strong><small>CATALOG_AUDIO_FILES</small></div></div></section></div><section class="diagram-connections"><h2>Declared connections</h2><div class="diagram-edge" data-source="TRACKS" data-target="RECORDINGS" role="img" aria-label="TRACKS to RECORDINGS"><span class="edge-endpoint">TRACKS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">has</span><span class="edge-endpoint">RECORDINGS</span></div><div class="diagram-edge" data-source="ALBUMS" data-target="TRACKS" role="img" aria-label="ALBUMS to TRACKS"><span class="edge-endpoint">ALBUMS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">contains</span><span class="edge-endpoint">TRACKS</span></div><div class="diagram-edge" data-source="CATALOG_SONGS" data-target="SETLIST_SONGS" role="img" aria-label="CATALOG_SONGS to SETLIST_SONGS"><span class="edge-endpoint">CATALOG_SONGS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">appears_in</span><span class="edge-endpoint">SETLIST_SONGS</span></div><div class="diagram-edge" data-source="SETLISTS" data-target="SETLIST_SONGS" role="img" aria-label="SETLISTS to SETLIST_SONGS"><span class="edge-endpoint">SETLISTS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">contains</span><span class="edge-endpoint">SETLIST_SONGS</span></div><div class="diagram-edge" data-source="BANDS" data-target="SETLISTS" role="img" aria-label="BANDS to SETLISTS"><span class="edge-endpoint">BANDS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">owns</span><span class="edge-endpoint">SETLISTS</span></div><div class="diagram-edge" data-source="EXERCISES" data-target="EXERCISE_CARDS" role="img" aria-label="EXERCISES to EXERCISE_CARDS"><span class="edge-endpoint">EXERCISES</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">composes</span><span class="edge-endpoint">EXERCISE_CARDS</span></div><div class="diagram-edge" data-source="GUITAR_SCALE_TEMPLATES" data-target="GUITAR_SCALE_POSITIONS" role="img" aria-label="GUITAR_SCALE_TEMPLATES to GUITAR_SCALE_POSITIONS"><span class="edge-endpoint">GUITAR_SCALE_TEMPLATES</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">instantiates</span><span class="edge-endpoint">GUITAR_SCALE_POSITIONS</span></div><div class="diagram-edge" data-source="RELEASE_SIGNATURES" data-target="DUPLICATE_GROUPS" role="img" aria-label="RELEASE_SIGNATURES to DUPLICATE_GROUPS"><span class="edge-endpoint">RELEASE_SIGNATURES</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">canonical</span><span class="edge-endpoint">DUPLICATE_GROUPS</span></div><div class="diagram-edge" data-source="RELEASE_SIGNATURES" data-target="DUPLICATE_GROUPS" role="img" aria-label="RELEASE_SIGNATURES to DUPLICATE_GROUPS"><span class="edge-endpoint">RELEASE_SIGNATURES</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">duplicate</span><span class="edge-endpoint">DUPLICATE_GROUPS</span></div><div class="diagram-edge" data-source="BANDS" data-target="BAND_SONG_ARRANGEMENTS" role="img" aria-label="BANDS to BAND_SONG_ARRANGEMENTS"><span class="edge-endpoint">BANDS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">arranges</span><span class="edge-endpoint">BAND_SONG_ARRANGEMENTS</span></div><div class="diagram-edge" data-source="CATALOG_SONGS" data-target="BAND_SONG_ARRANGEMENTS" role="img" aria-label="CATALOG_SONGS to BAND_SONG_ARRANGEMENTS"><span class="edge-endpoint">CATALOG_SONGS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">arranged_for</span><span class="edge-endpoint">BAND_SONG_ARRANGEMENTS</span></div><div class="diagram-edge" data-source="CATALOG_SONGS" data-target="CATALOG_SONG_ALIASES" role="img" aria-label="CATALOG_SONGS to CATALOG_SONG_ALIASES"><span class="edge-endpoint">CATALOG_SONGS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">aliased_by</span><span class="edge-endpoint">CATALOG_SONG_ALIASES</span></div><div class="diagram-edge" data-source="CATALOG_SONGS" data-target="GUITAR_TONE_PROFILES" role="img" aria-label="CATALOG_SONGS to GUITAR_TONE_PROFILES"><span class="edge-endpoint">CATALOG_SONGS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">tone_profiled</span><span class="edge-endpoint">GUITAR_TONE_PROFILES</span></div><div class="diagram-edge" data-source="ALBUMS" data-target="RELEASES" role="img" aria-label="ALBUMS to RELEASES"><span class="edge-endpoint">ALBUMS</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">released_as</span><span class="edge-endpoint">RELEASES</span></div><div class="diagram-edge" data-source="VAULT_LINES" data-target="PHONETIC_GROUPS" role="img" aria-label="VAULT_LINES to PHONETIC_GROUPS"><span class="edge-endpoint">VAULT_LINES</span><span class="edge-line" data-edge-style="solid" aria-hidden="true">──────▶</span><span class="edge-label">grouped_via vault_line_groups</span><span class="edge-endpoint">PHONETIC_GROUPS</span></div></section></section><section class="unsupported"><h2>Unsupported source constructs</h2><p>These lines remain visible for review and were not interpreted as diagram semantics.</p><ul><li>Line 20: <code>integer id PK</code></li><li>Line 21: <code>text title</code></li><li>Line 22: <code>integer album_id FK</code></li><li>Line 23: <code>integer tempo_bpm</code></li><li>Line 24: <code>text key_signature</code></li><li>Line 25: <code>text status</code></li><li>Line 26: <code>}</code></li><li>Line 28: <code>integer id PK</code></li><li>Line 29: <code>integer track_id FK</code></li><li>Line 30: <code>text file_path</code></li><li>Line 31: <code>integer quality_rating</code></li><li>Line 32: <code>text recorded_at</code></li><li>Line 33: <code>}</code></li><li>Line 35: <code>integer id PK</code></li><li>Line 36: <code>text title</code></li><li>Line 37: <code>text status</code></li><li>Line 38: <code>}</code></li><li>Line 40: <code>integer id PK</code></li><li>Line 41: <code>text title</code></li><li>Line 42: <code>text artist</code></li><li>Line 43: <code>integer bpm</code></li><li>Line 44: <code>text key_sig</code></li><li>Line 45: <code>text bpm_source</code></li><li>Line 46: <code>text source_file</code></li><li>Line 47: <code>text genre</code></li><li>Line 48: <code>text tags</code></li><li>Line 49: <code>}</code></li><li>Line 51: <code>integer setlist_id PK</code></li><li>Line 52: <code>text band</code></li><li>Line 53: <code>text name</code></li><li>Line 54: <code>text gig_date</code></li><li>Line 55: <code>}</code></li><li>Line 57: <code>integer id PK</code></li><li>Line 58: <code>integer setlist_id FK</code></li><li>Line 59: <code>integer catalog_song_id FK</code></li><li>Line 60: <code>integer set_number</code></li><li>Line 61: <code>integer position</code></li><li>Line 62: <code>text key_override</code></li><li>Line 63: <code>integer bpm_override</code></li><li>Line 64: <code>}</code></li><li>Line 66: <code>integer exercise_id PK</code></li><li>Line 67: <code>text title</code></li><li>Line 68: <code>text difficulty</code></li><li>Line 69: <code>text category</code></li><li>Line 70: <code>}</code></li><li>Line 72: <code>integer id PK</code></li><li>Line 73: <code>text item</code></li><li>Line 74: <code>text category</code></li><li>Line 75: <code>integer sort_order</code></li><li>Line 76: <code>}</code></li><li>Line 78: <code>text shape_name PK</code></li><li>Line 79: <code>integer root_string</code></li><li>Line 80: <code>text note_offsets</code></li><li>Line 81: <code>}</code></li><li>Line 83: <code>integer id PK</code></li><li>Line 84: <code>text key_name</code></li><li>Line 85: <code>integer position_order</code></li><li>Line 86: <code>text shape_name FK</code></li><li>Line 87: <code>text label</code></li><li>Line 88: <code>text root_string_name</code></li><li>Line 89: <code>integer root_fret</code></li><li>Line 90: <code>text instructor_phrase</code></li><li>Line 91: <code>}</code></li><li>Line 93: <code>integer id PK</code></li><li>Line 94: <code>text sha256</code></li><li>Line 95: <code>text provenance_id</code></li><li>Line 96: <code>text quantum_signed_at</code></li><li>Line 97: <code>text pipeline</code></li><li>Line 98: <code>text chacha20_poly1305_seal</code></li><li>Line 99: <code>text aesgcm_seal</code></li><li>Line 100: <code>text provenance_url</code></li><li>Line 101: <code>text analyzed_at</code></li><li>Line 102: <code>}</code></li><li>Line 104: <code>integer id PK</code></li><li>Line 105: <code>text sha256</code></li><li>Line 106: <code>integer canonical_sig_id FK</code></li><li>Line 107: <code>integer duplicate_sig_id FK</code></li><li>Line 108: <code>real provenance_score_canonical</code></li><li>Line 109: <code>real provenance_score_duplicate</code></li><li>Line 110: <code>text detected_at</code></li><li>Line 111: <code>}</code></li><li>Line 113: <code>integer id PK</code></li><li>Line 114: <code>text source</code></li><li>Line 115: <code>text gdrive_file_id UK</code></li><li>Line 116: <code>text local_path</code></li><li>Line 117: <code>text name</code></li><li>Line 118: <code>text file_ext</code></li><li>Line 119: <code>text category</code></li><li>Line 120: <code>text artist</code></li><li>Line 121: <code>text title</code></li><li>Line 122: <code>text key_descriptor</code></li><li>Line 123: <code>text ingested_at</code></li><li>Line 124: <code>}</code></li><li>Line 126: <code>integer id PK</code></li><li>Line 127: <code>text name UK</code></li><li>Line 128: <code>text genre</code></li><li>Line 129: <code>integer active</code></li><li>Line 130: <code>text notes</code></li><li>Line 131: <code>text created_at</code></li><li>Line 132: <code>}</code></li><li>Line 134: <code>integer id PK</code></li><li>Line 135: <code>integer band_id FK</code></li><li>Line 136: <code>integer catalog_song_id FK</code></li><li>Line 137: <code>text default_key</code></li><li>Line 138: <code>integer default_bpm</code></li><li>Line 139: <code>text notes</code></li><li>Line 140: <code>text created_at</code></li><li>Line 141: <code>}</code></li><li>Line 143: <code>integer id PK</code></li><li>Line 144: <code>text alias UK</code></li><li>Line 145: <code>integer catalog_song_id FK</code></li><li>Line 146: <code>text created_at</code></li><li>Line 147: <code>}</code></li><li>Line 149: <code>integer id PK</code></li><li>Line 150: <code>text category</code></li><li>Line 151: <code>text platform</code></li><li>Line 152: <code>text label</code></li><li>Line 153: <code>text url</code></li><li>Line 154: <code>text embed_html</code></li><li>Line 155: <code>text song_title</code></li><li>Line 156: <code>text status</code></li><li>Line 157: <code>integer sort_order</code></li><li>Line 158: <code>text created_at</code></li><li>Line 159: <code>text updated_at</code></li><li>Line 160: <code>}</code></li><li>Line 162: <code>integer id PK</code></li><li>Line 163: <code>integer album_id FK</code></li><li>Line 164: <code>text distributor</code></li><li>Line 165: <code>text release_date</code></li><li>Line 166: <code>text upc</code></li><li>Line 167: <code>integer spotify_confirmed</code></li><li>Line 168: <code>integer apple_confirmed</code></li><li>Line 169: <code>integer amazon_confirmed</code></li><li>Line 170: <code>integer youtube_confirmed</code></li><li>Line 171: <code>text platform_urls</code></li><li>Line 172: <code>text soundexchange_id</code></li><li>Line 173: <code>text notes</code></li><li>Line 174: <code>text created_at</code></li><li>Line 175: <code>}</code></li><li>Line 177: <code>integer id PK</code></li><li>Line 178: <code>integer exercise_id FK</code></li><li>Line 179: <code>text song_path</code></li><li>Line 180: <code>text seg_start</code></li><li>Line 181: <code>text seg_end</code></li><li>Line 182: <code>integer repetition</code></li><li>Line 183: <code>integer duration_minutes</code></li><li>Line 184: <code>text key</code></li><li>Line 185: <code>integer position</code></li><li>Line 186: <code>text exercise_name</code></li><li>Line 187: <code>text logged_at</code></li><li>Line 188: <code>}</code></li><li>Line 190: <code>integer id PK</code></li><li>Line 191: <code>text key</code></li><li>Line 192: <code>text mode</code></li><li>Line 193: <code>text scale</code></li><li>Line 194: <code>integer position</code></li><li>Line 195: <code>integer bpm</code></li><li>Line 196: <code>integer reps</code></li><li>Line 197: <code>integer duration_minutes</code></li><li>Line 198: <code>text logged_at</code></li><li>Line 199: <code>}</code></li><li>Line 201: <code>integer id PK</code></li><li>Line 202: <code>text studio_name</code></li><li>Line 203: <code>text category</code></li><li>Line 204: <code>text label</code></li><li>Line 205: <code>text spec_json</code></li><li>Line 206: <code>text status</code></li><li>Line 207: <code>text created_at</code></li><li>Line 208: <code>text updated_at</code></li><li>Line 209: <code>}</code></li><li>Line 211: <code>integer id PK</code></li><li>Line 212: <code>text line UK</code></li><li>Line 213: <code>integer is_hook</code></li><li>Line 214: <code>text created_at</code></li><li>Line 215: <code>}</code></li><li>Line 217: <code>integer id PK</code></li><li>Line 218: <code>text suffixes</code></li><li>Line 219: <code>}</code></li><li>Line 221: <code>integer id PK</code></li><li>Line 222: <code>text file_path</code></li><li>Line 223: <code>text sha256</code></li><li>Line 224: <code>text status</code></li><li>Line 225: <code>text created_at</code></li><li>Line 226: <code>}</code></li><li>Line 228: <code>integer id PK</code></li><li>Line 229: <code>integer catalog_song_id FK</code></li><li>Line 230: <code>text persona</code></li><li>Line 231: <code>text rationale</code></li><li>Line 232: <code>text hlx_filename</code></li><li>Line 233: <code>text status</code></li><li>Line 234: <code>text created_at</code></li><li>Line 235: <code>text updated_at</code></li><li>Line 236: <code>}</code></li></ul></section><details><summary>Source provenance</summary><p>Canonical source: <code>F:/⊕Workspace/.worktrees/feature-FR-20260811-architecture-diagram-beautifier-reimagination/diagrams/music-db-schema.mmd</code><br>sha256: <code>243960c88baf468bd17c858dd104f51fa45cdccae8af2a908e6d0fc390db5a69</code></p><pre>%%{init: {&#x27;theme&#x27;: &#x27;base&#x27;, &#x27;themeVariables&#x27;: {&#x27;primaryColor&#x27;: &#x27;#1a2e3a&#x27;, &#x27;primaryTextColor&#x27;: &#x27;#d0ecf8&#x27;, &#x27;edgeLabelBackground&#x27;: &#x27;#0f1318&#x27;, &#x27;lineColor&#x27;: &#x27;#4a7a9a&#x27;}}}%%
+erDiagram
+    TRACKS ||--o{ RECORDINGS : has
+    ALBUMS ||--o{ TRACKS : contains
+    CATALOG_SONGS ||--o{ SETLIST_SONGS : appears_in
+    SETLISTS ||--o{ SETLIST_SONGS : contains
+    BANDS ||--o{ SETLISTS : owns
+    EXERCISES ||--o{ EXERCISE_CARDS : composes
+    GUITAR_SCALE_TEMPLATES ||--o{ GUITAR_SCALE_POSITIONS : instantiates
+    RELEASE_SIGNATURES ||--o{ DUPLICATE_GROUPS : &quot;canonical&quot;
+    RELEASE_SIGNATURES ||--o{ DUPLICATE_GROUPS : &quot;duplicate&quot;
+    BANDS ||--o{ BAND_SONG_ARRANGEMENTS : arranges
+    CATALOG_SONGS ||--o{ BAND_SONG_ARRANGEMENTS : arranged_for
+    CATALOG_SONGS ||--o{ CATALOG_SONG_ALIASES : aliased_by
+    CATALOG_SONGS ||--o{ GUITAR_TONE_PROFILES : tone_profiled
+    ALBUMS ||--o{ RELEASES : released_as
+    VAULT_LINES ||--o{ PHONETIC_GROUPS : &quot;grouped_via vault_line_groups&quot;
+
+    TRACKS {
+        integer id PK
+        text title
+        integer album_id FK
+        integer tempo_bpm
+        text key_signature
+        text status
+    }
+    RECORDINGS {
+        integer id PK
+        integer track_id FK
+        text file_path
+        integer quality_rating
+        text recorded_at
+    }
+    ALBUMS {
+        integer id PK
+        text title
+        text status
+    }
+    CATALOG_SONGS {
+        integer id PK
+        text title
+        text artist
+        integer bpm
+        text key_sig
+        text bpm_source
+        text source_file
+        text genre
+        text tags
+    }
+    SETLISTS {
+        integer setlist_id PK
+        text band
+        text name
+        text gig_date
+    }
+    SETLIST_SONGS {
+        integer id PK
+        integer setlist_id FK
+        integer catalog_song_id FK
+        integer set_number
+        integer position
+        text key_override
+        integer bpm_override
+    }
+    EXERCISES {
+        integer exercise_id PK
+        text title
+        text difficulty
+        text category
+    }
+    GIG_INVENTORY {
+        integer id PK
+        text item
+        text category
+        integer sort_order
+    }
+    GUITAR_SCALE_TEMPLATES {
+        text shape_name PK
+        integer root_string
+        text note_offsets
+    }
+    GUITAR_SCALE_POSITIONS {
+        integer id PK
+        text key_name
+        integer position_order
+        text shape_name FK
+        text label
+        text root_string_name
+        integer root_fret
+        text instructor_phrase
+    }
+    RELEASE_SIGNATURES {
+        integer id PK
+        text sha256
+        text provenance_id
+        text quantum_signed_at
+        text pipeline
+        text chacha20_poly1305_seal
+        text aesgcm_seal
+        text provenance_url
+        text analyzed_at
+    }
+    DUPLICATE_GROUPS {
+        integer id PK
+        text sha256
+        integer canonical_sig_id FK
+        integer duplicate_sig_id FK
+        real provenance_score_canonical
+        real provenance_score_duplicate
+        text detected_at
+    }
+    SHEET_MUSIC {
+        integer id PK
+        text source
+        text gdrive_file_id UK
+        text local_path
+        text name
+        text file_ext
+        text category
+        text artist
+        text title
+        text key_descriptor
+        text ingested_at
+    }
+    BANDS {
+        integer id PK
+        text name UK
+        text genre
+        integer active
+        text notes
+        text created_at
+    }
+    BAND_SONG_ARRANGEMENTS {
+        integer id PK
+        integer band_id FK
+        integer catalog_song_id FK
+        text default_key
+        integer default_bpm
+        text notes
+        text created_at
+    }
+    CATALOG_SONG_ALIASES {
+        integer id PK
+        text alias UK
+        integer catalog_song_id FK
+        text created_at
+    }
+    ARTIST_LINKS {
+        integer id PK
+        text category
+        text platform
+        text label
+        text url
+        text embed_html
+        text song_title
+        text status
+        integer sort_order
+        text created_at
+        text updated_at
+    }
+    RELEASES {
+        integer id PK
+        integer album_id FK
+        text distributor
+        text release_date
+        text upc
+        integer spotify_confirmed
+        integer apple_confirmed
+        integer amazon_confirmed
+        integer youtube_confirmed
+        text platform_urls
+        text soundexchange_id
+        text notes
+        text created_at
+    }
+    GUITAR_TRAINING_LOG {
+        integer id PK
+        integer exercise_id FK
+        text song_path
+        text seg_start
+        text seg_end
+        integer repetition
+        integer duration_minutes
+        text key
+        integer position
+        text exercise_name
+        text logged_at
+    }
+    SCALE_PRACTICE_LOG {
+        integer id PK
+        text key
+        text mode
+        text scale
+        integer position
+        integer bpm
+        integer reps
+        integer duration_minutes
+        text logged_at
+    }
+    STUDIO_EQUIPMENT {
+        integer id PK
+        text studio_name
+        text category
+        text label
+        text spec_json
+        text status
+        text created_at
+        text updated_at
+    }
+    VAULT_LINES {
+        integer id PK
+        text line UK
+        integer is_hook
+        text created_at
+    }
+    PHONETIC_GROUPS {
+        integer id PK
+        text suffixes
+    }
+    CATALOG_AUDIO_FILES {
+        integer id PK
+        text file_path
+        text sha256
+        text status
+        text created_at
+    }
+    GUITAR_TONE_PROFILES {
+        integer id PK
+        integer catalog_song_id FK
+        text persona
+        text rationale
+        text hlx_filename
+        text status
+        text created_at
+        text updated_at
+    }</pre></details></main></body></html>
