@@ -88,6 +88,51 @@ def test_fr_cli_command_mapping_is_fixed(monkeypatch):
     ]
 
 
+def test_fr_cli_subprocess_has_ten_second_timeout(monkeypatch):
+    from src.utils import coordination_mcp_server
+
+    captured: dict[str, object] = {}
+
+    class Result:
+        stdout = "fr details\n"
+
+    def fake_run(args, **kwargs):
+        captured["kwargs"] = kwargs
+        if kwargs.get("timeout") != 10:
+            raise coordination_mcp_server.subprocess.TimeoutExpired(args, 10)
+        return Result()
+
+    monkeypatch.setattr(coordination_mcp_server.subprocess, "run", fake_run)
+
+    result = coordination_mcp_server._run_fr_cli(
+        "fr.get", {"fr_id": "FR-20260811-example"}
+    )
+
+    assert result == "fr details"
+    assert captured["kwargs"]["timeout"] == 10
+
+
+def test_fr_cli_subprocess_preserves_non_zero_failure(monkeypatch):
+    from src.utils import coordination_mcp_server
+
+    expected = coordination_mcp_server.subprocess.CalledProcessError(
+        2, ["fr_cli.py", "get", "FR-20260811-example"]
+    )
+
+    def fake_run(args, **kwargs):
+        assert kwargs["check"] is True
+        raise expected
+
+    monkeypatch.setattr(coordination_mcp_server.subprocess, "run", fake_run)
+
+    with pytest.raises(coordination_mcp_server.subprocess.CalledProcessError) as error:
+        coordination_mcp_server._run_fr_cli(
+            "fr.get", {"fr_id": "FR-20260811-example"}
+        )
+
+    assert error.value is expected
+
+
 @pytest.mark.parametrize("field", ["db", "sql"])
 def test_arbitrary_database_and_sql_inputs_are_rejected(field: str):
     from src.utils.coordination_mcp_server import invoke_coordination
