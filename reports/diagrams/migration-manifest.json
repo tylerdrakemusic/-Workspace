@@ -7,8 +7,8 @@
     },
     {
       "source": "diagrams/capital-db-schema.mmd",
-      "sha256": "801fe82a6aac85f83886e4178988ac8c1abf06905372c97ea39ffea7f8f8bf31",
-      "artifact": "diagrams/capital-db-schema--801fe82a6aac.html"
+      "sha256": "ab22b63c15654caff8ec67b4931605a6b868082444847384cae988fd64e16e5c",
+      "artifact": "diagrams/capital-db-schema--ab22b63c1565.html"
     },
     {
       "source": "diagrams/capital-tech-stack.mmd",
