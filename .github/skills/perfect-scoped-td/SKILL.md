@@ -103,6 +103,11 @@ or “sync” a todo is not by itself permission to write.
 After confirmation only:
 
 1. Update the existing todo using a transaction and parameterized values.
+   When the approved refinement transaction succeeds, set the nullable
+   `perfected_at` field to the current UTC timestamp in that same transaction.
+   A denied, unapproved, or failed refinement must not set or update
+   `perfected_at`; it remains null unless a prior approved successful
+   refinement already stamped it.
 2. Use `update_priority()` when changing priority so `priority_history` is
    recorded. Do not change `done` or `closed_at` through this skill.
 3. Set `fr_id` only to a confirmed existing FR ID. Never create an FR or
@@ -124,5 +129,7 @@ and do not partially continue the handshake.
 
 - This skill does not implement code, create branches, or open FRs.
 - It does not transition FR states or mark todos complete.
+- It only stamps `perfected_at` for an approved successful refinement
+   transaction; failed or unapproved refinement does not stamp it.
 - It does not modify unrelated todos or repair conflicts silently.
 - It does not create fallback files when either database is unavailable.
