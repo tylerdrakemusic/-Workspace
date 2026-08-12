@@ -43,6 +43,7 @@ def _run_fr_cli(operation: str, payload: dict[str, Any]) -> str:
         text=True,
         encoding="utf-8",
         check=True,
+        timeout=10,
     )
     return result.stdout.strip()
 
