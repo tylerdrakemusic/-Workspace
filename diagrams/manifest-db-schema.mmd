@@ -32,6 +32,7 @@ erDiagram
         integer priority "default 5"
         text autonomy_level "full|supervised|human"
         text fr_id "nullable — links to active FR"
+        text perfected_at "nullable — UTC timestamp proving successful approved perfect-scoped-td refinement; independent of fr_id"
         text rationale "nullable — LLM-generated rationale"
         text implementation_hints "nullable — LLM-generated hints"
         text context_snapshot "nullable — project context at discovery"
