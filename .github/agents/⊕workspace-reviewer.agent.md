@@ -87,8 +87,14 @@ After posting:
 $env:PYTHONUTF8="1"
 C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> ⊕workspace-reviewer decision "<decision>: <summary>"
 C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py update-state <FR-ID> AUTO_REVIEWED  # or CHANGES_REQUESTED
+# Advisory only: creates one local ElevenLabs MP3 after AUTO_REVIEWED. Never gate approval on this command.
+C:\G\python.exe f:\⊕Workspace\src\utils\fr_approval_notification.py <FR-ID>
 C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> url "GitHub Review" --path "<review-URL>"
 ```
+
+The audio notification is local and has no playback or external delivery. Missing
+credentials, API failures, timeouts, and rate limits are recorded as advisory
+events and must leave the FR state and Tyler's approval decision unchanged.
 
 ## Constraints
 - DO NOT approve if any hard gate fails
