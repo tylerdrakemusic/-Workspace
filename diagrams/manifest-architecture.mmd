@@ -38,6 +38,7 @@ graph TB
     MigrateScript[tools/<br/>migrate_todos.py]
     AllProjects([∞Life · ❤Music · ⟨ψ⟩Quantum<br/>· 👁Manifest · ⊕Workspace · ΣCapital])
     TodoDoneAPI[POST /api/todo/done]
+    TodoCancelAPI[POST /api/todo/cancel]
     CoordinationMCP[src/integrations/coordination/<br/>mcp_server.py]
     CoordinationTodos[src/integrations/coordination/<br/>todos_db.py]
     FrLinkGate{Tyler confirmation<br/>required for fr_id linkage}
@@ -49,6 +50,9 @@ graph TB
     Tools -->|gather_project_status| TodosDB
     Portal --- TodoDoneAPI
     TodoDoneAPI -->|mark_done| TodosDB
+    Portal --- TodoCancelAPI
+    TodoCancelAPI -->|cancel_todo| TodosUtil
+    TodosUtil -->|persists closure_reason| TodosDB
     CoordinationMCP -->|governed todo operations| CoordinationTodos
     CoordinationTodos ==> TodosDB
     CoordinationMCP -->|fr_id linkage request| FrLinkGate
@@ -79,7 +83,7 @@ graph TB
     class TodosDB db
     class TodosUtil,MigrateScript util
     class AllProjects ws
-    class TodoDoneAPI manifest
+    class TodoDoneAPI,TodoCancelAPI manifest
     class Triggers trig
     class OpenAI,ElevenLabs,DallE3,HFImage,HFSpaces,Pollinations api
     class TextOut,AudioOut,Portal,ImagesOut out

@@ -29,6 +29,7 @@ erDiagram
         integer done
         text created_at
         text closed_at
+        text closure_reason "nullable — completed|cancelled|stale; legacy rows remain NULL after migration"
         integer priority "default 5"
         text autonomy_level "full|supervised|human"
         text fr_id "nullable — links to active FR"
