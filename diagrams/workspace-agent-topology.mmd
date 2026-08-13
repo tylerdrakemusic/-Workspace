@@ -86,6 +86,16 @@ graph LR
     Overseer --> Dashboards & BenchAnalyzer & Protector & QA
     Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch & CapitalOrch
     Overseer --> TDDLight & TDDStd & TDDHeavy
+    Intake --> CI & Security
+    CI --> TDDStd & QA & Reviewer
+    Security --> Hygiene
+    QA --> Reviewer & ArchRev
+    Dashboards --> Discovery
+    Discovery --> Doer
+    BenchAnalyzer --> Protector
+    Protector --> Reviewer
+    TDDLight --> TDDStd
+    TDDStd --> TDDHeavy
     ArchRev -.->|STALE → delegates| ArchBeaut
     QA --> QALight & QAHeavy
     Reviewer --> ReviewerLight & ReviewerHeavy

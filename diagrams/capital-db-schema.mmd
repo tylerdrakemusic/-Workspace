@@ -6,6 +6,7 @@ erDiagram
     EXITS ||--o{ EXITS : supersedes
     TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
     TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves_candidate_account
+    RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies
 
     PORTFOLIO {
         integer id PK
@@ -85,8 +86,8 @@ erDiagram
     }
     RISK_THRESHOLDS {
         integer id PK
-        text dimension
-        real threshold
+        text dimension "qualification_score seeded"
+        real threshold "default 7.0"
         text updated_at
     }
     TRADE_CANDIDATES {
@@ -98,7 +99,9 @@ erDiagram
         real exit_target
         real stop_loss_target
         text ai_reason
-        real scoring
+        real confidence "derived picker confidence"
+        text rationale "provider or fallback rationale"
+        text scoring_method "perplexity|heuristic"
         text mode "simulated|real"
         text created_at
         text model
