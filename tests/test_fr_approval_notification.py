@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -155,3 +157,90 @@ def test_non_auto_reviewed_state_is_unchanged_and_not_synthesized(
     assert ledger.execute(
         "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
     ).fetchone()[0] == "REVIEW_REQUESTED"
+
+
+def test_concurrent_invocations_synthesize_and_record_one_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    database_path = tmp_path / "fr-ledger.db"
+    setup = sqlite3.connect(database_path)
+    setup.executescript(
+        """
+        CREATE TABLE feature_requests (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            state TEXT NOT NULL,
+            updated_at TEXT
+        );
+        CREATE TABLE fr_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fr_id TEXT NOT NULL,
+            ts TEXT NOT NULL,
+            agent TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            details TEXT,
+            next_action TEXT
+        );
+        CREATE TABLE fr_artifacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fr_id TEXT NOT NULL,
+            ts TEXT NOT NULL,
+            artifact_type TEXT NOT NULL,
+            label TEXT NOT NULL,
+            path_or_url TEXT
+        );
+        INSERT INTO feature_requests (id, title, state, updated_at)
+        VALUES ('FR-TEST-001', 'Governed approval notification', 'AUTO_REVIEWED', '2026-08-13');
+        """
+    )
+    setup.commit()
+    setup.close()
+
+    connections: list[sqlite3.Connection] = []
+    lookup_barrier = threading.Barrier(2)
+
+    def connection_factory() -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            database_path, timeout=5, check_same_thread=False
+        )
+        connection.row_factory = sqlite3.Row
+        connections.append(connection)
+        lookup_barrier.wait()
+        return connection
+
+    monkeypatch.setattr(fr_approval_notification, "_conn", connection_factory)
+    synthesis_calls = 0
+    calls_lock = threading.Lock()
+
+    class ConcurrentClient:
+        def text_to_speech(self, text: str, voice_id: str) -> bytes:
+            nonlocal synthesis_calls
+            with calls_lock:
+                synthesis_calls += 1
+            return b"fake-mp3"
+
+    def client_factory() -> ConcurrentClient:
+        return ConcurrentClient()
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(
+                executor.map(
+                    lambda _: fr_approval_notification.notify_auto_reviewed(
+                        "FR-TEST-001",
+                        output_dir=tmp_path / "proof",
+                        client_factory=client_factory,
+                    ),
+                    range(2),
+                )
+            )
+
+        assert sorted(result.status for result in results) == ["created", "duplicate"]
+        assert synthesis_calls == 1
+        verification = sqlite3.connect(database_path)
+        assert verification.execute("SELECT COUNT(*) FROM fr_artifacts").fetchone()[0] == 1
+        verification.close()
+    finally:
+        for connection in connections:
+            connection.close()
