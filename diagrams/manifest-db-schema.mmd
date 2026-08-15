@@ -21,6 +21,11 @@ erDiagram
         text provider
     }
     TODOS ||--o{ PRIORITY_HISTORY : has
+    TODOS ||--o{ TODOS : parent_of
+    TODOS ||--o{ TODO_PREREQUISITES : dependent
+    TODOS ||--o{ TODO_PREREQUISITES : prerequisite
+    TODOS ||--o{ TODO_FR_LINKS : links
+    FR_LEDGER ||--o{ TODO_FR_LINKS : "confirmed logical link"
     TODOS {
         integer id PK
         text project
@@ -39,6 +44,23 @@ erDiagram
         text context_snapshot "nullable — project context at discovery"
         text estimated_effort "nullable — XS|S|M|L|XL"
         text dependencies "nullable — todo IDs / FR IDs (comma-sep)"
+        integer parent_id "nullable — logical parent todo self-reference; no DB FK"
+    }
+    TODO_PREREQUISITES {
+        integer todo_id PK, FK
+        integer prerequisite_id PK, FK
+        text allowed_terminal_states "default completed|cancelled|stale; prerequisite must reach one"
+        text created_at
+        text constraint "todo_id <> prerequisite_id; cycles rejected"
+    }
+    TODO_FR_LINKS {
+        integer todo_id PK, FK
+        text fr_id PK "canonical FR ID; confirmation required"
+        integer confirmed "default 0; CHECK 0|1"
+        text created_at
+    }
+    FR_LEDGER {
+        text fr_id PK "canonical feature-request registry; logical reference"
     }
     PRIORITY_HISTORY {
         integer id PK

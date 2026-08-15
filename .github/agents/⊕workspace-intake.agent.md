@@ -51,10 +51,16 @@ Phase A question pool (pick relevant, fill options from context):
 2. Classify: `feature` | `fix` | `chore`
 3. Draft 3–7 acceptance criteria (testable, Tyler-confirmed only)
 4. Estimate risk: `low` | `medium` | `high`
-5. Open in DB: `fr_cli.py open <FR-ID> "<title>" --type <type> --risk <risk> --projects "<p>"`
-6. Start cycle timer: `perf_cli.py start "fr-cycle-<FR-ID>" --agent ⊕workspace-intake` → record run_id via `fr_cli.py record-artifact`
-7. `fr_cli.py update-state <FR-ID> TRIAGED && fr_cli.py record-event ...`
-8. **STOP — present scope card to Tyler:**
+5. Detect oversized scope when the request spans multiple projects, adds a
+  schema or integration, or contains more than three independently testable
+  outcomes. Propose an approval-gated child chain that preserves the parent,
+  names implementation-ready children, and records graph dependencies. Do not
+  create FR transitions from todo code; only the governed FR workflow may
+  mutate FR state.
+6. Open in DB: `fr_cli.py open <FR-ID> "<title>" --type <type> --risk <risk> --projects "<p>"`
+7. Start cycle timer: `perf_cli.py start "fr-cycle-<FR-ID>" --agent ⊕workspace-intake` → record run_id via `fr_cli.py record-artifact`
+8. `fr_cli.py update-state <FR-ID> TRIAGED && fr_cli.py record-event ...`
+9. **STOP — present scope card to Tyler:**
 
 ```
 ## FR-<id> — <title>
