@@ -74,6 +74,15 @@ Preserve the source intent while producing:
 Do not invent project facts, FR approvals, dependencies, or implementation
 details. Preserve existing fields when the input does not justify a change.
 
+### Oversized scope
+
+Treat a todo as oversized when it spans multiple projects, introduces a schema
+or integration, or contains more than three independently testable outcomes.
+For oversized scope, propose an approval-gated child chain: preserve the parent
+as the outcome anchor, list implementation-ready children, and show the graph
+edges and inherited confirmed FR link before writing. Do not create child rows,
+edges, or FR links until Tyler explicitly approves the full decomposition.
+
 ## Approval Gate
 
 Show a handshake report and proposed mutations before writing:
@@ -129,6 +138,8 @@ and do not partially continue the handshake.
 
 - This skill does not implement code, create branches, or open FRs.
 - It does not transition FR states or mark todos complete.
+- Do not create FR transitions from todo code; FR state changes remain owned by
+   the governed FR workflow and its CLI.
 - It only stamps `perfected_at` for an approved successful refinement
    transaction; failed or unapproved refinement does not stamp it.
 - It does not modify unrelated todos or repair conflicts silently.
