@@ -96,6 +96,7 @@ reports/diagrams/*.svg
 # remain the durable proof for FR review.
 proof/*
 proof/architecture-review-FR-*.md
+proof/FR-20260815-qec-security-maintenance-*.md
 
 # Workspace-local git worktrees (FR-20260511-worktree-local-migration)
 # Worktrees live at .worktrees/{branch-slug}/ — gitignored and IDE-excluded.
