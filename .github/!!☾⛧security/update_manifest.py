@@ -26,15 +26,39 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def build_manifest() -> dict:
+def _repo_root(repo_root: Path | None = None) -> Path:
+    return (repo_root or _GITHUB_DIR.parent).resolve()
+
+
+def _normalize_repo_key(key: str, repo_root: Path) -> str:
+    normalized = key.replace("\\", "/")
+    if not Path(key).is_absolute():
+        return normalized.removeprefix("./")
+
+    try:
+        return Path(key).resolve().relative_to(repo_root).as_posix()
+    except ValueError:
+        marker = ".github/"
+        marker_index = normalized.find(marker)
+        if marker_index >= 0:
+            return normalized[marker_index:]
+        return normalized
+
+
+def build_manifest(repo_root: Path | None = None) -> dict:
+    root = _repo_root(repo_root)
+    watched_dirs = [
+        root / ".github" / "agents",
+        root / ".github" / "instructions",
+        root / ".github" / "skills",
+    ]
     entries: dict[str, str] = {}
-    for watched_dir in WATCHED_DIRS:
+    for watched_dir in watched_dirs:
         if not watched_dir.exists():
             continue
-        for path in sorted(watched_dir.rglob("*")):
+        for path in sorted(watched_dir.rglob("*"), key=lambda item: item.as_posix()):
             if path.is_file() and path.suffix in EXTENSIONS:
-                rel = path.as_posix().replace("f:/", "f:\\")
-                entries[str(path)] = sha256_file(path)
+                entries[path.relative_to(root).as_posix()] = sha256_file(path)
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "generated_by": "update_manifest.py",
@@ -43,14 +67,18 @@ def build_manifest() -> dict:
     }
 
 
-def verify_manifest() -> None:
-    if not MANIFEST_PATH.exists():
+def verify_manifest(repo_root: Path | None = None) -> None:
+    root = _repo_root(repo_root)
+    manifest_path = root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    if not manifest_path.exists():
         print("❌ No manifest found. Run without --verify to create one.")
         sys.exit(1)
 
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    known = manifest["files"]
-    current = build_manifest()["files"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    known = {
+        _normalize_repo_key(key, root): digest for key, digest in manifest["files"].items()
+    }
+    current = build_manifest(root)["files"]
 
     new_files = set(current) - set(known)
     missing = set(known) - set(current)

@@ -78,7 +78,7 @@ REPLAY_WINDOW = 65536
 # Entropy source paths
 QUANTUM_CACHE = os.environ.get(
     "QUANTUM_CACHE_FILE",
-    str(Path(r"f:\executedcode\ty_string_cache.txt")),
+    str(Path(r"f:\⊕Workspace\tmp\ty_string_cache.txt")),
 )
 AER_QUBITS = 32
 AER_SHOTS = 8192
@@ -217,7 +217,7 @@ class QuantumEntropyProvider:
             from qiskit_aer import AerSimulator
 
             n_bits = n_bytes * 8
-            qubits = min(AER_CIRCUIT_QUBITS, n_bits)
+            qubits = min(AER_QUBITS, n_bits)
             shots = max(1, (n_bits + qubits - 1) // qubits)
 
             qc = QuantumCircuit(qubits, qubits)

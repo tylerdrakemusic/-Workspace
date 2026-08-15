@@ -8,9 +8,9 @@ from pathlib import Path
 from dataclasses import dataclass, field
 
 PROJECT_ROOTS = {
-    "infinitelife": Path(r"f:\executedcode\∞Life\src"),
-    "heartmusic":   Path(r"f:\executedcode\❤Music\src"),
-    "quantum":      Path(r"f:\executedcode\⟨ψ⟩Quantum\src"),
+    "infinitelife": Path(r"f:\∞Life\src"),
+    "heartmusic":   Path(r"f:\❤Music\src"),
+    "quantum":      Path(r"f:\⟨ψ⟩Quantum\src"),
 }
 
 RULES: list[tuple[str, str, str]] = [
@@ -140,7 +140,8 @@ def main() -> None:
             for f in all_findings
         ],
     }
-    out_path = Path(r"f:\tmp\security_scan_results.json")
+    out_path = Path(__file__).resolve().parents[2] / "tmp" / "security_scan_results.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\n  Full results: {out_path}")
 
