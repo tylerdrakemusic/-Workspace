@@ -381,7 +381,11 @@ def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
     monkeypatch.setenv("HEARTMUSIC_DB_KEY", "test-key")
 
     class FakeConnection:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+
         def execute(self, statement: str):
+            self.statements.append(statement)
             if statement.startswith("SELECT name"):
                 return self
             return self
@@ -395,10 +399,13 @@ def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
     class FakeSqlcipher:
         def __init__(self) -> None:
             self.paths: list[str] = []
+            self.connections: list[FakeConnection] = []
 
         def connect(self, path: str) -> FakeConnection:
             self.paths.append(path)
-            return FakeConnection()
+            connection = FakeConnection()
+            self.connections.append(connection)
+            return connection
 
     fake_sqlcipher = FakeSqlcipher()
     monkeypatch.setitem(sys.modules, "sqlcipher3", fake_sqlcipher)
@@ -408,6 +415,13 @@ def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
     )
 
     assert fake_sqlcipher.paths == [str(restored_path)]
+    assert fake_sqlcipher.connections[0].statements == [
+        "PRAGMA key='test-key'",
+        "PRAGMA cipher_page_size=4096",
+        "PRAGMA kdf_iter=256000",
+        "PRAGMA cipher_hmac_algorithm=HMAC_SHA512",
+        "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name LIMIT 1",
+    ]
 
 
 def test_discovery_fails_closed_for_unregistered_database(tmp_path: Path) -> None:
