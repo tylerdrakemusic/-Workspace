@@ -19,6 +19,8 @@ graph TB
             UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
             UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
             CoordinationMCP[coordination_mcp_server.py]
+            GmailMCP[gmail_mcp_server.py<br/>gmail-service-email · stdio]
+            GmailCreds{GMAIL_SERVICE_TOKEN<br/>environment only}
             FRCLI[fr_cli.py]
             Allowlist{Fixed allowlisted<br/>operation boundary}
         end
@@ -43,6 +45,8 @@ graph TB
     UtilsPerf --> Data
     UtilsData --> Data
     CoordinationMCP --> Allowlist
+    GmailMCP -->|GmailServiceClient| Integrations
+    GmailMCP -.->|credential lookup| GmailCreds
     Allowlist -->|FR operations only| FRCLI
     FRCLI ==> FRLedger
     class Tools tool

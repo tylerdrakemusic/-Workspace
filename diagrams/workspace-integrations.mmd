@@ -38,6 +38,11 @@ graph LR
     CapitalDB[(sigmacapital.db)]:::db
     FRLedger[(fr_ledgers.db)]:::db
     ManifestTodoDB[(manifest_todos.db)]:::db
+    GmailMCP{{gmail-service-email<br/>persistent stdio}}:::ws
+    GmailStdio[/stdio/]:::state
+    GmailOps[/discover/read/get/]:::state
+    GmailCreds{GMAIL_SERVICE_TOKEN<br/>env only}:::state
+    GmailOutbound{operator_approved=True<br/>policy}:::state
     %% Workspace → external
     Workspace -->|mcp_github| GitHub
     Workspace -->|diagrams render| Mermaid
@@ -56,6 +61,13 @@ graph LR
     Workspace -->|health ping| Perplexity
     Workspace -->|sonar search + reasoning| Perplexity
     Workspace -->|gdrive client SA auth| GDrive
+    Workspace -->|persistent MCP| GmailStdio
+    GmailStdio -->|server| GmailMCP
+    GmailMCP --> GmailOps
+    GmailMCP -.->|credential lookup| GmailCreds
+    GmailMCP -->|GmailServiceClient OAuth| Gmail
+    GmailMCP --> GmailOutbound
+    GmailOutbound ==>|"operator-approved"| Gmail
     %% ∞Life → external + DB
     Life -->|nutrition sync| MFP
     Life -->|workout sync| TZ
@@ -108,10 +120,9 @@ graph LR
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
     Life -.->|nova_portrait lazy-import| Workspace
     Music -.->|vera_portrait lazy-import| Workspace
-    Workspace -->|GmailServiceClient OAuth| Gmail
     %% Direct cross-repo import coupling
     Manifest -->|"direct import: tech debt scanner"| Workspace
-    linkStyle 52 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
+    linkStyle 67 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
 
 
 
