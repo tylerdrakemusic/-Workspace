@@ -9,6 +9,8 @@ graph TB
         Sec[security_dashboard.py]
         Ops[agent_ops_monitor.py]
         BackupGenerator[/generate_database_backup_scope_report.py/]
+        BackupRegister[/register_database_backup_task.ps1/]
+        BackupRunner[/run_database_backup.ps1<br/>run_database_backup.py/]
     end
     subgraph Src["src/"]
         subgraph UtilsGroup["utils/"]
@@ -39,13 +41,20 @@ graph TB
     end
     subgraph BackupContract["Local database backup contract"]
         BackupPolicy[Provider-neutral backup policy]
+        Scheduler([Windows Task Scheduler<br/>daily 02:00])
+        BackupTask[Registered backup task]
+        Preflight{Fail-closed preflight:<br/>E: present and identity matches?}
+        EnvBoundary{Environment boundary:<br/>WORKSPACE_BACKUP_VOLUME<br/>WORKSPACE_BACKUP_VOLUME_ID<br/>WORKSPACE_BACKUP_MANIFEST_KEY}
         Inventory[Manifest + inventory discovery]
+        WorkspaceDB[(workspace.db<br/>approved inventory entry)]
+        FutureDBs[Future approved database entries]
         DiscoveryGate{Registered, unambiguous,<br/>classified database?}
-        Destination[LocalVolumeDestination<br/>E: verified volume adapter]
-        Generation[Atomic generation copy<br/>SHA-256 manifest]
+        Destination[Trusted E:\\WorkspaceBackup<br/>.backup-volume-identity marker]
+        Generation[Atomic generations<br/>per-database copies]
+        Integrity[HMAC manifest + file hashes]
         Retention[30-generation retention]
-        Restore[Operator-approved isolated restore<br/>periodic schema validation]
-        Audit[Redacted backup / restore audit<br/>metadata only]
+        Restore[Isolated restore validation<br/>operator-approved, periodic schema check]
+        Audit[Redacted backup / restore audit output<br/>metadata only]
     end
     Portal --> Registry
     Registry --> PortalHtml
@@ -56,13 +65,23 @@ graph TB
     BackupGenerator -->|uses| BackupScope
     BackupScope -->|path metadata discovery + report rendering| BackupGenerator
     BackupGenerator -->|writes deterministic Markdown| BackupReport
+    Scheduler --> BackupTask
+    BackupRegister -->|registers| BackupTask
+    BackupTask --> BackupRunner
+    BackupRunner --> Preflight
+    EnvBoundary --> Preflight
+    Preflight -->|pass| BackupPolicy
+    Preflight -->|absent or mismatched E: -> stop| Audit
     BackupPolicy --> Inventory
+    WorkspaceDB --> Inventory
+    FutureDBs -.->|approved entries| Inventory
     Inventory --> DiscoveryGate
     DiscoveryGate -->|fail closed on unknown or ambiguous DBs| BackupPolicy
     BackupPolicy --> Destination
     Destination --> Generation
+    Generation --> Integrity
     Generation --> Retention
-    Generation --> Restore
+    Integrity --> Restore
     Restore --> Audit
     BackupPolicy --> Audit
     BackupManifest --> Inventory
@@ -83,6 +102,11 @@ graph TB
     class Src src
     class Reports out
     class BackupContract contract
+    class Scheduler ext
+    class BackupRegister,BackupRunner,BackupTask,BackupGenerator,BackupReport ws
+    class Preflight,EnvBoundary,DiscoveryGate state
+    class WorkspaceDB,Data,FRLedger db
+    class Destination,Generation,Integrity,Restore,Audit contract
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
