@@ -9,7 +9,7 @@ $workspaceContainer = Split-Path -Parent $WorkspaceRoot
 if ((Split-Path -Leaf $workspaceContainer) -eq '.worktrees') {
     $WorkspaceRoot = Split-Path -Parent $workspaceContainer
 }
-$Launcher = Join-Path $PSScriptRoot 'run_database_backup.ps1'
+$Launcher = Join-Path $WorkspaceRoot 'tools\run_database_backup.ps1'
 $Manifest = Join-Path $WorkspaceRoot 'src\config\database_backup_scope.json'
 $ProjectRoots = @(
     ([char]0x2764 + "Music=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) ([char]0x2764 + "Music"))),

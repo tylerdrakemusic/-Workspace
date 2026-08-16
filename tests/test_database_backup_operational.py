@@ -250,3 +250,12 @@ def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
     assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in registration.split(
         "$action", 1
     )[1].split("$trigger", 1)[0]
+
+def test_powershell_registration_uses_canonical_workspace_launcher() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "tools"
+        / "register_database_backup_task.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "$Launcher = Join-Path $WorkspaceRoot 'tools\\run_database_backup.ps1'" in script

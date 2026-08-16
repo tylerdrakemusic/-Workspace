@@ -315,3 +315,17 @@ def test_committed_manifest_registers_every_allowed_database() -> None:
 
     assert manifest["fr"] == "FR-20260815-workspace-database-backup-scope"
     assert all(entry["classification"] for entry in manifest["databases"])
+
+
+def test_scheduler_registration_uses_canonical_music_project_root() -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    workspace_root = Path(__file__).resolve().parents[1]
+    repository_root = Path(*workspace_root.resolve().parts[: -workspace_root.parts[::-1].index(".worktrees") - 1])
+    task = build_task_spec(workspace_root, Path("C:/G/python.exe"))
+
+    project_root_argument = task.arguments[task.arguments.index("-ProjectRoot") + 1]
+    entries = dict(item.split("=", 1) for item in project_root_argument.split(","))
+
+    assert entries["❤Music"] == str(repository_root.parent / "❤Music")
+    assert ".worktrees" not in entries["❤Music"]
