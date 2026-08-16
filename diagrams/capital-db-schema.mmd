@@ -7,6 +7,7 @@ erDiagram
     TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
     TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves_candidate_account
     RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies
+    SENTIMENT_SHADOW_RUNS ||--o{ SENTIMENT_VALIDATION_EVALUATIONS : groups_by_run_id
 
     PORTFOLIO {
         integer id PK
@@ -164,6 +165,29 @@ erDiagram
         text released_at "lifecycle timestamp"
     }
 
+    SENTIMENT_VALIDATION_EVALUATIONS {
+        text run_id PK "composite key"
+        text symbol PK "composite key"
+        text captured_at PK "composite key"
+        text payload "sanitized JSON; baseline/sentiment scores, ranks, deltas, provenance"
+    }
+
+    SENTIMENT_SHADOW_RUNS {
+        text run_id PK
+        text started_at
+        text mode "shadow; immutable summary"
+        text payload "sanitized evaluation summary JSON"
+        text result_hash "SHA-256 of canonical payload"
+    }
+
+    SENTIMENT_ACTIVATION_DECISIONS {
+        text decision_id PK
+        text created_at
+        text decision "PASS|BLOCKED"
+        text payload "dataset, window, counts, calibration, failures, deltas, approval gate"
+        text payload_hash "SHA-256 of canonical artifact"
+    }
+
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
     %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
     %% mode='real' reserved for future FR after broker-API compliance review
@@ -181,3 +205,7 @@ erDiagram
     %% status {available|unavailable|error}, error_code, and provenance metadata.
     %% Provider transcripts are never persisted. Unavailable/error states are
     %% fail-open for ranking and contribute zero to the bounded additive score.
+    %% Validation tables are separate from SIGNALS. The shadow-to-evaluation
+    %% relationship is application-level grouping by run_id; the implementation
+    %% does not declare SQL foreign keys. Activation decisions are independent
+    %% immutable artifacts whose payload records the evaluated window and gates.
