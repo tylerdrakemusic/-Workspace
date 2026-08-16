@@ -110,6 +110,67 @@ def test_backup_writes_hashed_manifest_and_prunes_old_generations(tmp_path: Path
     assert validate_backup(result.manifest_path) is True
 
 
+def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(tmp_path: Path) -> None:
+    first_source = tmp_path / "workspace.db"
+    second_source = tmp_path / "music" / "heartmusic-store"
+    second_source.parent.mkdir()
+    first_source.write_bytes(b"workspace-encrypted-db")
+    second_source.write_bytes(b"music-encrypted-db")
+    manifest = _manifest()
+    manifest["databases"] = [
+        {
+            "id": "workspace",
+            "path": "workspace.db",
+            "backup_allowed": True,
+            "classification": "canonical",
+            "reason": "Workspace coordination database",
+            "encryption": "sqlcipher",
+            "key_env": "WORKSPACE_DB_KEY",
+            "schema_tables": ["todos"],
+        },
+        {
+            "id": "music-heartmusic",
+            "path": "music/heartmusic-store",
+            "backup_allowed": True,
+            "classification": "derived",
+            "reason": "Music application database",
+            "encryption": "sqlcipher",
+            "key_env": "HEARTMUSIC_DB_KEY",
+            "schema_tables": ["songs"],
+        },
+    ]
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+
+    result = DatabaseBackup(
+        manifest=manifest,
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    metadata = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+
+    assert metadata["databases"] == [
+        {
+            "id": "workspace",
+            "relative_path": "workspace.db",
+            "classification": "canonical",
+            "encryption": "sqlcipher",
+            "key_env": "WORKSPACE_DB_KEY",
+            "schema_tables": ["todos"],
+        },
+        {
+            "id": "music-heartmusic",
+            "relative_path": "music/heartmusic-store",
+            "classification": "derived",
+            "encryption": "sqlcipher",
+            "key_env": "HEARTMUSIC_DB_KEY",
+            "schema_tables": ["songs"],
+        },
+    ]
+
+
 def test_restore_requires_approval_and_isolated_target(tmp_path: Path) -> None:
     source = tmp_path / "workspace.db"
     source.write_bytes(b"encrypted-db-bytes")

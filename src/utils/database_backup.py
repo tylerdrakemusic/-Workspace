@@ -306,8 +306,8 @@ class DatabaseBackup:
                 "files": files,
                 "databases": [
                     {
-                        "id": entry.get("id", relative_path),
-                        "relative_path": relative_path,
+                        "id": entry.get("id", str(entry["path"])),
+                        "relative_path": str(entry["path"]),
                         **{
                             field: entry[field]
                             for field in (
