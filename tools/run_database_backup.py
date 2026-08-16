@@ -7,8 +7,30 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.utils.database_backup import DatabaseBackup, LocalVolumeDestination
+from src.utils.database_backup import (
+    BackupResult,
+    DatabaseBackup,
+    DestinationIdentityError,
+    LocalVolumeDestination,
+)
 from src.utils.database_backup_scope import load_manifest
+
+
+def run_backup(
+    manifest_path: Path,
+    source_root: Path,
+    volume_root: Path,
+    volume_identity: str,
+) -> BackupResult:
+    """Run the approved manifest backup after a fail-closed volume preflight."""
+    if not volume_root.is_dir():
+        raise DestinationIdentityError(f"backup destination is missing: {volume_root}")
+    return DatabaseBackup(
+        manifest=load_manifest(manifest_path),
+        source_root=source_root,
+        destination=LocalVolumeDestination(volume_root, volume_identity),
+        expected_destination_identity=volume_identity,
+    ).run()
 
 
 def main() -> int:
@@ -20,12 +42,7 @@ def main() -> int:
     args = parser.parse_args()
     volume_root = args.volume_root or _required_path("WORKSPACE_BACKUP_VOLUME")
     volume_identity = args.volume_identity or _required_value("WORKSPACE_BACKUP_VOLUME_ID")
-    result = DatabaseBackup(
-        manifest=load_manifest(args.manifest),
-        source_root=args.source_root,
-        destination=LocalVolumeDestination(volume_root, volume_identity),
-        expected_destination_identity=volume_identity,
-    ).run()
+    result = run_backup(args.manifest, args.source_root, volume_root, volume_identity)
     print(result.manifest_path)
     return 0
 
