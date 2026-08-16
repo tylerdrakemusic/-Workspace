@@ -136,3 +136,23 @@ def test_scheduler_spec_is_daily_at_two_without_secret_arguments() -> None:
     assert "WORKSPACE_BACKUP_VOLUME_ID" in spec.environment_names
     assert "WORKSPACE_BACKUP_MANIFEST_KEY" in spec.environment_names
     assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in " ".join(spec.arguments)
+
+
+def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    workspace_root = Path(__file__).parents[1]
+    spec = build_task_spec(workspace_root, Path(r"C:\G\python.exe"))
+    registration = (
+        workspace_root / "tools" / "register_database_backup_task.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "$Python = 'C:\\G\\python.exe'" in registration
+    assert '-File `"$Launcher`" -Python `"$Python`"' in registration
+    assert f'-Manifest `"$Manifest`" -SourceRoot `"$SourceRoot`"' in registration
+    assert spec.arguments[0] in registration
+    assert spec.arguments[1] in registration
+    assert spec.arguments[2] in registration
+    assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in registration.split(
+        "$action", 1
+    )[1].split("$trigger", 1)[0]

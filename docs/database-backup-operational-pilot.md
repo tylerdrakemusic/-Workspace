@@ -36,7 +36,8 @@ E:\WorkspaceBackup\
 
 ## Environment
 
-Set these environment variables in the account or system environment used by
+Persist these environment variables in the account or system environment
+visible to Task Scheduler. Temporary process variables are not sufficient for
 the scheduled task. The manifest authentication key is not written to a file
 or included in task arguments.
 
@@ -54,7 +55,10 @@ does not install a task during tests:
 ```
 
 The task is named `⊕Workspace-DatabaseBackup`, runs daily at 02:00 local time,
-and invokes `tools\run_database_backup.ps1`. The launcher verifies that the
+and invokes `tools\run_database_backup.ps1` with the explicit `C:\G\python.exe`
+path, the reviewed manifest, and the workspace source root. Registration uses
+`-Force`, so an existing task with the same name is replaced. The launcher
+verifies that the
 configured destination is exactly `E:\WorkspaceBackup`, that the directory is
 mounted, and that the marker matches before invoking the generic Python runner.
 

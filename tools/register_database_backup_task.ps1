@@ -3,6 +3,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $TaskName = [char]0x2295 + 'Workspace-DatabaseBackup'
+$Python = 'C:\G\python.exe'
 $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $Launcher = Join-Path $PSScriptRoot 'run_database_backup.ps1'
 $Manifest = Join-Path $WorkspaceRoot 'src\config\database_backup_scope.json'
@@ -15,7 +16,7 @@ foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WO
 }
 
 $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument (
-    "-NoProfile -ExecutionPolicy Bypass -File `"$Launcher`" -Manifest `"$Manifest`" -SourceRoot `"$SourceRoot`""
+    "-NoProfile -ExecutionPolicy Bypass -File `"$Launcher`" -Python `"$Python`" -Manifest `"$Manifest`" -SourceRoot `"$SourceRoot`""
 )
 $trigger = New-ScheduledTaskTrigger -Daily -At '02:00'
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
