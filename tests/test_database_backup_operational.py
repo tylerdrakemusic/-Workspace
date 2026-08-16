@@ -205,13 +205,15 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
     assert "ΣCapital" not in arguments
 
 
-def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree() -> None:
+def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree(
+    tmp_path: Path,
+) -> None:
     from tools.register_database_backup_task import build_task_spec
 
-    active_worktree = Path(__file__).parents[1]
+    canonical_workspace = tmp_path / "workspace"
+    active_worktree = canonical_workspace / ".worktrees" / "feature-backup"
     spec = build_task_spec(active_worktree, Path(r"C:\G\python.exe"))
     arguments = " ".join(spec.arguments)
-    canonical_workspace = active_worktree.parents[1]
 
     assert f"⊕Workspace={canonical_workspace}" in arguments
     assert f"⟨ψ⟩Quantum={canonical_workspace.parent / '⟨ψ⟩Quantum'}" in arguments
