@@ -102,6 +102,43 @@ graph TB
     class CoordinationMCP,CoordinationTodos util
     class FrLinkGate state
 
+    %% FR-20260816-ai-manifest-database-backup-restore
+    subgraph DatabaseBackup["👁 AI-Manifest canonical database backup and restore"]
+        BackupInventory[database_backup_inventory.json<br/>approved canonical source mapping]
+        BackupFacade[src/utils/database_backup.py<br/>compatibility facade]
+        SharedContract[⊕ Workspace<br/>provider-neutral backup contract]
+        BackupLauncher[/tools/run_database_backup.ps1<br/>PowerShell 5.1 · User-scope env hydration/]
+        BackupTask[/tools/register_database_backup_task.ps1<br/>daily 02:00 Scheduler task/]
+        BackupRunner[/tools/run_database_backup.py<br/>inventory + project-root + volume paths/]
+        BackupEnv{Environment-only custody:<br/>volume identity · manifest HMAC key<br/>MANIFEST_TODOS_DB_KEY}
+        TrustedVolume[/E:\\WorkspaceBackup<br/>.backup-volume-identity marker/]
+        BackupGenerations[Authenticated encrypted generations<br/>atomic publication · SHA-256 identity<br/>30-generation retention]
+        RestoreTool[/tools/restore_database_backup.py<br/>operator-approved isolated restore/]
+        RestoreSQLCipher[SQLCipher reopen + schema validation<br/>isolated restore root]
+        BackupAudit[Redacted backup / restore audit<br/>metadata only]
+        BackupExclusions[Excluded: todos.db · lily_config.db<br/>worktrees · virtualenvs · caches · output · tmp · logs]
+        NoCloud{No cloud-provider integration<br/>no key-management service}
+    end
+    BackupTask --> BackupLauncher
+    BackupLauncher --> BackupRunner
+    BackupEnv --> BackupLauncher
+    BackupRunner --> BackupInventory
+    BackupInventory --> BackupFacade
+    BackupFacade --> SharedContract
+    SharedContract --> TrustedVolume
+    TrustedVolume --> BackupGenerations
+    BackupGenerations --> RestoreTool
+    RestoreTool --> RestoreSQLCipher
+    RestoreSQLCipher --> BackupAudit
+    BackupExclusions -.->|fail closed| BackupInventory
+    SharedContract -.-> NoCloud
+    TodosDB -.->|explicit approved canonical source| BackupInventory
+    class BackupInventory,BackupFacade,BackupRunner,BackupLauncher,BackupTask,RestoreTool ws
+    class SharedContract,BackupGenerations,BackupAudit contract
+    class TrustedVolume ext
+    class BackupEnv,BackupExclusions,NoCloud state
+    class RestoreSQLCipher db
+
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
@@ -116,3 +153,4 @@ classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
 classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
 classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
 classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
+classDef contract fill:#203a3a,stroke:#6ad4b4,color:#d0f8ee

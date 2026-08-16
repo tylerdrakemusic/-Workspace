@@ -17,6 +17,26 @@ graph LR
     class OpenAI,ElevenLabs,HF api
     class Requests,Pytest,Flask,Pydantic,Sounddevice,Soundfile,GPT,TTS,Models lib
 
+    %% FR-20260816-ai-manifest-database-backup-restore
+    BackupFacade[database_backup.py<br/>Workspace contract facade] --> BackupEngine[⊕ Workspace<br/>provider-neutral backup engine]
+    BackupInventory[database_backup_inventory.py<br/>explicit approved source mapping] --> BackupFacade
+    BackupInventory --> ManifestTodoDB[manifest_todos.db<br/>SQLCipher canonical coordination DB]
+    BackupLauncher[PowerShell 5.1 launcher<br/>User-scope env hydration] --> BackupRunner[run_database_backup.py<br/>path-only arguments]
+    BackupTask[Task Scheduler<br/>daily 02:00] --> BackupLauncher
+    BackupRunner --> BackupInventory
+    BackupSecrets{Environment-only secrets<br/>volume identity · HMAC key · DB key} --> BackupRunner
+    BackupEngine --> BackupStorage[Trusted local volume<br/>marker + authenticated encrypted generations]
+    BackupStorage --> BackupIntegrity[SHA-256 identity<br/>atomic publication · 30-generation retention]
+    RestoreTool[restore_database_backup.py<br/>operator-approved isolated restore] --> RestoreCheck[SQLCipher reopen<br/>schema validation]
+    BackupIntegrity --> RestoreTool
+    BackupEngine --> Audit[Redacted audit metadata<br/>no plaintext records or keys]
+    BackupEngine -.-> NoCloud[No cloud-provider integration]
+    BackupExclusions[Legacy · generated · worktree<br/>virtualenv · cache · output · transient copies] -.-> BackupInventory
+    class BackupFacade,BackupInventory,BackupLauncher,BackupRunner,BackupTask,RestoreTool util
+    class BackupEngine,BackupStorage,BackupIntegrity,Audit state
+    class ManifestTodoDB db
+    class BackupSecrets,NoCloud,BackupExclusions,RestoreCheck state
+
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8

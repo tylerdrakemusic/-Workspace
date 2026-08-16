@@ -21,6 +21,7 @@ graph TB
     end
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
+        ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
     end
     subgraph Capital["Σ Capital"]
         CapitalDB[(sigmacapital.db<br/>SQLCipher)]
@@ -41,8 +42,10 @@ graph TB
     MusicDB -.-> BackupContract
     QDB -.-> BackupContract
     CapitalDB -.-> BackupContract
+    ManifestDB -.->|explicit approved canonical mapping| BackupContract
     BackupContract --> BackupVolume
-    BackupVolume -.->|manifest-driven generations, retention, restore validation| BackupContract
+    BackupVolume -.->|trusted marker · encrypted generations · retention| BackupContract
+    BackupContract -.->|operator-approved isolated SQLCipher restore| ManifestDB
     BackupContract -.->|fail-closed discovery and redacted audit boundary| Registry
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
