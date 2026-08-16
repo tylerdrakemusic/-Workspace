@@ -35,7 +35,7 @@ graph TB
     ScoringBoundary -->|bounded additive contribution| QualificationGate
     Research --> PromptDiscovery
     PromptDiscovery -->|bounded additive contribution| ScoringBoundary
-    SentimentPayload -->|bounded additive contribution| ExitReeval
+    SentimentPayload -->|bounded additive contribution to exit candidates| Research
     ScoringBoundary ==>|"persists confidence, rationale, scoring_method, model"| DB
     QualificationGate -->|qualified candidate| TradeCandidates[trade_candidates table<br/>pending recommendations]
     Agents -->|pricing/volatility| YFinance[(yfinance<br/>Yahoo Finance)]
