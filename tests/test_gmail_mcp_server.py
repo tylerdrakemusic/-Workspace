@@ -1,0 +1,189 @@
+from __future__ import annotations
+
+import os
+import sys
+from types import SimpleNamespace
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+
+def test_capability_health_reports_missing_credentials_without_secrets():
+    from utils import gmail_mcp_server
+
+    with patch.dict(os.environ, {}, clear=True):
+        health = gmail_mcp_server.capability_health()
+
+    assert health["name"] == "dedicated-service-email"
+    assert health["available"] is False
+    assert health["state"] == "missing_credentials"
+    assert health["reauthentication_required"] is True
+    assert "GMAIL_SERVICE_TOKEN" in health["detail"]
+    assert "token" not in health["detail"].lower().replace("gmail_service_token", "")
+
+
+def test_capability_discovery_exposes_governed_actions():
+    from utils import gmail_mcp_server
+
+    capability = gmail_mcp_server.capability_discovery()
+
+    assert capability["name"] == "dedicated-service-email"
+    assert set(capability["actions"]) >= {
+        "read",
+        "search",
+        "get",
+        "draft",
+        "send",
+        "connectivity_test",
+    }
+    assert capability["outbound_requires_operator_approved_true"] is True
+    assert capability["credential_env"] == "GMAIL_SERVICE_TOKEN"
+    assert capability["mcp_tools"] == [
+        "discover_capability",
+        "health",
+        "read_messages",
+        "search_messages",
+        "get_message",
+        "create_draft",
+        "send_draft",
+        "connectivity_test",
+    ]
+
+
+def test_capability_health_reports_malformed_credentials_without_exception_details():
+    from utils import gmail_mcp_server
+
+    with patch.dict(os.environ, {"GMAIL_SERVICE_TOKEN": "not-a-token"}, clear=True):
+        health = gmail_mcp_server.capability_health()
+
+    assert health["state"] == "malformed_credentials"
+    assert health["reauthentication_required"] is True
+    assert "not-a-token" not in health["detail"]
+
+
+def test_capability_health_reports_expired_credentials_as_reauthentication_required(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from utils import gmail_mcp_server
+
+    monkeypatch.setenv("GMAIL_SERVICE_TOKEN", "opaque-runtime-value")
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "_load_credentials",
+        lambda: SimpleNamespace(expired=True),
+    )
+
+    health = gmail_mcp_server.capability_health()
+
+    assert health["state"] == "expired_credentials"
+    assert health["reauthentication_required"] is True
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_state", "reauthentication_required"),
+    [
+        (401, "revoked_credentials", True),
+        (403, "inaccessible_credentials", False),
+    ],
+)
+def test_capability_health_classifies_mailbox_access_failures(
+    monkeypatch: pytest.MonkeyPatch,
+    status: int,
+    expected_state: str,
+    reauthentication_required: bool,
+):
+    from utils import gmail_mcp_server
+
+    class AccessError(Exception):
+        resp = SimpleNamespace(status=status)
+
+    monkeypatch.setenv("GMAIL_SERVICE_TOKEN", "opaque-runtime-value")
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "_load_credentials",
+        lambda: SimpleNamespace(expired=False),
+    )
+    monkeypatch.setattr(gmail_mcp_server, "build_service", lambda credentials: None)
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "build_service",
+        lambda credentials: SimpleNamespace(
+            users=lambda: SimpleNamespace(
+                getProfile=lambda **kwargs: SimpleNamespace(
+                    execute=lambda: (_ for _ in ()).throw(AccessError())
+                )
+            )
+        ),
+    )
+
+    health = gmail_mcp_server.capability_health()
+
+    assert health["state"] == expected_state
+    assert health["reauthentication_required"] is reauthentication_required
+
+def test_read_messages_is_a_distinct_mcp_operation(monkeypatch: pytest.MonkeyPatch):
+    from utils import gmail_mcp_server
+
+    class FakeClient:
+        def list_messages(self, query: str):
+            assert query == "in:inbox"
+            return [{"id": "m1", "policy_redacted": False}]
+
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "capability_health",
+        lambda: {"available": True, "state": "available"},
+    )
+    monkeypatch.setattr(gmail_mcp_server, "_client", lambda: FakeClient())
+
+    result = gmail_mcp_server.read_messages("in:inbox")
+
+    assert result == {"ok": True, "messages": [{"id": "m1", "policy_redacted": False}]}
+
+
+def test_read_messages_returns_structured_unavailable_health(monkeypatch: pytest.MonkeyPatch):
+    from utils import gmail_mcp_server
+
+    expected_health = {
+        "available": False,
+        "state": "revoked_credentials",
+        "reauthentication_required": True,
+    }
+    monkeypatch.setattr(gmail_mcp_server, "capability_health", lambda: expected_health)
+
+    result = gmail_mcp_server.read_messages("in:inbox")
+
+    assert result == {
+        "ok": False,
+        "error": "gmail_unavailable",
+        "health": expected_health,
+    }
+
+
+def test_send_draft_forwards_exact_operator_approval(monkeypatch: pytest.MonkeyPatch):
+    from utils import gmail_mcp_server
+
+    approvals: list[object] = []
+
+    class FakeClient:
+        def send_draft(self, draft, *, operator_approved: bool):
+            approvals.append(operator_approved)
+            return {"id": "sent1"}
+
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "capability_health",
+        lambda: {"available": True, "state": "available"},
+    )
+    monkeypatch.setattr(gmail_mcp_server, "_client", lambda: FakeClient())
+
+    result = gmail_mcp_server.send_draft(
+        {"to": "destination@example.com", "subject": "Hi", "body": "Body"},
+        operator_approved=1,  # type: ignore[arg-type]
+    )
+
+    assert result == {"ok": True, "result": {"id": "sent1"}}
+    assert approvals == [1]

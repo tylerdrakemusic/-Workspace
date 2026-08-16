@@ -21,6 +21,27 @@ Already active in this workspace:
 
 This registry is now framed as optimization and standardization on top of that baseline.
 
+## Persistent Gmail Service Capability
+
+The dedicated service-email capability is available as a repository-owned,
+stdio MCP server:
+
+- `gmail-service-email` → `src/utils/gmail_mcp_server.py`
+- Run with `C:\G\python.exe src/utils/gmail_mcp_server.py`
+- Discovery: `discover_capability`
+- Health: `health` (reports missing, malformed, expired, revoked, and
+	inaccessible credential states without exposing secrets)
+- Mailbox: `read_messages`, `search_messages`, `get_message`
+- Outbound: `create_draft`, `send_draft`, `connectivity_test`
+
+The server reads `GMAIL_SERVICE_TOKEN` and `GMAIL_SERVICE_ADDRESS` from the
+process environment only. OAuth bootstrap remains human-only through
+`tools/gmail_oauth_bootstrap.py`; agents never mint or print credentials.
+Outbound delivery remains disabled by policy unless the existing policy allows
+it and the caller supplies exact `operator_approved=True`. The connectivity
+test recipient is runtime-only and is never stored. Deployment registration in
+the user-level VS Code `mcp.json` is intentionally outside this FR.
+
 ## Governed Coordination Servers
 
 The FR-20260809 coordination surface is intentionally separate from the
