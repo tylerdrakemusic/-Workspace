@@ -209,3 +209,100 @@ def test_send_draft_forwards_exact_operator_approval(monkeypatch: pytest.MonkeyP
 
     assert result == {"ok": True, "result": {"id": "sent1"}}
     assert approvals == [1]
+
+
+@pytest.mark.parametrize("tool_name", ["send_draft", "connectivity_test"])
+@pytest.mark.parametrize("operator_approved", [1, "yes", None, [], {}])
+def test_registered_outbound_tools_reject_non_boolean_approval(
+    tool_name: str, operator_approved: object
+):
+    from pydantic import ValidationError
+
+    from utils import gmail_mcp_server
+
+    tool = gmail_mcp_server.mcp._tool_manager._tools[tool_name]
+    arguments = (
+        {"draft": {"to": "destination@example.com", "subject": "Hi", "body": "Body"}}
+        if tool_name == "send_draft"
+        else {"recipient": "destination@example.com"}
+    )
+    arguments["operator_approved"] = operator_approved
+
+    with pytest.raises(ValidationError):
+        tool.fn_metadata.arg_model.model_validate(arguments)
+
+
+@pytest.mark.parametrize("tool_name", ["send_draft", "connectivity_test"])
+def test_registered_outbound_tools_do_not_authorize_json_false(
+    monkeypatch: pytest.MonkeyPatch, tool_name: str
+):
+    from utils import gmail_mcp_server
+
+    class FakeClient:
+        def send_draft(self, draft, *, operator_approved: bool):
+            if operator_approved is not True:
+                raise PermissionError("approval required")
+            raise AssertionError("false approval reached delivery")
+
+        def connectivity_test(self, recipient: str, *, operator_approved: bool):
+            if operator_approved is not True:
+                raise PermissionError("approval required")
+            raise AssertionError("false approval reached delivery")
+
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "capability_health",
+        lambda: {"available": True, "state": "available"},
+    )
+    monkeypatch.setattr(gmail_mcp_server, "_client", lambda: FakeClient())
+
+    tool = gmail_mcp_server.mcp._tool_manager._tools[tool_name]
+    arguments = (
+        {"draft": {"to": "destination@example.com", "subject": "Hi", "body": "Body"}}
+        if tool_name == "send_draft"
+        else {"recipient": "destination@example.com"}
+    )
+    arguments["operator_approved"] = False
+    validated_arguments = tool.fn_metadata.arg_model.model_validate(arguments)
+
+    with pytest.raises(PermissionError, match="approval required"):
+        tool.fn(**validated_arguments.model_dump())
+
+
+@pytest.mark.parametrize("tool_name", ["send_draft", "connectivity_test"])
+def test_registered_outbound_tools_accept_only_json_true_for_delivery(
+    monkeypatch: pytest.MonkeyPatch, tool_name: str
+):
+    from utils import gmail_mcp_server
+
+    approvals: list[object] = []
+
+    class FakeClient:
+        def send_draft(self, draft, *, operator_approved: bool):
+            approvals.append(operator_approved)
+            return {"id": "sent1"}
+
+        def connectivity_test(self, recipient: str, *, operator_approved: bool):
+            approvals.append(operator_approved)
+            return {"sent": True}
+
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "capability_health",
+        lambda: {"available": True, "state": "available"},
+    )
+    monkeypatch.setattr(gmail_mcp_server, "_client", lambda: FakeClient())
+
+    tool = gmail_mcp_server.mcp._tool_manager._tools[tool_name]
+    arguments = (
+        {"draft": {"to": "destination@example.com", "subject": "Hi", "body": "Body"}}
+        if tool_name == "send_draft"
+        else {"recipient": "destination@example.com"}
+    )
+    arguments["operator_approved"] = True
+    validated_arguments = tool.fn_metadata.arg_model.model_validate(arguments)
+
+    result = tool.fn(**validated_arguments.model_dump())
+
+    assert result["ok"] is True
+    assert approvals == [True]

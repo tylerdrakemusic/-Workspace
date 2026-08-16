@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import StrictBool
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -179,7 +180,7 @@ def create_draft(to: str, subject: str, body: str) -> dict[str, Any]:
 
 @mcp.tool()
 def send_draft(
-    draft: dict[str, str], *, operator_approved: bool = False
+    draft: dict[str, str], *, operator_approved: StrictBool = False
 ) -> dict[str, Any]:
     """Send a draft only when policy and exact operator approval permit it."""
     unavailable = _unavailable()
@@ -196,7 +197,9 @@ def send_draft(
 
 
 @mcp.tool()
-def connectivity_test(recipient: str, *, operator_approved: bool = False) -> dict[str, Any]:
+def connectivity_test(
+    recipient: str, *, operator_approved: StrictBool = False
+) -> dict[str, Any]:
     """Run the existing runtime-only, operator-gated connectivity test."""
     unavailable = _unavailable()
     if unavailable:
