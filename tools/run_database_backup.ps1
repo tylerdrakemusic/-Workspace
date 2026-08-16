@@ -3,14 +3,22 @@
 param(
     [string]$Python = 'C:\G\python.exe',
     [Parameter(Mandatory = $true)][string]$Manifest,
-    [Parameter(Mandatory = $true)][string]$SourceRoot
+    [string]$SourceRoot = $null,
+    [string[]]$ProjectRoot = @()
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WORKSPACE_BACKUP_MANIFEST_KEY')) {
-    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+    $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'User')
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            Set-Item -Path ('Env:' + $name) -Value $value
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
         throw "Missing required environment variable: $name"
     }
 }
@@ -31,9 +39,22 @@ if ((Get-Content -LiteralPath $marker -Raw).Trim() -cne $env:WORKSPACE_BACKUP_VO
     throw 'Trusted backup volume marker does not match WORKSPACE_BACKUP_VOLUME_ID.'
 }
 
-& $Python (Join-Path $PSScriptRoot 'run_database_backup.py') `
-    --manifest $Manifest `
-    --source-root $SourceRoot `
-    --volume-root $volume `
-    --volume-identity $env:WORKSPACE_BACKUP_VOLUME_ID
+$runnerArguments = @(
+    '--manifest', $Manifest,
+    '--volume-root', $volume
+)
+if ($ProjectRoot.Count -gt 0) {
+    if (-not [string]::IsNullOrWhiteSpace($SourceRoot)) {
+        throw 'SourceRoot and ProjectRoot cannot be combined.'
+    }
+    foreach ($root in $ProjectRoot) {
+        $runnerArguments += @('--project-root', $root)
+    }
+} elseif ($null -ne $SourceRoot) {
+    $runnerArguments += @('--source-root', $SourceRoot)
+} else {
+    throw 'SourceRoot or ProjectRoot is required.'
+}
+
+& $Python (Join-Path $PSScriptRoot 'run_database_backup.py') @runnerArguments
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

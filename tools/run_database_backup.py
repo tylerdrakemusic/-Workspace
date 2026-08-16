@@ -18,7 +18,7 @@ from src.utils.database_backup_scope import load_manifest
 
 def run_backup(
     manifest_path: Path,
-    source_root: Path,
+    source_root: Path | dict[str, Path],
     volume_root: Path,
     volume_identity: str,
 ) -> BackupResult:
@@ -36,15 +36,41 @@ def run_backup(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the daily local database backup.")
     parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--source-root", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, default=None)
+    parser.add_argument("--project-root", action="append", type=str, default=[])
     parser.add_argument("--volume-root", type=Path, default=None)
     parser.add_argument("--volume-identity", default=None)
     args = parser.parse_args()
+    project_roots: list[str] = []
+    for value in args.project_root:
+        if isinstance(value, tuple):
+            project_roots.append(f"{value[0]}={value[1]}")
+            continue
+        project_roots.extend(
+            item.strip().strip("'\"")
+            for item in value.split(",")
+            if item.strip().strip("'\"")
+        )
+    if project_roots and args.source_root is not None:
+        parser.error("--source-root and --project-root cannot be combined")
+    if project_roots:
+        source_root = dict(_parse_project_root(item) for item in project_roots)
+    elif args.source_root is not None:
+        source_root = args.source_root
+    else:
+        parser.error("one of --source-root or --project-root is required")
     volume_root = args.volume_root or _required_path("WORKSPACE_BACKUP_VOLUME")
     volume_identity = args.volume_identity or _required_value("WORKSPACE_BACKUP_VOLUME_ID")
-    result = run_backup(args.manifest, args.source_root, volume_root, volume_identity)
+    result = run_backup(args.manifest, source_root, volume_root, volume_identity)
     print(result.manifest_path)
     return 0
+
+
+def _parse_project_root(value: str) -> tuple[str, Path]:
+    label, separator, root = value.partition("=")
+    if not separator or not label.strip() or not root.strip():
+        raise argparse.ArgumentTypeError("project root must be LABEL=PATH")
+    return label, Path(root)
 
 
 def _required_path(name: str) -> Path:

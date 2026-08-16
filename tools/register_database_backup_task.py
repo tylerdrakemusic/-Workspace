@@ -18,6 +18,12 @@ class TaskSpec:
 def build_task_spec(workspace_root: Path, python_path: Path) -> TaskSpec:
     """Build the daily backup task without embedding secrets or drive fallbacks."""
     launcher = workspace_root / "tools" / "run_database_backup.ps1"
+    project_roots = (
+        ("❤Music", workspace_root.parent / "❤Music"),
+        ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
+        ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
+        ("⊕Workspace", workspace_root),
+    )
     return TaskSpec(
         executable=Path("PowerShell.exe"),
         arguments=(
@@ -30,8 +36,8 @@ def build_task_spec(workspace_root: Path, python_path: Path) -> TaskSpec:
             str(python_path),
             "-Manifest",
             str(workspace_root / "src" / "config" / "database_backup_scope.json"),
-            "-SourceRoot",
-            str(workspace_root.parent),
+            "-ProjectRoot",
+            ",".join(f"{label}={root}" for label, root in project_roots),
         ),
         trigger="02:00",
         frequency="DAILY",
