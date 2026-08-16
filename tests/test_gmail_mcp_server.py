@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 from types import SimpleNamespace
 from pathlib import Path
@@ -9,6 +10,27 @@ from unittest.mock import patch
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+
+def test_direct_launcher_starts_without_external_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    launcher = repo_root / "src" / "utils" / "gmail_mcp_server.py"
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+
+    completed = subprocess.run(
+        [sys.executable, str(launcher)],
+        cwd=repo_root,
+        env=environment,
+        input="",
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=10,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "ModuleNotFoundError: No module named 'integrations'" not in completed.stderr
 
 
 def test_capability_health_reports_missing_credentials_without_secrets():
