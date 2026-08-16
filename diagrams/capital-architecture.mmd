@@ -13,7 +13,7 @@ graph TB
     SentimentCollector["SentimentContext collector/normalizer<br/>provider-neutral normalized context<br/>transcript-free provenance"]
     GDELT[(GDELT 2.1 Document API<br/>public challenger)]
     GoogleNews[(Google News<br/>market-news RSS candidate)]
-    SentimentState["Provider result state<br/>available | unavailable | error<br/>fail-open: unavailable/error => zero contribution"]:::state
+    SentimentState["Provider result state<br/>available | unavailable | error | timeout | malformed | stale | partial_provider_failure<br/>fail-open: unavailable/error/timeout/malformed/stale/partial_provider_failure => zero contribution"]:::state
     SentimentPayload["Normalized sentiment_context payload<br/>bounded score/confidence · citations · request/batch IDs<br/>redacted provenance"]
     SanitizedReplay["Deterministic sanitized historical replay<br/>replay_evaluations()<br/>provider/broker-free · no raw transcripts"]:::state
     Calibration["Calibration metrics<br/>baseline vs sentiment: Brier · ECE<br/>per-provider observations"]:::state
