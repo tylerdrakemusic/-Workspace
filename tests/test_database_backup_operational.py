@@ -111,6 +111,50 @@ def test_runner_accepts_workspace_qualified_approved_manifest_entry(tmp_path: Pa
     ).read_bytes() == source.read_bytes()
 
 
+def test_runner_executes_manifest_backup_with_repeated_labeled_project_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    music_root = tmp_path / "❤Music"
+    workspace_root = tmp_path / "⊕Workspace"
+    music_source = music_root / "src" / "data" / "heartmusic.db"
+    workspace_source = workspace_root / "src" / "data" / "workspace.db"
+    music_source.parent.mkdir(parents=True)
+    workspace_source.parent.mkdir(parents=True)
+    music_source.write_bytes(b"music-db-bytes")
+    workspace_source.write_bytes(b"workspace-db-bytes")
+    manifest_path = tmp_path / "approved-manifest.json"
+    _write_manifest(
+        manifest_path,
+        "❤Music/src/data/heartmusic.db",
+        "⊕Workspace/src/data/workspace.db",
+    )
+    volume = tmp_path / "volume"
+    volume.mkdir()
+    (volume / ".backup-volume-identity").write_text("approved-volume\n", encoding="utf-8")
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_database_backup.py",
+            "--manifest",
+            str(manifest_path),
+            "--project-root",
+            f"❤Music={music_root}",
+            "--project-root",
+            f"⊕Workspace={workspace_root}",
+            "--volume-root",
+            str(volume),
+            "--volume-identity",
+            "approved-volume",
+        ],
+    )
+
+    assert runner.main() == 0
+    generation = next((volume / "generations").iterdir())
+    assert (generation / "❤Music/src/data/heartmusic.db").read_bytes() == b"music-db-bytes"
+    assert (generation / "⊕Workspace/src/data/workspace.db").read_bytes() == b"workspace-db-bytes"
+
+
 def test_provisioning_refuses_to_overwrite_mismatched_marker(tmp_path: Path) -> None:
     from tools.provision_backup_volume import provision_volume
 
@@ -138,6 +182,22 @@ def test_scheduler_spec_is_daily_at_two_without_secret_arguments() -> None:
     assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in " ".join(spec.arguments)
 
 
+def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    workspace_root = Path(r"F:\⊕Workspace")
+    spec = build_task_spec(workspace_root, Path(r"C:\G\python.exe"))
+    arguments = " ".join(spec.arguments)
+
+    assert "-SourceRoot" not in arguments
+    assert "-ProjectRoot ❤Music=F:\\❤Music" in arguments
+    assert "-ProjectRoot ⟨ψ⟩Quantum=F:\\⟨ψ⟩Quantum" in arguments
+    assert "-ProjectRoot 👁AI-Manifest=F:\\👁AI-Manifest" in arguments
+    assert "-ProjectRoot ⊕Workspace=F:\\⊕Workspace" in arguments
+    assert "F:\\∞Life" not in arguments
+    assert "F:\\ΣCapital" not in arguments
+
+
 def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
     from tools.register_database_backup_task import build_task_spec
 
@@ -149,7 +209,9 @@ def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
 
     assert "$Python = 'C:\\G\\python.exe'" in registration
     assert '-File `"$Launcher`" -Python `"$Python`"' in registration
-    assert f'-Manifest `"$Manifest`" -SourceRoot `"$SourceRoot`"' in registration
+    assert f'-Manifest `"$Manifest`" $ProjectRootArguments' in registration
+    assert "$SourceRoot" not in registration
+    assert "$ProjectRoots" in registration
     assert spec.arguments[0] in registration
     assert spec.arguments[1] in registration
     assert spec.arguments[2] in registration
