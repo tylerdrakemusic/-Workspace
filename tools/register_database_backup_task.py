@@ -17,6 +17,7 @@ class TaskSpec:
 
 def build_task_spec(workspace_root: Path, python_path: Path) -> TaskSpec:
     """Build the daily backup task without embedding secrets or drive fallbacks."""
+    workspace_root = _canonical_workspace_root(workspace_root)
     launcher = workspace_root / "tools" / "run_database_backup.ps1"
     project_roots = (
         ("❤Music", workspace_root.parent / "❤Music"),
@@ -47,3 +48,15 @@ def build_task_spec(workspace_root: Path, python_path: Path) -> TaskSpec:
             "WORKSPACE_BACKUP_MANIFEST_KEY",
         ),
     )
+
+
+def _canonical_workspace_root(workspace_root: Path) -> Path:
+    """Resolve a worktree path to the repository root used by scheduled jobs."""
+    resolved = Path(workspace_root).resolve()
+    parts = [part.casefold() for part in resolved.parts]
+    if ".worktrees" not in parts:
+        return resolved
+    worktrees_index = parts.index(".worktrees")
+    if worktrees_index == 0:
+        raise ValueError("workspace worktree path has no repository root")
+    return Path(*resolved.parts[:worktrees_index])
