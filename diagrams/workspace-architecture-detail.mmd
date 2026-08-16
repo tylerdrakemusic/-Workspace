@@ -8,6 +8,7 @@ graph TB
         FR[fr_dashboard.py]
         Sec[security_dashboard.py]
         Ops[agent_ops_monitor.py]
+        BackupGenerator[/generate_database_backup_scope_report.py/]
     end
     subgraph Src["src/"]
         subgraph UtilsGroup["utils/"]
@@ -18,6 +19,7 @@ graph TB
             UtilsDiscovery[discovery/gen<br/>workspace_discovery · roadmap_generator<br/>gen_qee · complexity_router · tech_debt_scanner]
             UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
             UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
+            BackupScope[database_backup_scope.py<br/>manifest validation · discovery · report rendering]
             CoordinationMCP[coordination_mcp_server.py]
             GmailMCP[gmail_mcp_server.py<br/>gmail-service-email · stdio]
             GmailCreds{GMAIL_SERVICE_TOKEN<br/>environment only}
@@ -26,18 +28,24 @@ graph TB
         end
         Integrations[integrations/<br/>elevenlabs · mermaid<br/>dalle3 · huggingface<br/>gdrive · gmail<br/>ollama · pollinations<br/>perplexity]
         Config[config/<br/>repo_visibility · playwright_servers<br/>service_email]
+        BackupManifest[database_backup_scope.json<br/>versioned policy manifest]
         Data[(data/<br/>workspace.db)]
         FRLedger[(data/<br/>fr_ledgers.db)]
     end
     subgraph Reports["reports/"]
         PortalHtml[portal.html]
         Dashes[*_dashboard.html]
+        BackupReport[database_backup_scope.md<br/>deterministic generated report]
     end
     Portal --> Registry
     Registry --> PortalHtml
     Bench --> Dashes
     Diagrams --> Dashes
     FR --> Dashes
+    BackupGenerator -->|loads + validates| BackupManifest
+    BackupGenerator -->|uses| BackupScope
+    BackupScope -->|path metadata discovery + report rendering| BackupGenerator
+    BackupGenerator -->|writes deterministic Markdown| BackupReport
     UtilsCore --> Data
     UtilsFR --> Data
     UtilsSec --> Data
