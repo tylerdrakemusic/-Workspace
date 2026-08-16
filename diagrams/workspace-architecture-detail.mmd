@@ -37,6 +37,16 @@ graph TB
         Dashes[*_dashboard.html]
         BackupReport[database_backup_scope.md<br/>deterministic generated report]
     end
+    subgraph BackupContract["Local database backup contract"]
+        BackupPolicy[Provider-neutral backup policy]
+        Inventory[Manifest + inventory discovery]
+        DiscoveryGate{Registered, unambiguous,<br/>classified database?}
+        Destination[LocalVolumeDestination<br/>E: verified volume adapter]
+        Generation[Atomic generation copy<br/>SHA-256 manifest]
+        Retention[30-generation retention]
+        Restore[Operator-approved isolated restore<br/>periodic schema validation]
+        Audit[Redacted backup / restore audit<br/>metadata only]
+    end
     Portal --> Registry
     Registry --> PortalHtml
     Bench --> Dashes
@@ -46,6 +56,18 @@ graph TB
     BackupGenerator -->|uses| BackupScope
     BackupScope -->|path metadata discovery + report rendering| BackupGenerator
     BackupGenerator -->|writes deterministic Markdown| BackupReport
+    BackupPolicy --> Inventory
+    Inventory --> DiscoveryGate
+    DiscoveryGate -->|fail closed on unknown or ambiguous DBs| BackupPolicy
+    BackupPolicy --> Destination
+    Destination --> Generation
+    Generation --> Retention
+    Generation --> Restore
+    Restore --> Audit
+    BackupPolicy --> Audit
+    BackupManifest --> Inventory
+    BackupScope --> DiscoveryGate
+    BackupPolicy -.->|provider-neutral; no cloud or key-management implementation| BackupGenerator
     UtilsCore --> Data
     UtilsFR --> Data
     UtilsSec --> Data
@@ -60,6 +82,7 @@ graph TB
     class Tools tool
     class Src src
     class Reports out
+    class BackupContract contract
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -70,3 +93,4 @@ classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef contract fill:#203a3a,stroke:#6ad4b4,color:#d0f8ee

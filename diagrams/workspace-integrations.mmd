@@ -120,6 +120,23 @@ graph LR
     Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
     Life -.->|nova_portrait lazy-import| Workspace
     Music -.->|vera_portrait lazy-import| Workspace
+    %% Provider-neutral local database backup contract
+    BackupContract[Provider-neutral local<br/>database backup contract]:::ws
+    BackupInventory[Manifest + inventory<br/>future DB enrollment]:::ws
+    BackupDiscovery{Fail-closed discovery:<br/>registered + unambiguous + classified}:::state
+    LocalVolume[/E: verified local volume adapter/]:::ext
+    BackupLifecycle[Atomic copy · SHA-256 integrity<br/>30-generation retention]:::state
+    RestoreValidation[Operator-approved isolated restore<br/>periodic validation]:::state
+    AuditBoundary{Redacted audit boundary:<br/>metadata only, no DB contents or keys}:::state
+    Workspace --> BackupContract
+    BackupContract --> BackupInventory
+    BackupInventory --> BackupDiscovery
+    BackupDiscovery -->|eligible databases only| BackupContract
+    BackupContract --> LocalVolume
+    LocalVolume --> BackupLifecycle
+    BackupLifecycle --> RestoreValidation
+    RestoreValidation --> AuditBoundary
+    BackupContract -.->|provider-neutral; no cloud provider| AuditBoundary
     %% Direct cross-repo import coupling
     Manifest -->|"direct import: tech debt scanner"| Workspace
     linkStyle 67 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0

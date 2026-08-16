@@ -4,6 +4,8 @@ graph TB
         Portal[reports/portal.html<br/>Unified Dashboard Portal]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
+        BackupContract[Provider-neutral local<br/>database backup contract]
+        BackupVolume[/E: verified local volume/]
     end
     subgraph Life["∞ Life"]
         LifeDB[(infinitelife.db<br/>SQLCipher)]
@@ -35,6 +37,13 @@ graph TB
     Music --> MusicDB
     Quantum --> QDB
     Capital --> CapitalDB
+    LifeDB -.-> BackupContract
+    MusicDB -.-> BackupContract
+    QDB -.-> BackupContract
+    CapitalDB -.-> BackupContract
+    BackupContract --> BackupVolume
+    BackupVolume -.->|manifest-driven generations, retention, restore validation| BackupContract
+    BackupContract -.->|fail-closed discovery and redacted audit boundary| Registry
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
 
