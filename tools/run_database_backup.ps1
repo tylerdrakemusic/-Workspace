@@ -11,7 +11,14 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WORKSPACE_BACKUP_MANIFEST_KEY')) {
-    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+    $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'User')
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            Set-Item -Path ('Env:' + $name) -Value $value
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
         throw "Missing required environment variable: $name"
     }
 }
@@ -34,11 +41,10 @@ if ((Get-Content -LiteralPath $marker -Raw).Trim() -cne $env:WORKSPACE_BACKUP_VO
 
 $runnerArguments = @(
     '--manifest', $Manifest,
-    '--volume-root', $volume,
-    '--volume-identity', $env:WORKSPACE_BACKUP_VOLUME_ID
+    '--volume-root', $volume
 )
 if ($ProjectRoot.Count -gt 0) {
-    if ($null -ne $SourceRoot) {
+    if (-not [string]::IsNullOrWhiteSpace($SourceRoot)) {
         throw 'SourceRoot and ProjectRoot cannot be combined.'
     }
     foreach ($root in $ProjectRoot) {

@@ -37,14 +37,24 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the daily local database backup.")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--source-root", type=Path, default=None)
-    parser.add_argument("--project-root", action="append", type=_parse_project_root, default=[])
+    parser.add_argument("--project-root", action="append", type=str, default=[])
     parser.add_argument("--volume-root", type=Path, default=None)
     parser.add_argument("--volume-identity", default=None)
     args = parser.parse_args()
-    if args.project_root and args.source_root is not None:
+    project_roots: list[str] = []
+    for value in args.project_root:
+        if isinstance(value, tuple):
+            project_roots.append(f"{value[0]}={value[1]}")
+            continue
+        project_roots.extend(
+            item.strip().strip("'\"")
+            for item in value.split(",")
+            if item.strip().strip("'\"")
+        )
+    if project_roots and args.source_root is not None:
         parser.error("--source-root and --project-root cannot be combined")
-    if args.project_root:
-        source_root: Path | dict[str, Path] = dict(args.project_root)
+    if project_roots:
+        source_root = dict(_parse_project_root(item) for item in project_roots)
     elif args.source_root is not None:
         source_root = args.source_root
     else:

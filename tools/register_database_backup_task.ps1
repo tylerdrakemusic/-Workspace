@@ -5,6 +5,10 @@ $ErrorActionPreference = 'Stop'
 $TaskName = [char]0x2295 + 'Workspace-DatabaseBackup'
 $Python = 'C:\G\python.exe'
 $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
+$workspaceContainer = Split-Path -Parent $WorkspaceRoot
+if ((Split-Path -Leaf $workspaceContainer) -eq '.worktrees') {
+    $WorkspaceRoot = Split-Path -Parent $workspaceContainer
+}
 $Launcher = Join-Path $PSScriptRoot 'run_database_backup.ps1'
 $Manifest = Join-Path $WorkspaceRoot 'src\config\database_backup_scope.json'
 $ProjectRoots = @(
@@ -13,10 +17,14 @@ $ProjectRoots = @(
     ("👁AI-Manifest=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) "👁AI-Manifest")),
     ("⊕Workspace=" + $WorkspaceRoot)
 )
-$ProjectRootArguments = ($ProjectRoots | ForEach-Object { "-ProjectRoot `"$_`"" }) -join ' '
+$ProjectRootArguments = '-ProjectRoot ' + ($ProjectRoots -join ',')
 
 foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WORKSPACE_BACKUP_MANIFEST_KEY')) {
-    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+    $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'User')
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
         throw "Set required environment variable before registration: $name"
     }
 }

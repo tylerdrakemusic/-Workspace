@@ -190,10 +190,8 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
     arguments = " ".join(spec.arguments)
 
     assert "-SourceRoot" not in arguments
-    assert "-ProjectRoot ❤Music=F:\\❤Music" in arguments
-    assert "-ProjectRoot ⟨ψ⟩Quantum=F:\\⟨ψ⟩Quantum" in arguments
-    assert "-ProjectRoot 👁AI-Manifest=F:\\👁AI-Manifest" in arguments
-    assert "-ProjectRoot ⊕Workspace=F:\\⊕Workspace" in arguments
+    assert "-ProjectRoot" in arguments
+    assert "❤Music=F:\\❤Music,⟨ψ⟩Quantum=F:\\⟨ψ⟩Quantum,👁AI-Manifest=F:\\👁AI-Manifest,⊕Workspace=F:\\⊕Workspace" in arguments
     assert "F:\\∞Life" not in arguments
     assert "F:\\ΣCapital" not in arguments
 
