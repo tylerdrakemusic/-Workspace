@@ -218,6 +218,16 @@ def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree() -> No
     assert ".worktrees" not in arguments
 
 
+def test_scheduler_spec_preserves_non_worktree_root_on_foreign_platform() -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    configured_root = Path("/ci/workspace")
+    spec = build_task_spec(configured_root, Path("/ci/python"))
+
+    assert str(configured_root / "tools" / "run_database_backup.ps1") in spec.arguments
+    assert f"⊕Workspace={configured_root}" in " ".join(spec.arguments)
+
+
 def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
     from tools.register_database_backup_task import build_task_spec
 

@@ -52,10 +52,12 @@ def build_task_spec(workspace_root: Path, python_path: Path) -> TaskSpec:
 
 def _canonical_workspace_root(workspace_root: Path) -> Path:
     """Resolve a worktree path to the repository root used by scheduled jobs."""
-    resolved = Path(workspace_root).resolve()
-    parts = [part.casefold() for part in resolved.parts]
+    configured_root = Path(workspace_root)
+    parts = [part.casefold() for part in configured_root.parts]
     if ".worktrees" not in parts:
-        return resolved
+        return configured_root
+    resolved = configured_root.resolve()
+    parts = [part.casefold() for part in resolved.parts]
     worktrees_index = parts.index(".worktrees")
     if worktrees_index == 0:
         raise ValueError("workspace worktree path has no repository root")
