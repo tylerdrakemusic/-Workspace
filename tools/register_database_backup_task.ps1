@@ -1,6 +1,5 @@
 #Requires -Version 5.1
 param(
-    [ValidateSet('❤Music', '⟨ψ⟩Quantum', '👁AI-Manifest', '⊕Workspace')]
     [string]$ApprovedProject = $null
 )
 
@@ -8,6 +7,14 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $TaskName = [char]0x2295 + 'Workspace-DatabaseBackup'
+$MusicLabel = [char]0x2764 + 'Music'
+$QuantumLabel = [char]0x27E8 + [char]0x03C8 + [char]0x27E9 + 'Quantum'
+$ManifestLabel = [char]0xD83D + [char]0xDC41 + 'AI-Manifest'
+$WorkspaceLabel = [char]0x2295 + 'Workspace'
+$ApprovedProjectLabels = @($MusicLabel, $QuantumLabel, $ManifestLabel, $WorkspaceLabel)
+if ($ApprovedProject -and $ApprovedProjectLabels -notcontains $ApprovedProject) {
+    throw "Unknown approved project: $ApprovedProject"
+}
 $Python = 'C:\G\python.exe'
 $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $workspaceContainer = Split-Path -Parent $WorkspaceRoot
@@ -18,22 +25,22 @@ $Launcher = Join-Path $WorkspaceRoot 'tools\run_database_backup.ps1'
 $Manifest = Join-Path $WorkspaceRoot 'src\config\database_backup_scope.json'
 $ProjectRoots = if ($ApprovedProject) {
     @(
-        if ($ApprovedProject -eq '❤Music') {
-            ([char]0x2764 + "Music=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) ([char]0x2764 + "Music")))
-        } elseif ($ApprovedProject -eq '⟨ψ⟩Quantum') {
-            ("⟨ψ⟩Quantum=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) "⟨ψ⟩Quantum"))
-        } elseif ($ApprovedProject -eq '👁AI-Manifest') {
-            ("👁AI-Manifest=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) "👁AI-Manifest"))
+        if ($ApprovedProject -eq $MusicLabel) {
+            ($MusicLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $MusicLabel))
+        } elseif ($ApprovedProject -eq $QuantumLabel) {
+            ($QuantumLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $QuantumLabel))
+        } elseif ($ApprovedProject -eq $ManifestLabel) {
+            ($ManifestLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $ManifestLabel))
         } else {
-            ("⊕Workspace=" + $WorkspaceRoot)
+            ($WorkspaceLabel + "=" + $WorkspaceRoot)
         }
     )
 } else {
     @(
-        ([char]0x2764 + "Music=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) ([char]0x2764 + "Music"))),
-        ("⟨ψ⟩Quantum=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) "⟨ψ⟩Quantum")),
-        ("👁AI-Manifest=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) "👁AI-Manifest")),
-        ("⊕Workspace=" + $WorkspaceRoot)
+        ($MusicLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $MusicLabel)),
+        ($QuantumLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $QuantumLabel)),
+        ($ManifestLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $ManifestLabel)),
+        ($WorkspaceLabel + "=" + $WorkspaceRoot)
     )
 }
 $ProjectRootArguments = '-ProjectRoot ' + ($ProjectRoots -join ',')

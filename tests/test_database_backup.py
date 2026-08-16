@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import sys
 from pathlib import Path
 
 import pytest
@@ -298,6 +299,54 @@ def test_periodic_validation_uses_real_validator_by_default(
 
     assert validate_recent_backups(destination, "approved-volume") == [result.manifest_path]
     assert calls
+
+
+def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worktree = Path(__file__).resolve().parent.parent
+    manifest = json.loads(
+        (worktree / "src" / "config" / "database_backup_scope.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    music_entry = next(
+        entry for entry in manifest["databases"] if entry["id"] == "music-heartmusic"
+    )
+    music_entry["relative_path"] = "music/heartmusic-store"
+    restored_path = tmp_path / music_entry["relative_path"]
+    restored_path.parent.mkdir(parents=True)
+    restored_path.touch()
+    monkeypatch.setenv("HEARTMUSIC_DB_KEY", "test-key")
+
+    class FakeConnection:
+        def execute(self, statement: str):
+            if statement.startswith("SELECT name"):
+                return self
+            return self
+
+        def fetchone(self):
+            return ("songs",)
+
+        def close(self) -> None:
+            pass
+
+    class FakeSqlcipher:
+        def __init__(self) -> None:
+            self.paths: list[str] = []
+
+        def connect(self, path: str) -> FakeConnection:
+            self.paths.append(path)
+            return FakeConnection()
+
+    fake_sqlcipher = FakeSqlcipher()
+    monkeypatch.setitem(sys.modules, "sqlcipher3", fake_sqlcipher)
+
+    database_backup_module._validate_restored_databases(
+        tmp_path, {"databases": [music_entry]}
+    )
+
+    assert fake_sqlcipher.paths == [str(restored_path)]
 
 
 def test_discovery_fails_closed_for_unregistered_database(tmp_path: Path) -> None:

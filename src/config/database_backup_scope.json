@@ -34,7 +34,9 @@
       "path": "❤Music/src/data/heartmusic.db",
       "classification": "canonical",
       "backup_allowed": true,
-      "reason": "Authoritative ❤Music application database."
+      "reason": "Authoritative ❤Music application database.",
+      "encryption": "sqlcipher",
+      "key_env": "HEARTMUSIC_DB_KEY"
     },
     {
       "id": "music-spirit",

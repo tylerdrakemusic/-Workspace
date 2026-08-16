@@ -317,6 +317,18 @@ def test_committed_manifest_registers_every_allowed_database() -> None:
     assert all(entry["classification"] for entry in manifest["databases"])
 
 
+def test_committed_music_entry_declares_sqlcipher_restore_validation_metadata() -> None:
+    worktree = Path(__file__).resolve().parent.parent
+    manifest = load_manifest(worktree / "src" / "config" / "database_backup_scope.json")
+
+    music_entry = next(
+        entry for entry in manifest["databases"] if entry["id"] == "music-heartmusic"
+    )
+
+    assert music_entry["encryption"] == "sqlcipher"
+    assert music_entry["key_env"] == "HEARTMUSIC_DB_KEY"
+
+
 def test_scheduler_registration_uses_canonical_music_project_root() -> None:
     from tools.register_database_backup_task import build_task_spec
 

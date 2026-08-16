@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -283,12 +285,39 @@ def test_music_registration_selector_is_explicit_and_secret_free() -> None:
     ).read_text(encoding="utf-8")
 
     assert "[string]$ApprovedProject = $null" in script
-    assert "if ($ApprovedProject -eq '❤Music')" in script
+    assert "if ($ApprovedProject -eq $MusicLabel)" in script
     assert "Join-Path (Split-Path -Parent $WorkspaceRoot)" in script
     assert "$ApprovedProject" not in script.split("$action", 1)[1]
     assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in script.split(
         "$action", 1
     )[1].split("$trigger", 1)[0]
+
+
+def test_registration_script_is_ascii_source_and_parses_with_windows_powershell() -> None:
+    script_path = Path(__file__).resolve().parents[1] / "tools" / "register_database_backup_task.ps1"
+    script = script_path.read_bytes().decode("ascii")
+
+    assert "[char]0x2764" in script
+    assert "[char]0x27E8" in script
+    assert "[char]0xD83D" in script
+    assert "[char]0xDC41" in script
+
+    powershell = shutil.which("powershell.exe")
+    if powershell is None:
+        return
+    result = subprocess.run(
+        [
+            powershell,
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            f"[void][scriptblock]::Create((Get-Content -Raw -LiteralPath '{script_path}'))",
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
 
 def test_powershell_registration_uses_canonical_workspace_launcher() -> None:
     script = (
