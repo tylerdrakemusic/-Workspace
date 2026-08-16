@@ -113,8 +113,17 @@ source file is read or copied. `LocalVolumeDestination` uses a pre-provisioned
 into a temporary generation directory, atomically commits the generation, and
 writes a JSON manifest with SHA-256 hashes. It retains the newest 30 generations
 and appends backup and restore events to `backup-audit.jsonl`.
-`validate_recent_backups()` is the periodic restore-validation hook; it checks
-every retained manifest without modifying source databases.
+`validate_recent_backups()` is the periodic restore-validation hook; it hashes
+each retained manifest, restores it into a temporary isolated directory, and
+opens declared SQLCipher databases using only their environment-variable key
+references to inspect schema metadata. The temporary restore is removed after
+validation and source databases are never modified.
+
+Project inventories are projected into this same manifest contract. Entries
+with a redacted locator use their safe `discovery` project/basename key to
+resolve exactly one local candidate; discovery collisions and unregistered
+files fail closed before any copy. Approved entries therefore share backup,
+retention, restore, audit, and drift behavior without database-specific code.
 
 Restore is isolated by target directory and requires `operator_approved=True`.
 It verifies generation hashes before copying, preserving encrypted bytes and

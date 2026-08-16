@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import tempfile
 from typing import Any, Callable, Mapping, Sequence
 
 from src.utils.database_backup_scope import discover_databases, validate_manifest
@@ -107,9 +108,11 @@ def validate_backup(manifest_path: Path) -> bool:
 
 
 def validate_recent_backups(
-    destination: BackupDestination, limit: int = 30
+    destination: BackupDestination,
+    limit: int = 30,
+    restore_validator: Callable[[Path, dict[str, Any]], None] | None = None,
 ) -> list[Path]:
-    """Validate retained generations and append a validation audit record."""
+    """Restore retained generations into temporary roots and validate metadata."""
     if limit < 1:
         raise ValueError("validation limit must be positive")
     generations_root = destination.path() / "generations"
@@ -120,9 +123,50 @@ def validate_recent_backups(
     )[:limit]
     for manifest_path in manifests:
         validate_backup(manifest_path)
+        metadata = json.loads(manifest_path.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory(
+            prefix="backup-restore-validation-", dir=destination.path()
+        ) as restore_root:
+            DatabaseBackup.restore(
+                manifest_path,
+                destination,
+                Path(restore_root),
+                operator_approved=True,
+            )
+            if restore_validator is not None:
+                restore_validator(Path(restore_root), metadata)
+            else:
+                _validate_restored_databases(Path(restore_root), metadata)
     with (destination.path() / "backup-audit.jsonl").open("a", encoding="utf-8") as audit:
         audit.write(json.dumps({"event": "validation", "count": len(manifests)}) + "\n")
     return manifests
+
+
+def _validate_restored_databases(restore_root: Path, metadata: dict[str, Any]) -> None:
+    """Open declared SQLCipher files and inspect schema metadata only."""
+    for database in metadata.get("databases", []):
+        key_env = database.get("key_env")
+        if database.get("encryption") != "sqlcipher" or not key_env:
+            continue
+        key = os.environ.get(str(key_env), "")
+        if not key:
+            raise BackupError(f"missing SQLCipher key environment variable: {key_env}")
+        try:
+            import sqlcipher3
+        except ImportError as error:  # pragma: no cover - dependency is deployment-specific
+            raise BackupError("sqlcipher3 is required for restore validation") from error
+        database_path = restore_root / str(database["relative_path"])
+        connection = sqlcipher3.connect(str(database_path))
+        try:
+            key_hex = key.encode().hex()
+            connection.execute(f'PRAGMA key="x\'{key_hex}\'"')
+            tables = connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name LIMIT 1"
+            ).fetchone()
+            if tables is None:
+                raise BackupError(f"restored database has no schema metadata: {database_path}")
+        finally:
+            connection.close()
 
 
 def discover_and_validate_manifest(
@@ -140,14 +184,18 @@ class DatabaseBackup:
     def __init__(
         self,
         manifest: Mapping[str, Any],
-        source_root: Path,
+        source_root: Path | Mapping[str, Path],
         destination: BackupDestination,
         expected_destination_identity: str,
         now: Callable[[], str] | None = None,
         retention: int = 30,
     ) -> None:
         self._manifest = manifest
-        self._source_root = Path(source_root)
+        self._source_root = (
+            {label: Path(root) for label, root in source_root.items()}
+            if isinstance(source_root, Mapping)
+            else Path(source_root)
+        )
         self._destination = destination
         self._expected_destination_identity = expected_destination_identity
         self._now = now or (lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
@@ -168,6 +216,10 @@ class DatabaseBackup:
         entries = self._manifest.get("databases")
         if not isinstance(entries, list):
             raise BackupError("manifest databases must be a list")
+        discovered = discover_databases(
+            self._source_root if isinstance(self._source_root, Mapping) else [self._source_root]
+        )
+        validate_manifest(self._manifest, {entry["path"] for entry in discovered})
         timestamp = self._now()
         generation = timestamp.replace("-", "").replace(":", "").replace("+", "").replace("Z", "Z")
         generation_root = self._destination.path() / "generations" / generation
@@ -181,7 +233,7 @@ class DatabaseBackup:
                 if not entry.get("backup_allowed", False):
                     continue
                 relative_path = str(entry["path"])
-                source = self._source_root / Path(relative_path)
+                source = self._resolve_source(entry, relative_path, discovered)
                 if not source.is_file():
                     raise BackupError(f"manifest source is missing: {source}")
                 target = temporary_root / Path(relative_path)
@@ -193,6 +245,19 @@ class DatabaseBackup:
                 "created_at": timestamp,
                 "destination_identity": self._expected_destination_identity,
                 "files": files,
+                "databases": [
+                    {
+                        "id": entry.get("id", relative_path),
+                        "relative_path": relative_path,
+                        **{
+                            field: entry[field]
+                            for field in ("encryption", "key_env", "schema_tables")
+                            if field in entry
+                        },
+                    }
+                    for entry in entries
+                    if entry.get("backup_allowed", False)
+                ],
             }
             manifest_path = temporary_root / "manifest.json"
             manifest_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -206,6 +271,33 @@ class DatabaseBackup:
         with audit_path.open("a", encoding="utf-8") as audit:
             audit.write(json.dumps({"event": "backup", "generation": generation, "manifest": str(final_manifest)}) + "\n")
         return BackupResult(generation=generation, manifest_path=final_manifest)
+
+    def _resolve_source(
+        self,
+        entry: Mapping[str, Any],
+        relative_path: str,
+        discovered: Sequence[dict[str, str]],
+    ) -> Path:
+        if isinstance(self._source_root, Path):
+            return self._source_root / Path(relative_path)
+        discovery = entry.get("discovery")
+        if isinstance(discovery, Mapping):
+            matches = [
+                item["path"]
+                for item in discovered
+                if item["path"].split("/", 1)[0] == discovery["project"]
+                and item["path"].rsplit("/", 1)[-1] == discovery["basename"]
+            ]
+            if len(matches) == 1:
+                project, local_path = matches[0].split("/", 1)
+                return Path(self._source_root[project]) / Path(local_path)
+            if len(matches) > 1:
+                raise BackupError(f"ambiguous database discovery: {discovery}")
+        for project, root in self._source_root.items():
+            prefix = f"{project}/"
+            if relative_path.startswith(prefix):
+                return Path(root) / Path(relative_path[len(prefix) :])
+        raise BackupError(f"manifest source root is not registered: {relative_path}")
 
     def _prune_generations(self) -> None:
         generations_root = self._destination.path() / "generations"

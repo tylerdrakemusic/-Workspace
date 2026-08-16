@@ -34,7 +34,7 @@ REQUIRED_DATABASE_FIELDS = {
     "backup_allowed",
     "reason",
 }
-OPTIONAL_DATABASE_FIELDS = {"discovery"}
+OPTIONAL_DATABASE_FIELDS = {"discovery", "encryption", "key_env", "schema_tables"}
 EXCLUSION_FIELDS = {"pattern", "reason"}
 DISCOVERY_FIELDS = {"project", "basename"}
 DATABASE_SUFFIXES = {".db", ".sqlite", ".sqlite3"}
@@ -179,6 +179,13 @@ def validate_manifest(
             raise ValueError(
                 f"database {database.get('id', '<unknown>')} must have a non-empty reason"
             )
+        if "encryption" in database and database["encryption"] != "sqlcipher":
+            raise ValueError("database encryption must be sqlcipher")
+        if "key_env" in database and (
+            not isinstance(database["key_env"], str)
+            or not re.fullmatch(r"[A-Z][A-Z0-9_]*", database["key_env"])
+        ):
+            raise ValueError("database key_env must be an environment variable name")
         if classification == "approval-required" and database.get("backup_allowed") is not False:
             raise ValueError(
                 f"database {database.get('id', '<unknown>')} must be default-denied"

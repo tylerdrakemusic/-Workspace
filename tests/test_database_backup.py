@@ -145,6 +145,31 @@ def test_discovery_fails_closed_for_unregistered_database(tmp_path: Path) -> Non
         )
 
 
+def test_approved_project_inventory_entry_uses_discovery_for_generic_lifecycle(
+    tmp_path: Path,
+) -> None:
+    project_root = tmp_path / "music"
+    (project_root / "src" / "data").mkdir(parents=True)
+    source = project_root / "src" / "data" / "future_store.sqlite3"
+    source.write_bytes(b"encrypted-db-bytes")
+    manifest = _manifest(path="music/future-store")
+    manifest["databases"][0]["discovery"] = {
+        "project": "music",
+        "basename": "future_store.sqlite3",
+    }
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+
+    result = DatabaseBackup(
+        manifest=manifest,
+        source_root={"music": project_root},
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    assert (result.manifest_path.parent / "music/future-store").read_bytes() == source.read_bytes()
+
+
 def test_periodic_validation_hook_audits_retained_generations(tmp_path: Path) -> None:
     source = tmp_path / "workspace.db"
     source.write_bytes(b"encrypted-db-bytes")
@@ -159,3 +184,32 @@ def test_periodic_validation_hook_audits_retained_generations(tmp_path: Path) ->
 
     assert validate_recent_backups(destination) == [result.manifest_path]
     assert '"event": "validation"' in (destination.path() / "backup-audit.jsonl").read_text(encoding="utf-8")
+
+
+def test_recent_validation_restores_isolated_generation_and_validates_metadata(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+    result = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+    observed: list[Path] = []
+
+    def validate_restored_metadata(restore_root: Path, metadata: dict[str, object]) -> None:
+        observed.append(restore_root)
+        assert metadata["generation"] == result.generation
+        assert (restore_root / "workspace.db").read_bytes() == source.read_bytes()
+
+    assert validate_recent_backups(
+        destination,
+        restore_validator=validate_restored_metadata,
+    ) == [result.manifest_path]
+    assert observed
+    assert observed[0] != source.parent
+    assert source.read_bytes() == b"encrypted-db-bytes"
