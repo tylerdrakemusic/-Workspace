@@ -79,10 +79,12 @@ erDiagram
         integer id PK
         text source
         text symbol
-        text payload
+        text payload "sentiment_context JSON; normalized metadata; no provider transcript"
         text captured_at
         text category
         text batch_id
+        text sentiment "normalized polarity: bullish|bearish|neutral"
+        text citations "JSON array of citation URLs"
     }
     RISK_THRESHOLDS {
         integer id PK
@@ -173,3 +175,9 @@ erDiagram
     %% (FR-20260808-sigmacapital-margin-aware-picker): margin columns are copied
     %% across candidate, execution, and confirmation audit rows; reservations are
     %% unique per candidate and retain release history instead of deleting rows.
+    %% SIGNALS sentiment_context payload (existing signals table; no new entity):
+    %% provider, model, symbol, polarity, score [-1,1], confidence [0,1],
+    %% captured_at, citations, redacted source_metadata, request_id, batch_id,
+    %% status {available|unavailable|error}, error_code, and provenance metadata.
+    %% Provider transcripts are never persisted. Unavailable/error states are
+    %% fail-open for ranking and contribute zero to the bounded additive score.
