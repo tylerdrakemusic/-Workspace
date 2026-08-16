@@ -90,7 +90,6 @@ graph TB
     ExitReeval["exit_reevaluation<br/>src/agents/exit_reevaluation.py<br/>(daily scheduled job)"]
     DB -->|active exits| ExitReeval
     ExitReeval -->|live price/ATR| YFinance
-    ExitReeval -->|sentiment| Perplexity
     ExitReeval -->|supersede/trigger/partial-close<br/>max-hold forced exit| DB
     GtcOrder[gtc_order.py<br/>construct-only GTC payloads<br/>never live-submits]
     ExitReeval -->|triggered exits| GtcOrder
