@@ -40,21 +40,24 @@ graph TB
         BackupReport[database_backup_scope.md<br/>deterministic generated report]
     end
     subgraph BackupContract["Local database backup contract"]
-        BackupPolicy[Provider-neutral backup policy]
+        BackupPolicy[Provider-neutral backup contract]
         Scheduler([Windows Task Scheduler<br/>daily 02:00])
         BackupTask[Registered backup task]
-        Preflight{Fail-closed preflight:<br/>E: present and identity matches?}
-        EnvBoundary{Environment boundary:<br/>WORKSPACE_BACKUP_VOLUME<br/>WORKSPACE_BACKUP_VOLUME_ID<br/>WORKSPACE_BACKUP_MANIFEST_KEY}
+        Launcher[/PowerShell 5.1 launcher<br/>User-scope env hydration/]
+        Preflight{Fail-closed preflight:<br/>volume + marker identity match?}
+        EnvBoundary{Environment-only secret custody:<br/>volume identity · manifest key<br/>SQLCipher key; no CLI secrets}
         Inventory[Manifest + inventory discovery]
+        ManifestScope[Approved canonical mapping:<br/>👁AI-Manifest/src/data/<br/>manifest_todos.db]
         WorkspaceDB[(workspace.db<br/>approved inventory entry)]
         FutureDBs[Future approved database entries]
         DiscoveryGate{Registered, unambiguous,<br/>classified database?}
         Destination[Trusted E:\\WorkspaceBackup<br/>.backup-volume-identity marker]
-        Generation[Atomic generations<br/>per-database copies]
-        Integrity[HMAC manifest + file hashes]
+        Generation[Authenticated encrypted generations<br/>atomic publication]
+        Integrity[HMAC manifest + SHA-256 identity]
         Retention[30-generation retention]
-        Restore[Isolated restore validation<br/>operator-approved, periodic schema check]
+        Restore[Operator-approved isolated restore<br/>SQLCipher reopen validation]
         Audit[Redacted backup / restore audit output<br/>metadata only]
+        Exclusions[Exclusions:<br/>legacy · generated · worktree<br/>virtualenv · cache · output · transient]
     end
     Portal --> Registry
     Registry --> PortalHtml
@@ -68,15 +71,19 @@ graph TB
     Scheduler --> BackupTask
     BackupRegister -->|registers| BackupTask
     BackupTask --> BackupRunner
+    BackupTask --> Launcher
+    Launcher --> BackupRunner
     BackupRunner --> Preflight
     EnvBoundary --> Preflight
     Preflight -->|pass| BackupPolicy
     Preflight -->|absent or mismatched E: -> stop| Audit
     BackupPolicy --> Inventory
+    ManifestScope --> Inventory
     WorkspaceDB --> Inventory
     FutureDBs -.->|approved entries| Inventory
     Inventory --> DiscoveryGate
     DiscoveryGate -->|fail closed on unknown or ambiguous DBs| BackupPolicy
+    Exclusions -.->|excluded from discovery| Inventory
     BackupPolicy --> Destination
     Destination --> Generation
     Generation --> Integrity
@@ -86,7 +93,7 @@ graph TB
     BackupPolicy --> Audit
     BackupManifest --> Inventory
     BackupScope --> DiscoveryGate
-    BackupPolicy -.->|provider-neutral; no cloud or key-management implementation| BackupGenerator
+    BackupPolicy -.->|provider-neutral; no cloud-provider integration| BackupGenerator
     UtilsCore --> Data
     UtilsFR --> Data
     UtilsSec --> Data

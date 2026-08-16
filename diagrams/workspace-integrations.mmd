@@ -122,21 +122,32 @@ graph LR
     Music -.->|vera_portrait lazy-import| Workspace
     %% Provider-neutral local database backup contract
     BackupContract[Provider-neutral local<br/>database backup contract]:::ws
-    BackupInventory[Manifest + inventory<br/>future DB enrollment]:::ws
+    BackupInventory[Manifest + inventory<br/>explicit canonical source mapping]:::ws
     BackupDiscovery{Fail-closed discovery:<br/>registered + unambiguous + classified}:::state
-    LocalVolume[/E: verified local volume adapter/]:::ext
-    BackupLifecycle[Atomic copy · SHA-256 integrity<br/>30-generation retention]:::state
-    RestoreValidation[Operator-approved isolated restore<br/>periodic validation]:::state
+    BackupScheduler([Windows Task Scheduler<br/>daily 02:00]):::ext
+    BackupLauncher[/PowerShell 5.1 launcher<br/>User-scope env hydration/]:::ws
+    BackupSecrets{Environment-only secret custody<br/>no secrets in task arguments}:::state
+    LocalVolume[/E: verified local volume<br/>.backup-volume-identity marker/]:::ext
+    BackupLifecycle[Authenticated encrypted generations<br/>atomic publication · SHA-256 identity<br/>30-generation retention]:::state
+    RestoreValidation[Operator-approved isolated restore<br/>SQLCipher reopen validation]:::state
     AuditBoundary{Redacted audit boundary:<br/>metadata only, no DB contents or keys}:::state
+    ManifestCanonical[(👁 manifest_todos.db<br/>SQLCipher · approved canonical source)]:::db
+    BackupExclusions[Excluded copies:<br/>legacy · generated · worktree · transient]:::state
     Workspace --> BackupContract
+    BackupScheduler --> BackupLauncher
+    BackupLauncher --> BackupContract
+    BackupSecrets --> BackupLauncher
     BackupContract --> BackupInventory
+    ManifestCanonical -->|explicit approved mapping| BackupInventory
     BackupInventory --> BackupDiscovery
     BackupDiscovery -->|eligible databases only| BackupContract
+    BackupExclusions -.->|excluded from discovery| BackupInventory
     BackupContract --> LocalVolume
     LocalVolume --> BackupLifecycle
     BackupLifecycle --> RestoreValidation
     RestoreValidation --> AuditBoundary
-    BackupContract -.->|provider-neutral; no cloud provider| AuditBoundary
+    RestoreValidation -.->|isolated SQLCipher validation| ManifestCanonical
+    BackupContract -.->|provider-neutral; no cloud-provider integration| AuditBoundary
     %% Direct cross-repo import coupling
     Manifest -->|"direct import: tech debt scanner"| Workspace
     linkStyle 67 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
