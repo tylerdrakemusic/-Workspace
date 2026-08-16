@@ -1,8 +1,8 @@
 # Workspace Database Backup Scope
 
-This policy prepares the workspace for future disaster recovery. It is an
-inventory and approval boundary only; it does not implement backup, restore,
-retention, encryption-key management, or delivery to a backup service.
+This policy prepares the workspace for local disaster recovery. It is the
+inventory and approval boundary for the provider-neutral backup engine; it does
+not authorize cloud delivery or manage database encryption keys.
 
 ## Source Of Truth
 
@@ -54,9 +54,9 @@ The default exclusions are:
 
 - `.git/`
 - virtual environments (`.venv/` and `venv/`)
-- worktrees (`.worktrees/`)
-- caches (`cache/`, `caches/`, `.cache/`)
-- generated output (`output/`)
+This policy prepares the workspace for local disaster recovery. It is the
+inventory and approval boundary for the provider-neutral backup engine; it does
+not authorize cloud delivery or manage database encryption keys.
 - backup artifacts (`backups/`)
 - transient areas (`tmp/`, `logs/`, and `qbackups/`)
 - root-level temporary database files such as `tmp*.db`, `tmp*.sqlite`, and
@@ -102,6 +102,34 @@ report generation does not itself perform a live discovery drift check. A
 separate validation run must discover current files and compare them with the
 registered paths before treating the inventory as current.
 
-This feature request authorizes no cloud upload and no transfer of database
-contents. It records database paths and policy metadata only; it does not read,
-copy, upload, or restore database contents.
+## Local Backup Contract
+
+`src/utils/database_backup.py` is the provider-neutral implementation. A
+`BackupDestination` must positively verify its stable identity before any
+source file is read or copied. `LocalVolumeDestination` uses a pre-provisioned
+`.backup-volume-identity` marker for local external volumes.
+
+`DatabaseBackup.run()` copies only manifest entries with `backup_allowed: true`
+into a temporary generation directory, atomically commits the generation, and
+writes a JSON manifest with SHA-256 hashes. It retains the newest 30 generations
+and appends backup and restore events to `backup-audit.jsonl`.
+`validate_recent_backups()` is the periodic restore-validation hook; it checks
+every retained manifest without modifying source databases.
+
+Restore is isolated by target directory and requires `operator_approved=True`.
+It verifies generation hashes before copying, preserving encrypted bytes and
+leaving environment-backed database keys untouched. Discovery remains
+fail-closed through `discover_and_validate_manifest()`.
+
+The daily entry point is:
+
+```powershell
+$env:WORKSPACE_BACKUP_VOLUME = "E:\WorkspaceBackup"
+$env:WORKSPACE_BACKUP_VOLUME_ID = "approved-volume-id"
+& "C:\G\python.exe" "tools\run_database_backup.py" `
+  --manifest "src\config\database_backup_scope.json" `
+  --source-root "F:\"
+```
+
+The destination identity and paths are supplied by the operator/environment;
+no provider SDK, cloud upload, or key material is embedded in the contract.
