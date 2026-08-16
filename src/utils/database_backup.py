@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,9 @@ import tempfile
 from typing import Any, Callable, Mapping, Sequence
 
 from src.utils.database_backup_scope import discover_databases, validate_manifest
+
+
+MANIFEST_KEY_ENV = "WORKSPACE_BACKUP_MANIFEST_KEY"
 
 
 class BackupError(RuntimeError):
@@ -86,6 +90,52 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _manifest_key() -> bytes:
+    value = os.environ.get(MANIFEST_KEY_ENV, "")
+    if not value:
+        raise BackupError(f"missing manifest authentication key: {MANIFEST_KEY_ENV}")
+    return value.encode("utf-8")
+
+
+def _canonical_metadata(metadata: Mapping[str, Any]) -> bytes:
+    unsigned = {key: value for key, value in metadata.items() if key != "manifest_auth"}
+    return json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _authenticate_manifest(metadata: Mapping[str, Any]) -> dict[str, str]:
+    authentication = metadata.get("manifest_auth")
+    if not isinstance(authentication, Mapping):
+        raise BackupError("manifest authentication metadata is missing")
+    if authentication.get("algorithm") != "HMAC-SHA256":
+        raise BackupError("manifest authentication algorithm is unsupported")
+    signature = authentication.get("signature")
+    if not isinstance(signature, str) or not signature:
+        raise BackupError("manifest authentication signature is missing")
+    expected = hmac.new(_manifest_key(), _canonical_metadata(metadata), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        raise BackupError("manifest authentication failed")
+    return dict(authentication)
+
+
+def _contained_path(root: Path, relative_path: str) -> Path:
+    candidate = Path(relative_path)
+    if (
+        not relative_path
+        or candidate.is_absolute()
+        or candidate.drive
+        or "\\" in relative_path
+        or any(part in {"", ".", ".."} for part in relative_path.split("/"))
+    ):
+        raise BackupError(f"manifest path is not strict relative path: {relative_path!r}")
+    resolved_root = root.resolve()
+    resolved_candidate = (resolved_root / candidate).resolve()
+    try:
+        resolved_candidate.relative_to(resolved_root)
+    except ValueError as error:
+        raise BackupError(f"manifest path escapes root: {relative_path!r}") from error
+    return resolved_candidate
+
+
 def _atomic_copy(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(destination.name + ".tmp")
@@ -104,9 +154,10 @@ def _redacted_target_id(restore_root: Path) -> str:
 def validate_backup(manifest_path: Path) -> bool:
     """Verify every file listed by a backup manifest."""
     metadata = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    _authenticate_manifest(metadata)
     generation_root = Path(manifest_path).parent
     for entry in metadata.get("files", []):
-        path = generation_root / entry["relative_path"]
+        path = _contained_path(generation_root, entry["relative_path"])
         if not path.is_file() or _sha256(path) != entry["sha256"]:
             raise BackupError(f"backup hash validation failed: {path}")
     return True
@@ -273,6 +324,12 @@ class DatabaseBackup:
                 ],
             }
             manifest_path = temporary_root / "manifest.json"
+            metadata["manifest_auth"] = {
+                "algorithm": "HMAC-SHA256",
+                "signature": hmac.new(
+                    _manifest_key(), _canonical_metadata(metadata), hashlib.sha256
+                ).hexdigest(),
+            }
             manifest_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             os.replace(temporary_root, generation_root)
         finally:
@@ -364,10 +421,10 @@ class DatabaseBackup:
         restore_root = Path(restore_root)
         restore_root.mkdir(parents=True, exist_ok=True)
         for entry in metadata["files"]:
-            target = restore_root / entry["relative_path"]
+            target = _contained_path(restore_root, entry["relative_path"])
             if target.exists() and not overwrite:
                 raise RestoreApprovalError(f"existing restore target: {entry['relative_path']}")
-            _atomic_copy(generation_root / entry["relative_path"], target)
+            _atomic_copy(_contained_path(generation_root, entry["relative_path"]), target)
         with (destination.path() / "backup-audit.jsonl").open("a", encoding="utf-8") as audit:
             audit.write(
                 json.dumps(

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import secrets
 from pathlib import Path
 
 import pytest
 
 import src.utils.database_backup as database_backup_module
 from src.utils.database_backup import (
+    BackupError,
     BackupDestination,
     DatabaseBackup,
     DestinationIdentityError,
@@ -166,14 +168,15 @@ def test_restore_uses_trusted_identity_and_never_manifest_identity(tmp_path: Pat
             allow_canonical_restore=True,
         )
 
-    DatabaseBackup.restore(
-        result.manifest_path,
-        destination,
-        tmp_path / "restore",
-        operator_approved=True,
-        expected_destination_identity="approved-volume",
-        allow_canonical_restore=True,
-    )
+    with pytest.raises(BackupError, match="manifest authentication"):
+        DatabaseBackup.restore(
+            result.manifest_path,
+            destination,
+            tmp_path / "restore",
+            operator_approved=True,
+            expected_destination_identity="approved-volume",
+            allow_canonical_restore=True,
+        )
 
 
 def test_restore_rejects_existing_targets_until_separately_authorized(tmp_path: Path) -> None:
@@ -375,3 +378,101 @@ def test_recent_validation_restores_isolated_generation_and_validates_metadata(
     assert observed
     assert observed[0] != source.parent
     assert source.read_bytes() == b"encrypted-db-bytes"
+
+
+def test_restored_sqlcipher_bytes_open_with_runtime_generated_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sqlcipher3 = pytest.importorskip("sqlcipher3")
+    key = secrets.token_hex(32)
+    monkeypatch.setenv("TEST_SQLCIPHER_KEY", key)
+    source = tmp_path / "workspace.db"
+    connection = sqlcipher3.connect(str(source))
+    try:
+        connection.execute(f'PRAGMA key="x\'{key.encode().hex()}\'"')
+        connection.execute("CREATE TABLE contract (value TEXT NOT NULL)")
+        connection.execute("INSERT INTO contract VALUES ('restored')")
+        connection.commit()
+    finally:
+        connection.close()
+
+    manifest = _manifest()
+    manifest["databases"][0].update(
+        encryption="sqlcipher", key_env="TEST_SQLCIPHER_KEY", classification="derived"
+    )
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+    result = DatabaseBackup(
+        manifest=manifest,
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+    restore_root = tmp_path / "restore"
+    DatabaseBackup.restore(
+        result.manifest_path,
+        destination,
+        restore_root,
+        operator_approved=True,
+        expected_destination_identity="approved-volume",
+    )
+
+    restored = sqlcipher3.connect(str(restore_root / "workspace.db"))
+    try:
+        restored.execute(f'PRAGMA key="x\'{key.encode().hex()}\'"')
+        assert restored.execute("SELECT value FROM contract").fetchone() == ("restored",)
+    finally:
+        restored.close()
+
+
+def test_restore_rejects_tampered_database_metadata_before_copying(tmp_path: Path) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+    result = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+    metadata = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    metadata["databases"][0]["classification"] = "derived"
+    result.manifest_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+    with pytest.raises(BackupError, match="manifest authentication"):
+        DatabaseBackup.restore(
+            result.manifest_path,
+            destination,
+            tmp_path / "restore",
+            operator_approved=True,
+            expected_destination_identity="approved-volume",
+            allow_canonical_restore=True,
+        )
+
+
+def test_restore_rejects_tampered_traversal_path_before_copying(tmp_path: Path) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+    result = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+    metadata = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    metadata["files"][0]["relative_path"] = "../../escaped.db"
+    result.manifest_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+    with pytest.raises(BackupError, match="manifest authentication"):
+        DatabaseBackup.restore(
+            result.manifest_path,
+            destination,
+            tmp_path / "restore",
+            operator_approved=True,
+            expected_destination_identity="approved-volume",
+            allow_canonical_restore=True,
+        )
+    assert not (tmp_path.parent / "escaped.db").exists()
