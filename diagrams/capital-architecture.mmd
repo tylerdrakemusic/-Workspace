@@ -5,17 +5,37 @@ graph TB
     Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
     Research[src/research/<br/>off-market pick generation — future] --> DB
     Agents[src/agents/<br/>research, risk] --> DB
-    Agents -->|news/sentiment batch| Perplexity[(Perplexity.ai<br/>Sonar)]
+    Agents -->|news/sentiment batch| Perplexity[(Perplexity.ai<br/>Sonar<br/>champion provider)]
     ScoringBoundary["Provider-neutral scoring boundary<br/>ScoreResult: score · method · rationale · provenance · signal_available<br/>persisted candidate fields: confidence · rationale · scoring_method · model"]
     PerplexityAdapter["Perplexity adapter<br/>integrations/perplexity/PerplexityClient"]
     DeterministicFallback["Deterministic heuristic fallback<br/>method=heuristic · provenance=deterministic"]:::state
     QualificationGate{"Qualification gate<br/>signal_available and score >= qualification_score"}:::state
+    SentimentCollector["SentimentContext collector/normalizer<br/>provider-neutral normalized context<br/>transcript-free provenance"]
+    GDELT[(GDELT 2.1 Document API<br/>public challenger)]
+    GoogleNews[(Google News<br/>market-news RSS candidate)]
+    SentimentState["Provider result state<br/>available | unavailable | error<br/>fail-open: unavailable/error => zero contribution"]:::state
+    SentimentPayload["Normalized sentiment_context payload<br/>bounded score/confidence · citations · request/batch IDs<br/>redacted provenance"]
+    PromptDiscovery["Prompt/discovery candidate path<br/>shared context consumption"]
     Research --> ScoringBoundary
     ScoringBoundary -->|provider path| PerplexityAdapter
     PerplexityAdapter -->|provider scoring request| Perplexity
     ScoringBoundary -->|unavailable or invalid provider response| DeterministicFallback
     PerplexityAdapter --> QualificationGate
     DeterministicFallback --> QualificationGate
+    SentimentCollector -->|champion request| Perplexity
+    SentimentCollector -->|challenger request| GDELT
+    SentimentCollector -->|candidate request| GoogleNews
+    Perplexity -->|normalized result| SentimentCollector
+    GDELT -->|normalized result| SentimentCollector
+    GoogleNews -->|normalized result| SentimentCollector
+    SentimentCollector --> SentimentState
+    SentimentState --> SentimentPayload
+    SentimentPayload -->|bounded additive contribution| ScoringBoundary
+    SentimentPayload ==>|normalized metadata only| DB
+    ScoringBoundary -->|bounded additive contribution| QualificationGate
+    Research --> PromptDiscovery
+    PromptDiscovery -->|bounded additive contribution| ScoringBoundary
+    SentimentPayload -->|bounded additive contribution| ExitReeval
     ScoringBoundary ==>|"persists confidence, rationale, scoring_method, model"| DB
     QualificationGate -->|qualified candidate| TradeCandidates[trade_candidates table<br/>pending recommendations]
     Agents -->|pricing/volatility| YFinance[(yfinance<br/>Yahoo Finance)]
