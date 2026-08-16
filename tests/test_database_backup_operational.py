@@ -191,9 +191,18 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
 
     assert "-SourceRoot" not in arguments
     assert "-ProjectRoot" in arguments
-    assert "❤Music=F:\\❤Music,⟨ψ⟩Quantum=F:\\⟨ψ⟩Quantum,👁AI-Manifest=F:\\👁AI-Manifest,⊕Workspace=F:\\⊕Workspace" in arguments
-    assert "F:\\∞Life" not in arguments
-    assert "F:\\ΣCapital" not in arguments
+    expected_roots = ",".join(
+        f"{label}={root}"
+        for label, root in (
+            ("❤Music", workspace_root.parent / "❤Music"),
+            ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
+            ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
+            ("⊕Workspace", workspace_root),
+        )
+    )
+    assert expected_roots in arguments
+    assert "∞Life" not in arguments
+    assert "ΣCapital" not in arguments
 
 
 def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
