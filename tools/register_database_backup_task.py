@@ -15,16 +15,31 @@ class TaskSpec:
     environment_names: tuple[str, ...]
 
 
-def build_task_spec(workspace_root: Path, python_path: Path) -> TaskSpec:
+def build_task_spec(
+    workspace_root: Path,
+    python_path: Path,
+    approved_projects: tuple[str, ...] | None = None,
+) -> TaskSpec:
     """Build the daily backup task without embedding secrets or drive fallbacks."""
     workspace_root = _canonical_workspace_root(workspace_root)
-    launcher = workspace_root / "tools" / "run_database_backup.ps1"
-    project_roots = (
+    all_project_roots = (
         ("❤Music", workspace_root.parent / "❤Music"),
         ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
         ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
         ("⊕Workspace", workspace_root),
     )
+    if approved_projects is None:
+        project_roots = all_project_roots
+    else:
+        requested = tuple(approved_projects)
+        available = dict(all_project_roots)
+        unknown = set(requested) - set(available)
+        if unknown:
+            raise ValueError(f"unknown approved project(s): {sorted(unknown)}")
+        if not requested:
+            raise ValueError("at least one approved project is required")
+        project_roots = tuple((label, available[label]) for label in requested)
+    launcher = workspace_root / "tools" / "run_database_backup.ps1"
     return TaskSpec(
         executable=Path("PowerShell.exe"),
         arguments=(

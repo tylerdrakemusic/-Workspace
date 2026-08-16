@@ -220,6 +220,29 @@ def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree(
     assert ".worktrees" not in arguments
 
 
+def test_scheduler_spec_music_selector_registers_only_canonical_music_root(
+    tmp_path: Path,
+) -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    canonical_workspace = tmp_path / "workspace"
+    active_worktree = canonical_workspace / ".worktrees" / "feature-backup"
+    spec = build_task_spec(
+        active_worktree,
+        Path("C:/G/python.exe"),
+        approved_projects=("❤Music",),
+    )
+    arguments = list(spec.arguments)
+    project_root_argument = arguments[arguments.index("-ProjectRoot") + 1]
+
+    assert project_root_argument == f"❤Music={canonical_workspace.parent / '❤Music'}"
+    assert ".worktrees" not in project_root_argument
+    assert all(
+        excluded not in project_root_argument
+        for excluded in ("∞Life", "⟨ψ⟩Quantum", "👁AI-Manifest", "⊕Workspace", "ΣCapital")
+    )
+
+
 def test_scheduler_spec_preserves_non_worktree_root_on_foreign_platform() -> None:
     from tools.register_database_backup_task import build_task_spec
 
@@ -248,6 +271,22 @@ def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
     assert spec.arguments[1] in registration
     assert spec.arguments[2] in registration
     assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in registration.split(
+        "$action", 1
+    )[1].split("$trigger", 1)[0]
+
+
+def test_music_registration_selector_is_explicit_and_secret_free() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "tools"
+        / "register_database_backup_task.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "[string]$ApprovedProject = $null" in script
+    assert "if ($ApprovedProject -eq '❤Music')" in script
+    assert "Join-Path (Split-Path -Parent $WorkspaceRoot)" in script
+    assert "$ApprovedProject" not in script.split("$action", 1)[1]
+    assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in script.split(
         "$action", 1
     )[1].split("$trigger", 1)[0]
 
