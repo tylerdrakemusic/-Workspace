@@ -35,6 +35,12 @@ def ensure_portal_html() -> None:
             )
 
 
+@pytest.fixture(autouse=True)
+def backup_manifest_key(monkeypatch):
+    """Give backup tests an ephemeral signing key without persisting key material."""
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-only-ephemeral-key")
+
+
 def pytest_collection_modifyitems(config, items):
     """Skip playwright-marked tests unless PLAYWRIGHT_ENABLED=1 is set."""
     if os.getenv("PLAYWRIGHT_ENABLED") != "1":

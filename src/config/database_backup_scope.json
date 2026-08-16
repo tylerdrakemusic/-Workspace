@@ -144,9 +144,7 @@
   "not_implemented": [
     "upload",
     "cloud_provider",
-    "encryption_key_management",
-    "retention",
-    "restore"
+    "encryption_key_management"
   ],
   "separate_todos": ["239", "243", "244", "247"]
 }

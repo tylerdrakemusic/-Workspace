@@ -1,8 +1,8 @@
 # Workspace Database Backup Scope
 
-This policy prepares the workspace for future disaster recovery. It is an
-inventory and approval boundary only; it does not implement backup, restore,
-retention, encryption-key management, or delivery to a backup service.
+This policy prepares the workspace for local disaster recovery. It is the
+inventory and approval boundary for the provider-neutral backup engine; it does
+not authorize cloud delivery or manage database encryption keys.
 
 ## Source Of Truth
 
@@ -54,9 +54,9 @@ The default exclusions are:
 
 - `.git/`
 - virtual environments (`.venv/` and `venv/`)
-- worktrees (`.worktrees/`)
-- caches (`cache/`, `caches/`, `.cache/`)
-- generated output (`output/`)
+This policy prepares the workspace for local disaster recovery. It is the
+inventory and approval boundary for the provider-neutral backup engine; it does
+not authorize cloud delivery or manage database encryption keys.
 - backup artifacts (`backups/`)
 - transient areas (`tmp/`, `logs/`, and `qbackups/`)
 - root-level temporary database files such as `tmp*.db`, `tmp*.sqlite`, and
@@ -102,6 +102,50 @@ report generation does not itself perform a live discovery drift check. A
 separate validation run must discover current files and compare them with the
 registered paths before treating the inventory as current.
 
-This feature request authorizes no cloud upload and no transfer of database
-contents. It records database paths and policy metadata only; it does not read,
-copy, upload, or restore database contents.
+## Local Backup Contract
+
+`src/utils/database_backup.py` is the provider-neutral implementation. A
+`BackupDestination` must positively verify its stable identity before any
+source file is read or copied. `LocalVolumeDestination` uses a pre-provisioned
+`.backup-volume-identity` marker for local external volumes.
+
+`DatabaseBackup.run()` copies only manifest entries with `backup_allowed: true`
+into a temporary generation directory, atomically commits the generation, and
+writes a JSON manifest with SHA-256 hashes. It retains the newest 30 generations
+and appends backup and restore events to `backup-audit.jsonl`.
+`validate_recent_backups()` is the periodic restore-validation hook; it hashes
+each retained manifest, restores it into a temporary isolated directory, and
+opens declared SQLCipher databases using only their environment-variable key
+references to inspect schema metadata. The temporary restore is removed after
+validation and source databases are never modified. The validator is used by
+default; test-only adapters must be passed explicitly.
+
+Project inventories are projected into this same manifest contract. Entries
+with a redacted locator use their safe `discovery` project/basename key to
+resolve exactly one local candidate; discovery collisions and unregistered
+files fail closed before any copy. Approved entries therefore share backup,
+retention, restore, audit, and drift behavior without database-specific code.
+
+Restore is isolated by target directory and requires `operator_approved=True`
+plus a trusted runtime destination identity. The identity is never taken from
+manifest metadata. Canonical database restore is prohibited by default. An
+existing target is rejected unless both `overwrite=True` and a separate
+`overwrite_operator_approved=True` authorization are supplied. Restore audit
+records contain only generation-relative manifest locators and stable target
+IDs, never absolute source or target paths. It verifies generation hashes
+before copying, preserving encrypted bytes and leaving environment-backed
+database keys untouched. Discovery remains fail-closed through
+`discover_and_validate_manifest()`.
+
+The daily entry point is:
+
+```powershell
+$env:WORKSPACE_BACKUP_VOLUME = "E:\WorkspaceBackup"
+$env:WORKSPACE_BACKUP_VOLUME_ID = "approved-volume-id"
+& "C:\G\python.exe" "tools\run_database_backup.py" `
+  --manifest "src\config\database_backup_scope.json" `
+  --source-root "F:\"
+```
+
+The destination identity and paths are supplied by the operator/environment;
+no provider SDK, cloud upload, or key material is embedded in the contract.
