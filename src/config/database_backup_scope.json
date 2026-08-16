@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "fr": "FR-20260815-workspace-database-backup-scope",
+  "policy_status": "reviewed",
+  "purpose": "Inventory authoritative workspace databases before backup implementation.",
+  "content_boundary": "Path and policy metadata only; database contents never leave the machine under this FR.",
+  "classifications": [
+    "canonical",
+    "coordination",
+    "derived",
+    "temporary",
+    "legacy",
+    "unknown",
+    "approval-required"
+  ],
+  "databases": [
+    {
+      "id": "life-infinitelife",
+      "path": "life/health-store",
+      "discovery": {"project": "life", "basename": "infinitelife.db"},
+      "classification": "approval-required",
+      "backup_allowed": false,
+      "reason": "Health and genomic store; default-denied pending explicit approval."
+    },
+    {
+      "id": "life-nova-config",
+      "path": "∞Life/src/data/nova_config.db",
+      "classification": "unknown",
+      "backup_allowed": false,
+      "reason": "Discovered configuration database; authority and sensitivity not yet established."
+    },
+    {
+      "id": "music-heartmusic",
+      "path": "❤Music/src/data/heartmusic.db",
+      "classification": "canonical",
+      "backup_allowed": true,
+      "reason": "Authoritative ❤Music application database."
+    },
+    {
+      "id": "music-spirit",
+      "path": "❤Music/spirit.db",
+      "classification": "unknown",
+      "backup_allowed": false,
+      "reason": "Discovered database at project root; authority not yet established."
+    },
+    {
+      "id": "music-vera-config",
+      "path": "❤Music/src/data/vera_config.db",
+      "classification": "derived",
+      "backup_allowed": false,
+      "reason": "Generated configuration store, not an authoritative catalog."
+    },
+    {
+      "id": "music-legacy-heartmusic",
+      "path": "❤Music/data/legacy_heartmusic.db",
+      "classification": "legacy",
+      "backup_allowed": false,
+      "reason": "Explicitly retained legacy store; excluded from future backup scope."
+    },
+    {
+      "id": "quantum-quantumpsi",
+      "path": "⟨ψ⟩Quantum/src/data/quantumpsi.db",
+      "classification": "canonical",
+      "backup_allowed": true,
+      "reason": "Authoritative ⟨ψ⟩Quantum application database."
+    },
+    {
+      "id": "quantum-orion-config",
+      "path": "⟨ψ⟩Quantum/src/data/orion_config.db",
+      "classification": "derived",
+      "backup_allowed": false,
+      "reason": "Generated configuration store, not an authoritative application database."
+    },
+    {
+      "id": "manifest-todos",
+      "path": "👁AI-Manifest/src/data/manifest_todos.db",
+      "classification": "coordination",
+      "backup_allowed": true,
+      "reason": "Coordination database used by the manifest service."
+    },
+    {
+      "id": "manifest-todos-legacy",
+      "path": "👁AI-Manifest/src/data/todos.db",
+      "classification": "legacy",
+      "backup_allowed": false,
+      "reason": "Superseded coordination store."
+    },
+    {
+      "id": "manifest-lily-config",
+      "path": "👁AI-Manifest/src/data/lily_config.db",
+      "classification": "derived",
+      "backup_allowed": false,
+      "reason": "Generated configuration store."
+    },
+    {
+      "id": "workspace-agent-perf",
+      "path": "⊕Workspace/src/data/agent_perf.db",
+      "classification": "coordination",
+      "backup_allowed": true,
+      "reason": "Shared agent performance coordination store."
+    },
+    {
+      "id": "workspace-fr-ledgers",
+      "path": "⊕Workspace/src/data/fr_ledgers.db",
+      "classification": "coordination",
+      "backup_allowed": true,
+      "reason": "Feature-request coordination ledger."
+    },
+    {
+      "id": "workspace-manifest-todos",
+      "path": "⊕Workspace/src/data/manifest_todos.db",
+      "classification": "coordination",
+      "backup_allowed": true,
+      "reason": "Shared coordination todo store."
+    },
+    {
+      "id": "workspace",
+      "path": "⊕Workspace/src/data/workspace.db",
+      "classification": "canonical",
+      "backup_allowed": true,
+      "reason": "Authoritative shared workspace database."
+    },
+    {
+      "id": "capital-sigmacapital",
+      "path": "capital/financial-store",
+      "discovery": {"project": "capital", "basename": "sigmacapital.db"},
+      "classification": "approval-required",
+      "backup_allowed": false,
+      "reason": "Financial store; default-denied pending explicit approval."
+    }
+  ],
+  "exclusions": [
+    {"pattern": "**/.git/**", "reason": "Version-control internals are not database scope."},
+    {"pattern": "**/.venv/**", "reason": "Virtual environments are reproducible and transient."},
+    {"pattern": "**/venv/**", "reason": "Virtual environments are reproducible and transient."},
+    {"pattern": "**/.worktrees/**", "reason": "Isolated worktrees are non-authoritative copies."},
+    {"pattern": "**/{cache,caches,.cache}/**", "reason": "Caches are regenerable."},
+    {"pattern": "**/output/**", "reason": "Generated output is not an authoritative database source."},
+    {"pattern": "**/backups/**", "reason": "Backup artifacts are excluded from discovery and future scope."},
+    {"pattern": "**/{tmp,logs,qbackups}/**", "reason": "Transient areas are excluded unless separately registered."},
+    {"pattern": "**/tmp*.{db,sqlite,sqlite3}", "reason": "Root-level transient database artifacts are excluded unless separately registered."},
+    {"pattern": "❤Music/src/data/backups/**", "reason": "Existing plaintext backup artifacts are excluded from future scope."}
+  ],
+  "not_implemented": [
+    "upload",
+    "cloud_provider",
+    "encryption_key_management",
+    "retention",
+    "restore"
+  ],
+  "separate_todos": ["239", "243", "244", "247"]
+}
