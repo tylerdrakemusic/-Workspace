@@ -96,6 +96,11 @@ def _atomic_copy(source: Path, destination: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _redacted_target_id(restore_root: Path) -> str:
+    digest = hashlib.sha256(str(restore_root.resolve()).encode("utf-8")).hexdigest()[:16]
+    return f"restore-{digest}"
+
+
 def validate_backup(manifest_path: Path) -> bool:
     """Verify every file listed by a backup manifest."""
     metadata = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
@@ -109,6 +114,7 @@ def validate_backup(manifest_path: Path) -> bool:
 
 def validate_recent_backups(
     destination: BackupDestination,
+    expected_destination_identity: str,
     limit: int = 30,
     restore_validator: Callable[[Path, dict[str, Any]], None] | None = None,
 ) -> list[Path]:
@@ -132,6 +138,8 @@ def validate_recent_backups(
                 destination,
                 Path(restore_root),
                 operator_approved=True,
+                expected_destination_identity=expected_destination_identity,
+                allow_canonical_restore=True,
             )
             if restore_validator is not None:
                 restore_validator(Path(restore_root), metadata)
@@ -251,7 +259,12 @@ class DatabaseBackup:
                         "relative_path": relative_path,
                         **{
                             field: entry[field]
-                            for field in ("encryption", "key_env", "schema_tables")
+                            for field in (
+                                "classification",
+                                "encryption",
+                                "key_env",
+                                "schema_tables",
+                            )
                             if field in entry
                         },
                     }
@@ -269,7 +282,16 @@ class DatabaseBackup:
         final_manifest = generation_root / "manifest.json"
         audit_path = self._destination.path() / "backup-audit.jsonl"
         with audit_path.open("a", encoding="utf-8") as audit:
-            audit.write(json.dumps({"event": "backup", "generation": generation, "manifest": str(final_manifest)}) + "\n")
+            audit.write(
+                json.dumps(
+                    {
+                        "event": "backup",
+                        "generation": generation,
+                        "manifest_locator": f"generations/{generation}/manifest.json",
+                    }
+                )
+                + "\n"
+            )
         return BackupResult(generation=generation, manifest_path=final_manifest)
 
     def _resolve_source(
@@ -315,20 +337,45 @@ class DatabaseBackup:
         destination: BackupDestination,
         restore_root: Path,
         operator_approved: bool,
+        expected_destination_identity: str,
+        overwrite: bool = False,
+        overwrite_operator_approved: bool = False,
+        allow_canonical_restore: bool = False,
     ) -> None:
         """Restore verified files only into a separate operator-approved directory."""
         if not operator_approved:
             raise RestoreApprovalError("restore requires explicit operator approval")
+        if not expected_destination_identity.strip():
+            raise DestinationIdentityError("trusted destination identity is required")
         if Path(restore_root).resolve() == Path.cwd().resolve():
             raise RestoreApprovalError("restore target must be isolated")
-        if not destination.is_verified(json.loads(Path(manifest_path).read_text(encoding="utf-8")).get("destination_identity", "")):
+        if not destination.is_verified(expected_destination_identity):
             raise DestinationIdentityError("restore destination identity is not verified")
         validate_backup(manifest_path)
         metadata = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+        if any(
+            database.get("classification") == "canonical"
+            for database in metadata.get("databases", [])
+        ) and not allow_canonical_restore:
+            raise RestoreApprovalError("canonical database restore is prohibited by default")
+        if overwrite and not overwrite_operator_approved:
+            raise RestoreApprovalError("overwrite requires separate overwrite authorization")
         generation_root = Path(manifest_path).parent
         restore_root = Path(restore_root)
         restore_root.mkdir(parents=True, exist_ok=True)
         for entry in metadata["files"]:
-            _atomic_copy(generation_root / entry["relative_path"], restore_root / entry["relative_path"])
+            target = restore_root / entry["relative_path"]
+            if target.exists() and not overwrite:
+                raise RestoreApprovalError(f"existing restore target: {entry['relative_path']}")
+            _atomic_copy(generation_root / entry["relative_path"], target)
         with (destination.path() / "backup-audit.jsonl").open("a", encoding="utf-8") as audit:
-            audit.write(json.dumps({"event": "restore", "manifest": str(manifest_path), "target": str(restore_root)}) + "\n")
+            audit.write(
+                json.dumps(
+                    {
+                        "event": "restore",
+                        "manifest_locator": f"generations/{generation_root.name}/manifest.json",
+                        "target_id": _redacted_target_id(restore_root),
+                    }
+                )
+                + "\n"
+            )

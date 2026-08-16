@@ -117,7 +117,8 @@ and appends backup and restore events to `backup-audit.jsonl`.
 each retained manifest, restores it into a temporary isolated directory, and
 opens declared SQLCipher databases using only their environment-variable key
 references to inspect schema metadata. The temporary restore is removed after
-validation and source databases are never modified.
+validation and source databases are never modified. The validator is used by
+default; test-only adapters must be passed explicitly.
 
 Project inventories are projected into this same manifest contract. Entries
 with a redacted locator use their safe `discovery` project/basename key to
@@ -125,10 +126,16 @@ resolve exactly one local candidate; discovery collisions and unregistered
 files fail closed before any copy. Approved entries therefore share backup,
 retention, restore, audit, and drift behavior without database-specific code.
 
-Restore is isolated by target directory and requires `operator_approved=True`.
-It verifies generation hashes before copying, preserving encrypted bytes and
-leaving environment-backed database keys untouched. Discovery remains
-fail-closed through `discover_and_validate_manifest()`.
+Restore is isolated by target directory and requires `operator_approved=True`
+plus a trusted runtime destination identity. The identity is never taken from
+manifest metadata. Canonical database restore is prohibited by default. An
+existing target is rejected unless both `overwrite=True` and a separate
+`overwrite_operator_approved=True` authorization are supplied. Restore audit
+records contain only generation-relative manifest locators and stable target
+IDs, never absolute source or target paths. It verifies generation hashes
+before copying, preserving encrypted bytes and leaving environment-backed
+database keys untouched. Discovery remains fail-closed through
+`discover_and_validate_manifest()`.
 
 The daily entry point is:
 
