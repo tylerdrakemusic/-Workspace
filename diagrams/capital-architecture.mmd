@@ -15,6 +15,14 @@ graph TB
     GoogleNews[(Google News<br/>market-news RSS candidate)]
     SentimentState["Provider result state<br/>available | unavailable | error<br/>fail-open: unavailable/error => zero contribution"]:::state
     SentimentPayload["Normalized sentiment_context payload<br/>bounded score/confidence · citations · request/batch IDs<br/>redacted provenance"]
+    SanitizedReplay["Deterministic sanitized historical replay<br/>replay_evaluations()<br/>provider/broker-free · no raw transcripts"]:::state
+    Calibration["Calibration metrics<br/>baseline vs sentiment: Brier · ECE<br/>per-provider observations"]:::state
+    ShadowWindow["Non-decisioning shadow boundary<br/>ends at 14 days OR 200 picker runs<br/>fail-open states contribute zero"]:::state
+    ValidationEvaluations[(sentiment_validation_evaluations<br/>composite key: run_id + symbol + captured_at)]
+    ShadowRuns[(sentiment_shadow_runs<br/>run_id PK · immutable mode=shadow<br/>result_hash SHA-256)]
+    ActivationDecision["Activation decision artifact<br/>BLOCKED by default · activation_enabled=false<br/>provider calibration + explicit Tyler approval required"]:::state
+    TylerApproval["Explicit Tyler approval gate<br/>approval is never inferred from metrics"]:::state
+    ValidationBoundary["NON-DECISIONING VALIDATION BOUNDARY<br/>sentiment cannot reach eligibility, Trade Gate,<br/>order payload, or real-money execution"]:::state
     PromptDiscovery["Prompt/discovery candidate path<br/>shared context consumption"]
     Research --> ScoringBoundary
     ScoringBoundary -->|provider path| PerplexityAdapter
@@ -32,6 +40,25 @@ graph TB
     SentimentState --> SentimentPayload
     SentimentPayload -->|bounded additive contribution| ScoringBoundary
     SentimentPayload ==>|normalized metadata only| DB
+    SanitizedReplay --> Calibration
+    Calibration --> ShadowWindow
+    ShadowWindow --> ValidationEvaluations
+    ShadowWindow --> ShadowRuns
+    Calibration --> ActivationDecision
+    ShadowRuns -->|application-level summary input| ActivationDecision
+    Tyler --> TylerApproval
+    TylerApproval --> ActivationDecision
+    SanitizedReplay -.->|does not invoke provider| Perplexity
+    SanitizedReplay -.->|does not invoke broker| AccountsTrading
+    ValidationEvaluations ==> DB
+    ShadowRuns ==> DB
+    ActivationDecision ==> DB
+    ActivationDecision --> ValidationBoundary
+    ValidationBoundary -.->|cannot reach| QualificationGate
+    ValidationBoundary -.->|cannot reach| TradeGate
+    ValidationBoundary -.->|cannot reach| ApproveCandidate
+    ValidationBoundary -.->|cannot reach| SubmitRealOrder
+    ValidationBoundary -.->|cannot reach| AccountsTrading
     ScoringBoundary -->|bounded additive contribution| QualificationGate
     Research --> PromptDiscovery
     PromptDiscovery -->|bounded additive contribution| ScoringBoundary
@@ -142,7 +169,7 @@ graph TB
     class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
     class MarginGate,MarginUI,DeterministicFallback,QualificationGate state
     class OAuthLoop,TokenStore state
-    class DB db
+    class DB,ValidationEvaluations,ShadowRuns db
     class Perplexity,YFinance,Anthropic,Schwab ext
     class Tyler tyler
 
