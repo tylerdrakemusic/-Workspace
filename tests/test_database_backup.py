@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import sys
 from pathlib import Path
 
 import pytest
@@ -107,6 +108,67 @@ def test_backup_writes_hashed_manifest_and_prunes_old_generations(tmp_path: Path
     assert (destination_root / "generations" / result.generation / "workspace.db").read_bytes() == source.read_bytes()
     assert len(list((destination_root / "generations").iterdir())) == 30
     assert validate_backup(result.manifest_path) is True
+
+
+def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(tmp_path: Path) -> None:
+    first_source = tmp_path / "workspace.db"
+    second_source = tmp_path / "music" / "heartmusic-store"
+    second_source.parent.mkdir()
+    first_source.write_bytes(b"workspace-encrypted-db")
+    second_source.write_bytes(b"music-encrypted-db")
+    manifest = _manifest()
+    manifest["databases"] = [
+        {
+            "id": "workspace",
+            "path": "workspace.db",
+            "backup_allowed": True,
+            "classification": "canonical",
+            "reason": "Workspace coordination database",
+            "encryption": "sqlcipher",
+            "key_env": "WORKSPACE_DB_KEY",
+            "schema_tables": ["todos"],
+        },
+        {
+            "id": "music-heartmusic",
+            "path": "music/heartmusic-store",
+            "backup_allowed": True,
+            "classification": "derived",
+            "reason": "Music application database",
+            "encryption": "sqlcipher",
+            "key_env": "HEARTMUSIC_DB_KEY",
+            "schema_tables": ["songs"],
+        },
+    ]
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+
+    result = DatabaseBackup(
+        manifest=manifest,
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    metadata = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+
+    assert metadata["databases"] == [
+        {
+            "id": "workspace",
+            "relative_path": "workspace.db",
+            "classification": "canonical",
+            "encryption": "sqlcipher",
+            "key_env": "WORKSPACE_DB_KEY",
+            "schema_tables": ["todos"],
+        },
+        {
+            "id": "music-heartmusic",
+            "relative_path": "music/heartmusic-store",
+            "classification": "derived",
+            "encryption": "sqlcipher",
+            "key_env": "HEARTMUSIC_DB_KEY",
+            "schema_tables": ["songs"],
+        },
+    ]
 
 
 def test_restore_requires_approval_and_isolated_target(tmp_path: Path) -> None:
@@ -298,6 +360,68 @@ def test_periodic_validation_uses_real_validator_by_default(
 
     assert validate_recent_backups(destination, "approved-volume") == [result.manifest_path]
     assert calls
+
+
+def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    worktree = Path(__file__).resolve().parent.parent
+    manifest = json.loads(
+        (worktree / "src" / "config" / "database_backup_scope.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    music_entry = next(
+        entry for entry in manifest["databases"] if entry["id"] == "music-heartmusic"
+    )
+    music_entry["relative_path"] = "music/heartmusic-store"
+    restored_path = tmp_path / music_entry["relative_path"]
+    restored_path.parent.mkdir(parents=True)
+    restored_path.touch()
+    monkeypatch.setenv("HEARTMUSIC_DB_KEY", "test-key")
+
+    class FakeConnection:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+
+        def execute(self, statement: str):
+            self.statements.append(statement)
+            if statement.startswith("SELECT name"):
+                return self
+            return self
+
+        def fetchone(self):
+            return ("songs",)
+
+        def close(self) -> None:
+            pass
+
+    class FakeSqlcipher:
+        def __init__(self) -> None:
+            self.paths: list[str] = []
+            self.connections: list[FakeConnection] = []
+
+        def connect(self, path: str) -> FakeConnection:
+            self.paths.append(path)
+            connection = FakeConnection()
+            self.connections.append(connection)
+            return connection
+
+    fake_sqlcipher = FakeSqlcipher()
+    monkeypatch.setitem(sys.modules, "sqlcipher3", fake_sqlcipher)
+
+    database_backup_module._validate_restored_databases(
+        tmp_path, {"databases": [music_entry]}
+    )
+
+    assert fake_sqlcipher.paths == [str(restored_path)]
+    assert fake_sqlcipher.connections[0].statements == [
+        "PRAGMA key='test-key'",
+        "PRAGMA cipher_page_size=4096",
+        "PRAGMA kdf_iter=256000",
+        "PRAGMA cipher_hmac_algorithm=HMAC_SHA512",
+        "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name LIMIT 1",
+    ]
 
 
 def test_discovery_fails_closed_for_unregistered_database(tmp_path: Path) -> None:

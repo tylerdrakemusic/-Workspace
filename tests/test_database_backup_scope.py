@@ -315,3 +315,35 @@ def test_committed_manifest_registers_every_allowed_database() -> None:
 
     assert manifest["fr"] == "FR-20260815-workspace-database-backup-scope"
     assert all(entry["classification"] for entry in manifest["databases"])
+
+
+def test_committed_music_entry_declares_sqlcipher_restore_validation_metadata() -> None:
+    worktree = Path(__file__).resolve().parent.parent
+    manifest = load_manifest(worktree / "src" / "config" / "database_backup_scope.json")
+
+    music_entry = next(
+        entry for entry in manifest["databases"] if entry["id"] == "music-heartmusic"
+    )
+
+    assert music_entry["encryption"] == "sqlcipher"
+    assert music_entry["key_env"] == "HEARTMUSIC_DB_KEY"
+
+
+def test_scheduler_registration_uses_canonical_music_project_root() -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    workspace_root = Path(__file__).resolve().parents[1]
+    resolved_root = workspace_root.resolve()
+    root_parts = [part.casefold() for part in resolved_root.parts]
+    if ".worktrees" in root_parts:
+        worktrees_index = root_parts.index(".worktrees")
+        repository_root = Path(*resolved_root.parts[:worktrees_index])
+    else:
+        repository_root = resolved_root
+    task = build_task_spec(workspace_root, Path("C:/G/python.exe"))
+
+    project_root_argument = task.arguments[task.arguments.index("-ProjectRoot") + 1]
+    entries = dict(item.split("=", 1) for item in project_root_argument.split(","))
+
+    assert entries["❤Music"] == str(repository_root.parent / "❤Music")
+    assert ".worktrees" not in entries["❤Music"]

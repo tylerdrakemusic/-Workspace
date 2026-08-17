@@ -16,6 +16,11 @@ from src.utils.database_backup_scope import discover_databases, validate_manifes
 
 
 MANIFEST_KEY_ENV = "WORKSPACE_BACKUP_MANIFEST_KEY"
+SQLCIPHER_RESTORE_PRAGMAS = (
+    "PRAGMA cipher_page_size=4096",
+    "PRAGMA kdf_iter=256000",
+    "PRAGMA cipher_hmac_algorithm=HMAC_SHA512",
+)
 
 
 class BackupError(RuntimeError):
@@ -217,8 +222,10 @@ def _validate_restored_databases(restore_root: Path, metadata: dict[str, Any]) -
         database_path = restore_root / str(database["relative_path"])
         connection = sqlcipher3.connect(str(database_path))
         try:
-            key_hex = key.encode().hex()
-            connection.execute(f'PRAGMA key="x\'{key_hex}\'"')
+            safe_key = key.replace("'", "''")
+            connection.execute(f"PRAGMA key='{safe_key}'")
+            for pragma in SQLCIPHER_RESTORE_PRAGMAS:
+                connection.execute(pragma)
             tables = connection.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name LIMIT 1"
             ).fetchone()
@@ -306,8 +313,8 @@ class DatabaseBackup:
                 "files": files,
                 "databases": [
                     {
-                        "id": entry.get("id", relative_path),
-                        "relative_path": relative_path,
+                        "id": entry.get("id", str(entry["path"])),
+                        "relative_path": str(entry["path"]),
                         **{
                             field: entry[field]
                             for field in (
