@@ -14,10 +14,21 @@ graph LR
     Python -.->|lazy cross-project import| WSOllama[(⊕Workspace<br/>src/integrations/ollama)]
     WSOllama -.-> Ollama[(Ollama LLM<br/>local server)]
     Python -->|Dockerfile| Docker[Docker<br/>python:3.11-slim image] -->|"flyctl deploy (CI, main-only)"| FlyIO[(Fly.io<br/>guitartrainer.fly.dev)]
+    HyperthreatLauncher["hyperthreat_app.py<br/>minimal Flask launcher<br/>/ · /mic-config · /patch-bay<br/>/patch_bay.html · /health"]
+    HyperthreatTemplates["Static templates only<br/>mic_config_template.html<br/>patch_bay.html"]
+    HyperthreatDocker["Dockerfile.hyperthreat-studio<br/>python:3.11-slim<br/>launcher + two templates only"]
+    HyperthreatGate{"refs/heads/main<br/>approval == approved"}
+    HyperthreatFly[(Fly.io<br/>ht / hthreat / hyperthreat)]
+    HyperthreatLauncher --> HyperthreatTemplates
+    HyperthreatLauncher -->|"Dockerfile.hyperthreat-studio"| HyperthreatDocker
+    HyperthreatDocker --> HyperthreatGate
+    HyperthreatGate -->|"manual deploy after exact approval"| HyperthreatFly
     class Python,Web lang
     class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone,PythonDocx,Pypdf,Pronouncing,Demucs,Requests lib
     class WSOllama ws
-    class Ollama,FlyIO ext
+    class Ollama,FlyIO,HyperthreatFly ext
+    class HyperthreatLauncher,HyperthreatTemplates,HyperthreatDocker svc
+    class HyperthreatGate state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

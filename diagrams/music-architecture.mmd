@@ -24,6 +24,11 @@ graph TB
         TrainerApp[Flask app:5055]
         TrainerDB[(exercises<br/>cards)]
     end
+    subgraph Hyperthreat["Hyperthreat Studio Templates"]
+        HyperthreatApp["hyperthreat_app.py<br/>minimal Flask launcher"]
+        HyperthreatRoutes["/ · /mic-config · /patch-bay<br/>/patch_bay.html · /health"]
+        HyperthreatAssets["static templates only<br/>mic_config_template.html · patch_bay.html"]
+    end
     subgraph Radio["src/radio/"]
         RadioApp["tjd_radio.py<br/>TJD Radio :8100"]
         RadioProxy["/api/radio/*<br/>now_playing · playlist"]
@@ -76,6 +81,8 @@ graph TB
     Export --> Dash
     TrainerApp --> TrainerDB
     Songs -.shared db.-> TrainerDB
+    HyperthreatApp --> HyperthreatRoutes
+    HyperthreatApp --> HyperthreatAssets
     AudioFiles -->|scan| AutoTagger
     DB -->|source_file · file_path| AutoTagger
     AutoTagger --> AudioTagger
