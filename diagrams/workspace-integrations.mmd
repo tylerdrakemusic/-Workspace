@@ -19,6 +19,7 @@ graph LR
     Schwab[(Charles Schwab API)]:::ext
     GetSongBPM[(GetSongBPM API)]:::ext
     FlyIO[(Fly.io)]:::ext
+    HyperthreatFlyIO[(Fly.io<br/>Hyperthreat templates<br/>ht / hthreat / hyperthreat)]:::ext
     %% Project sigils
     Workspace[⊕ Workspace]:::ws
     Life[∞ Life]:::orch
@@ -79,6 +80,7 @@ graph LR
     Music -.->|sheet_music ingest| GDrive
     Music -->|BPM autolookup| GetSongBPM
     Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
+    Music -->|"manual deploy: main branch + exact approval"| HyperthreatFlyIO
     %% ⟨ψ⟩Quantum → external + DB
     Quantum -->|qiskit jobs| IBMQ
     Quantum -->|model hub| HF
