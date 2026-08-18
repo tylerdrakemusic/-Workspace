@@ -56,6 +56,7 @@ EXCLUDED_DIRECTORY_NAMES = {
     "backups",
     "qbackups",
 }
+DISPLAY_PROJECT_KEYS = {"∞Life": "life"}
 
 
 def validate_manifest(
@@ -255,7 +256,11 @@ def validate_manifest(
 def discover_databases(
     roots: Sequence[Path] | Mapping[str, Path],
 ) -> list[dict[str, str]]:
-    """Return database paths under roots, excluding transient directory names."""
+    """Return database paths under roots, excluding transient directory names.
+
+    Mapping labels are display project names; explicit entries in
+    ``DISPLAY_PROJECT_KEYS`` translate them to manifest discovery keys.
+    """
     discovered: list[dict[str, str]] = []
     discovery_keys: dict[tuple[str, str], str] = {}
     root_items = roots.items() if isinstance(roots, Mapping) else ((None, root) for root in roots)
@@ -272,9 +277,13 @@ def discover_databases(
             if candidate.name.casefold().startswith("tmp"):
                 continue
             relative_path = "/".join(relative_parts)
-            project = label or (relative_parts[0] if len(relative_parts) > 1 else "")
+            project = (
+                DISPLAY_PROJECT_KEYS.get(label, label)
+                if label
+                else (relative_parts[0] if len(relative_parts) > 1 else "")
+            )
             discovery_key = (project.casefold(), candidate.name.casefold())
-            path = f"{label}/{relative_path}" if label else relative_path
+            path = f"{project}/{relative_path}" if label else relative_path
             previous_path = discovery_keys.get(discovery_key)
             if previous_path is not None:
                 raise ValueError(

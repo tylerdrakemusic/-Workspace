@@ -233,6 +233,19 @@ def test_discover_databases_accepts_unique_project_basename_keys(tmp_path) -> No
     ]
 
 
+def test_discover_databases_maps_life_display_label_to_manifest_project_key(
+    tmp_path: Path,
+) -> None:
+    life_root = tmp_path / "life-project"
+    canonical_database = life_root / "src" / "data" / "primary.db"
+    canonical_database.parent.mkdir(parents=True)
+    canonical_database.touch()
+
+    discovered = discover_databases({"∞Life": life_root})
+
+    assert discovered == [{"path": "life/src/data/primary.db"}]
+
+
 def test_validate_manifest_rejects_unregistered_discovered_database() -> None:
     manifest = _manifest([_database()])
 
