@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "fr": "FR-20260815-workspace-database-backup-scope",
-  "policy_status": "reviewed",
+  "policy_status": "approved",
   "purpose": "Inventory authoritative workspace databases before backup implementation.",
   "content_boundary": "Path and policy metadata only; database contents never leave the machine under this FR.",
   "classifications": [
@@ -18,9 +18,11 @@
       "id": "life-infinitelife",
       "path": "life/health-store",
       "discovery": {"project": "life", "basename": "infinitelife.db"},
-      "classification": "approval-required",
-      "backup_allowed": false,
-      "reason": "Health and genomic store; default-denied pending explicit approval."
+      "classification": "canonical",
+      "backup_allowed": true,
+      "reason": "Explicitly approved redacted Life health-store locator.",
+      "encryption": "sqlcipher",
+      "key_env": "INFINITELIFE_DB_KEY"
     },
     {
       "id": "life-nova-config",

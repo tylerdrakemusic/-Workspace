@@ -212,6 +212,28 @@ def validate_manifest(
                 ):
                     raise ValueError("database discovery values must be safe identifiers")
 
+        life_discovery = (
+            isinstance(discovery, dict) and discovery.get("project") == "life"
+        )
+        if database.get("backup_allowed") and (
+            normalized_path.startswith("life/") or life_discovery
+        ):
+            if manifest["policy_status"] != "approved":
+                raise ValueError(
+                    "Life database backup requires governed approval"
+                )
+            if normalized_path != "life/health-store" or discovery != {
+                "project": "life",
+                "basename": "infinitelife.db",
+            }:
+                raise ValueError(
+                    "approved Life scope is limited to life/health-store"
+                )
+            if database.get("encryption") != "sqlcipher" or not database.get("key_env"):
+                raise ValueError(
+                    "approved Life scope requires SQLCipher key metadata"
+                )
+
     if discovered_paths is not None:
         normalized_discovered = {path.replace("\\", "/") for path in discovered_paths}
         missing = set()

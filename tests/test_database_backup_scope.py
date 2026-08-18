@@ -250,6 +250,95 @@ def test_validate_manifest_default_denies_sensitive_databases(locator: str) -> N
         validate_manifest(manifest)
 
 
+def test_validate_manifest_requires_governed_approval_for_life_health_store() -> None:
+    manifest = _manifest(
+        [_database(
+            id="life-health",
+            path="life/health-store",
+            discovery={"project": "life", "basename": "infinitelife.db"},
+            classification="canonical",
+            backup_allowed=True,
+        )]
+    )
+
+    with pytest.raises(ValueError, match="governed approval"):
+        validate_manifest(manifest)
+
+
+def test_validate_manifest_accepts_only_approved_redacted_life_locator() -> None:
+    manifest = _manifest(
+        [_database(
+            id="life-health",
+            path="life/health-store",
+            discovery={"project": "life", "basename": "infinitelife.db"},
+            classification="canonical",
+            backup_allowed=True,
+            encryption="sqlcipher",
+            key_env="INFINITELIFE_DB_KEY",
+        )],
+        policy_status="approved",
+    )
+
+    validate_manifest(manifest)
+
+
+def test_validate_manifest_requires_sqlcipher_metadata_for_approved_life_locator() -> None:
+    manifest = _manifest(
+        [_database(
+            id="life-health",
+            path="life/health-store",
+            discovery={"project": "life", "basename": "infinitelife.db"},
+            classification="canonical",
+            backup_allowed=True,
+        )],
+        policy_status="approved",
+    )
+
+    with pytest.raises(ValueError, match="SQLCipher key metadata"):
+        validate_manifest(manifest)
+
+
+def test_validate_manifest_rejects_approved_life_database_outside_redacted_locator() -> None:
+    manifest = _manifest(
+        [_database(
+            id="life-other",
+            path="life/other-store",
+            discovery={"project": "life", "basename": "other.db"},
+            classification="canonical",
+            backup_allowed=True,
+        )],
+        policy_status="approved",
+    )
+
+    with pytest.raises(ValueError, match="life/health-store"):
+        validate_manifest(manifest)
+
+
+def test_committed_manifest_has_one_explicitly_approved_life_scope() -> None:
+    worktree = Path(__file__).resolve().parent.parent
+    manifest = load_manifest(worktree / "src" / "config" / "database_backup_scope.json")
+
+    life_entries = [
+        entry
+        for entry in manifest["databases"]
+        if entry.get("discovery", {}).get("project") == "life"
+    ]
+
+    assert manifest["policy_status"] == "approved"
+    assert life_entries == [
+        {
+            "id": "life-infinitelife",
+            "path": "life/health-store",
+            "discovery": {"project": "life", "basename": "infinitelife.db"},
+            "classification": "canonical",
+            "backup_allowed": True,
+            "reason": "Explicitly approved redacted Life health-store locator.",
+            "encryption": "sqlcipher",
+            "key_env": "INFINITELIFE_DB_KEY",
+        }
+    ]
+
+
 def test_render_report_is_derived_from_manifest_entries() -> None:
     manifest = _manifest(
         [_database(
