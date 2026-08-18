@@ -135,6 +135,9 @@ graph LR
     AuditBoundary{Redacted audit boundary:<br/>metadata only, no DB contents or keys}:::state
     ManifestCanonical[(👁 manifest_todos.db<br/>SQLCipher · approved canonical source)]:::db
     BackupExclusions[Excluded copies:<br/>legacy · generated · worktree · transient]:::state
+    LifeInventoryAdapter[∞ Life database inventory adapter<br/>redacted locator + classification metadata<br/>no DB contents or key values]:::orch
+    LifeApprovalProjection{Governed approval projection:<br/>exactly one approved life/health-store<br/>approval gates execution}:::state
+    LifeInventoryExclusions[∞ Life exclusions:<br/>genomics · medical records · bloodwork<br/>worktree · transient · unknown databases]:::state
     Workspace --> BackupContract
     BackupScheduler --> BackupLauncher
     BackupLauncher --> BackupContract
@@ -150,6 +153,10 @@ graph LR
     RestoreValidation --> AuditBoundary
     RestoreValidation -.->|isolated SQLCipher validation| ManifestCanonical
     BackupContract -.->|provider-neutral; no cloud-provider integration| AuditBoundary
+    LifeDB -.->|redacted metadata only: life/health-store + infinitelife.db| LifeInventoryAdapter
+    LifeInventoryExclusions -.->|excluded from Life inventory| LifeInventoryAdapter
+    LifeInventoryAdapter -->|approved canonical metadata projection| LifeApprovalProjection
+    LifeApprovalProjection ==>|approval-gated provider-neutral execution| BackupContract
     %% Direct cross-repo import coupling
     Manifest -->|"direct import: tech debt scanner"| Workspace
     linkStyle 67 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0

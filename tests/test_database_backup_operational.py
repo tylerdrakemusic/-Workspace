@@ -196,6 +196,7 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
     expected_roots = ",".join(
         f"{label}={root}"
         for label, root in (
+            ("∞Life", workspace_root.parent / "∞Life"),
             ("❤Music", workspace_root.parent / "❤Music"),
             ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
             ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
@@ -203,7 +204,6 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
         )
     )
     assert expected_roots in arguments
-    assert "∞Life" not in arguments
     assert "ΣCapital" not in arguments
 
 
@@ -243,6 +243,22 @@ def test_scheduler_spec_music_selector_registers_only_canonical_music_root(
         excluded not in project_root_argument
         for excluded in ("∞Life", "⟨ψ⟩Quantum", "👁AI-Manifest", "⊕Workspace", "ΣCapital")
     )
+
+
+def test_scheduler_spec_can_select_only_the_approved_life_root(tmp_path: Path) -> None:
+    from tools.register_database_backup_task import build_task_spec
+
+    canonical_workspace = tmp_path / "workspace"
+    active_worktree = canonical_workspace / ".worktrees" / "feature-backup"
+    spec = build_task_spec(
+        active_worktree,
+        Path("C:/G/python.exe"),
+        approved_projects=("∞Life",),
+    )
+    project_root_argument = spec.arguments[spec.arguments.index("-ProjectRoot") + 1]
+
+    assert project_root_argument == f"∞Life={canonical_workspace.parent / '∞Life'}"
+    assert ".worktrees" not in project_root_argument
 
 
 def test_scheduler_spec_preserves_non_worktree_root_on_foreign_platform() -> None:
@@ -327,3 +343,29 @@ def test_powershell_registration_uses_canonical_workspace_launcher() -> None:
     ).read_text(encoding="utf-8")
 
     assert "$Launcher = Join-Path $WorkspaceRoot 'tools\\run_database_backup.ps1'" in script
+
+
+def test_scheduler_action_is_secret_free_and_uses_one_normalized_project_root_argument() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "tools"
+        / "register_database_backup_task.ps1"
+    ).read_text(encoding="utf-8")
+
+    action = script.split("$action =", 1)[1].split("$trigger =", 1)[0]
+    assert "run_database_backup.ps1" not in action
+    assert '-File `"$Launcher`"' in action
+    assert "$ProjectRootArguments" in action
+    assert action.count("-ProjectRoot") == 0
+    assert "WORKSPACE_BACKUP_MANIFEST_KEY" not in action
+    assert "-WorkingDirectory" not in action
+
+
+def test_scheduler_registration_hydrates_user_scope_environment_for_action() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "tools"
+        / "register_database_backup_task.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert 'Set-Item -Path "Env:$name" -Value $value' in script

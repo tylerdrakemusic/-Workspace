@@ -23,6 +23,12 @@ graph TB
     TruDx[src/etl/<br/>trudiagnostic_import.py<br/>epigenetic clocks · organ ages]
     MigrateFR[src/utils/<br/>migrate_fr20260426.py<br/>lab_panels]
     WSIntegrations[(⊕Workspace<br/>src/integrations/)]
+    LifeInventoryAdapter[src/utils/<br/>database_backup_inventory.py<br/>redacted metadata-only adapter]
+    LifeApprovalProjection{Workspace approval projection:<br/>exactly one approved life/health-store candidate}
+    WSBackupContract[⊕ Workspace<br/>provider-neutral backup contract]
+    WSBackupExecution[⊕ Workspace backup execution<br/>discovery · backup lifecycle · restore]
+    LifeBackupExclusions[Excluded from Life inventory:<br/>genomics · medical records · bloodwork<br/>worktree · transient · unknown databases]
+    KeyCustody{INFINITELIFE_DB_KEY<br/>environment-backed; value absent}
     NovaPortrait -->|daily portrait PNG| Output
     NovaPortrait -.->|lazy import HFSpaces+Pollinations| WSIntegrations
     WGSProvider --> DB
@@ -32,8 +38,16 @@ graph TB
     MigrateFR --> DB
     class Inputs,Reports,Scheduler,TokenFile io
     class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh,TruDx core
-    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR util
-    class WSIntegrations ws
+    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR,LifeInventoryAdapter util
+    class WSIntegrations,WSBackupContract,WSBackupExecution ws
+    class LifeApprovalProjection,LifeBackupExclusions,KeyCustody state
+
+    DB -.->|redacted locator + classification metadata only| LifeInventoryAdapter
+    LifeInventoryAdapter -.->|no database contents or key values| LifeApprovalProjection
+    LifeBackupExclusions -.->|excluded from discovery| LifeInventoryAdapter
+    KeyCustody -.->|key name only; value stays in environment| LifeInventoryAdapter
+    LifeApprovalProjection ==>|approval gates execution| WSBackupContract
+    WSBackupContract --> WSBackupExecution
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

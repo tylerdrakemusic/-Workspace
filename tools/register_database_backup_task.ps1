@@ -7,11 +7,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $TaskName = [char]0x2295 + 'Workspace-DatabaseBackup'
+$LifeLabel = [char]0x221E + 'Life'
 $MusicLabel = [char]0x2764 + 'Music'
 $QuantumLabel = [char]0x27E8 + [char]0x03C8 + [char]0x27E9 + 'Quantum'
 $ManifestLabel = [char]0xD83D + [char]0xDC41 + 'AI-Manifest'
 $WorkspaceLabel = [char]0x2295 + 'Workspace'
-$ApprovedProjectLabels = @($MusicLabel, $QuantumLabel, $ManifestLabel, $WorkspaceLabel)
+$ApprovedProjectLabels = @($LifeLabel, $MusicLabel, $QuantumLabel, $ManifestLabel, $WorkspaceLabel)
 if ($ApprovedProject -and $ApprovedProjectLabels -notcontains $ApprovedProject) {
     throw "Unknown approved project: $ApprovedProject"
 }
@@ -27,6 +28,8 @@ $ProjectRoots = if ($ApprovedProject) {
     @(
         if ($ApprovedProject -eq $MusicLabel) {
             ($MusicLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $MusicLabel))
+        } elseif ($ApprovedProject -eq $LifeLabel) {
+            ($LifeLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $LifeLabel))
         } elseif ($ApprovedProject -eq $QuantumLabel) {
             ($QuantumLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $QuantumLabel))
         } elseif ($ApprovedProject -eq $ManifestLabel) {
@@ -37,6 +40,7 @@ $ProjectRoots = if ($ApprovedProject) {
     )
 } else {
     @(
+        ($LifeLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $LifeLabel)),
         ($MusicLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $MusicLabel)),
         ($QuantumLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $QuantumLabel)),
         ($ManifestLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $ManifestLabel)),
@@ -53,6 +57,7 @@ foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WO
     if ([string]::IsNullOrWhiteSpace($value)) {
         throw "Set required environment variable before registration: $name"
     }
+    Set-Item -Path "Env:$name" -Value $value
 }
 
 $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument (

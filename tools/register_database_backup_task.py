@@ -23,6 +23,7 @@ def build_task_spec(
     """Build the daily backup task without embedding secrets or drive fallbacks."""
     workspace_root = _canonical_workspace_root(workspace_root)
     all_project_roots = (
+        ("∞Life", workspace_root.parent / "∞Life"),
         ("❤Music", workspace_root.parent / "❤Music"),
         ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
         ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
