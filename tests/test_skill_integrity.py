@@ -286,7 +286,7 @@ def test_workspace_config_declares_superpowers_tdd_provenance() -> None:
     assert mapping["skill_root"] == "skills"
     assert mapping["skills"] == ["test-driven-development"]
     assert mapping["provenance"] == "external-source"
-    assert mapping["source_policy"] == "required"
+    assert mapping["source_policy"] == "optional"
 
 
 def test_relocated_config_resolves_all_paths_from_checkout_root(tmp_path: Path) -> None:

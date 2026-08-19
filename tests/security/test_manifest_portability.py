@@ -108,3 +108,51 @@ def test_davidondrej_mappings_are_explicitly_optional() -> None:
         "thinking-and-docs/before-building",
         "thinking-and-docs/decisions",
     ]
+
+
+def test_all_external_mappings_are_explicitly_optional() -> None:
+    config = json.loads(
+        (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
+    )
+
+    assert config["repos"]
+    assert all(repo["source_policy"] == "optional" for repo in config["repos"])
+
+
+def test_verify_allows_absent_external_sources_in_clean_checkout(tmp_path: Path) -> None:
+    module = load_manifest_module()
+    clone_root = tmp_path / "clone"
+    for watched_dir in ("agents", "instructions", "skills"):
+        shutil.copytree(
+            WORKTREE_ROOT / ".github" / watched_dir,
+            clone_root / ".github" / watched_dir,
+        )
+
+    config_path = clone_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    manifest_path = clone_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest = module.build_manifest(clone_root)
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False), encoding="utf-8"
+    )
+    manifest_skills = {
+        key.removeprefix(".github/skills/").removesuffix("/SKILL.md")
+        for key in manifest["files"]
+        if key.startswith(".github/skills/")
+    }
+    config = json.loads(
+        (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
+    )
+    config["repos"] = [
+        {**repo, "skills": [skill for skill in repo["skills"] if skill in manifest_skills]}
+        for repo in config["repos"]
+    ]
+    config["repos"] = [repo for repo in config["repos"] if repo["skills"]]
+    config_path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+
+    result = module.verify_skill_integrity(config_path, manifest_path)
+
+    assert result.hard_findings == []
+    assert result.entries
+    assert {entry.status for entry in result.entries} == {"source_unavailable"}

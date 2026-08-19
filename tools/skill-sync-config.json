@@ -9,7 +9,7 @@
       "remote": "https://github.com/mattpocock/skills",
       "skill_root": "skills/engineering",
       "provenance": "external-source",
-      "source_policy": "required",
+      "source_policy": "optional",
       "skills": ["tdd", "wayfinder", "prototype", "wizard"]
     },
     {
@@ -18,7 +18,7 @@
       "remote": null,
       "skill_root": "skills/productivity",
       "provenance": "external-source",
-      "source_policy": "required",
+      "source_policy": "optional",
       "skills": ["wait-what", "to-questionnaire", "teach", "handoff"]
     },
     {
@@ -27,7 +27,7 @@
       "remote": "https://github.com/addyosmani/agent-skills",
       "skill_root": "skills",
       "provenance": "external-source",
-      "source_policy": "required",
+      "source_policy": "optional",
       "skills": [
         "interview-me",
         "spec-driven-development",
@@ -49,7 +49,7 @@
       "remote": "https://github.com/multica-ai/andrej-karpathy-skills",
       "skill_root": "skills",
       "provenance": "external-source",
-      "source_policy": "required",
+      "source_policy": "optional",
       "skills": ["karpathy-guidelines"]
     },
     {
@@ -71,7 +71,7 @@
       "remote": null,
       "skill_root": "skills",
       "provenance": "external-source",
-      "source_policy": "required",
+      "source_policy": "optional",
       "skills": ["test-driven-development"]
     }
   ]
