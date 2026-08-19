@@ -4,8 +4,10 @@
 import hashlib
 import json
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 _GITHUB_DIR = Path(__file__).resolve().parent.parent  # f:\⊕Workspace\.github\
 
@@ -15,7 +17,82 @@ WATCHED_DIRS = [
     _GITHUB_DIR / "skills",
 ]
 MANIFEST_PATH = _GITHUB_DIR / "!!☾⛧security" / "agent-manifest.json"
+SKILL_SYNC_CONFIG = _GITHUB_DIR.parent / "tools" / "skill-sync-config.json"
 EXTENSIONS = {".md", ".py", ".json", ".yaml", ".yml"}
+
+
+@dataclass(frozen=True)
+class SkillIntegrityEntry:
+    target: str
+    source: str
+    source_repository: str
+    provenance: str
+    status: str
+
+
+@dataclass(frozen=True)
+class SkillIntegrityResult:
+    entries: list[SkillIntegrityEntry]
+    hard_findings: list[SkillIntegrityEntry]
+
+
+def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
+    destination = Path(config["destination"])
+    entries: list[dict[str, str]] = []
+    for repo in config["repos"]:
+        provenance = repo.get("provenance", "external-source")
+        for skill in repo["skills"]:
+            source = Path(repo["path"]) / repo["skill_root"] / skill / "SKILL.md"
+            target = destination / skill / "SKILL.md"
+            entries.append(
+                {
+                    "source": str(source),
+                    "target": str(target),
+                    "manifest_key": f".github/skills/{skill}/SKILL.md",
+                    "source_repository": repo["name"],
+                    "provenance": provenance,
+                }
+            )
+    return entries
+
+
+def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillIntegrityResult:
+    """Classify copied skills against their declared source and local baseline."""
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_files = manifest.get("files", {})
+    entries: list[SkillIntegrityEntry] = []
+    hard_findings: list[SkillIntegrityEntry] = []
+
+    for item in _skill_entries(config):
+        source = Path(item["source"])
+        target = Path(item["target"])
+        target_key = item["manifest_key"]
+        manifest_hash = manifest_files.get(target_key)
+        target_hash = sha256_file(target) if target.exists() else None
+        source_hash = sha256_file(source) if source.exists() else None
+
+        if target_hash is None or source_hash is None or manifest_hash is None:
+            status = "integrity_failure"
+        elif target_hash == source_hash:
+            status = "source_match"
+        elif target_hash == manifest_hash:
+            status = "local_customization"
+        else:
+            status = "integrity_failure"
+
+        entry = SkillIntegrityEntry(
+            target=str(target),
+            source=str(source),
+            source_repository=item["source_repository"],
+            provenance=item["provenance"],
+            status=status,
+        )
+        entries.append(entry)
+        if status == "integrity_failure":
+            hard_findings.append(entry)
+
+    return SkillIntegrityResult(entries=entries, hard_findings=hard_findings)
 
 
 def sha256_file(path: Path) -> str:
@@ -99,6 +176,26 @@ def verify_manifest(repo_root: Path | None = None) -> None:
         print(f"  ✅ All {len(known)} agent files match manifest.")
     else:
         print(f"\n  {issues} integrity issue(s) found. Review before proceeding.")
+
+    if SKILL_SYNC_CONFIG.exists():
+        skill_result = verify_skill_integrity(SKILL_SYNC_CONFIG, manifest_path)
+        for entry in skill_result.entries:
+            if entry.status == "local_customization":
+                print(f"  ⚠️  SOURCE DRIFT (approval required): {entry.target}")
+            elif entry.status == "source_match":
+                print(f"  ✅ SOURCE MATCH: {entry.target}")
+        if skill_result.hard_findings:
+            for entry in skill_result.hard_findings:
+                print(
+                    f"  ❌ SKILL INTEGRITY: {entry.target} "
+                    f"(source={entry.source})"
+                )
+            print(
+                f"\n  {len(skill_result.hard_findings)} skill integrity issue(s) found."
+            )
+            issues += len(skill_result.hard_findings)
+
+    if issues:
         sys.exit(2)
 
 

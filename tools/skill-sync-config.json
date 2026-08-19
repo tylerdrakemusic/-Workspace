@@ -7,6 +7,7 @@
       "path": "f:\\mp-skills",
       "remote": "https://github.com/mattpocock/skills",
       "skill_root": "skills/engineering",
+      "provenance": "external-source",
       "skills": ["tdd", "wayfinder", "prototype", "wizard"]
     },
     {
@@ -14,6 +15,7 @@
       "path": "f:\\mp-skills",
       "remote": null,
       "skill_root": "skills/productivity",
+      "provenance": "external-source",
       "skills": ["wait-what", "to-questionnaire", "teach", "handoff"]
     },
     {
@@ -21,6 +23,7 @@
       "path": "f:\\addyosmani-agent-skills",
       "remote": "https://github.com/addyosmani/agent-skills",
       "skill_root": "skills",
+      "provenance": "external-source",
       "skills": [
         "interview-me",
         "spec-driven-development",
@@ -41,6 +44,7 @@
       "path": "f:\\andrej-karpathy-skills",
       "remote": "https://github.com/multica-ai/andrej-karpathy-skills",
       "skill_root": "skills",
+      "provenance": "external-source",
       "skills": ["karpathy-guidelines"]
     },
     {
@@ -48,11 +52,20 @@
       "path": "f:\\davidondrej-skills",
       "remote": "https://github.com/davidondrej/skills",
       "skill_root": "skills",
+      "provenance": "external-source",
       "skills": [
         "agent-orchestration/git-worktree",
         "thinking-and-docs/before-building",
         "thinking-and-docs/decisions"
       ]
+    },
+    {
+      "name": "superpowers",
+      "path": "f:\\superpowers",
+      "remote": null,
+      "skill_root": "skills",
+      "provenance": "external-source",
+      "skills": ["test-driven-development"]
     }
   ]
 }

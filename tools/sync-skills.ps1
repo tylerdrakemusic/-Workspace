@@ -2,6 +2,10 @@
 # sync-skills.ps1 — git pull each skill repo and copy registered SKILL.md files
 # into .github/skills/. Driven by skill-sync-config.json.
 
+param(
+    [switch]$ApproveProtectedSync
+)
+
 $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
 
@@ -58,6 +62,10 @@ foreach ($repo in $config.repos) {
         }
 
         New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        if ((Test-Path $destFile) -and -not $ApproveProtectedSync) {
+            Write-Log "DRY-RUN: existing protected skill $destFile — use -ApproveProtectedSync to overwrite"
+            continue
+        }
         Copy-Item $src $destFile -Force
         Write-Log "Copied $skill from $($repo.name)"
     }
