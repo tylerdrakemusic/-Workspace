@@ -1,6 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
 graph LR
-    Python[Python 3.11] --> SQLCipher[sqlcipher3-binary<br/>encrypted SQLite]
+    Python[Python 3.11] --> SQLCipher[sqlcipher3==0.6.2<br/>SQLCipher 4.12.0<br/>encrypted SQLite]
+    SQLCipher --> SQLCipherEvidence[Compatibility evidence<br/>supported: CPython 3.11 · Windows AMD64<br/>SQLCipher 4.12.0]
     Python --> Dotenv[python-dotenv]
     Python --> Pytest[pytest]
     Python --> Perplexity["perplexity-client<br/>(via ⊕Workspace/src/integrations)"]
@@ -10,7 +11,7 @@ graph LR
     Python --> Keyring["keyring<br/>optional OS credential vault for OAuth tokens"]
     Python --> YFinance[yfinance<br/>pricing/volatility]
     class Python lang
-    class SQLCipher,Dotenv,Pytest,Crypto,Requests,Flask,Keyring,YFinance lib
+    class SQLCipher,SQLCipherEvidence,Dotenv,Pytest,Crypto,Requests,Flask,Keyring,YFinance lib
     class Perplexity ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
