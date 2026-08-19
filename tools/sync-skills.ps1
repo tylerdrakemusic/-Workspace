@@ -3,18 +3,27 @@
 # into .github/skills/. Driven by skill-sync-config.json.
 
 param(
-    [switch]$ApproveProtectedSync
+    [switch]$ApproveProtectedSync,
+    [string]$ConfigPath,
+    [string]$ManifestPath
 )
 
 $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$configPath = Join-Path $scriptDir "skill-sync-config.json"
+$configPath = if ($ConfigPath) { $ConfigPath } else { Join-Path $scriptDir "skill-sync-config.json" }
 $config = Get-Content $configPath -Encoding UTF8 | ConvertFrom-Json
 
 $logFile = $config.log_file
 $destination = $config.destination
+$repoRoot = Split-Path (Split-Path $destination -Parent) -Parent
+$manifestPath = if ($ManifestPath) {
+    $ManifestPath
+} else {
+    Join-Path $repoRoot ".github\!!☾⛧security\agent-manifest.json"
+}
+$manifestUpdater = Join-Path (Split-Path $scriptDir -Parent) ".github\!!☾⛧security\update_manifest.py"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 function Write-Log {
@@ -62,12 +71,25 @@ foreach ($repo in $config.repos) {
         }
 
         New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        if ((Test-Path $destFile) -and $ApproveProtectedSync -and $repo.provenance -ne "external-source") {
+            Write-Log "SKIP: approved overwrite is limited to external-source skill $destFile"
+            continue
+        }
         if ((Test-Path $destFile) -and -not $ApproveProtectedSync) {
             Write-Log "DRY-RUN: existing protected skill $destFile — use -ApproveProtectedSync to overwrite"
             continue
         }
         Copy-Item $src $destFile -Force
         Write-Log "Copied $skill from $($repo.name)"
+        if ($ApproveProtectedSync) {
+            & "C:\G\python.exe" $manifestUpdater `
+                --update-files $destFile `
+                --manifest $manifestPath `
+                --repo-root $repoRoot 2>&1 | ForEach-Object { Write-Log $_ }
+            if ($LASTEXITCODE -ne 0) {
+                throw "Manifest update failed for $destFile"
+            }
+        }
     }
 }
 

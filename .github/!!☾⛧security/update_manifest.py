@@ -103,6 +103,31 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def update_manifest_entries(
+    manifest_path: Path,
+    paths: list[Path],
+    repo_root: Path | None = None,
+) -> None:
+    """Update only the manifest hashes for the supplied existing files."""
+    root = _repo_root(repo_root)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    files = manifest.setdefault("files", {})
+
+    for path in paths:
+        resolved_path = path.resolve()
+        if not resolved_path.is_file():
+            raise FileNotFoundError(resolved_path)
+        key = _normalize_repo_key(str(resolved_path), root)
+        files[key] = sha256_file(resolved_path)
+
+    manifest["file_count"] = len(files)
+    manifest["generated_at"] = datetime.now(timezone.utc).isoformat()
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
 def _repo_root(repo_root: Path | None = None) -> Path:
     return (repo_root or _GITHUB_DIR.parent).resolve()
 
@@ -200,7 +225,17 @@ def verify_manifest(repo_root: Path | None = None) -> None:
 
 
 if __name__ == "__main__":
-    if "--verify" in sys.argv:
+    if "--update-files" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--update-files", nargs="+", type=Path, required=True)
+        parser.add_argument("--manifest", type=Path, required=True)
+        parser.add_argument("--repo-root", type=Path, required=True)
+        args = parser.parse_args()
+        update_manifest_entries(args.manifest, args.update_files, args.repo_root)
+        print(f"Manifest entries updated: {len(args.update_files)}")
+    elif "--verify" in sys.argv:
         print("=== Agent File Integrity Check ===")
         verify_manifest()
     else:
