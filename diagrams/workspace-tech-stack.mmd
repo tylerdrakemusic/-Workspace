@@ -10,12 +10,14 @@ graph LR
     Python --> Pillow[Pillow<br/>image integrations]
     Python --> Bandit[bandit<br/>security scan]
     Python --> Safety[safety<br/>security scan]
+    Python --> PipAudit[pip-audit<br/>requirements.txt<br/>strict installed-environment audit]
     Python --> Radon[radon<br/>complexity scan]
     Node[Node.js] --> Mmdc[mermaid-cli<br/>mmdc]
     PowerShell[PowerShell 7] --> LaunchScripts[open_portal.ps1<br/>start_*.ps1]
     GitHub[GitHub Actions] --> CI_Tests[test workflow]
+    CI_Tests --> PipAudit --> Pytest
     class Python,Node,PowerShell lang
-    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,Radon tool
+    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,PipAudit,Radon tool
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
