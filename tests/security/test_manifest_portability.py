@@ -42,7 +42,9 @@ def test_manifest_keys_are_stable_across_checkout_roots(tmp_path: Path) -> None:
     )
 
 
-def test_verify_normalizes_legacy_absolute_keys(tmp_path: Path) -> None:
+def test_verify_normalizes_legacy_absolute_keys_without_external_skill_config(
+    tmp_path: Path, monkeypatch
+) -> None:
     module = load_manifest_module()
     clone_root = tmp_path / "clone"
     for watched_dir in ("agents", "instructions", "skills"):
@@ -61,5 +63,11 @@ def test_verify_normalizes_legacy_absolute_keys(tmp_path: Path) -> None:
     manifest_path.write_text(
         json.dumps({"files": legacy_files}, ensure_ascii=False), encoding="utf-8"
     )
+
+    external_config = tmp_path / "external-live" / "tools" / "skill-sync-config.json"
+    external_config.parent.mkdir(parents=True)
+    external_config.write_text("not clone config", encoding="utf-8")
+    monkeypatch.setattr(module, "SKILL_SYNC_CONFIG", external_config, raising=False)
+    assert not (clone_root / "tools" / "skill-sync-config.json").exists()
 
     module.verify_manifest(clone_root)

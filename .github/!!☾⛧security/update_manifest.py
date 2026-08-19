@@ -17,7 +17,6 @@ WATCHED_DIRS = [
     _GITHUB_DIR / "skills",
 ]
 MANIFEST_PATH = _GITHUB_DIR / "!!☾⛧security" / "agent-manifest.json"
-SKILL_SYNC_CONFIG = _GITHUB_DIR.parent / "tools" / "skill-sync-config.json"
 EXTENSIONS = {".md", ".py", ".json", ".yaml", ".yml"}
 
 
@@ -172,6 +171,7 @@ def build_manifest(repo_root: Path | None = None) -> dict:
 def verify_manifest(repo_root: Path | None = None) -> None:
     root = _repo_root(repo_root)
     manifest_path = root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    skill_sync_config = root / "tools" / "skill-sync-config.json"
     if not manifest_path.exists():
         print("❌ No manifest found. Run without --verify to create one.")
         sys.exit(1)
@@ -202,8 +202,8 @@ def verify_manifest(repo_root: Path | None = None) -> None:
     else:
         print(f"\n  {issues} integrity issue(s) found. Review before proceeding.")
 
-    if SKILL_SYNC_CONFIG.exists():
-        skill_result = verify_skill_integrity(SKILL_SYNC_CONFIG, manifest_path)
+    if skill_sync_config.exists():
+        skill_result = verify_skill_integrity(skill_sync_config, manifest_path)
         for entry in skill_result.entries:
             if entry.status == "local_customization":
                 print(f"  ⚠️  SOURCE DRIFT (approval required): {entry.target}")
