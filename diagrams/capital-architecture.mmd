@@ -5,6 +5,26 @@ graph TB
     Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
     Research[src/research/<br/>off-market pick generation — future] --> DB
     Agents[src/agents/<br/>research, risk] --> DB
+    CapitalBackupRestore[Capital-local authenticated<br/>manifest-driven backup/restore<br/>tools/database_backup.py + tools/database_restore.py]
+    BackupManifest[Authenticated backup manifest<br/>canonical Capital database identity<br/>generation metadata + destination binding]:::state
+    BackupArtifact[(Encrypted backup generation<br/>SQLCipher database snapshot)]
+    DestinationIdentity[Verified destination identity<br/>allowlisted canonical destination + trusted marker]:::state
+    IntegrityVerification[HMAC/hash verification<br/>manifest HMAC + backup SHA-256]:::state
+    CanonicalApproval[Distinct canonical approval<br/>operation + destination binding]:::state
+    StagedRestore[Staged atomic isolated restore<br/>temporary SQLCipher database + validation]:::state
+    NoPartialRestore[NO-PARTIAL-RESTORE boundary<br/>failed checks leave live sigmacapital.db unchanged]:::state
+    Tyler --> CanonicalApproval
+    DB -->|authenticated backup| CapitalBackupRestore
+    CapitalBackupRestore --> BackupManifest
+    CapitalBackupRestore --> BackupArtifact
+    BackupManifest --> DestinationIdentity
+    BackupArtifact --> IntegrityVerification
+    BackupManifest --> IntegrityVerification
+    DestinationIdentity --> StagedRestore
+    IntegrityVerification --> StagedRestore
+    CanonicalApproval --> StagedRestore
+    StagedRestore --> NoPartialRestore
+    NoPartialRestore -->|commit only after isolated validation| DB
     Agents -->|news/sentiment batch| Perplexity[(Perplexity.ai<br/>Sonar<br/>champion provider)]
     ScoringBoundary["Provider-neutral scoring boundary<br/>ScoreResult: score · method · rationale · provenance · signal_available<br/>persisted candidate fields: confidence · rationale · scoring_method · model"]
     PerplexityAdapter["Perplexity adapter<br/>integrations/perplexity/PerplexityClient"]
@@ -167,9 +187,11 @@ graph TB
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
     class LogRealTrade orch
     class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
+    class CapitalBackupRestore orch
     class MarginGate,MarginUI,DeterministicFallback,QualificationGate state
+    class BackupManifest,DestinationIdentity,IntegrityVerification,CanonicalApproval,StagedRestore,NoPartialRestore state
     class OAuthLoop,TokenStore state
-    class DB,ValidationEvaluations,ShadowRuns db
+    class DB,ValidationEvaluations,ShadowRuns,BackupArtifact db
     class Perplexity,YFinance,Anthropic,Schwab ext
     class Tyler tyler
 
