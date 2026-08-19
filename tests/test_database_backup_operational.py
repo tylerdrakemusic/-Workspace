@@ -204,7 +204,7 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
         )
     )
     assert expected_roots in arguments
-    assert "ΣCapital" not in arguments
+    assert "ΣCapital" in arguments
 
 
 def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree(
@@ -280,7 +280,7 @@ def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
         workspace_root / "tools" / "register_database_backup_task.ps1"
     ).read_text(encoding="utf-8")
 
-    assert "$Python = 'C:\\G\\python.exe'" in registration
+    assert "WORKSPACE_BACKUP_PYTHON" in registration
     assert '-File `"$Launcher`" -Python `"$Python`"' in registration
     assert f'-Manifest `"$Manifest`" $ProjectRootArguments' in registration
     assert "$SourceRoot" not in registration

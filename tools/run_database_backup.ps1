@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$Python = 'C:\G\python.exe',
+    [string]$Python = $null,
     [Parameter(Mandatory = $true)][string]$Manifest,
     [string]$SourceRoot = $null,
     [string[]]$ProjectRoot = @()
@@ -21,6 +21,16 @@ foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WO
     if ([string]::IsNullOrWhiteSpace($value)) {
         throw "Missing required environment variable: $name"
     }
+}
+
+if ([string]::IsNullOrWhiteSpace($Python)) {
+    $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'Process')
+    if ([string]::IsNullOrWhiteSpace($Python)) {
+        $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'User')
+    }
+}
+if ([string]::IsNullOrWhiteSpace($Python) -or -not (Test-Path -LiteralPath $Python -PathType Leaf)) {
+    throw 'Configured Python interpreter is unavailable to the scheduled task identity.'
 }
 
 $volume = [IO.Path]::GetFullPath($env:WORKSPACE_BACKUP_VOLUME)

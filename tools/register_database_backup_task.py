@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 
@@ -9,6 +10,7 @@ class TaskSpec:
     """Pure task registration values used by the Windows launcher."""
 
     executable: Path
+    python_path: Path
     arguments: tuple[str, ...]
     trigger: str
     frequency: str
@@ -17,17 +19,19 @@ class TaskSpec:
 
 def build_task_spec(
     workspace_root: Path,
-    python_path: Path,
+    python_path: Path | None = None,
     approved_projects: tuple[str, ...] | None = None,
 ) -> TaskSpec:
     """Build the daily backup task without embedding secrets or drive fallbacks."""
     workspace_root = _canonical_workspace_root(workspace_root)
+    configured_python = python_path or resolve_configured_interpreter()
     all_project_roots = (
         ("∞Life", workspace_root.parent / "∞Life"),
         ("❤Music", workspace_root.parent / "❤Music"),
         ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
         ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
         ("⊕Workspace", workspace_root),
+        ("ΣCapital", workspace_root.parent / "ΣCapital"),
     )
     if approved_projects is None:
         project_roots = all_project_roots
@@ -43,14 +47,13 @@ def build_task_spec(
     launcher = workspace_root / "tools" / "run_database_backup.ps1"
     return TaskSpec(
         executable=Path("PowerShell.exe"),
+        python_path=configured_python,
         arguments=(
             "-NoProfile",
             "-ExecutionPolicy",
             "Bypass",
             "-File",
             str(launcher),
-            "-Python",
-            str(python_path),
             "-Manifest",
             str(workspace_root / "src" / "config" / "database_backup_scope.json"),
             "-ProjectRoot",
@@ -59,11 +62,23 @@ def build_task_spec(
         trigger="02:00",
         frequency="DAILY",
         environment_names=(
+            "WORKSPACE_BACKUP_PYTHON",
             "WORKSPACE_BACKUP_VOLUME",
             "WORKSPACE_BACKUP_VOLUME_ID",
             "WORKSPACE_BACKUP_MANIFEST_KEY",
         ),
     )
+
+
+def resolve_configured_interpreter() -> Path:
+    """Resolve the interpreter available to the scheduled task identity."""
+    value = os.environ.get("WORKSPACE_BACKUP_PYTHON", "").strip()
+    if not value:
+        raise RuntimeError("configured Python interpreter is unavailable")
+    interpreter = Path(value).expanduser()
+    if not interpreter.is_file():
+        raise RuntimeError(f"configured Python interpreter is unavailable: {interpreter}")
+    return interpreter.resolve()
 
 
 def _canonical_workspace_root(workspace_root: Path) -> Path:
