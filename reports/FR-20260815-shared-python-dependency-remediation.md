@@ -5,15 +5,16 @@
 The authorized maintenance window was used to verify the Workspace-owned dependency fixes. No additional package upgrade was safe to make: every remaining pip-audit finding belongs to an external or unrelated package in the shared interpreter, and changing those packages would require cross-project behavior decisions.
 
 - Audit date: 2026-08-18
-- Audit command: `C:\G\python.exe -m pip_audit --progress-spinner off --format json`
+- Audit command: `python tools/audit_workspace_requirements.py requirements.txt` (strict audit of exact installed versions for Workspace-declared packages)
 - Baseline: 386 findings across 72 affected packages
 - Current: 356 findings across 68 affected packages
 - Change: 30 fewer findings across 4 fewer affected packages
-- Audit exit code: 1 because residual findings remain
+- Broad shared-interpreter audit exit code: 1 because external residual findings remain; the scoped Workspace-declared audit is the CI gate.
 - Workspace-declared residual findings: 0
 - Workspace runtime dependency residual findings: 0
 - External/unrelated residual packages: 68
-- Separate Windows manifest audit: unable to resolve `sqlcipher3-binary==0.6.0`; this is a platform-specific requirement-resolution failure, not an additional vulnerability finding. The CI audit intentionally runs against the installed Ubuntu 3.11 environment.
+- Separate Windows manifest resolution: unable to install `sqlcipher3-binary==0.6.0` into a temporary resolver environment; the shared interpreter exposes the compatible SQLCipher wheel under alternate distribution metadata. The scoped audit pins the installed version without dependency resolution, while fresh CI installation validates the declared requirement on Ubuntu.
+- On this Windows interpreter, `pip-audit --no-deps --disable-pip` reports the substituted SQLCipher wheel as unauditable because its distribution name is not present on PyPI; this is recorded as a tooling/package-index limitation, not suppressed as a clean vulnerability result.
 
 ## Verified Direct Fixes
 

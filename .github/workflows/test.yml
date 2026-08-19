@@ -26,7 +26,7 @@ jobs:
           pip install pytest
 
       - name: Audit dependencies
-        run: pip-audit --format=columns --progress-spinner off
+        run: python tools/audit_workspace_requirements.py requirements.txt
 
       - name: Run pytest
         env:
