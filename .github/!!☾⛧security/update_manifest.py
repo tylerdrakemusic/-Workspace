@@ -3,6 +3,7 @@
 # Usage: C:\G\python.exe update_manifest.py
 import hashlib
 import json
+import os
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -40,6 +41,7 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
     entries: list[dict[str, str]] = []
     for repo in config["repos"]:
         provenance = repo.get("provenance", "external-source")
+        source_policy = repo.get("source_policy", "required")
         for skill in repo["skills"]:
             source = Path(repo["path"]) / repo["skill_root"] / skill / "SKILL.md"
             target = destination / skill / "SKILL.md"
@@ -50,14 +52,45 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
                     "manifest_key": f".github/skills/{skill}/SKILL.md",
                     "source_repository": repo["name"],
                     "provenance": provenance,
+                    "source_policy": source_policy,
                 }
             )
     return entries
 
 
+def _resolve_path(value: Any, root: Path) -> Path:
+    if isinstance(value, dict):
+        environment_name = value.get("env")
+        if environment_name and (environment_value := os.environ.get(environment_name)):
+            value = environment_value
+        else:
+            value = value.get("relative", ".")
+    path = Path(value)
+    return path.resolve() if path.is_absolute() else (root / path).resolve()
+
+
+def resolve_sync_config(config_path: Path) -> dict[str, Any]:
+    """Resolve a sync config relative to its checkout or explicit environment roots."""
+    raw_config = json.loads(config_path.read_text(encoding="utf-8"))
+    root_spec = raw_config.get("workspace_root", {"relative": "."})
+    root = _resolve_path(root_spec, config_path.parent.parent)
+    resolved = dict(raw_config)
+    resolved["workspace_root"] = root
+    resolved["destination"] = _resolve_path(raw_config["destination"], root)
+    resolved["log_file"] = _resolve_path(
+        raw_config.get("log_file", "logs/skill-sync.log"), root
+    )
+    resolved["repos"] = []
+    for repo in raw_config["repos"]:
+        resolved_repo = dict(repo)
+        resolved_repo["path"] = _resolve_path(repo["path"], root)
+        resolved["repos"].append(resolved_repo)
+    return resolved
+
+
 def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillIntegrityResult:
     """Classify copied skills against their declared source and local baseline."""
-    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config = resolve_sync_config(config_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest_files = manifest.get("files", {})
     entries: list[SkillIntegrityEntry] = []
@@ -71,7 +104,11 @@ def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillInteg
         target_hash = sha256_file(target) if target.exists() else None
         source_hash = sha256_file(source) if source.exists() else None
 
-        if target_hash is None or source_hash is None or manifest_hash is None:
+        if target_hash is None or manifest_hash is None:
+            status = "integrity_failure"
+        elif source_hash is None and item["source_policy"] == "optional":
+            status = "source_unavailable"
+        elif source_hash is None:
             status = "integrity_failure"
         elif target_hash == source_hash:
             status = "source_match"
@@ -209,6 +246,8 @@ def verify_manifest(repo_root: Path | None = None) -> None:
                 print(f"  ⚠️  SOURCE DRIFT (approval required): {entry.target}")
             elif entry.status == "source_match":
                 print(f"  ✅ SOURCE MATCH: {entry.target}")
+            elif entry.status == "source_unavailable":
+                print(f"  ℹ️  SOURCE UNAVAILABLE: {entry.target} (optional source)")
         if skill_result.hard_findings:
             for entry in skill_result.hard_findings:
                 print(

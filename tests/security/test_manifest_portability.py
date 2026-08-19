@@ -71,3 +71,40 @@ def test_verify_normalizes_legacy_absolute_keys_without_external_skill_config(
     assert not (clone_root / "tools" / "skill-sync-config.json").exists()
 
     module.verify_manifest(clone_root)
+
+
+def test_copied_sync_config_resolves_from_relocated_checkout(tmp_path: Path, monkeypatch) -> None:
+    module = load_manifest_module()
+    clone_root = tmp_path / "relocated-checkout"
+    config_path = clone_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    shutil.copy2(WORKTREE_ROOT / "tools" / "skill-sync-config.json", config_path)
+    superpowers_root = clone_root / "external" / "superpowers"
+    superpowers_root.mkdir(parents=True)
+    monkeypatch.setenv("WORKSPACE_ROOT", str(clone_root))
+    monkeypatch.setenv("SUPERPOWERS_ROOT", str(superpowers_root))
+
+    config = module.resolve_sync_config(config_path)
+
+    assert config["destination"] == clone_root / ".github" / "skills"
+    assert config["log_file"] == clone_root / "logs" / "skill-sync.log"
+    assert config["repos"][-1]["path"] == superpowers_root
+    assert all(
+        not str(path).lower().startswith("f:\\")
+        for repo in config["repos"]
+        for path in [repo["path"]]
+    )
+
+
+def test_davidondrej_mappings_are_explicitly_optional() -> None:
+    config = json.loads(
+        (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
+    )
+    mapping = next(repo for repo in config["repos"] if repo["name"] == "davidondrej-skills")
+
+    assert mapping["source_policy"] == "optional"
+    assert mapping["skills"] == [
+        "agent-orchestration/git-worktree",
+        "thinking-and-docs/before-building",
+        "thinking-and-docs/decisions",
+    ]

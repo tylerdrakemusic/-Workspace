@@ -3,14 +3,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / ".github" / "!!☾⛧security"))
 
-from update_manifest import update_manifest_entries, verify_skill_integrity
+from update_manifest import (
+    resolve_sync_config,
+    update_manifest_entries,
+    verify_skill_integrity,
+)
 
 
 def _sha256(path: Path) -> str:
@@ -154,6 +162,9 @@ def test_default_sync_leaves_existing_target_unchanged(tmp_path: Path) -> None:
 
 
 def test_sync_script_default_and_approved_flows(tmp_path: Path) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
     config_path, target_file, manifest_path = _write_skill_fixture(
         tmp_path,
         source_text="new upstream\n",
@@ -209,6 +220,9 @@ def test_sync_script_default_and_approved_flows(tmp_path: Path) -> None:
 
 
 def test_approved_sync_does_not_overwrite_non_external_mapping(tmp_path: Path) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
     config_path, target_file, manifest_path = _write_skill_fixture(
         tmp_path,
         source_text="new upstream\n",
@@ -268,7 +282,90 @@ def test_workspace_config_declares_superpowers_tdd_provenance() -> None:
 
     mapping = next(repo for repo in config["repos"] if repo["name"] == "superpowers")
 
-    assert mapping["path"] == "f:\\superpowers"
+    assert mapping["path"]["relative"] == "../superpowers"
     assert mapping["skill_root"] == "skills"
     assert mapping["skills"] == ["test-driven-development"]
     assert mapping["provenance"] == "external-source"
+    assert mapping["source_policy"] == "required"
+
+
+def test_relocated_config_resolves_all_paths_from_checkout_root(tmp_path: Path) -> None:
+    checkout = tmp_path / "relocated-checkout"
+    config_path = checkout / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    source_root = checkout / "external" / "mp-skills"
+    (source_root / "skills" / "tdd").mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"env": "TEST_WORKSPACE_ROOT", "default": "."},
+                "destination": ".github/skills",
+                "log_file": "logs/skill-sync.log",
+                "repos": [
+                    {
+                        "name": "mp-skills",
+                        "path": "external/mp-skills",
+                        "skill_root": "skills",
+                        "source_policy": "required",
+                        "skills": ["tdd"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    old_root = os.environ.get("TEST_WORKSPACE_ROOT")
+    os.environ["TEST_WORKSPACE_ROOT"] = str(checkout)
+    try:
+        config = resolve_sync_config(config_path)
+    finally:
+        if old_root is None:
+            os.environ.pop("TEST_WORKSPACE_ROOT", None)
+        else:
+            os.environ["TEST_WORKSPACE_ROOT"] = old_root
+
+    assert config["destination"] == checkout / ".github/skills"
+    assert config["log_file"] == checkout / "logs/skill-sync.log"
+    assert config["repos"][0]["path"] == source_root
+    assert all(
+        "f:\\" not in str(value).lower()
+        for value in config.values()
+        if isinstance(value, Path)
+    )
+
+
+def test_optional_missing_source_is_informational(tmp_path: Path) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="unused\n",
+        target_text="local customization\n",
+        manifest_text="local customization\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["path"] = str(tmp_path / "missing-source")
+    config["repos"][0]["source_policy"] = "optional"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert result.hard_findings == []
+    assert result.entries[0].status == "source_unavailable"
+
+
+def test_required_missing_source_remains_hard(tmp_path: Path) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="unused\n",
+        target_text="local customization\n",
+        manifest_text="local customization\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["path"] = str(tmp_path / "missing-source")
+    config["repos"][0]["source_policy"] = "required"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.entries[0].status == "integrity_failure"
