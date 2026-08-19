@@ -51,6 +51,15 @@ $repoRoot = if ($ManifestPath) {
 }
 $manifestUpdater = Join-Path (Split-Path $scriptDir -Parent) ".github\!!☾⛧security\update_manifest.py"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+$pythonExecutable = if ($env:PYTHON_EXECUTABLE) {
+    $env:PYTHON_EXECUTABLE
+} elseif (Get-Command python -ErrorAction SilentlyContinue) {
+    (Get-Command python).Source
+} elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
+    (Get-Command python3).Source
+} else {
+    throw "Python executable not found; set PYTHON_EXECUTABLE or install python"
+}
 
 function Write-Log {
     param([string]$msg)
@@ -109,7 +118,7 @@ foreach ($repo in $config.repos) {
         Copy-Item $src $destFile -Force
         Write-Log "Copied $skill from $($repo.name)"
         if ($ApproveProtectedSync) {
-            & "C:\G\python.exe" $manifestUpdater `
+            & $pythonExecutable $manifestUpdater `
                 --update-files $destFile `
                 --manifest $manifestPath `
                 --repo-root $repoRoot 2>&1 | ForEach-Object { Write-Log $_ }
