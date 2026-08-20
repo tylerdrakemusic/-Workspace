@@ -12,7 +12,11 @@ import shutil
 import tempfile
 from typing import Any, Callable, Mapping, Sequence
 
-from src.utils.database_backup_scope import discover_databases, validate_manifest
+from src.utils.database_backup_scope import (
+    DISPLAY_PROJECT_KEYS,
+    discover_databases,
+    validate_manifest,
+)
 
 
 MANIFEST_KEY_ENV = "WORKSPACE_BACKUP_MANIFEST_KEY"
@@ -376,7 +380,17 @@ class DatabaseBackup:
             ]
             if len(matches) == 1:
                 project, local_path = matches[0].split("/", 1)
-                return Path(self._source_root[project]) / Path(local_path)
+                source_label = next(
+                    (
+                        label
+                        for label in self._source_root
+                        if DISPLAY_PROJECT_KEYS.get(label, label) == project
+                    ),
+                    project,
+                )
+                if source_label not in self._source_root:
+                    raise BackupError(f"manifest source root is not registered: {project}")
+                return Path(self._source_root[source_label]) / Path(local_path)
             if len(matches) > 1:
                 raise BackupError(f"ambiguous database discovery: {discovery}")
         for project, root in self._source_root.items():
