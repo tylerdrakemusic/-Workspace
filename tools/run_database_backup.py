@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
 import sys
@@ -14,6 +16,23 @@ from src.utils.database_backup import (
     LocalVolumeDestination,
 )
 from src.utils.database_backup_scope import load_manifest
+
+
+@dataclass(frozen=True)
+class ProjectOutcome:
+    """Redacted outcome for one scheduled project root."""
+
+    status: str
+    detail: str = ""
+
+
+@dataclass(frozen=True)
+class ScheduledBackupResult:
+    """Aggregate status for one scheduled backup invocation."""
+
+    overall_status: str
+    project_outcomes: dict[str, ProjectOutcome]
+    failure_reason: str = ""
 
 
 def run_backup(
@@ -31,6 +50,29 @@ def run_backup(
         destination=LocalVolumeDestination(volume_root, volume_identity),
         expected_destination_identity=volume_identity,
     ).run()
+
+
+def run_scheduled_backups(
+    manifest_path: Path,
+    project_roots: dict[str, Path],
+    volume_root: Path,
+    volume_identity: str,
+) -> ScheduledBackupResult:
+    """Run the shared backup once and report a redacted outcome per project."""
+    outcomes = {label: ProjectOutcome("failed") for label in project_roots}
+    try:
+        run_backup(manifest_path, project_roots, volume_root, volume_identity)
+    except Exception as error:  # noqa: BLE001 - scheduler must report all project failures
+        detail = type(error).__name__
+        return ScheduledBackupResult(
+            overall_status="failed",
+            project_outcomes={label: ProjectOutcome("failed", detail) for label in project_roots},
+            failure_reason=detail,
+        )
+    return ScheduledBackupResult(
+        overall_status="succeeded",
+        project_outcomes={label: ProjectOutcome("succeeded") for label in outcomes},
+    )
 
 
 def main() -> int:
@@ -61,9 +103,18 @@ def main() -> int:
         parser.error("one of --source-root or --project-root is required")
     volume_root = args.volume_root or _required_path("WORKSPACE_BACKUP_VOLUME")
     volume_identity = args.volume_identity or _required_value("WORKSPACE_BACKUP_VOLUME_ID")
-    result = run_backup(args.manifest, source_root, volume_root, volume_identity)
-    print(result.manifest_path)
-    return 0
+    result = run_scheduled_backups(
+        args.manifest,
+        source_root if isinstance(source_root, dict) else {"source": source_root},
+        volume_root,
+        volume_identity,
+    )
+    print(json.dumps({
+        "overall_status": result.overall_status,
+        "projects": {label: outcome.status for label, outcome in result.project_outcomes.items()},
+        "failure": result.failure_reason,
+    }, sort_keys=True))
+    return 0 if result.overall_status == "succeeded" else 1
 
 
 def _parse_project_root(value: str) -> tuple[str, Path]:

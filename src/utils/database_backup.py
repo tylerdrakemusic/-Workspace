@@ -222,8 +222,8 @@ def _validate_restored_databases(restore_root: Path, metadata: dict[str, Any]) -
         database_path = restore_root / str(database["relative_path"])
         connection = sqlcipher3.connect(str(database_path))
         try:
-            safe_key = key.replace("'", "''")
-            connection.execute(f"PRAGMA key='{safe_key}'")
+            raw_key = key.encode("utf-8").hex()
+            connection.execute(f'PRAGMA key="x\'{raw_key}\'"')
             for pragma in SQLCIPHER_RESTORE_PRAGMAS:
                 connection.execute(pragma)
             tables = connection.execute(
@@ -389,7 +389,7 @@ class DatabaseBackup:
         generations_root = self._destination.path() / "generations"
         generations = sorted(
             (path for path in generations_root.iterdir() if path.is_dir()),
-            key=lambda path: path.stat().st_mtime,
+            key=lambda path: (path.name[:8].isdigit(), path.name),
             reverse=True,
         )
         for obsolete in generations[self._retention :]:
