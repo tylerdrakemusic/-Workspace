@@ -201,6 +201,7 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
             ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
             ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
             ("⊕Workspace", workspace_root),
+            ("ΣCapital", workspace_root.parent / "ΣCapital"),
         )
     )
     assert expected_roots in arguments
@@ -280,7 +281,8 @@ def test_scheduler_registration_renders_the_canonical_runner_command() -> None:
         workspace_root / "tools" / "register_database_backup_task.ps1"
     ).read_text(encoding="utf-8")
 
-    assert "WORKSPACE_BACKUP_PYTHON" in registration
+    assert "$Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'Process')" in registration
+    assert "$Python = 'C:\\G\\python.exe'" not in registration
     assert '-File `"$Launcher`" -Python `"$Python`"' in registration
     assert f'-Manifest `"$Manifest`" $ProjectRootArguments' in registration
     assert "$SourceRoot" not in registration
