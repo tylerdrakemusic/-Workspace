@@ -56,7 +56,10 @@ EXCLUDED_DIRECTORY_NAMES = {
     "backups",
     "qbackups",
 }
-DISPLAY_PROJECT_KEYS = {"∞Life": "life"}
+DISPLAY_PROJECT_KEYS = {
+    "∞Life": "life",
+    "ΣCapital": "capital",
+}
 
 
 def validate_manifest(
