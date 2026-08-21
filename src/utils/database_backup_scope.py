@@ -254,6 +254,12 @@ def validate_manifest(
         for discovered_path in normalized_discovered:
             if discovered_path in registered_paths:
                 continue
+            if any(
+                f"{manifest_key}/" in discovered_path
+                and f"{display_label}/{discovered_path.split('/', 1)[1]}" in registered_paths
+                for display_label, manifest_key in DISPLAY_PROJECT_KEYS.items()
+            ):
+                continue
             path_parts = discovered_path.split("/")
             basename = path_parts[-1]
             project = path_parts[0] if path_parts else ""
