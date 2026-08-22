@@ -66,7 +66,9 @@
       "path": "⟨ψ⟩Quantum/src/data/quantumpsi.db",
       "classification": "canonical",
       "backup_allowed": true,
-      "reason": "Authoritative ⟨ψ⟩Quantum application database."
+      "reason": "Authoritative ⟨ψ⟩Quantum application database.",
+      "encryption": "sqlcipher",
+      "key_env": "QUANTUMPSI_DB_KEY"
     },
     {
       "id": "quantum-orion-config",
@@ -80,7 +82,9 @@
       "path": "👁AI-Manifest/src/data/manifest_todos.db",
       "classification": "coordination",
       "backup_allowed": true,
-      "reason": "Coordination database used by the manifest service."
+      "reason": "Coordination database used by the manifest service.",
+      "encryption": "sqlcipher",
+      "key_env": "MANIFEST_TODOS_DB_KEY"
     },
     {
       "id": "manifest-todos-legacy",
@@ -101,36 +105,53 @@
       "path": "⊕Workspace/src/data/agent_perf.db",
       "classification": "coordination",
       "backup_allowed": true,
-      "reason": "Shared agent performance coordination store."
+      "reason": "Shared agent performance coordination store.",
+      "encryption": "sqlcipher",
+      "key_env": "AGENT_PERF_DB_KEY"
     },
     {
       "id": "workspace-fr-ledgers",
       "path": "⊕Workspace/src/data/fr_ledgers.db",
       "classification": "coordination",
       "backup_allowed": true,
-      "reason": "Feature-request coordination ledger."
+      "reason": "Feature-request coordination ledger.",
+      "encryption": "sqlcipher",
+      "key_env": "FR_LEDGERS_DB_KEY"
     },
     {
       "id": "workspace-manifest-todos",
       "path": "⊕Workspace/src/data/manifest_todos.db",
       "classification": "coordination",
       "backup_allowed": true,
-      "reason": "Shared coordination todo store."
+      "reason": "Shared coordination todo store.",
+      "encryption": "sqlcipher",
+      "key_env": "MANIFEST_TODOS_DB_KEY"
     },
     {
       "id": "workspace",
       "path": "⊕Workspace/src/data/workspace.db",
       "classification": "canonical",
       "backup_allowed": true,
-      "reason": "Authoritative shared workspace database."
+      "reason": "Authoritative shared workspace database.",
+      "encryption": "sqlcipher",
+      "key_env": "WORKSPACE_DB_KEY"
+    },
+    {
+      "id": "workspace-temporary",
+      "path": "⊕Workspace/tmp/temporary.db",
+      "classification": "temporary",
+      "backup_allowed": false,
+      "reason": "Transient test or staging database; excluded from backup scope."
     },
     {
       "id": "capital-sigmacapital",
       "path": "capital/financial-store",
       "discovery": {"project": "capital", "basename": "sigmacapital.db"},
       "classification": "approval-required",
-      "backup_allowed": false,
-      "reason": "Financial store; default-denied pending explicit approval."
+      "backup_allowed": true,
+      "reason": "Financial store; governed approval is required before backup.",
+      "encryption": "sqlcipher",
+      "key_env": "SIGMACAPITAL_DB_KEY"
     }
   ],
   "exclusions": [

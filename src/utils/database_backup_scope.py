@@ -56,7 +56,10 @@ EXCLUDED_DIRECTORY_NAMES = {
     "backups",
     "qbackups",
 }
-DISPLAY_PROJECT_KEYS = {"∞Life": "life"}
+DISPLAY_PROJECT_KEYS = {
+    "∞Life": "life",
+    "ΣCapital": "capital",
+}
 
 
 def validate_manifest(
@@ -188,9 +191,19 @@ def validate_manifest(
         ):
             raise ValueError("database key_env must be an environment variable name")
         if classification == "approval-required" and database.get("backup_allowed") is not False:
-            raise ValueError(
-                f"database {database.get('id', '<unknown>')} must be default-denied"
-            )
+            if database.get("id") != "capital-sigmacapital":
+                raise ValueError(
+                    f"database {database.get('id', '<unknown>')} must be default-denied"
+                )
+            if manifest["policy_status"] != "approved":
+                raise ValueError("Capital database backup requires governed approval")
+            if normalized_path != "capital/financial-store" or database.get("discovery") != {
+                "project": "capital",
+                "basename": "sigmacapital.db",
+            }:
+                raise ValueError("approved Capital scope is limited to capital/financial-store")
+            if database.get("encryption") != "sqlcipher" or database.get("key_env") != "SIGMACAPITAL_DB_KEY":
+                raise ValueError("approved Capital scope requires SQLCipher key metadata")
 
         discovery = database.get("discovery")
         if discovery is not None:
@@ -240,6 +253,12 @@ def validate_manifest(
         missing = set()
         for discovered_path in normalized_discovered:
             if discovered_path in registered_paths:
+                continue
+            if any(
+                f"{manifest_key}/" in discovered_path
+                and f"{display_label}/{discovered_path.split('/', 1)[1]}" in registered_paths
+                for display_label, manifest_key in DISPLAY_PROJECT_KEYS.items()
+            ):
                 continue
             path_parts = discovered_path.split("/")
             basename = path_parts[-1]
