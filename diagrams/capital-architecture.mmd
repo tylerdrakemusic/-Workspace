@@ -180,6 +180,51 @@ graph TB
     ReconcileOrders -->|GET /accounts/{hash}/orders| AccountsTrading
     AccountsTrading -->|order status per broker_order_id| ReconcileOrders
     ReconcileOrders -->|update execution_history.status<br/>+ broker_status| DB
+
+    %% Position realization and holdings reconciliation (FR-20260821-sigmacapital-position-realization)
+    PositionRealizationScheduler[Windows Task Scheduler XML<br/>tools/schedule_position_realization.xml<br/>daily 03:30 · InteractiveToken<br/>LeastPrivilege · StartWhenAvailable<br/>1-hour limit · MultipleInstancesPolicy=IgnoreNew]:::state
+    PositionRealizationBatch[run_scheduled_position_realization_batch()<br/>daily async entrypoint → sync DB boundary]:::state
+    DedicatedAccountBinding[Dedicated-account binding<br/>get_dedicated_account_hash()<br/>caller hash mismatch rejected<br/>get_positions(resolved hash) only]:::state
+    HoldingsCapture[capture_holdings_snapshot()<br/>dedicated-account read + normalization]:::state
+    SnapshotIdentity[Snapshot identity guard<br/>account_binding = SHA-256 dedicated hash<br/>snapshot_fingerprint = SHA-256 normalized holdings<br/>UNIQUE fingerprint · duplicate capture reuses snapshot]:::state
+    HoldingsSnapshot[(holdings_snapshots<br/>fresh | stale | unavailable)]
+    PositionHoldings[(position_holdings<br/>normalized symbol · quantity · market value)]
+    FreshnessBoundary{Freshness gate<br/>stale or unavailable => blocked}:::state
+    CorrelationBoundary{Conservative correlation gate<br/>approved candidate + exact quantity<br/>ambiguous matches => no promotion}:::state
+    DirectionCompatibility{Direction compatibility<br/>long ↔ buy · short ↔ sell<br/>positive quantity required}:::state
+    ReviewUniqueness[Review idempotency guard<br/>UNIQUE(snapshot_id)<br/>existing pending review is reused]:::state
+    PositionReview[(position_reviews<br/>pending_review · review_only=1)]
+    ProposalContract[Typed immutable proposal contract<br/>numeric target_price > 0<br/>UNIQUE(source_review_id, version)<br/>update/delete blocked by DB triggers]:::state
+    ProposalDraft[(position_proposal_drafts<br/>versioned · review-only · append-only)]
+    PositionReviewQuery[Trade Gate Position Realization section<br/>read-only joined review/snapshot/draft view<br/>renders action + numeric target_price]:::state
+    PositionRealizationBoundary[POSITION REALIZATION BOUNDARY<br/>no approval · order placement · cancellation<br/>replacement · execution mutation]:::state
+    PositionRealizationScheduler --> PositionRealizationBatch
+    PositionRealizationBatch --> DedicatedAccountBinding
+    DedicatedAccountBinding --> HoldingsCapture
+    DedicatedAccountBinding -->|"get_positions(resolved dedicated hash) only; read-only"| AccountsTrading
+    HoldingsCapture -->|normalized response| HoldingsSnapshot
+    HoldingsCapture --> SnapshotIdentity
+    SnapshotIdentity -->|new snapshot or idempotent reuse| HoldingsSnapshot
+    HoldingsSnapshot --> PositionHoldings
+    HoldingsSnapshot --> FreshnessBoundary
+    FreshnessBoundary -->|fresh only| CorrelationBoundary
+    FreshnessBoundary -.->|stale or unavailable| PositionRealizationBoundary
+    CorrelationBoundary -->|unambiguous approved exact-quantity match| DirectionCompatibility
+    DirectionCompatibility --> ReviewUniqueness
+    ReviewUniqueness -->|new review or pending-review reuse| PositionReview
+    CorrelationBoundary -.->|no match or duplicate match| PositionRealizationBoundary
+    PositionReview --> ProposalContract
+    ProposalContract --> ProposalDraft
+    HoldingsSnapshot ==> DB
+    PositionHoldings ==> DB
+    PositionReview ==> DB
+    ProposalDraft ==> DB
+    DB -->|reviews + snapshots + typed draft targets| PositionReviewQuery
+    TradeGate --> PositionReviewQuery
+    PositionReviewQuery --> PositionRealizationBoundary
+    PositionRealizationBoundary -.->|cannot reach| ApproveCandidate
+    PositionRealizationBoundary -.->|cannot reach| SubmitRealOrder
+    PositionRealizationBoundary -.->|cannot mutate| AccountsTrading
     class ReconcileOrders orch
     class Signals,Manual state
     class Ingest,Research,TradeCandidates,Portfolio,TradeApprovalGate orch
@@ -189,9 +234,10 @@ graph TB
     class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
     class CapitalBackupRestore orch
     class MarginGate,MarginUI,DeterministicFallback,QualificationGate state
+    class PositionRealizationScheduler,PositionRealizationBatch,DedicatedAccountBinding,HoldingsCapture,SnapshotIdentity,FreshnessBoundary,CorrelationBoundary,DirectionCompatibility,ReviewUniqueness,ProposalContract,PositionReviewQuery,PositionRealizationBoundary state
     class BackupManifest,DestinationIdentity,IntegrityVerification,CanonicalApproval,StagedRestore,NoPartialRestore state
     class OAuthLoop,TokenStore state
-    class DB,ValidationEvaluations,ShadowRuns,BackupArtifact db
+    class DB,ValidationEvaluations,ShadowRuns,BackupArtifact,HoldingsSnapshot,PositionHoldings,PositionReview,ProposalDraft db
     class Perplexity,YFinance,Anthropic,Schwab ext
     class Tyler tyler
 
