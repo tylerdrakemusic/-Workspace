@@ -31,7 +31,7 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 4015 | 3995 | 36 | 29 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 6 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1147 | 1145 | 6 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture | 👁AI-Manifest | 8187 | 8139 | 98 | 71 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
+| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture | 👁AI-Manifest | 8187 | 8137 | 98 | 71 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
 | diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 2624 | 2606 | 8 | 7 | NOT RUN: no `mmdc` | Backend unavailable | init directive; Unicode labels |
 | diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3062 | 3051 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
@@ -41,12 +41,12 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 3052 | 3048 | 34 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 2605 | 2605 | 8 | 6 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1196 | 1194 | 7 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5768 | 70 | 32 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-architecture-detail.mmd | ⊕Workspace detailed system architecture | ⊕Workspace | 6584 | 6557 | 89 | 46 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 2787 | 2766 | 21 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/workspace-architecture-detail.mmd | ⊕Workspace detailed system architecture | ⊕Workspace | 6584 | 6556 | 89 | 46 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 2787 | 2765 | 21 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 1973 | 1973 | 8 | 3 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 1670 | 1658 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology | ⊕Workspace | 9136 | 9072 | 118 | 88 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
+| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology | ⊕Workspace | 9136 | 9068 | 118 | 88 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
 | diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 1851 | 1851 | 16 | 16 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 
 ## Baseline Findings
