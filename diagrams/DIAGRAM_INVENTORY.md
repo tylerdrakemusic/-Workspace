@@ -6,7 +6,7 @@ This inventory is the TODO 302 handoff artifact for
 
 ## Measurement Contract
 
-- Baseline commit: `a704f0e` (`feature/FR-20260822-workspace-architecture-diagram-system`)
+- Baseline commit: `a704f0e` (committed `origin/main` baseline)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
   count is 23.
 - Bytes: exact UTF-8 byte length of the source file.

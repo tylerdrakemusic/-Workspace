@@ -26,4 +26,5 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
         inventory_row = next(row for row in inventory.splitlines() if f"| {source_path} |" in row)
         assert int(inventory_row.split("|")[5].strip()) == character_count
     assert "Committed baseline" in inventory
+    assert "Baseline commit: `a704f0e` (committed `origin/main` baseline)" in inventory
     assert "Uncommitted local overlay" in inventory
