@@ -10,9 +10,21 @@ graph LR
     Python --> Flask[flask<br/>Trade Gate web UI]
     Python --> Keyring["keyring<br/>optional OS credential vault for OAuth tokens"]
     Python --> YFinance[yfinance<br/>pricing/volatility]
+    Python --> QuoteService[QuoteService<br/>src/utils/quote_feed.py<br/>normalized quote boundary]
+    QuoteService --> QuoteConcurrency[stdlib concurrent.futures<br/>bounded ThreadPoolExecutor<br/>max 6 workers · 10s timeout]
+    QuoteService --> SchwabMarketData[Schwab Market Data<br/>initial champion · read-only]
+    QuoteService --> YahooQuote[Yahoo quote API<br/>challenger · requests]
+    QuoteService --> AlphaVantage[Alpha Vantage<br/>challenger · requests<br/>ALPHA_VANTAGE_API_KEY]
+    QuoteService --> YFinanceFallback[yfinance<br/>challenger / fallback]
+    QuoteService --> QuotePolicy[Freshness + quorum policy<br/>120s TTL · quorum 2 · 1% tolerance]
+    QuoteService --> Reliability[ProviderReliability<br/>promotion/demotion · cooldown<br/>rollback + hysteresis]
+    QuoteService --> QuoteTables[(quote_observations<br/>quote_provider_health<br/>quote_decisions)]
+    SQLCipher --> QuoteTables
     class Python lang
-    class SQLCipher,SQLCipherEvidence,Dotenv,Pytest,Crypto,Requests,Flask,Keyring,YFinance lib
-    class Perplexity ext
+    class SQLCipher,SQLCipherEvidence,Dotenv,Pytest,Crypto,Requests,Flask,Keyring,YFinance,QuoteConcurrency lib
+    class QuoteService,QuotePolicy,Reliability orch
+    class QuoteTables db
+    class Perplexity,SchwabMarketData,YahooQuote,AlphaVantage,YFinanceFallback ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

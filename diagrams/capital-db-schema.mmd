@@ -8,6 +8,8 @@ erDiagram
     TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves_candidate_account
     RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies
     SENTIMENT_SHADOW_RUNS ||--o{ SENTIMENT_VALIDATION_EVALUATIONS : groups_by_run_id
+    QUOTE_DECISIONS ||--o{ QUOTE_OBSERVATIONS : decision_id_application_link
+    QUOTE_DECISIONS ||--o{ QUOTE_PROVIDER_HEALTH : window_id_application_link
 
     PORTFOLIO {
         integer id PK
@@ -188,6 +190,33 @@ erDiagram
         text payload_hash "SHA-256 of canonical artifact"
     }
 
+    QUOTE_OBSERVATIONS {
+        integer id PK
+        text decision_id "NOT NULL; unique with provider,symbol"
+        text provider "NOT NULL"
+        text symbol "NOT NULL"
+        real price "NOT NULL; CHECK > 0"
+        text observed_at "NOT NULL"
+    }
+
+    QUOTE_PROVIDER_HEALTH {
+        integer id PK
+        text provider "NOT NULL; unique with window_id"
+        text window_id "NOT NULL"
+        text status "NOT NULL"
+        integer observations "NOT NULL; DEFAULT 0"
+        integer failures "NOT NULL; DEFAULT 0"
+        text recorded_at "NOT NULL; DEFAULT datetime('now')"
+    }
+
+    QUOTE_DECISIONS {
+        text id PK
+        text provider "nullable"
+        text status "NOT NULL"
+        text warning "nullable"
+        text decided_at "NOT NULL"
+    }
+
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
     %% CHECK constraints enforce side ∈ {buy,sell} and mode ∈ {sim,real}
     %% mode='real' reserved for future FR after broker-API compliance review
@@ -209,3 +238,7 @@ erDiagram
     %% relationship is application-level grouping by run_id; the implementation
     %% does not declare SQL foreign keys. Activation decisions are independent
     %% immutable artifacts whose payload records the evaluated window and gates.
+    %% Quote indexes: idx_quote_observations_symbol(symbol, observed_at) and
+    %% idx_quote_provider_health_provider(provider, recorded_at). Quote tables
+    %% are append-only history; decision_id/window_id links are application-
+    %% level because init_db.py declares no SQL foreign keys.
