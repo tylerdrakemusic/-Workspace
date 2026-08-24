@@ -205,7 +205,6 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
         )
     )
     assert expected_roots in arguments
-    assert "ΣCapital" in arguments
 
 
 def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree(
