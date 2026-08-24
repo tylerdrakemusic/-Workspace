@@ -12,7 +12,8 @@ $MusicLabel = [char]0x2764 + 'Music'
 $QuantumLabel = [char]0x27E8 + [char]0x03C8 + [char]0x27E9 + 'Quantum'
 $ManifestLabel = [char]0xD83D + [char]0xDC41 + 'AI-Manifest'
 $WorkspaceLabel = [char]0x2295 + 'Workspace'
-$ApprovedProjectLabels = @($LifeLabel, $MusicLabel, $QuantumLabel, $ManifestLabel, $WorkspaceLabel)
+$CapitalLabel = [char]0x03A3 + 'Capital'
+$ApprovedProjectLabels = @($LifeLabel, $MusicLabel, $QuantumLabel, $ManifestLabel, $WorkspaceLabel, $CapitalLabel)
 if ($ApprovedProject -and $ApprovedProjectLabels -notcontains $ApprovedProject) {
     throw "Unknown approved project: $ApprovedProject"
 }
@@ -43,6 +44,8 @@ $ProjectRoots = if ($ApprovedProject) {
             ($QuantumLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $QuantumLabel))
         } elseif ($ApprovedProject -eq $ManifestLabel) {
             ($ManifestLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $ManifestLabel))
+        } elseif ($ApprovedProject -eq $CapitalLabel) {
+            ($CapitalLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $CapitalLabel))
         } else {
             ($WorkspaceLabel + "=" + $WorkspaceRoot)
         }
@@ -53,7 +56,8 @@ $ProjectRoots = if ($ApprovedProject) {
         ($MusicLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $MusicLabel)),
         ($QuantumLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $QuantumLabel)),
         ($ManifestLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $ManifestLabel)),
-        ($WorkspaceLabel + "=" + $WorkspaceRoot)
+        ($WorkspaceLabel + "=" + $WorkspaceRoot),
+        ($CapitalLabel + "=" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $CapitalLabel))
     )
 }
 $ProjectRootArguments = '-ProjectRoot ' + ($ProjectRoots -join ',')
