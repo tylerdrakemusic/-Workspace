@@ -189,6 +189,28 @@ def validate_contracts(contracts: Iterable[TodoContract]) -> None:
     _reject_cycles(parent_graph, "parent cycle")
     _reject_cycles(prerequisite_graph, "prerequisite cycle")
 
+    effective_fr: dict[str, str | None] = {}
+
+    def resolve_effective_fr(todo_id: str) -> str | None:
+        if todo_id in effective_fr:
+            return effective_fr[todo_id]
+        contract = by_id[todo_id]
+        parent_fr = (
+            resolve_effective_fr(contract.parent_id)
+            if contract.parent_id is not None else None
+        )
+        if contract.inherited_fr_id is not None and parent_fr is not None:
+            if contract.inherited_fr_id != parent_fr:
+                raise ContractValidationError(
+                    f"inherited FR mismatch for {todo_id}: parent effective FR is {parent_fr}"
+                )
+        resolved = contract.fr_id or contract.inherited_fr_id or parent_fr
+        effective_fr[todo_id] = resolved
+        return resolved
+
+    for contract in items:
+        resolve_effective_fr(contract.todo_id)
+
 
 def _reject_cycles(graph: dict[str, Iterable[str]], label: str) -> None:
     visiting: set[str] = set()

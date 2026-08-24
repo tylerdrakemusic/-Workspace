@@ -87,6 +87,30 @@ def test_refined_anchor_can_associate_only_with_its_inherited_fr() -> None:
         associate_fr(anchor, "FR-2")
 
 
+def test_registry_rejects_descendant_inherited_fr_mismatch_with_parent() -> None:
+    with pytest.raises(ContractValidationError, match="inherited FR"):
+        validate_contracts((
+            TodoContract(todo_id="parent", fr_id="FR-1"),
+            TodoContract(todo_id="child", parent_id="parent", inherited_fr_id="FR-2"),
+        ))
+
+
+def test_registry_checks_inherited_fr_against_the_effective_parent_chain() -> None:
+    with pytest.raises(ContractValidationError, match="inherited FR"):
+        validate_contracts((
+            TodoContract(todo_id="root", fr_id="FR-1"),
+            TodoContract(todo_id="parent", parent_id="root"),
+            TodoContract(todo_id="child", parent_id="parent", inherited_fr_id="FR-2"),
+        ))
+
+
+def test_registry_preserves_pre_fr_null_anchors_until_association() -> None:
+    validate_contracts((
+        TodoContract(todo_id="anchor", fr_id=None),
+        TodoContract(todo_id="child", parent_id="anchor", inherited_fr_id="FR-1"),
+    ))
+
+
 def test_execution_lease_exposes_claim_heartbeat_expiration_retry_and_cancellation_contract() -> None:
     now = datetime.now(timezone.utc)
     lease = ExecutionLease(
