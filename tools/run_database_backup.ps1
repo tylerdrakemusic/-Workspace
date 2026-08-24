@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$Python = 'C:\G\python.exe',
+    [string]$Python = $null,
     [Parameter(Mandatory = $true)][string]$Manifest,
     [string]$SourceRoot = $null,
     [string[]]$ProjectRoot = @()
@@ -9,6 +9,19 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($Python)) {
+    $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'Process')
+}
+if ([string]::IsNullOrWhiteSpace($Python)) {
+    $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'Machine')
+}
+if ([string]::IsNullOrWhiteSpace($Python)) {
+    $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'User')
+}
+if ([string]::IsNullOrWhiteSpace($Python) -or -not (Test-Path -LiteralPath $Python -PathType Leaf)) {
+    throw 'WORKSPACE_BACKUP_PYTHON must reference an existing supported interpreter.'
+}
 
 foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WORKSPACE_BACKUP_MANIFEST_KEY')) {
     $value = [Environment]::GetEnvironmentVariable($name, 'Process')

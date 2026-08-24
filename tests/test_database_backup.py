@@ -416,7 +416,7 @@ def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
 
     assert fake_sqlcipher.paths == [str(restored_path)]
     assert fake_sqlcipher.connections[0].statements == [
-        "PRAGMA key='test-key'",
+        'PRAGMA key="x\'746573742d6b6579\'"',
         "PRAGMA cipher_page_size=4096",
         "PRAGMA kdf_iter=256000",
         "PRAGMA cipher_hmac_algorithm=HMAC_SHA512",

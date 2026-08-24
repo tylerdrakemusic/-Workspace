@@ -10,6 +10,9 @@ erDiagram
     SENTIMENT_SHADOW_RUNS ||--o{ SENTIMENT_VALIDATION_EVALUATIONS : groups_by_run_id
     QUOTE_DECISIONS ||--o{ QUOTE_OBSERVATIONS : decision_id_application_link
     QUOTE_DECISIONS ||--o{ QUOTE_PROVIDER_HEALTH : window_id_application_link
+    HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : "enforced FK contains"
+    HOLDINGS_SNAPSHOTS ||--o{ POSITION_REVIEWS : "enforced FK feeds; UNIQUE snapshot"
+    POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : "enforced FK produces"
 
     PORTFOLIO {
         integer id PK
@@ -215,6 +218,43 @@ erDiagram
         text status "NOT NULL"
         text warning "nullable"
         text decided_at "NOT NULL"
+    HOLDINGS_SNAPSHOTS {
+        text id PK
+        text account_scope "CHECK dedicated"
+        text captured_at
+        text freshness_status "CHECK fresh|stale|unavailable"
+        text error_message
+        text account_binding "dedicated-account SHA-256 binding"
+        text snapshot_fingerprint UK "UNIQUE normalized-holdings fingerprint"
+    }
+    POSITION_HOLDINGS {
+        integer id PK
+        text snapshot_id FK
+        text symbol
+        real quantity "normalized positive quantity"
+        text direction "CHECK long|short; long↔buy, short↔sell"
+        real market_value
+        text freshness_status "CHECK fresh|stale|unavailable"
+    }
+    POSITION_REVIEWS {
+        text id PK
+        text snapshot_id FK "UNIQUE per snapshot"
+        text status "CHECK pending_review|blocked|reviewed"
+        integer review_only "CHECK = 1"
+        text reason
+        text created_at
+    }
+    POSITION_PROPOSAL_DRAFTS {
+        integer id PK
+        text source_review_id FK
+        text symbol
+        text action "CHECK loss_prevention|take_profit"
+        real quantity
+        real target_price "numeric CHECK > 0"
+        text rationale
+        integer version UK "UNIQUE(source_review_id, version)"
+        text status "CHECK pending_review|superseded|reviewed"
+        text created_at
     }
 
     %% sigmacapital.db — SQLCipher, key=SIGMACAPITAL_DB_KEY
@@ -242,3 +282,15 @@ erDiagram
     %% idx_quote_provider_health_provider(provider, recorded_at). Quote tables
     %% are append-only history; decision_id/window_id links are application-
     %% level because init_db.py declares no SQL foreign keys.
+    %% FR-20260821 position realization: correlation to approved trade_candidates
+    %% is application-level and requires a fresh dedicated-account snapshot plus
+    %% an unambiguous exact-quantity match; stale/unavailable data fails closed.
+    %% account_binding binds each snapshot to the dedicated account; the unique
+    %% snapshot_fingerprint enables idempotent snapshot reuse. Foreign-key
+    %% enforcement is enabled (PRAGMA foreign_keys=ON) and rejects orphan
+    %% position_holdings, position_reviews, and position_proposal_drafts rows.
+    %% position_reviews has UNIQUE(snapshot_id); position_proposal_drafts has
+    %% UNIQUE(source_review_id, version). Direction compatibility is long/buy or
+    %% short/sell. TRIGGER position_proposal_drafts_no_update aborts content or
+    %% version changes; TRIGGER position_proposal_drafts_no_delete aborts every
+    %% delete, preserving the append-only review-only proposal history.
