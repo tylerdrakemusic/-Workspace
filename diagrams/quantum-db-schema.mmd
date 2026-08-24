@@ -26,6 +26,23 @@ erDiagram
         text notes
     }
 
+    %% --- Seeded ideal/noisy Shor replay analysis (FR-20260822-quantum-shor-ideal-noisy-analysis) ---
+    SHOR_REPLAY_BENCHMARKS {
+        integer id PK
+        text run_id "idx_shor_replay_run_mode"
+        text mode "idx_shor_replay_run_mode"
+        integer n_value
+        integer repetitions
+        integer successes
+        real success_rate
+        real ci_95_low
+        real ci_95_high
+        integer seed
+        text order_summary_json
+        text provenance_json
+        text created_at
+    }
+
     %% --- VQE molecular simulation runs (FR-20260430-vqe-aer-bench) ---
     VQE_RUNS {
         integer id PK

@@ -170,6 +170,30 @@ graph TB
     GtcOrder[gtc_order.py<br/>construct-only GTC payloads<br/>never live-submits]
     ExitReeval -->|triggered exits| GtcOrder
     GtcOrder -.gated by.-> Compliance
+    %% Protective OCO preview, confirmation, dedicated submission, and reconciliation (FR-20260822-sigmacapital-oco-protective-exits)
+    SchwabOCOBuilder[schwab_exit_bracket.py<br/>build_schwab_exit_bracket_payload()<br/>STOP + LIMIT protective children]:::state
+    OCOPreview[Trade Gate OCO preview<br/>pair and leg details · prices · quantity<br/>proposal only]:::state
+    OCOConfirmations[Two-step human confirmation<br/>preview acknowledged, then live submission confirmed<br/>no inferred approval]:::state
+    DedicatedOCORoute[Dedicated OCO route<br/>validated protective-pair payload<br/>sole live OCO submission and cancellation path]:::state
+    SchwabOCOSubmission[submit_previewed_oco()<br/>live Schwab OCO submission<br/>pair ID + child leg IDs persisted]:::state
+    SchwabOCOLifecycle[Schwab OCO lifecycle<br/>pair and leg status snapshots<br/>fill · reject · cancel outcomes]:::state
+    OCOReconciliation[reconcile_oco_pair_and_legs()<br/>pair/leg reconciliation<br/>uncertain outcomes => reconciliation_required]:::state
+    SiblingCancellation[Sibling cancellation<br/>cancel remaining protective leg<br/>only through dedicated OCO route]:::state
+    ReconciliationRequired[reconciliation_required<br/>fail-closed: block further OCO actions<br/>until pair and legs are reconciled]:::state
+    ExitReeval -->|triggered exits| SchwabOCOBuilder
+    TradeGate -->|OCO preview| OCOPreview
+    SchwabOCOBuilder --> OCOPreview
+    OCOPreview --> OCOConfirmations
+    OCOConfirmations -->|both confirmations satisfied| DedicatedOCORoute
+    DedicatedOCORoute --> SchwabOCOSubmission
+    SchwabOCOSubmission -->|place OCO LIVE| AccountsTrading
+    SchwabOCOSubmission --> SchwabOCOLifecycle
+    SchwabOCOLifecycle --> OCOReconciliation
+    OCOReconciliation -->|one leg fills or fails| SiblingCancellation
+    SiblingCancellation -->|cancel sibling through dedicated route| DedicatedOCORoute
+    SiblingCancellation -->|cancellation failure| ReconciliationRequired
+    OCOReconciliation -->|ambiguous pair or leg state| ReconciliationRequired
+    ReconciliationRequired -.->|blocks further submission and cancellation| DedicatedOCORoute
     Technicals[technicals.py<br/>src/utils/technicals.py<br/>ATR/quote-based indicator calc]
     Technicals -->|ATR| ExitStrategy
     Backfill[backfill_exits.py<br/>tools/backfill_exits.py<br/>one-time backfill for<br/>positions lacking exit rows]
@@ -259,6 +283,7 @@ graph TB
     class Ingest,Research,TradeCandidates,Portfolio,TradeApprovalGate orch
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading,ScoringBoundary,PerplexityAdapter,QuoteService,QuoteParallel,QuotePersistence orch
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
+    class SchwabOCOBuilder,OCOPreview,OCOConfirmations,DedicatedOCORoute,SchwabOCOSubmission,SchwabOCOLifecycle,OCOReconciliation,SiblingCancellation,ReconciliationRequired state
     class LogRealTrade orch
     class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
     class CapitalBackupRestore orch

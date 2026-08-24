@@ -13,6 +13,9 @@ erDiagram
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : "enforced FK contains"
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_REVIEWS : "enforced FK feeds; UNIQUE snapshot"
     POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : "enforced FK produces"
+    OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_LEGS : contains
+    OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_EVENTS : records
+    OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_CONFIRMATIONS : requires
 
     PORTFOLIO {
         integer id PK
@@ -256,6 +259,46 @@ erDiagram
         text rationale
         integer version UK "UNIQUE(source_review_id, version)"
         text status "CHECK pending_review|superseded|reviewed"
+        text created_at
+    }
+    OCO_PROTECTIVE_PAIRS {
+        text id PK
+        text symbol
+        text direction "CHECK long|short"
+        real quantity "CHECK > 0"
+        real stop_loss_price "CHECK > 0"
+        real take_profit_price "CHECK > 0"
+        text account_scope "CHECK dedicated"
+        text status "CHECK previewed|submitted|partially_filled|filled|filled_pending_sibling_cancel|reconciliation_required|rejected|rejected_leg|cancelled"
+        text payload
+        text preview_payload
+        text parent_order_id
+        text created_at
+    }
+    OCO_PROTECTIVE_LEGS {
+        integer id PK
+        text pair_id FK
+        text leg_type "CHECK stop|take_profit; UNIQUE with pair_id"
+        text instruction "CHECK SELL|BUY_TO_COVER"
+        real quantity
+        real price "CHECK > 0"
+        text status "CHECK previewed|submitted|partially_filled|filled|rejected|cancelled|cancellation_failed"
+        text broker_order_id
+        real fill_quantity
+        text rejection_reason
+    }
+    OCO_PROTECTIVE_EVENTS {
+        integer id PK
+        text pair_id FK
+        text event_type "preview/submission_unconfirmed/submitted/reconciled/cancellation_failed"
+        text details "JSON broker lifecycle metadata"
+        text created_at
+    }
+    OCO_PROTECTIVE_CONFIRMATIONS {
+        integer id PK
+        text pair_id FK "UNIQUE per pair"
+        text account_ref "dedicated account"
+        text context
         text created_at
     }
 

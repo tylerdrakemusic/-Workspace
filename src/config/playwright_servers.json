@@ -93,7 +93,7 @@
       },
       "cwd": "f:\\ΣCapital",
       "port": 7475,
-      "health_url": "http://127.0.0.1:7475/",
+      "health_url": "http://127.0.0.1:7475/health",
       "health_timeout_s": 10,
       "notes": "Port is hardcoded in trade_gate.py (app.run(port=7475)); no --port CLI flag. Requires SIGMACAPITAL_DB_KEY and Schwab OAuth env vars already present at the Windows system level."
     }

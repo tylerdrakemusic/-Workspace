@@ -4,6 +4,11 @@ graph TB
         Shor[bench_shors_v2.py<br/>run_shors_bench.py]
         VQE[bench_vqe.py<br/>run_vqe_bench.py]
     end
+    subgraph OfflineReplay["Offline seeded replay analysis"]
+        ShorAnalysis[tools/shor_ideal_noisy_analysis.py]
+        IdealReplay[Local Aer<br/>ideal seeded replay]
+        NoisyReplay[Local Aer<br/>noisy seeded replay]
+    end
     subgraph Backends
         IBM[IBM Quantum<br/>QISKIT_TOKEN]
         Sim[Aer Simulator<br/>local]
@@ -11,6 +16,7 @@ graph TB
     subgraph Util["src/utils/"]
         Orion[orion_portrait.py<br/>+ orion_config_db.py]
         ExecPolicyMod[execution_policy.py]
+        AerNoise[aer_noise_model.py<br/>deterministic Aer noise model]
     end
     subgraph WalkMusic["src/quantum_walk_music.py<br/>src/quantum_walk_music/"]
         Midi[MIDI generation<br/>via midiutil<br/>FR-20260518-quantum-walk-music]
@@ -18,6 +24,7 @@ graph TB
     subgraph Storage
         DB[(quantumpsi.db<br/>SQLCipher)]
         BenchTbl[benchmarks<br/>shors_qpu_bench<br/>vqe_runs table]
+        ShorReplayTbl[shor_replay_benchmarks table]
         CacheHealthLog[cache_health_log table]
         BackendHealthTbl[backend_health table]
         PolicyTbl[policy_events<br/>policy_audit_runs table]
@@ -40,6 +47,12 @@ graph TB
     end
     Bench --> IBM
     Bench --> Sim
+    ShorAnalysis --> IdealReplay & NoisyReplay
+    IdealReplay --> Sim
+    NoisyReplay --> Sim
+    ShorAnalysis --> ShorReplayTbl
+    ShorReplayTbl --> Reports
+    AerNoise --> Sim
     Bench --> BenchTbl
     BenchTbl --> Reports
     GuardTask --> CacheGuard
@@ -56,12 +69,14 @@ graph TB
     class Bench alg
     class Backends back
     class Storage,Outputs store
+    class OfflineReplay quantum
+    class ShorAnalysis,IdealReplay,NoisyReplay quantum
     class FillCache,CacheGuard,BackendMonitor,AuditPolicy quantum
     class GuardTask ext
-    class CacheHealthLog,BenchTbl,BackendHealthTbl,PolicyTbl db
+    class CacheHealthLog,BenchTbl,ShorReplayTbl,BackendHealthTbl,PolicyTbl db
     class CacheCapacity state
     class WSIntegrations ws
-    class Orion,ExecPolicyMod quantum
+    class Orion,ExecPolicyMod,AerNoise quantum
     class WalkMusic,Midi quantum
     class PolicyJson state
 
