@@ -33,3 +33,8 @@ resource reservations. It returns `ReadinessResult` with `blocked`, `queued`,
 The scheduler does not implement claims, leases, heartbeats, retries, stale
 recovery, persistence, execution-state writes, FR ledger mutation,
 branch/worktree operations, child FRs, approval bypass, or worker coordination.
+
+This is a pure scheduler boundary: it returns readiness projections for
+downstream consumers and does not perform those actions. TODO 332 consumes the
+projections for worker lifecycle, claims, and lease handling; TODO 333 consumes
+them for branch, worktree, and integration handling.
