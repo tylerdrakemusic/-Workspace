@@ -12,7 +12,7 @@ canonical, coordination, derived, temporary, legacy, unknown, approval-required
 
 | ID | Path | Classification | Backup allowed | Reason |
 | --- | --- | --- | --- | --- |
-| life-infinitelife | life/health-store | approval-required | no | Health and genomic store; default-denied pending explicit approval. |
+| life-infinitelife | life/health-store | canonical | yes | Explicitly approved redacted Life health-store locator. |
 | life-nova-config | ∞Life/src/data/nova_config.db | unknown | no | Discovered configuration database; authority and sensitivity not yet established. |
 | music-heartmusic | ❤Music/src/data/heartmusic.db | canonical | yes | Authoritative ❤Music application database. |
 | music-spirit | ❤Music/spirit.db | unknown | no | Discovered database at project root; authority not yet established. |
@@ -27,7 +27,8 @@ canonical, coordination, derived, temporary, legacy, unknown, approval-required
 | workspace-fr-ledgers | ⊕Workspace/src/data/fr_ledgers.db | coordination | yes | Feature-request coordination ledger. |
 | workspace-manifest-todos | ⊕Workspace/src/data/manifest_todos.db | coordination | yes | Shared coordination todo store. |
 | workspace | ⊕Workspace/src/data/workspace.db | canonical | yes | Authoritative shared workspace database. |
-| capital-sigmacapital | capital/financial-store | approval-required | no | Financial store; default-denied pending explicit approval. |
+| workspace-temporary | ⊕Workspace/tmp/temporary.db | temporary | no | Transient test or staging database; excluded from backup scope. |
+| capital-sigmacapital | capital/financial-store | approval-required | yes | Financial store backup is explicitly authorized under governed approval; sensitive values remain outside this configuration. |
 
 ## Explicit Exclusions
 

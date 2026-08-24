@@ -212,10 +212,47 @@ def test_manifest_explicitly_authorizes_sigmacapital_backup() -> None:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     entry = next(item for item in manifest["databases"] if item["id"] == "capital-sigmacapital")
 
+    assert set(entry) == {
+        "id",
+        "path",
+        "discovery",
+        "classification",
+        "backup_allowed",
+        "reason",
+        "encryption",
+        "key_env",
+    }
+    assert entry["id"] == "capital-sigmacapital"
+    assert entry["path"] == "capital/financial-store"
+    assert entry["discovery"] == {"project": "capital", "basename": "sigmacapital.db"}
+    assert entry["classification"] == "approval-required"
     assert entry["backup_allowed"] is True
     assert "explicitly authorized" in entry["reason"]
-    assert "account" not in json.dumps(entry).lower()
-    assert "contents" not in json.dumps(entry).lower()
+    assert entry["encryption"] == "sqlcipher"
+    assert entry["key_env"] == "SIGMACAPITAL_DB_KEY"
+    assert not set(entry) & {
+        "account_number",
+        "account_numbers",
+        "secret",
+        "token",
+        "password",
+        "database_contents",
+        "financial_records",
+    }
+
+
+def test_powershell_registration_includes_the_authorized_sigmacapital_root() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "tools"
+        / "register_database_backup_task.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "$CapitalLabel = [char]0x03A3 + 'Capital'" in script
+    assert "$CapitalLabel" in script.split("$ApprovedProjectLabels", 1)[1].split("if ($ApprovedProject", 1)[0]
+    assert "if ($ApprovedProject -eq $CapitalLabel)" in script
+    capital_root = "($CapitalLabel + \"=\" + (Join-Path (Split-Path -Parent $WorkspaceRoot) $CapitalLabel))"
+    assert script.count(capital_root) == 2
 
 
 def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree(
