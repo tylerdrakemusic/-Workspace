@@ -234,6 +234,9 @@ class ExecutionLifecycle:
         record = self._owned(todo_id, worker_id, lease_token, now)
         if record.state not in {"claimed", "running"}:
             raise InvalidTransitionError("cancellation requires an active lease")
+        if now >= record.lease_expires_at:
+            self._invalid_after_owned(record, "lease expired", now)
+            raise InvalidTransitionError("lease expired")
         return self._update(record, state="cancelled", lease_expires_at=record.lease_expires_at,
                             heartbeat_at=record.heartbeat_at, reason=reason, occurred_at=now)
 

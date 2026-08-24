@@ -139,6 +139,46 @@ def test_stale_attempt_requires_explicit_retry_before_claim() -> None:
     ).state == "claimed"
 
 
+def test_expired_cancellation_rejects_and_allows_stale_recovery() -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle, retries=1)
+
+    with pytest.raises(InvalidTransitionError, match="expired"):
+        lifecycle.cancel("todo-1", "worker-a", "token-100.0", 130.0, "operator request")
+
+    assert lifecycle.get("todo-1").state == "claimed"
+    assert lifecycle.recover_stale(131.0) == ["todo-1"]
+    assert lifecycle.get("todo-1").state == "stale"
+    assert any(
+        event["state"] == "stale" and event["error"] == "lease expired"
+        for event in lifecycle.events("todo-1")
+    )
+    recovery = lifecycle.connection.execute(
+        "SELECT reason, error FROM todo_execution_stale_recoveries WHERE todo_id = ?",
+        ("todo-1",),
+    ).fetchone()
+    assert recovery["reason"] == "lease expired; worker recovered"
+    assert recovery["error"] == "lease expired"
+
+
+def test_cancellation_preserves_ownership_and_terminal_idempotency() -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle)
+
+    with pytest.raises(LeaseOwnershipError):
+        lifecycle.cancel("todo-1", "worker-b", "token-100.0", 105.0, "operator request")
+    with pytest.raises(LeaseOwnershipError):
+        lifecycle.cancel("todo-1", "worker-a", "wrong-token", 105.0, "operator request")
+
+    cancelled = lifecycle.cancel(
+        "todo-1", "worker-a", "token-100.0", 105.0, "operator request"
+    )
+    assert cancelled.state == "cancelled"
+    with pytest.raises(InvalidTransitionError, match="active lease"):
+        lifecycle.cancel("todo-1", "worker-a", "token-100.0", 106.0, "repeat request")
+    assert lifecycle.get("todo-1").state == "cancelled"
+
+
 @pytest.mark.parametrize("terminal_state", ["completed", "cancelled"])
 def test_terminal_execution_cannot_be_claimed_again(terminal_state: str) -> None:
     lifecycle = make_lifecycle()
