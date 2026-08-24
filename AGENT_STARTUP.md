@@ -30,7 +30,10 @@ Sync external skill repositories to latest main and refresh local copies:
 cd F:\superpowers
 git fetch origin
 git merge --ff-only origin/main
-Copy-Item "F:\superpowers\skills\test-driven-development\SKILL.md" `
-    "f:\⊕Workspace\.github\skills\test-driven-development\SKILL.md" -Force
-Write-Host "superpowers synced + TDD skill refreshed"
+f:\⊕Workspace\tools\sync-skills.ps1 -ApproveProtectedSync
+Write-Host "external skills synced with explicit approval"
 ```
+
+The scheduled sync runs without `-ApproveProtectedSync` and therefore skips
+existing skill files. This preserves local baselines until an operator
+explicitly approves protected-file synchronization.

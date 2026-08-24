@@ -246,6 +246,21 @@ def test_discover_databases_maps_life_display_label_to_manifest_project_key(
     assert discovered == [{"path": "life/src/data/primary.db"}]
 
 
+def test_validate_manifest_accepts_life_display_path_for_denied_database() -> None:
+    manifest = _manifest(
+        [
+            _database(
+                id="life-nova-config",
+                path="∞Life/src/data/nova_config.db",
+                classification="unknown",
+                backup_allowed=False,
+            )
+        ]
+    )
+
+    validate_manifest(manifest, discovered_paths={"life/src/data/nova_config.db"})
+
+
 def test_validate_manifest_rejects_unregistered_discovered_database() -> None:
     manifest = _manifest([_database()])
 

@@ -16,7 +16,16 @@ $ApprovedProjectLabels = @($LifeLabel, $MusicLabel, $QuantumLabel, $ManifestLabe
 if ($ApprovedProject -and $ApprovedProjectLabels -notcontains $ApprovedProject) {
     throw "Unknown approved project: $ApprovedProject"
 }
-$Python = 'C:\G\python.exe'
+$Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'Process')
+if ([string]::IsNullOrWhiteSpace($Python)) {
+    $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'Machine')
+}
+if ([string]::IsNullOrWhiteSpace($Python)) {
+    $Python = [Environment]::GetEnvironmentVariable('WORKSPACE_BACKUP_PYTHON', 'User')
+}
+if ([string]::IsNullOrWhiteSpace($Python) -or -not (Test-Path -LiteralPath $Python -PathType Leaf)) {
+    throw 'WORKSPACE_BACKUP_PYTHON must reference an existing supported interpreter.'
+}
 $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $workspaceContainer = Split-Path -Parent $WorkspaceRoot
 if ((Split-Path -Leaf $workspaceContainer) -eq '.worktrees') {
