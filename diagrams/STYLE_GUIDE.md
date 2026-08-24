@@ -157,6 +157,11 @@ end
 The `--refresh-knowledge` mode in `tools/diagram_beautifier.py` may propose
 updates as a unified diff. Tyler or the overseer reviews and applies selectively.
 
+## 9. Size and Traceability Budgets
+
+See [DIAGRAM_BUDGETS.md](DIAGRAM_BUDGETS.md) for machine-checked source,
+complexity, renderer-risk, split-required, and parent/derived-view rules.
+
 ---
 
 *Last updated: 2026-04-26 by ⊕workspace-architecture-beautifier (FR-20260425-architecture-beautifier-styling)*
