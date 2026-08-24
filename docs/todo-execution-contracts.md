@@ -33,7 +33,34 @@ outcomes.
 
 These helpers are pure: they return values and do not mutate TODO, worker, or
 FR state. Claim persistence, scheduling, and capacity decisions remain
-outside this scope for TODOs 331 and 332.
+outside this contract module.
 
-The pure readiness and capacity projection for TODO 331 is documented in
+The durable worker lifecycle is implemented by
+`src/utils/todo_execution_lifecycle.py`. `ExecutionLifecycle` initializes its
+tables in the existing workspace SQLite database, enforces one active claim per
+TODO, validates worker/lease ownership and expiry, records immutable lifecycle
+events, bounds retries, and persists stale-worker recovery records. Callers
+provide the existing database connection; no separate database is created.
+
+Pure readiness and capacity projection is documented in
 [`todo-readiness-scheduler.md`](todo-readiness-scheduler.md).
+
+## Lifecycle state machine
+
+```text
+queued -> claimed -> running -> completed
+					|       -> failed -> queued (explicit retry)
+					|       -> cancelled
+					+------> stale (expired lease)
+									  -> queued (explicit retry)
+```
+
+`heartbeat` moves `claimed` to `running` and renews the lease. Completion and
+failure are single-winner operations guarded by the worker ID and lease token.
+Cancellation is terminal. A failed or stale attempt can return to `queued` only
+while its bounded retry budget remains; exhaustion preserves `failed`.
+
+Downstream integration may consume a successful claim and its FR anchor to
+create a child branch and worktree, but must not bypass lifecycle ownership, FR
+gates, approval, QA, review, or merge controls. This implementation does not
+create branches, worktrees, child FRs, or background workers.
