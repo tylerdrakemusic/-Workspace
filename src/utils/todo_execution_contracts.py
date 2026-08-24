@@ -257,8 +257,11 @@ def expire_execution(lease: ExecutionLease, now: datetime) -> ExecutionState:
     return ExecutionState.STALE if _utc(now) >= lease.lease_expires_at else lease.state
 
 
-def retry_allowed(lease: ExecutionLease) -> bool:
-    """Return whether another attempt is permitted after a stale/failed attempt."""
+def retry_allowed(lease: ExecutionLease,
+                  prior_state: ExecutionState | None = None) -> bool:
+    """Return whether a failed or stale prior attempt may be retried."""
+    if prior_state not in {ExecutionState.FAILED, ExecutionState.STALE}:
+        return False
     return lease.attempt <= lease.max_retries
 
 

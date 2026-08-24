@@ -137,8 +137,15 @@ def test_parent_join_waits_for_children_and_propagates_terminal_failure() -> Non
 
 
 def test_contract_preserves_one_branch_one_worktree_traceability() -> None:
-    contract = TodoContract(todo_id="todo", branch="feature/todo", worktree=".worktrees/todo")
-    assert (contract.branch, contract.worktree) == ("feature/todo", ".worktrees/todo")
+    contract = TodoContract(
+        todo_id="todo",
+        branch="feature/todo",
+        worktree="repository-relative feature worktree",
+    )
+    assert (contract.branch, contract.worktree) == (
+        "feature/todo",
+        "repository-relative feature worktree",
+    )
 
     with pytest.raises(ContractValidationError, match="traceability"):
         TodoContract(todo_id="todo", branch="feature/todo")
@@ -154,3 +161,37 @@ def test_lease_helpers_cover_heartbeat_expiration_retry_and_cancellation() -> No
     assert expire_execution(running, now + timedelta(seconds=70)) is ExecutionState.STALE
     assert cancellation_state(running.state) is ExecutionState.CANCELLED
     assert retry_allowed(running) is False
+
+
+def test_retry_is_not_allowed_for_a_claimed_lease_with_remaining_retries() -> None:
+    now = datetime.now(timezone.utc)
+    lease = claim_execution("todo", "worker", "claim", 60, now)
+    lease = ExecutionLease(**{**lease.__dict__, "max_retries": 2})
+
+    assert retry_allowed(lease) is False
+
+
+def test_retry_is_not_allowed_for_a_running_lease_with_remaining_retries() -> None:
+    now = datetime.now(timezone.utc)
+    lease = claim_execution("todo", "worker", "claim", 60, now)
+    running = heartbeat_execution(lease, now + timedelta(seconds=10), 60)
+    running = ExecutionLease(**{**running.__dict__, "max_retries": 2})
+
+    assert retry_allowed(running) is False
+
+
+def test_failed_and_stale_prior_attempts_are_retryable_when_retries_remain() -> None:
+    now = datetime.now(timezone.utc)
+    lease = claim_execution("todo", "worker", "claim", 60, now)
+    lease = ExecutionLease(**{**lease.__dict__, "max_retries": 2})
+
+    assert retry_allowed(lease, prior_state=ExecutionState.FAILED) is True
+    assert retry_allowed(lease, prior_state=ExecutionState.STALE) is True
+
+
+def test_failed_prior_attempt_is_not_retryable_after_retry_limit() -> None:
+    now = datetime.now(timezone.utc)
+    lease = claim_execution("todo", "worker", "claim", 60, now)
+    exhausted = ExecutionLease(**{**lease.__dict__, "attempt": 3, "max_retries": 2})
+
+    assert retry_allowed(exhausted, prior_state=ExecutionState.FAILED) is False
