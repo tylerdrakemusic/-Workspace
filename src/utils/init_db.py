@@ -336,6 +336,8 @@ def init_db() -> None:
     """)
     conn.commit()
     _run_migrations(conn)
+    from .todo_execution_lifecycle import ExecutionLifecycle
+    ExecutionLifecycle(conn)
     conn.close()
 
 

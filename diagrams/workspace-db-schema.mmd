@@ -79,3 +79,38 @@ erDiagram
         text status
         text created_at
     }
+
+    %% Source: src/utils/todo_execution_lifecycle.py :: ExecutionLifecycle._create_schema
+    TODO_EXECUTION_LIFECYCLE ||--o{ TODO_EXECUTION_EVENTS : records
+    TODO_EXECUTION_LIFECYCLE ||--o{ TODO_EXECUTION_STALE_RECOVERIES : recovers
+    TODO_EXECUTION_LIFECYCLE {
+        text todo_id PK
+        text fr_id
+        text worker_id
+        text claim_id UK
+        text lease_token UK
+        text state
+        real lease_expires_at
+        real heartbeat_at
+        integer attempt
+        integer max_retries
+        text idempotency_key UK
+        real updated_at
+    }
+    TODO_EXECUTION_EVENTS {
+        integer event_id PK
+        text todo_id
+        text claim_id
+        text state
+        text reason
+        text error
+        real occurred_at
+    }
+    TODO_EXECUTION_STALE_RECOVERIES {
+        integer recovery_id PK
+        text todo_id
+        text claim_id
+        real recovered_at
+        text reason
+        text error
+    }
