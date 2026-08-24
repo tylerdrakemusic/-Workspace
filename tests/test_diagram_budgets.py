@@ -9,6 +9,7 @@ from diagram_budgets import (
     Traceability,
     BUDGETS,
     measure_source,
+    validate_inventory,
     validate_diagram,
 )
 
@@ -117,3 +118,49 @@ def test_measure_source_uses_todo_302_utf8_contract() -> None:
     assert metrics.nodes == 16
     assert metrics.edges == 16
     assert metrics.fallback_risk == "medium"
+
+
+def test_validate_inventory_reconciles_committed_baseline_measurements() -> None:
+    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
+
+    findings = validate_inventory(inventory_path)
+
+    assert any(
+        finding.code == "inventory_utf8_bytes"
+        and "diagrams/capital-architecture.mmd" in finding.message
+        for finding in findings
+    )
+    assert any(
+        finding.code == "inventory_utf8_characters"
+        and "diagrams/capital-architecture.mmd" in finding.message
+        for finding in findings
+    )
+    assert any(
+        finding.code == "inventory_nodes"
+        and "diagrams/capital-db-schema.mmd" in finding.message
+        for finding in findings
+    )
+    assert any(
+        finding.code == "inventory_edges"
+        and "diagrams/life-db-schema.mmd" in finding.message
+        for finding in findings
+    )
+
+
+def test_validate_inventory_detects_missing_baseline_row(tmp_path: Path) -> None:
+    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
+    inventory = inventory_path.read_text(encoding="utf-8")
+    inventory = inventory.replace(
+        "| diagrams/workspace-tech-stack.mmd |",
+        "| diagrams/workspace-tech-stack.removed.mmd |",
+    )
+    reduced_inventory_path = tmp_path / "DIAGRAM_INVENTORY.md"
+    reduced_inventory_path.write_text(inventory, encoding="utf-8")
+
+    findings = validate_inventory(reduced_inventory_path, source_root=inventory_path.parents[1])
+
+    assert any(
+        finding.code == "inventory_missing"
+        and "diagrams/workspace-tech-stack.mmd" in finding.message
+        for finding in findings
+    )

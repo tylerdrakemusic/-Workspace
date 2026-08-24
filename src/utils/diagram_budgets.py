@@ -133,6 +133,58 @@ def measure_source(path: Path) -> DiagramMetrics:
     )
 
 
+def validate_inventory(
+    inventory_path: Path,
+    source_root: Path | None = None,
+) -> tuple[Finding, ...]:
+    """Reconcile the committed inventory measurements with Mermaid sources."""
+    source_root = source_root or inventory_path.parent.parent
+    inventory_rows = _read_inventory_rows(inventory_path)
+    source_paths = {
+        path.relative_to(source_root).as_posix(): path
+        for path in (source_root / "diagrams").glob("*.mmd")
+    }
+    findings: list[Finding] = []
+
+    for relative_path in sorted(source_paths):
+        expected = inventory_rows.get(relative_path)
+        if expected is None:
+            findings.append(Finding("inventory_missing", f"{relative_path} is missing from inventory"))
+            continue
+        actual = measure_source(source_paths[relative_path])
+        for code, actual_value, expected_value in (
+            ("inventory_utf8_bytes", actual.utf8_bytes, expected[0]),
+            ("inventory_utf8_characters", actual.utf8_characters, expected[1]),
+            ("inventory_nodes", actual.nodes, expected[2]),
+            ("inventory_edges", actual.edges, expected[3]),
+        ):
+            if actual_value != expected_value:
+                findings.append(
+                    Finding(
+                        code,
+                        f"{relative_path}: inventory={expected_value}, measured={actual_value}",
+                    )
+                )
+
+    for relative_path in sorted(set(inventory_rows) - set(source_paths)):
+        findings.append(Finding("inventory_extra", f"{relative_path} is not a Mermaid source"))
+    return tuple(findings)
+
+
+def _read_inventory_rows(inventory_path: Path) -> dict[str, tuple[int, int, int, int]]:
+    rows: dict[str, tuple[int, int, int, int]] = {}
+    with inventory_path.open("r", encoding="utf-8", newline="") as inventory_file:
+        for line in inventory_file:
+            columns = [column.strip() for column in line.rstrip("\r\n").split("|")]
+            if len(columns) < 8 or not columns[1].startswith("diagrams/") or not columns[1].endswith(".mmd"):
+                continue
+            try:
+                rows[columns[1]] = tuple(int(columns[index]) for index in range(4, 8))  # type: ignore[assignment]
+            except ValueError:
+                continue
+    return rows
+
+
 def _looks_like_node(line: str) -> bool:
     stripped = line.strip()
     if not stripped or stripped.startswith(("%%", "subgraph", "classDef", "class ", "style ", "linkStyle")):
