@@ -149,7 +149,7 @@
       "discovery": {"project": "capital", "basename": "sigmacapital.db"},
       "classification": "approval-required",
       "backup_allowed": true,
-      "reason": "Financial store; governed approval is required before backup.",
+      "reason": "Financial store backup is explicitly authorized under governed approval; sensitive values remain outside this configuration.",
       "encryption": "sqlcipher",
       "key_env": "SIGMACAPITAL_DB_KEY"
     }

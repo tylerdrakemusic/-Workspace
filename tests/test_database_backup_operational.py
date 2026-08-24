@@ -201,9 +201,21 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
             ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
             ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
             ("⊕Workspace", workspace_root),
+            ("ΣCapital", workspace_root.parent / "ΣCapital"),
         )
     )
     assert expected_roots in arguments
+
+
+def test_manifest_explicitly_authorizes_sigmacapital_backup() -> None:
+    manifest_path = Path(__file__).parents[1] / "src" / "config" / "database_backup_scope.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    entry = next(item for item in manifest["databases"] if item["id"] == "capital-sigmacapital")
+
+    assert entry["backup_allowed"] is True
+    assert "explicitly authorized" in entry["reason"]
+    assert "account" not in json.dumps(entry).lower()
+    assert "contents" not in json.dumps(entry).lower()
 
 
 def test_scheduler_spec_resolves_canonical_roots_from_an_active_worktree(
