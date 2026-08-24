@@ -1,6 +1,35 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
 graph TB
     Tyler([Tyler]) --> Manual[Manual placement<br/>Schwab personal account<br/>off-market / evening preferred]
+    QuoteService[QuoteService<br/>src/utils/quote_feed.py<br/>normalized read-only market-data boundary]:::orch
+    SchwabMarketData[Schwab Market Data<br/>initial champion provider]:::ext
+    YahooQuote[Yahoo quote API<br/>challenger]:::ext
+    AlphaVantage[Alpha Vantage<br/>challenger]:::ext
+    YFinanceQuotes[yfinance<br/>challenger / fallback]:::ext
+    QuoteParallel[Bounded parallel evaluation<br/>ThreadPoolExecutor<br/>max 6 providers · 10s window]:::state
+    QuoteQuorum{Freshness TTL 120s<br/>quorum 2 · 1% agreement tolerance}:::state
+    QuoteReliability[ProviderReliability<br/>promotion · demotion · rollback<br/>cooldown + hysteresis]:::state
+    QuoteDecision[Decision states<br/>quorum | degraded | unavailable<br/>fresh Schwab fallback only]:::state
+    QuotePersistence[Normalized persistence<br/>observations · provider health · decisions]:::state
+    QuoteIsolation[Explicitly excluded from QuoteService<br/>AccountsTrading · Trade Gate approval<br/>order routes / real-money execution]:::state
+    QuoteService --> QuoteParallel
+    QuoteParallel -->|read-only provider calls| SchwabMarketData
+    QuoteParallel -->|read-only provider calls| YahooQuote
+    QuoteParallel -->|read-only provider calls| AlphaVantage
+    QuoteParallel -->|read-only provider calls| YFinanceQuotes
+    SchwabMarketData --> QuoteParallel
+    YahooQuote --> QuoteParallel
+    AlphaVantage --> QuoteParallel
+    YFinanceQuotes --> QuoteParallel
+    QuoteParallel --> QuoteQuorum
+    QuoteQuorum --> QuoteReliability
+    QuoteReliability --> QuoteDecision
+    QuoteDecision --> QuotePersistence
+    QuotePersistence ==> DB
+    QuoteService -.->|NO connection| QuoteIsolation
+    QuoteIsolation -.->|excluded| AccountsTrading
+    QuoteIsolation -.->|excluded| TradeGate
+    QuoteIsolation -.->|excluded| SubmitRealOrder
     Signals[Public market signals<br/>news · filings · sentiment] --> Ingest[src/ingest/<br/>signal fetchers — future]
     Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
     Research[src/research/<br/>off-market pick generation — future] --> DB
@@ -228,17 +257,17 @@ graph TB
     class ReconcileOrders orch
     class Signals,Manual state
     class Ingest,Research,TradeCandidates,Portfolio,TradeApprovalGate orch
-    class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading,ScoringBoundary,PerplexityAdapter orch
+    class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading,ScoringBoundary,PerplexityAdapter,QuoteService,QuoteParallel,QuotePersistence orch
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
     class LogRealTrade orch
     class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
     class CapitalBackupRestore orch
-    class MarginGate,MarginUI,DeterministicFallback,QualificationGate state
+    class MarginGate,MarginUI,DeterministicFallback,QualificationGate,QuoteQuorum,QuoteReliability,QuoteDecision,QuoteIsolation state
     class PositionRealizationScheduler,PositionRealizationBatch,DedicatedAccountBinding,HoldingsCapture,SnapshotIdentity,FreshnessBoundary,CorrelationBoundary,DirectionCompatibility,ReviewUniqueness,ProposalContract,PositionReviewQuery,PositionRealizationBoundary state
     class BackupManifest,DestinationIdentity,IntegrityVerification,CanonicalApproval,StagedRestore,NoPartialRestore state
     class OAuthLoop,TokenStore state
     class DB,ValidationEvaluations,ShadowRuns,BackupArtifact,HoldingsSnapshot,PositionHoldings,PositionReview,ProposalDraft db
-    class Perplexity,YFinance,Anthropic,Schwab ext
+    class Perplexity,YFinance,Anthropic,Schwab,SchwabMarketData,YahooQuote,AlphaVantage,YFinanceQuotes ext
     class Tyler tyler
 
 classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
