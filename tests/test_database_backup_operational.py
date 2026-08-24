@@ -201,7 +201,6 @@ def test_scheduler_spec_uses_only_explicit_manifest_aligned_project_roots() -> N
             ("⟨ψ⟩Quantum", workspace_root.parent / "⟨ψ⟩Quantum"),
             ("👁AI-Manifest", workspace_root.parent / "👁AI-Manifest"),
             ("⊕Workspace", workspace_root),
-            ("ΣCapital", workspace_root.parent / "ΣCapital"),
         )
     )
     assert expected_roots in arguments
