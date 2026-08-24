@@ -119,6 +119,10 @@ class ExecutionLifecycle:
                     return self._record(existing)
                 if existing["state"] in {"claimed", "running"}:
                     raise DuplicateClaimError(f"TODO already has active claim: {todo_id}")
+                if existing["state"] != "queued":
+                    raise InvalidTransitionError(
+                        "claim requires a new or queued execution"
+                    )
 
             record = ExecutionRecord(
                 todo_id=todo_id,

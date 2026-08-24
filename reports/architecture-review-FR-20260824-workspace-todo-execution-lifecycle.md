@@ -1,6 +1,6 @@
 # Architecture Impact Report - FR-20260824-workspace-todo-execution-lifecycle
 
-Decision: PASS
+Decision: ARCHITECTURE_REVIEW:PASS
 
 ## Change surface
 
@@ -25,15 +25,19 @@ Decision: PASS
 
 ## Boundary and residual-risk findings
 
-- Focused lifecycle and package-import regression tests pass: 7 passed.
+- Claim admission matches the lifecycle state machine: new executions and queued retries may be claimed; claimed/running executions retain duplicate-claim protection; failed and stale executions require an explicit retry transition.
+- Retry ownership is explicit: `retry` is the only transition from failed/stale to queued, and it rejects exhausted budgets without changing the failed/stale state.
+- Completed and cancelled executions are terminal and cannot be claimed or retried.
 - The initializer imports the lifecycle through the sibling package boundary (`from .todo_execution_lifecycle import ExecutionLifecycle`); the regression test removes the direct `utils` path and verifies temporary database initialization through `src.utils`.
 - The three diagram entities and all implementation fields match the SQL schema; the two declared lifecycle relationships match the persisted event and stale-recovery rows keyed by `todo_id`/`claim_id`.
-- No requirements change, cross-project import, agent definition, integration, branch/worktree creation, FR creation, approval bypass, QA bypass, review bypass, or merge bypass was found.
+- The claim-admission repair changes no schema or diagram content, so `diagrams/workspace-db-schema.mmd` remains accurate for the cumulative implementation.
+- No requirements change, cross-project import, agent definition, integration, scope-creep artifact, branch/worktree creation, FR creation, approval bypass, QA bypass, review bypass, or merge bypass was found.
 - TODO 333 handoff remains accurate: it may consume a successful claim and FR anchor later, but this change creates no branches, worktrees, child FRs, workers, or background execution and does not bypass lifecycle ownership or FR gates.
 - Residual risk: callers must continue to supply valid lease credentials and use the explicit retry/recovery transitions; scheduler/worker orchestration remains outside this TODO 332 scope.
 
 ## Verification
 
 - Mandatory topology completeness check: PASS; all workspace agent files have matching topology nodes.
-- Focused tests: `7 passed`.
+- Focused lifecycle and package-import tests: `12 passed`.
+- Full workspace suite: `862 passed, 13 skipped, 11 deselected`.
 - FR history confirms TRIAGED, implementation delegation, FUNCTIONAL_QA, QA PASS, prior ARCHITECTURE_REVIEW STALE, architecture repair, and post-repair QA PASS in order. No approval, review, or merge transition was bypassed.

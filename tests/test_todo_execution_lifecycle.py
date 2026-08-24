@@ -103,6 +103,82 @@ def test_failure_retry_and_exhaustion_preserve_terminal_failure() -> None:
     assert lifecycle.get("todo-1").state == "failed"
 
 
+def test_failed_attempt_cannot_be_reclaimed_when_retry_budget_is_exhausted() -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle, retries=0)
+    lifecycle.fail("todo-1", "worker-a", "token-100.0", 110.0, "permanent")
+
+    with pytest.raises(InvalidTransitionError):
+        lifecycle.claim(
+            todo_id="todo-1", fr_id="FR-1", worker_id="worker-b",
+            claim_id="claim-2", lease_token="token-2", now=111.0,
+            lease_seconds=30, max_retries=0, idempotency_key="delivery-2",
+        )
+
+    assert lifecycle.get("todo-1").state == "failed"
+
+
+def test_stale_attempt_requires_explicit_retry_before_claim() -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle, retries=1)
+    assert lifecycle.recover_stale(130.0) == ["todo-1"]
+
+    with pytest.raises(InvalidTransitionError):
+        lifecycle.claim(
+            todo_id="todo-1", fr_id="FR-1", worker_id="worker-b",
+            claim_id="claim-2", lease_token="token-2", now=131.0,
+            lease_seconds=30, max_retries=1, idempotency_key="delivery-2",
+        )
+
+    assert lifecycle.get("todo-1").state == "stale"
+    assert lifecycle.retry("todo-1", 132.0, "recover stale attempt").state == "queued"
+    assert lifecycle.claim(
+        todo_id="todo-1", fr_id="FR-1", worker_id="worker-b",
+        claim_id="claim-2", lease_token="token-2", now=133.0,
+        lease_seconds=30, max_retries=1, idempotency_key="delivery-2",
+    ).state == "claimed"
+
+
+@pytest.mark.parametrize("terminal_state", ["completed", "cancelled"])
+def test_terminal_execution_cannot_be_claimed_again(terminal_state: str) -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle)
+    if terminal_state == "completed":
+        lifecycle.heartbeat("todo-1", "worker-a", "token-100.0", 105.0, 30)
+        lifecycle.complete("todo-1", "worker-a", "token-100.0", 110.0, "done")
+    else:
+        lifecycle.cancel("todo-1", "worker-a", "token-100.0", 105.0, "operator request")
+
+    with pytest.raises(InvalidTransitionError):
+        lifecycle.claim(
+            todo_id="todo-1", fr_id="FR-1", worker_id="worker-b",
+            claim_id="claim-2", lease_token="token-2", now=111.0,
+            lease_seconds=30, max_retries=1, idempotency_key="delivery-2",
+        )
+
+    assert lifecycle.get("todo-1").state == terminal_state
+
+
+def test_new_and_queued_claims_remain_valid_after_admission_fix() -> None:
+    lifecycle = make_lifecycle()
+    first = claim(lifecycle, retries=1)
+    lifecycle.fail("todo-1", "worker-a", "token-100.0", 110.0, "transient")
+    assert lifecycle.retry("todo-1", 111.0, "retry transient attempt").state == "queued"
+
+    second = lifecycle.claim(
+        todo_id="todo-1", fr_id="FR-1", worker_id="worker-a",
+        claim_id="claim-120.0", lease_token="token-120.0", now=120.0,
+        lease_seconds=30, max_retries=1, idempotency_key="delivery-120.0",
+    )
+    assert second.state == "claimed"
+    assert second.attempt == first.attempt + 1
+    assert lifecycle.claim(
+        todo_id="todo-1", fr_id="FR-1", worker_id="worker-a",
+        claim_id="claim-120.0", lease_token="token-120.0", now=121.0,
+        lease_seconds=30, max_retries=1, idempotency_key="delivery-120.0",
+    ) == second
+
+
 def test_cancellation_stale_recovery_and_restart_recovery_are_auditable() -> None:
     lifecycle = make_lifecycle()
     claim(lifecycle, retries=1)
