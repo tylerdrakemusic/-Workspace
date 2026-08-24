@@ -9,6 +9,15 @@ graph TB
         IdealReplay[Local Aer<br/>ideal seeded replay]
         NoisyReplay[Local Aer<br/>noisy seeded replay]
     end
+    subgraph KernelSVM["Quantum Kernel SVM feasibility prototype"]
+        KernelModule[src/quantum_kernel_svm.py<br/>Quantum Kernel SVM module]
+        KernelCLI[/tools/run_quantum_kernel_svm.py<br/>explicit approval CLI gate/]
+        KernelAer[Local Qiskit Aer<br/>statevector fidelity kernel]
+        KernelComparator[scikit-learn<br/>RBF SVC comparator]
+        KernelManifest[src/config/<br/>quantum_kernel_svm_approval_manifest.json<br/>versioned v1 manifest]
+        KernelEvidence[reports/quantum_kernel_svm/<br/>redacted aggregate evidence + report]
+        KernelBoundary{Synthetic fixtures only<br/>no raw or row-level persistence}
+    end
     subgraph Backends
         IBM[IBM Quantum<br/>QISKIT_TOKEN]
         Sim[Aer Simulator<br/>local]
@@ -17,6 +26,7 @@ graph TB
         Orion[orion_portrait.py<br/>+ orion_config_db.py]
         ExecPolicyMod[execution_policy.py]
         AerNoise[aer_noise_model.py<br/>deterministic Aer noise model]
+        QecExamples[src/qec_examples.py<br/>reusable local Aer QEC API]
     end
     subgraph WalkMusic["src/quantum_walk_music.py<br/>src/quantum_walk_music/"]
         Midi[MIDI generation<br/>via midiutil<br/>FR-20260518-quantum-walk-music]
@@ -38,6 +48,7 @@ graph TB
         CacheGuard[cache_depletion_guard.py]
         BackendMonitor[backend_availability_monitor.py]
         AuditPolicy[audit_policy.py]
+        RunQec[run_qec_examples.py<br/>runnable QEC examples]
     end
     subgraph Config["src/config/"]
         PolicyJson[execution_policy.json]
@@ -52,7 +63,16 @@ graph TB
     NoisyReplay --> Sim
     ShorAnalysis --> ShorReplayTbl
     ShorReplayTbl --> Reports
+    KernelManifest --> KernelCLI
+    KernelCLI --> KernelModule
+    KernelModule --> KernelAer & KernelComparator
+    KernelAer --> KernelEvidence
+    KernelComparator --> KernelEvidence
+    KernelModule -.-> KernelBoundary
+    KernelBoundary -.-> KernelEvidence
     AerNoise --> Sim
+    QecExamples --> Sim
+    RunQec --> Sim
     Bench --> BenchTbl
     BenchTbl --> Reports
     GuardTask --> CacheGuard
@@ -71,12 +91,15 @@ graph TB
     class Storage,Outputs store
     class OfflineReplay quantum
     class ShorAnalysis,IdealReplay,NoisyReplay quantum
-    class FillCache,CacheGuard,BackendMonitor,AuditPolicy quantum
+    class KernelSVM quantum
+    class KernelModule,KernelCLI,KernelAer,KernelComparator,KernelManifest,KernelEvidence quantum
+    class KernelBoundary state
+    class FillCache,CacheGuard,BackendMonitor,AuditPolicy,RunQec quantum
     class GuardTask ext
     class CacheHealthLog,BenchTbl,ShorReplayTbl,BackendHealthTbl,PolicyTbl db
     class CacheCapacity state
     class WSIntegrations ws
-    class Orion,ExecPolicyMod,AerNoise quantum
+    class Orion,ExecPolicyMod,AerNoise,QecExamples quantum
     class WalkMusic,Midi quantum
     class PolicyJson state
 
