@@ -120,6 +120,16 @@ def test_measure_source_uses_todo_302_utf8_contract() -> None:
     assert metrics.fallback_risk == "medium"
 
 
+def test_measure_source_normalizes_checkout_line_endings(tmp_path: Path) -> None:
+    source_path = tmp_path / "line-endings.mmd"
+    source_path.write_bytes(b"graph LR\r\n    A --> B\r\n")
+
+    metrics = measure_source(source_path)
+
+    assert metrics.utf8_characters == len("graph LR\r\n    A --> B\r\n")
+    assert metrics.utf8_bytes == len("graph LR\r\n    A --> B\r\n".encode("utf-8"))
+
+
 def test_validate_inventory_reconciles_committed_baseline_measurements() -> None:
     inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
 

@@ -2,8 +2,10 @@
 
 The validator in `src/utils/diagram_budgets.py` applies these budgets to each
 Mermaid source. Measurements follow `DIAGRAM_INVENTORY.md`: source text is
-decoded as UTF-8 without newline normalization, characters are Python string
-length, and bytes are exact UTF-8 length.
+decoded as UTF-8, line endings are normalized to the inventory's canonical
+CRLF representation, characters are Python string length, and bytes are exact
+UTF-8 length of that canonical representation. This keeps measurements stable
+across Windows and Linux checkouts.
 
 ## Machine-Checked Limits
 
