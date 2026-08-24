@@ -34,3 +34,6 @@ outcomes.
 These helpers are pure: they return values and do not mutate TODO, worker, or
 FR state. Claim persistence, scheduling, and capacity decisions remain
 outside this scope for TODOs 331 and 332.
+
+The pure readiness and capacity projection for TODO 331 is documented in
+[`todo-readiness-scheduler.md`](todo-readiness-scheduler.md).
