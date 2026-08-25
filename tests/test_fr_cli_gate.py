@@ -118,13 +118,7 @@ class TestMergedGate:
             capture_output=True,
             text=True,
         ).stdout.strip()
-        head = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=PROJECT_ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
+        head = fr_cli._resolve_parent_head(branch)
         acceptance_criteria = json.loads(
             conn.execute(
                 "SELECT acceptance_criteria FROM feature_requests WHERE id='FR-TEST-001'"
