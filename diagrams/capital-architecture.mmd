@@ -1,308 +1,36 @@
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a3a1a', 'primaryTextColor': '#d0f8d0', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a9a4a'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=false
+%% Traceability.derived_views: diagrams/capital-derived-market-data.mmd, diagrams/capital-derived-trading-controls.mmd, diagrams/capital-derived-position-realization.mmd
 graph TB
-    Tyler([Tyler]) --> Manual[Manual placement<br/>Schwab personal account<br/>off-market / evening preferred]
-    QuoteService[QuoteService<br/>src/utils/quote_feed.py<br/>normalized read-only market-data boundary]:::orch
-    SchwabMarketData[Schwab Market Data<br/>initial champion provider]:::ext
-    YahooQuote[Yahoo quote API<br/>challenger]:::ext
-    AlphaVantage[Alpha Vantage<br/>challenger]:::ext
-    YFinanceQuotes[yfinance<br/>challenger / fallback]:::ext
-    QuoteParallel[Bounded parallel evaluation<br/>ThreadPoolExecutor<br/>max 6 providers · 10s window]:::state
-    QuoteQuorum{Freshness TTL 120s<br/>quorum 2 · 1% agreement tolerance}:::state
-    QuoteReliability[ProviderReliability<br/>promotion · demotion · rollback<br/>cooldown + hysteresis]:::state
-    QuoteDecision[Decision states<br/>quorum | degraded | unavailable<br/>fresh Schwab fallback only]:::state
-    QuotePersistence[Normalized persistence<br/>observations · provider health · decisions]:::state
-    QuoteIsolation[Explicitly excluded from QuoteService<br/>AccountsTrading · Trade Gate approval<br/>order routes / real-money execution]:::state
-    QuoteService --> QuoteParallel
-    QuoteParallel -->|read-only provider calls| SchwabMarketData
-    QuoteParallel -->|read-only provider calls| YahooQuote
-    QuoteParallel -->|read-only provider calls| AlphaVantage
-    QuoteParallel -->|read-only provider calls| YFinanceQuotes
-    SchwabMarketData --> QuoteParallel
-    YahooQuote --> QuoteParallel
-    AlphaVantage --> QuoteParallel
-    YFinanceQuotes --> QuoteParallel
-    QuoteParallel --> QuoteQuorum
-    QuoteQuorum --> QuoteReliability
-    QuoteReliability --> QuoteDecision
-    QuoteDecision --> QuotePersistence
-    QuotePersistence ==> DB
-    QuoteService -.->|NO connection| QuoteIsolation
-    QuoteIsolation -.->|excluded| AccountsTrading
-    QuoteIsolation -.->|excluded| TradeGate
-    QuoteIsolation -.->|excluded| SubmitRealOrder
-    Signals[Public market signals<br/>news · filings · sentiment] --> Ingest[src/ingest/<br/>signal fetchers — future]
-    Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
-    Research[src/research/<br/>off-market pick generation — future] --> DB
-    Research --> Watchlist[watchlist observations]
+    Tyler([Tyler]) --> TradeGate[Trade Gate]
+    Research[off-market research] --> Watchlist[watchlist observations]
     Watchlist --> Review[supervised watchlist review]
     Review --> PromotionBoundary{promotion only<br/>no order execution}
     PromotionBoundary --> Pending[trade candidate<br/>approval_status=pending]
     Pending --> TradeGate
-    Agents[src/agents/<br/>research, risk] --> DB
-    CapitalBackupRestore[Capital-local authenticated<br/>manifest-driven backup/restore<br/>tools/database_backup.py + tools/database_restore.py]
-    BackupManifest[Authenticated backup manifest<br/>canonical Capital database identity<br/>generation metadata + destination binding]:::state
-    BackupArtifact[(Encrypted backup generation<br/>SQLCipher database snapshot)]
-    DestinationIdentity[Verified destination identity<br/>allowlisted canonical destination + trusted marker]:::state
-    IntegrityVerification[HMAC/hash verification<br/>manifest HMAC + backup SHA-256]:::state
-    CanonicalApproval[Distinct canonical approval<br/>operation + destination binding]:::state
-    StagedRestore[Staged atomic isolated restore<br/>temporary SQLCipher database + validation]:::state
-    NoPartialRestore[NO-PARTIAL-RESTORE boundary<br/>failed checks leave live sigmacapital.db unchanged]:::state
-    Tyler --> CanonicalApproval
-    DB -->|authenticated backup| CapitalBackupRestore
-    CapitalBackupRestore --> BackupManifest
-    CapitalBackupRestore --> BackupArtifact
-    BackupManifest --> DestinationIdentity
-    BackupArtifact --> IntegrityVerification
-    BackupManifest --> IntegrityVerification
-    DestinationIdentity --> StagedRestore
-    IntegrityVerification --> StagedRestore
-    CanonicalApproval --> StagedRestore
-    StagedRestore --> NoPartialRestore
-    NoPartialRestore -->|commit only after isolated validation| DB
-    Agents -->|news/sentiment batch| Perplexity[(Perplexity.ai<br/>Sonar<br/>champion provider)]
-    ScoringBoundary["Provider-neutral scoring boundary<br/>ScoreResult: score · method · rationale · provenance · signal_available<br/>persisted candidate fields: confidence · rationale · scoring_method · model"]
-    PerplexityAdapter["Perplexity adapter<br/>integrations/perplexity/PerplexityClient"]
-    DeterministicFallback["Deterministic heuristic fallback<br/>method=heuristic · provenance=deterministic"]:::state
-    QualificationGate{"Qualification gate<br/>signal_available and score >= qualification_score"}:::state
-    SentimentCollector["SentimentContext collector/normalizer<br/>provider-neutral normalized context<br/>transcript-free provenance"]
-    GDELT[(GDELT 2.1 Document API<br/>public challenger)]
-    GoogleNews[(Google News<br/>market-news RSS candidate)]
-    SentimentState["Provider result state<br/>available | unavailable | error | timeout | malformed | stale | partial_provider_failure<br/>fail-open: unavailable/error/timeout/malformed/stale/partial_provider_failure => zero contribution"]:::state
-    SentimentPayload["Normalized sentiment_context payload<br/>bounded score/confidence · citations · request/batch IDs<br/>redacted provenance"]
-    SanitizedReplay["Deterministic sanitized historical replay<br/>replay_evaluations()<br/>provider/broker-free · no raw transcripts"]:::state
-    Calibration["Calibration metrics<br/>baseline vs sentiment: Brier · ECE<br/>per-provider observations"]:::state
-    ShadowWindow["Non-decisioning shadow boundary<br/>ends at 14 days OR 200 picker runs<br/>fail-open states contribute zero"]:::state
-    ValidationEvaluations[(sentiment_validation_evaluations<br/>composite key: run_id + symbol + captured_at)]
-    ShadowRuns[(sentiment_shadow_runs<br/>run_id PK · immutable mode=shadow<br/>result_hash SHA-256)]
-    ActivationDecision["Activation decision artifact<br/>BLOCKED by default · activation_enabled=false<br/>provider calibration + explicit Tyler approval required"]:::state
-    TylerApproval["Explicit Tyler approval gate<br/>approval is never inferred from metrics"]:::state
-    ValidationBoundary["NON-DECISIONING VALIDATION BOUNDARY<br/>sentiment cannot reach eligibility, Trade Gate,<br/>order payload, or real-money execution"]:::state
-    PromptDiscovery["Prompt/discovery candidate path<br/>shared context consumption"]
-    Research --> ScoringBoundary
-    ScoringBoundary -->|provider path| PerplexityAdapter
-    PerplexityAdapter -->|provider scoring request| Perplexity
-    ScoringBoundary -->|unavailable or invalid provider response| DeterministicFallback
-    PerplexityAdapter --> QualificationGate
-    DeterministicFallback --> QualificationGate
-    SentimentCollector -->|champion request| Perplexity
-    SentimentCollector -->|challenger request| GDELT
-    SentimentCollector -->|candidate request| GoogleNews
-    Perplexity -->|normalized result| SentimentCollector
-    GDELT -->|normalized result| SentimentCollector
-    GoogleNews -->|normalized result| SentimentCollector
-    SentimentCollector --> SentimentState
-    SentimentState --> SentimentPayload
-    SentimentPayload -->|bounded additive contribution| ScoringBoundary
-    SentimentPayload ==>|normalized metadata only| DB
-    SanitizedReplay --> Calibration
-    Calibration --> ShadowWindow
-    ShadowWindow --> ValidationEvaluations
-    ShadowWindow --> ShadowRuns
-    Calibration --> ActivationDecision
-    ShadowRuns -->|application-level summary input| ActivationDecision
-    Tyler --> TylerApproval
-    TylerApproval --> ActivationDecision
-    SanitizedReplay -.->|does not invoke provider| Perplexity
-    SanitizedReplay -.->|does not invoke broker| AccountsTrading
-    ValidationEvaluations ==> DB
-    ShadowRuns ==> DB
-    ActivationDecision ==> DB
-    ActivationDecision --> ValidationBoundary
-    ValidationBoundary -.->|cannot reach| QualificationGate
-    ValidationBoundary -.->|cannot reach| TradeGate
-    ValidationBoundary -.->|cannot reach| ApproveCandidate
-    ValidationBoundary -.->|cannot reach| SubmitRealOrder
-    ValidationBoundary -.->|cannot reach| AccountsTrading
-    ScoringBoundary -->|bounded additive contribution| QualificationGate
-    Research --> PromptDiscovery
-    PromptDiscovery -->|bounded additive contribution| ScoringBoundary
-    SentimentPayload -->|bounded additive contribution to exit candidates| Research
-    ScoringBoundary ==>|"persists confidence, rationale, scoring_method, model"| DB
-    QualificationGate -->|qualified candidate| TradeCandidates[trade_candidates table<br/>pending recommendations]
-    Agents -->|pricing/volatility| YFinance[(yfinance<br/>Yahoo Finance)]
-    TradeApprovalGate["Trade Approval Gate"] -->|pricing| YFinance
-    TradeApprovalGate -->|AI reasoning| Anthropic[(Anthropic<br/>Claude API)]
-    TradeApprovalGate -->|news| Perplexity
-    TradeApprovalGate --> DB
-    MarginPolicy[margin_policy.py<br/>overnight margin policy<br/>caps · proof freshness · drawdown · composite score]
-    MarginStore[margin_store.py<br/>exposure + reservation persistence]
-    MarginGate[Overnight-margin hard gate<br/>fail-closed policy decision]:::state
-    MarginProof[Schwab margin proof/recheck<br/>AccountsTradingClient.get_account<br/>explicit margin fields + observed date]
-    MarginUI[Independent UI margin acknowledgment<br/>Tyler confirms margin use separately]:::state
-    SelectedAccount[Selected account ref<br/>Trade Approval Gate UI]
-    PersistedAccount[Persisted approval_account_ref<br/>candidate → execution account binding]
-    MarginReservation[Margin reservation<br/>pending → consumed / released]
-    TradeApprovalGate --> MarginUI
-    TradeApprovalGate --> SelectedAccount
-    SelectedAccount --> MarginProof
-    MarginProof --> MarginPolicy
-    MarginUI --> MarginPolicy
-    MarginPolicy --> MarginGate
-    MarginGate -->|allowed only after proof, recheck, caps, and composite checks| MarginStore
-    SelectedAccount --> PersistedAccount
-    PersistedAccount ==> DB
-    MarginStore --> MarginReservation
-    MarginReservation ==> DB
-    MarginProof -->|live proof and recheck| DB
-    ResearchAgent["Σcapital-research<br/>.agent.md"] --> Agents
-    DB --> Portfolio[portfolio + trades<br/>simulated + human-confirmed live]
-    TradeCandidates --> Tyler
-    %% Schwab API M1 — OAuth + Market Data ingestion (FR-20260628-sigmacapital-schwab-api)
-    Schwab[(Charles Schwab API<br/>OAuth 2.0)] --> OAuthLoop[HTTPS loopback<br/>port 8182 market data<br/>port 8183 trading]
-    OAuthLoop --> TokenStore[token_store<br/>data/secrets/ · encrypted via cryptography<br/>0600 perms · gitignored]
-    TokenStore --> MarketData[MarketDataClient<br/>src/integrations/schwab/market_data.py]
-    MarketData -->|source=schwab_marketdata<br/>category=quote| DB
-    TradeGate[Trade Gate<br/>port 7475] -->|GET /api/schwab/status| Reauth[tools/schwab_reauth.py]
-    TradeGate -->|POST /api/schwab/reauth| Reauth
-    Reauth -.refreshes.-> TokenStore
-    TokenStore --> AccountsTrading[AccountsTradingClient<br/>src/integrations/schwab/accounts_trading.py]
-    AccountsTrading -->|account/trading endpoints| Schwab
-    Compliance[COMPLIANCE.md<br/>Schwab API authorized<br/>M1: market data + re-auth<br/>M2 live order placement AUTHORIZED + ACTIVE<br/>FR-20260801-sigmacapital-real-order-placement]:::state
-    Compliance -.permits as one option.-> Manual
-    Compliance -.enforces.-> Research
-    Compliance -.governs.-> Schwab
-    Compliance -.governs.-> AccountsTrading
-    Hook[.git/hooks/pre-push<br/>mirrors ∞Life PROTECTION_HOOK]:::state
-    Hook -.blocks.-> DB
-    %% Exit strategy lifecycle (FR-20260704-sigmacapital-exit-strategy)
-    ExitStrategy[exit_strategy.py<br/>ATR threshold calc · short-mirror logic<br/>supersede/partial exit CRUD]
-    TradeApprovalGate -->|approved candidate| ExitStrategy
-    ExitStrategy -->|creates entry exit row| DB
-    ExitReeval["exit_reevaluation<br/>src/agents/exit_reevaluation.py<br/>(daily scheduled job)"]
-    DB -->|active exits| ExitReeval
-    ExitReeval -->|live price/ATR| YFinance
-    ExitReeval -->|supersede/trigger/partial-close<br/>max-hold forced exit| DB
-    GtcOrder[gtc_order.py<br/>construct-only GTC payloads<br/>never live-submits]
-    ExitReeval -->|triggered exits| GtcOrder
-    GtcOrder -.gated by.-> Compliance
-    %% Protective OCO preview, confirmation, dedicated submission, and reconciliation (FR-20260822-sigmacapital-oco-protective-exits)
-    SchwabOCOBuilder[schwab_exit_bracket.py<br/>build_schwab_exit_bracket_payload()<br/>STOP + LIMIT protective children]:::state
-    OCOPreview[Trade Gate OCO preview<br/>pair and leg details · prices · quantity<br/>proposal only]:::state
-    OCOConfirmations[Two-step human confirmation<br/>preview acknowledged, then live submission confirmed<br/>no inferred approval]:::state
-    DedicatedOCORoute[Dedicated OCO route<br/>validated protective-pair payload<br/>sole live OCO submission and cancellation path]:::state
-    SchwabOCOSubmission[submit_previewed_oco()<br/>live Schwab OCO submission<br/>pair ID + child leg IDs persisted]:::state
-    SchwabOCOLifecycle[Schwab OCO lifecycle<br/>pair and leg status snapshots<br/>fill · reject · cancel outcomes]:::state
-    OCOReconciliation[reconcile_oco_pair_and_legs()<br/>pair/leg reconciliation<br/>uncertain outcomes => reconciliation_required]:::state
-    SiblingCancellation[Sibling cancellation<br/>cancel remaining protective leg<br/>only through dedicated OCO route]:::state
-    ReconciliationRequired[reconciliation_required<br/>fail-closed: block further OCO actions<br/>until pair and legs are reconciled]:::state
-    ExitReeval -->|triggered exits| SchwabOCOBuilder
-    TradeGate -->|OCO preview| OCOPreview
-    SchwabOCOBuilder --> OCOPreview
-    OCOPreview --> OCOConfirmations
-    OCOConfirmations -->|both confirmations satisfied| DedicatedOCORoute
-    DedicatedOCORoute --> SchwabOCOSubmission
-    SchwabOCOSubmission -->|place OCO LIVE| AccountsTrading
-    SchwabOCOSubmission --> SchwabOCOLifecycle
-    SchwabOCOLifecycle --> OCOReconciliation
-    OCOReconciliation -->|one leg fills or fails| SiblingCancellation
-    SiblingCancellation -->|cancel sibling through dedicated route| DedicatedOCORoute
-    SiblingCancellation -->|cancellation failure| ReconciliationRequired
-    OCOReconciliation -->|ambiguous pair or leg state| ReconciliationRequired
-    ReconciliationRequired -.->|blocks further submission and cancellation| DedicatedOCORoute
-    Technicals[technicals.py<br/>src/utils/technicals.py<br/>ATR/quote-based indicator calc]
-    Technicals -->|ATR| ExitStrategy
-    Backfill[backfill_exits.py<br/>tools/backfill_exits.py<br/>one-time backfill for<br/>positions lacking exit rows]
-    Technicals -->|ATR at entry| Backfill
-    Backfill -->|backfilled exit rows| DB
-    %% Real-trade audit logging + compliance trail (FR-20260711-sigmacapital-real-trade-audit-logging)
-    LogRealTrade[log_real_trade.py<br/>Tyler-invoked audit CLI<br/>NOT part of picker/approval pipeline]
-    Tyler --> LogRealTrade
-    LogRealTrade -->|writes audit row<br/>mode=real| DB
-    LogRealTrade -->|verify only — does not place orders| AccountsTrading
-    Agents -->|get_account/get_positions<br/>gates mode=real @ min confidence 0.85| AccountsTrading
-    %% M2 live order placement (FR-20260801-sigmacapital-real-order-placement)
-    TradeGate -->|POST /api/approve-real/&lt;id&gt;<br/>human-confirmed — SOLE real-mode entry point| ApproveCandidate["approve_candidate(candidate_id, *, real_money_confirmed=False,<br/>margin_ui_acknowledged=False, selected_account_ref=None)<br/>src/utils/candidate_glue.py"]
-    ApproveCandidate -->|selected account| PersistedAccount
-    ApproveCandidate -->|overnight-margin candidates| MarginGate
-    MarginGate -->|reserve atomically before execution row| MarginStore
-    RealGate["REAL-MONEY AUTHORIZATION GATE<br/>AUTHORIZED_REAL_MONEY_FR_ID (module-level code constant)<br/>AND real_money_confirmed=True (kwarg, defaults False)<br/>⚠ code constant — NOT runtime-toggleable;<br/>revocation requires process restart"]:::state
-    ApproveCandidate --> RealGate
-    RealGate -->|both conditions satisfied| SubmitRealOrder["submit_real_order()<br/>src/utils/candidate_glue.py"]
-    RealGate -.fails closed.-> DB
-    SubmitRealOrder -->|place_order LIVE| AccountsTrading
-    SubmitRealOrder -->|broker_order_id on success| DB
-    SubmitRealOrder -.->|broker_error · placement_warnings<br/>on failure| DB
-    SubmitRealOrder -->|consume reservation on successful execution| MarginStore
-    SubmitRealOrder -->|release pending reservation on failure| MarginStore
-    MarginStore -->|consume| MarginReservation
-    MarginStore -->|release with released_at audit timestamp| MarginReservation
-    LegacyRoute["POST /approve/&lt;candidate_id&gt;<br/>DELETED — legacy unguarded route"]:::state
-    LegacyRoute -.removed.-> TradeGate
-    TradeGate -->|POST /api/approve<br/>inverse guard: refuses mode=real candidates| ApproveCandidate
-    TradeApprovalGate -->|re-verify pending real trades<br/>on dashboard load| LogRealTrade
-    WSFrCli[⊕ Workspace<br/>fr_cli.py record-event]:::ws
-    LogRealTrade -.->|"subprocess: fr_cli.py record-event<br/>(compliance audit)"| WSFrCli
-    TradeApprovalGate -.->|"subprocess: fr_cli.py record-event<br/>(compliance audit)"| WSFrCli
-    %% Nightly order reconciliation (FR-20260803-sigmacapital-order-reconciliation)
-    ReconcileOrders["reconcile_orders.py<br/>tools/reconcile_orders.py<br/>nightly cron — Windows Task Scheduler<br/>schedule_order_sync.xml"]
-    ReconcileOrders -->|GET /accounts/{hash}/orders| AccountsTrading
-    AccountsTrading -->|order status per broker_order_id| ReconcileOrders
-    ReconcileOrders -->|update execution_history.status<br/>+ broker_status| DB
-
-    %% Position realization and holdings reconciliation (FR-20260821-sigmacapital-position-realization)
-    PositionRealizationScheduler[Windows Task Scheduler XML<br/>tools/schedule_position_realization.xml<br/>daily 03:30 · InteractiveToken<br/>LeastPrivilege · StartWhenAvailable<br/>1-hour limit · MultipleInstancesPolicy=IgnoreNew]:::state
-    PositionRealizationBatch[run_scheduled_position_realization_batch()<br/>daily async entrypoint → sync DB boundary]:::state
-    DedicatedAccountBinding[Dedicated-account binding<br/>get_dedicated_account_hash()<br/>caller hash mismatch rejected<br/>get_positions(resolved hash) only]:::state
-    HoldingsCapture[capture_holdings_snapshot()<br/>dedicated-account read + normalization]:::state
-    SnapshotIdentity[Snapshot identity guard<br/>account_binding = SHA-256 dedicated hash<br/>snapshot_fingerprint = SHA-256 normalized holdings<br/>UNIQUE fingerprint · duplicate capture reuses snapshot]:::state
-    HoldingsSnapshot[(holdings_snapshots<br/>fresh | stale | unavailable)]
-    PositionHoldings[(position_holdings<br/>normalized symbol · quantity · market value)]
-    FreshnessBoundary{Freshness gate<br/>stale or unavailable => blocked}:::state
-    CorrelationBoundary{Conservative correlation gate<br/>approved candidate + exact quantity<br/>ambiguous matches => no promotion}:::state
-    DirectionCompatibility{Direction compatibility<br/>long ↔ buy · short ↔ sell<br/>positive quantity required}:::state
-    ReviewUniqueness[Review idempotency guard<br/>UNIQUE(snapshot_id)<br/>existing pending review is reused]:::state
-    PositionReview[(position_reviews<br/>pending_review · review_only=1)]
-    ProposalContract[Typed immutable proposal contract<br/>numeric target_price > 0<br/>UNIQUE(source_review_id, version)<br/>update/delete blocked by DB triggers]:::state
-    ProposalDraft[(position_proposal_drafts<br/>versioned · review-only · append-only)]
-    PositionReviewQuery[Trade Gate Position Realization section<br/>read-only joined review/snapshot/draft view<br/>renders action + numeric target_price]:::state
-    PositionRealizationBoundary[POSITION REALIZATION BOUNDARY<br/>no approval · order placement · cancellation<br/>replacement · execution mutation]:::state
-    PositionRealizationScheduler --> PositionRealizationBatch
-    PositionRealizationBatch --> DedicatedAccountBinding
-    DedicatedAccountBinding --> HoldingsCapture
-    DedicatedAccountBinding -->|"get_positions(resolved dedicated hash) only; read-only"| AccountsTrading
-    HoldingsCapture -->|normalized response| HoldingsSnapshot
-    HoldingsCapture --> SnapshotIdentity
-    SnapshotIdentity -->|new snapshot or idempotent reuse| HoldingsSnapshot
-    HoldingsSnapshot --> PositionHoldings
-    HoldingsSnapshot --> FreshnessBoundary
-    FreshnessBoundary -->|fresh only| CorrelationBoundary
-    FreshnessBoundary -.->|stale or unavailable| PositionRealizationBoundary
-    CorrelationBoundary -->|unambiguous approved exact-quantity match| DirectionCompatibility
-    DirectionCompatibility --> ReviewUniqueness
-    ReviewUniqueness -->|new review or pending-review reuse| PositionReview
-    CorrelationBoundary -.->|no match or duplicate match| PositionRealizationBoundary
-    PositionReview --> ProposalContract
-    ProposalContract --> ProposalDraft
-    HoldingsSnapshot ==> DB
-    PositionHoldings ==> DB
-    PositionReview ==> DB
-    ProposalDraft ==> DB
-    DB -->|reviews + snapshots + typed draft targets| PositionReviewQuery
-    TradeGate --> PositionReviewQuery
-    PositionReviewQuery --> PositionRealizationBoundary
-    PositionRealizationBoundary -.->|cannot reach| ApproveCandidate
-    PositionRealizationBoundary -.->|cannot reach| SubmitRealOrder
-    PositionRealizationBoundary -.->|cannot mutate| AccountsTrading
-    class ReconcileOrders orch
-    class Signals,Manual state
-    class Ingest,Research,Review,TradeCandidates,Portfolio,TradeApprovalGate orch
-    class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading,ScoringBoundary,PerplexityAdapter,QuoteService,QuoteParallel,QuotePersistence orch
-    class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
-    class SchwabOCOBuilder,OCOPreview,OCOConfirmations,DedicatedOCORoute,SchwabOCOSubmission,SchwabOCOLifecycle,OCOReconciliation,SiblingCancellation,ReconciliationRequired state
-    class LogRealTrade orch
-    class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
-    class CapitalBackupRestore orch
-    class MarginGate,MarginUI,PromotionBoundary,DeterministicFallback,QualificationGate,QuoteQuorum,QuoteReliability,QuoteDecision,QuoteIsolation state
-    class PositionRealizationScheduler,PositionRealizationBatch,DedicatedAccountBinding,HoldingsCapture,SnapshotIdentity,FreshnessBoundary,CorrelationBoundary,DirectionCompatibility,ReviewUniqueness,ProposalContract,PositionReviewQuery,PositionRealizationBoundary state
-    class BackupManifest,DestinationIdentity,IntegrityVerification,CanonicalApproval,StagedRestore,NoPartialRestore state
-    class OAuthLoop,TokenStore state
-    class DB,Watchlist,Pending,ValidationEvaluations,ShadowRuns,BackupArtifact,HoldingsSnapshot,PositionHoldings,PositionReview,ProposalDraft db
-    class Perplexity,YFinance,Anthropic,Schwab,SchwabMarketData,YahooQuote,AlphaVantage,YFinanceQuotes ext
+    QuoteService[QuoteService<br/>read-only market data] --> QuoteDecision[quorum or degraded decision]
+    QuoteDecision --> CapitalDB[(sigmacapital.db)]
+    TradeGate --> Approval[human approval and account binding]
+    Approval --> RealGate[real-money authorization gate]
+    RealGate --> AccountsTrading[AccountsTradingClient]
+    AccountsTrading --> Schwab[Charles Schwab API]
+    CapitalDB --> Backup[authenticated backup and restore]
+    Backup --> Restore[isolated validation before publication]
+    TradeGate --> PositionView[position realization read-only view]
+    PositionView -.->|cannot approve or execute| RealGate
+    QuoteService -.->|excluded| RealGate
+    CapitalDB -.->|parent details| MarketView[capital-derived-market-data]
+    CapitalDB -.->|parent details| TradingView[capital-derived-trading-controls]
+    CapitalDB -.->|parent details| PositionViewDetail[capital-derived-position-realization]
     class Tyler tyler
-
-classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
-classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
-classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
-classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
-classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
-classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView,Research,Watchlist,Review orch
+    class QuoteDecision,RealGate,Restore,PromotionBoundary state
+    class CapitalDB,Pending db
+    class Schwab ext
+    class Backup,MarketView,TradingView,PositionViewDetail ws
+classDef tyler fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state fill:#1a1a1a,stroke:#888888,color:#cccccc

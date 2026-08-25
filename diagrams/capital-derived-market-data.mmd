@@ -1,0 +1,22 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/capital-architecture.mmd
+graph TB
+    QuoteService[QuoteService<br/>normalized read-only boundary] --> Parallel[bounded parallel provider calls<br/>max 6 providers, 10s window]
+    Parallel --> SchwabMarketData[Schwab Market Data]
+    Parallel --> YahooQuote[Yahoo quote API]
+    Parallel --> AlphaVantage[Alpha Vantage]
+    Parallel --> YFinanceQuotes[yfinance fallback]
+    Parallel --> Quorum{freshness TTL 120s<br/>quorum 2, 1% tolerance}
+    Quorum --> Reliability[provider promotion, demotion, rollback]
+    Reliability --> Decision[quorum, degraded, unavailable]
+    Decision ==> DB[(sigmacapital.db)]
+    QuoteService -.->|NO connection| TradeGate[Trade Gate and order routes]
+    class QuoteService,Parallel,Reliability orch
+    class Quorum,Decision,TradeGate state
+    class DB db
+    class SchwabMarketData,YahooQuote,AlphaVantage,YFinanceQuotes ext
+classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state fill:#1a1a1a,stroke:#888888,color:#cccccc

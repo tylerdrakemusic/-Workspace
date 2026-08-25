@@ -1,181 +1,27 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=false
+%% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd
 graph LR
-    %% Cross-project integration points and governed coordination boundaries.
-    GitHub[(GitHub)]:::ext
-    IBMQ[(IBM Quantum)]:::ext
-    OpenAI[(OpenAI)]:::ext
-    ElevenLabs[(ElevenLabs)]:::ext
-    HF[(Hugging Face)]:::ext
-    Suno[(Suno)]:::ext
-    MFP[(MyFitnessPal)]:::ext
-    TZ[(TrainingZones)]:::ext
-    Mermaid[(mermaid.ink)]:::ext
-    Ollama[(Ollama)]:::ext
-    PollinationsExt[(Pollinations.AI<br/>image.pollinations.ai)]:::ext
-    HFSpacesExt[(HF Spaces<br/>FLUX.1-schnell<br/>Gradio REST)]:::ext
-    GDrive[(Google Drive)]:::ext
-    Gmail[(Google Gmail API)]:::ext
-    Perplexity[(Perplexity.ai<br/>Sonar + Reasoning)]:::ext
-    Schwab[(Charles Schwab API)]:::ext
-    GetSongBPM[(GetSongBPM API)]:::ext
-    FlyIO[(Fly.io)]:::ext
-    HyperthreatFlyIO[(Fly.io<br/>Hyperthreat templates<br/>ht / hthreat / hyperthreat)]:::ext
-    %% Project sigils
-    Workspace[⊕ Workspace]:::ws
-    Life[∞ Life]:::orch
-    Music[❤ Music]:::orch
-    Quantum[⟨ψ⟩ Quantum]:::orch
-    Manifest[👁 AI-Manifest]:::orch
-    Capital[Σ Capital]:::orch
-    WorkspaceCoord[⊕ coordination MCP]:::ws
-    ManifestCoord[👁 coordination MCP]:::manifest
-    CoordinationBoundary{Allowlisted FR / todo ops}:::state
-    NoGenericSQL[No generic SQL / arbitrary routing]:::state
-    %% Databases
-    WSDB[(workspace.db)]:::db
-    LifeDB[(infinitelife.db)]:::db
-    MusicDB[(heartmusic.db)]:::db
-    QDB[(quantumpsi.db)]:::db
-    CapitalDB[(sigmacapital.db)]:::db
-    FRLedger[(fr_ledgers.db)]:::db
-    ManifestTodoDB[(manifest_todos.db)]:::db
-    GmailMCP{{gmail-service-email<br/>persistent stdio}}:::ws
-    GmailStdio[/stdio/]:::state
-    GmailOps[/discover/read/get/]:::state
-    GmailCreds{GMAIL_SERVICE_TOKEN<br/>env only}:::state
-    GmailOutbound{operator_approved=True<br/>policy}:::state
-    %% Workspace → external
-    Workspace -->|mcp_github| GitHub
-    Workspace -->|diagrams render| Mermaid
-    Workspace -->|dalle3 image gen| OpenAI
-    Workspace -->|huggingface inference| HF
-    Workspace -->|pollinations image gen| PollinationsExt
-    Workspace -->|hf spaces FLUX| HFSpacesExt
-    Workspace --> WSDB
-    Workspace --> WorkspaceCoord
-    WorkspaceCoord -->|FR operations| FRLedger
-    WorkspaceCoord --> CoordinationBoundary
-    WorkspaceCoord -.->|rejects| NoGenericSQL
-    Workspace -->|health ping| ElevenLabs
-    Workspace -->|health ping| Ollama
-    Workspace -->|health ping| HF
-    Workspace -->|health ping| Perplexity
-    Workspace -->|sonar search + reasoning| Perplexity
-    Workspace -->|gdrive client SA auth| GDrive
-    Workspace -->|persistent MCP| GmailStdio
-    GmailStdio -->|server| GmailMCP
-    GmailMCP --> GmailOps
-    GmailMCP -.->|credential lookup| GmailCreds
-    GmailMCP -->|GmailServiceClient OAuth| Gmail
-    GmailMCP --> GmailOutbound
-    GmailOutbound ==>|"operator-approved"| Gmail
-    %% ∞Life → external + DB
-    Life -->|nutrition sync| MFP
-    Life -->|workout sync| TZ
-    Life -->|llm research| OpenAI
-    Life --> LifeDB
-    %% ❤Music → external + DB
-    Music -->|catalog import| Suno
-    Music --> MusicDB
-    Music -.->|sheet_music ingest| GDrive
-    Music -->|BPM autolookup| GetSongBPM
-    Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
-    Music -->|"manual deploy: main branch + exact approval"| HyperthreatFlyIO
-    %% ⟨ψ⟩Quantum → external + DB
-    Quantum -->|qiskit jobs| IBMQ
-    Quantum -->|model hub| HF
-    Quantum --> QDB
-    %% 👁AI-Manifest → external
-    Manifest -->|tts synthesis| ElevenLabs
-    Manifest -->|llm orchestration| OpenAI
-    Manifest -->|model hub| HF
-    Manifest --> ManifestTodoDB
-    Manifest --> ManifestCoord
-    ManifestCoord -->|todo operations| ManifestTodoDB
-    ManifestCoord --> CoordinationBoundary
-    ManifestCoord -.->|rejects| NoGenericSQL
-    Manifest -.->|migrate_todos.py reads TODO_*.md| Life
-    Manifest -.->|migrate_todos.py reads TODO_*.md| Music
-    Manifest -.->|migrate_todos.py reads TODO_*.md| Quantum
-    Manifest -.->|migrate_todos.py reads TODO_*.md| Workspace
-    %% Roadmap generation
-    RoadmapJSON[(roadmap.json)]:::db
-    Workspace -->|roadmap_generator.py| RoadmapJSON
-    Manifest -->|subprocess: invokes roadmap_generator.py| Workspace
-    Manifest -.->|reads roadmap.json| Workspace
-    %% Cross-project integrations
-    Quantum -.->|QRNG entropy| Workspace
-    Workspace -.->|gen-qee passwords| Life
-    Workspace -.->|gen-qee passwords| Music
-    Workspace -.->|gen-qee passwords| Quantum
-    Workspace -.->|gen-qee passwords| Manifest
-    Workspace -.->|gen-qee passwords| Capital
-    %% ΣCapital → DB + Perplexity
-    Capital --> CapitalDB
-    Capital -.->|capital research via ⊕Workspace integration| Perplexity
-    Capital -->|OAuth · market data| Schwab
-    Capital ==>|LIVE order placement — only external<br/>financial-institution WRITE in the workspace| Schwab
-    linkStyle 45 stroke:#ff2a2a,stroke-width:4px,color:#ff9a9a
-    Capital -.->|"fr_cli.py audit event"| Workspace
-    Manifest -.->|executive briefs| Life
-    Music -.->|signature generation| Quantum
-    Workspace -.->|dalle3 + hf + pollinations image clients| Manifest
-    Life -.->|nova_portrait lazy-import| Workspace
-    Music -.->|vera_portrait lazy-import| Workspace
-    %% Provider-neutral local database backup contract
-    BackupContract[Provider-neutral local<br/>database backup contract]:::ws
-    BackupInventory[Manifest + inventory<br/>explicit canonical source mapping]:::ws
-    BackupDiscovery{Fail-closed discovery:<br/>registered + unambiguous + classified}:::state
-    BackupScheduler([Windows Task Scheduler<br/>daily 02:00]):::ext
-    BackupLauncher[/PowerShell 5.1 launcher<br/>User-scope env hydration/]:::ws
-    BackupSecrets{Environment-only secret custody<br/>no secrets in task arguments}:::state
-    LocalVolume[/E: verified local volume<br/>.backup-volume-identity marker/]:::ext
-    BackupLifecycle[Authenticated encrypted generations<br/>atomic publication · SHA-256 identity<br/>30-generation retention]:::state
-    RestoreValidation[Operator-approved isolated restore<br/>SQLCipher reopen validation]:::state
-    AuditBoundary{Redacted audit boundary:<br/>metadata only, no DB contents or keys}:::state
-    ManifestCanonical[(👁 manifest_todos.db<br/>SQLCipher · approved canonical source)]:::db
-    BackupExclusions[Excluded copies:<br/>legacy · generated · worktree · transient]:::state
-    LifeInventoryAdapter[∞ Life database inventory adapter<br/>redacted locator + classification metadata<br/>no DB contents or key values]:::orch
-    LifeApprovalProjection{Governed approval projection:<br/>exactly one approved life/health-store<br/>approval gates execution}:::state
-    LifeInventoryExclusions[∞ Life exclusions:<br/>genomics · medical records · bloodwork<br/>worktree · transient · unknown databases]:::state
-    Workspace --> BackupContract
-    BackupScheduler --> BackupLauncher
-    BackupLauncher --> BackupContract
-    BackupSecrets --> BackupLauncher
-    BackupContract --> BackupInventory
-    ManifestCanonical -->|explicit approved mapping| BackupInventory
-    BackupInventory --> BackupDiscovery
-    BackupDiscovery -->|eligible databases only| BackupContract
-    BackupExclusions -.->|excluded from discovery| BackupInventory
-    BackupContract --> LocalVolume
-    LocalVolume --> BackupLifecycle
-    BackupLifecycle --> RestoreValidation
-    RestoreValidation --> AuditBoundary
-    RestoreValidation -.->|isolated SQLCipher validation| ManifestCanonical
-    BackupContract -.->|provider-neutral; no cloud-provider integration| AuditBoundary
-    LifeDB -.->|redacted metadata only: life/health-store + infinitelife.db| LifeInventoryAdapter
-    LifeInventoryExclusions -.->|excluded from Life inventory| LifeInventoryAdapter
-    LifeInventoryAdapter -->|approved canonical metadata projection| LifeApprovalProjection
-    LifeApprovalProjection ==>|approval-gated provider-neutral execution| BackupContract
-    %% Direct cross-repo import coupling
-    Manifest -->|"direct import: tech debt scanner"| Workspace
-    linkStyle 67 stroke:#ffa94d,stroke-width:3px,stroke-dasharray:6 3,color:#ffd9a0
-
-
-
-    subgraph Legend[" Legend "]
-        direction LR
-    L_ws([⊕ Workspace]):::ws
-    L_db[(DB)]:::db
-    L_ext{{Ext}}:::ext
-    end
-
-classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
-classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
-classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
-classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
-classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
-classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
-classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
-classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
-classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+    Workspace[⊕ Workspace] --> GitHub[GitHub]
+    Workspace --> Mermaid[mermaid renderer]
+    Workspace --> Life[∞ Life]
+    Workspace --> Music[❤ Music]
+    Workspace --> Quantum[⟨ψ⟩ Quantum]
+    Workspace --> Manifest[👁 AI-Manifest]
+    Workspace --> Capital[Σ Capital]
+    Workspace --> WSDB[(workspace.db)]
+    Workspace -.-> Services[workspace-derived-services]
+    Workspace -.-> Backup[workspace-derived-backup-and-coordination]
+    Life --> LifeDB[(infinitelife.db)]
+    Music --> MusicDB[(heartmusic.db)]
+    Quantum --> QDB[(quantumpsi.db)]
+    Manifest --> ManifestDB[(manifest_todos.db)]
+    Capital --> CapitalDB[(sigmacapital.db)]
+    class Workspace,Services,Backup ws
+    class Life,Music,Quantum,Manifest,Capital orch
+    class GitHub,Mermaid ext
+    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB db
+classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0

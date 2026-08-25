@@ -121,13 +121,18 @@ def test_measure_source_uses_todo_302_utf8_contract() -> None:
 
 
 def test_measure_source_normalizes_checkout_line_endings(tmp_path: Path) -> None:
-    source_path = tmp_path / "line-endings.mmd"
-    source_path.write_bytes(b"graph LR\r\n    A --> B\r\n")
+    source_text = "graph LR\n    A --> B\n"
+    lf_path = tmp_path / "line-endings-lf.mmd"
+    crlf_path = tmp_path / "line-endings-crlf.mmd"
+    lf_path.write_bytes(source_text.encode("utf-8"))
+    crlf_path.write_bytes(source_text.replace("\n", "\r\n").encode("utf-8"))
 
-    metrics = measure_source(source_path)
+    lf_metrics = measure_source(lf_path)
+    crlf_metrics = measure_source(crlf_path)
 
-    assert metrics.utf8_characters == len("graph LR\r\n    A --> B\r\n")
-    assert metrics.utf8_bytes == len("graph LR\r\n    A --> B\r\n".encode("utf-8"))
+    assert lf_metrics == crlf_metrics
+    assert lf_metrics.utf8_characters == len(source_text.replace("\n", "\r\n"))
+    assert lf_metrics.utf8_bytes == len(source_text.replace("\n", "\r\n").encode("utf-8"))
 
 
 def test_validate_inventory_reconciles_committed_baseline_measurements() -> None:
@@ -135,26 +140,7 @@ def test_validate_inventory_reconciles_committed_baseline_measurements() -> None
 
     findings = validate_inventory(inventory_path)
 
-    assert any(
-        finding.code == "inventory_utf8_bytes"
-        and "diagrams/capital-architecture.mmd" in finding.message
-        for finding in findings
-    )
-    assert any(
-        finding.code == "inventory_utf8_characters"
-        and "diagrams/capital-architecture.mmd" in finding.message
-        for finding in findings
-    )
-    assert any(
-        finding.code == "inventory_nodes"
-        and "diagrams/capital-db-schema.mmd" in finding.message
-        for finding in findings
-    )
-    assert any(
-        finding.code == "inventory_edges"
-        and "diagrams/life-db-schema.mmd" in finding.message
-        for finding in findings
-    )
+    assert findings == ()
 
 
 def test_validate_inventory_detects_missing_baseline_row(tmp_path: Path) -> None:
@@ -174,3 +160,33 @@ def test_validate_inventory_detects_missing_baseline_row(tmp_path: Path) -> None
         and "diagrams/workspace-tech-stack.mmd" in finding.message
         for finding in findings
     )
+
+
+def test_validate_inventory_has_no_findings_for_the_complete_source_set() -> None:
+    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
+
+    assert validate_inventory(inventory_path) == ()
+
+
+def test_derived_views_preserve_canonical_origin_relationships() -> None:
+    diagrams_dir = Path(__file__).parents[1] / "diagrams"
+    required_relationships = {
+        "capital-db-derived-trading.mmd": (
+            "RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies",
+            "TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit",
+            "EXITS ||--o{ EXITS : supersedes",
+        ),
+        "manifest-derived-media-pipeline.mmd": ("AudioOut --> Portal",),
+        "workspace-derived-backup-and-coordination.mmd": (
+            "BackupContract --> BackupInventory",
+        ),
+        "workspace-derived-services.mmd": (
+            "Life -->|llm research| OpenAI",
+            "Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO",
+            "Quantum -->|qiskit jobs| IBMQ",
+        ),
+    }
+
+    for filename, relationships in required_relationships.items():
+        source = (diagrams_dir / filename).read_text(encoding="utf-8")
+        assert all(relationship in source for relationship in relationships), filename

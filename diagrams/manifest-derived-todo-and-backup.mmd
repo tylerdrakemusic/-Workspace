@@ -1,0 +1,22 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/manifest-architecture.mmd
+graph TB
+    Tools[AI-Manifest tools] --> TodosUtil[todos_db.py]
+    TodosUtil --> TodosDB[(manifest_todos.db)]
+    Tools --> Migrate[migrate_todos.py]
+    Migrate -.->|reads TODO files| Projects[all project scopes]
+    Tools --> Coordination[governed coordination MCP]
+    Coordination --> TodosDB
+    Tools --> BackupRunner[run_database_backup.py]
+    BackupRunner --> Inventory[canonical source inventory]
+    Inventory --> Generations[authenticated encrypted generations]
+    Generations --> Restore[operator-approved isolated restore]
+    Restore --> Audit[redacted audit metadata]
+    BackupRunner -.->|excludes transient/output/worktrees| Inventory
+    class Tools,TodosUtil,Migrate,Coordination,BackupRunner,Inventory,Generations,Restore,Audit ws
+    class Projects ext
+    class TodosDB db
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0

@@ -1,0 +1,17 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/capital-db-schema.mmd
+erDiagram
+    RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies
+    TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
+    PORTFOLIO ||--o{ EXITS : has_exit
+    EXITS ||--o{ EXITS : supersedes
+    TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
+    TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves
+    QUOTE_DECISIONS ||--o{ QUOTE_OBSERVATIONS : decision_link
+    QUOTE_DECISIONS ||--o{ QUOTE_PROVIDER_HEALTH : window_link
+    TRADE_CANDIDATES { integer id PK text symbol text mode real confidence }
+    EXECUTION_HISTORY { integer id PK text broker_order_id text status text mode }
+    EXITS { integer id PK integer position_id FK text status integer version }
+    MARGIN_RESERVATIONS { integer id PK integer candidate_id FK text status }
