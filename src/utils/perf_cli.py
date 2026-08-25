@@ -16,8 +16,11 @@ import time
 import uuid
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from init_db import get_connection, init_db
+try:
+    from .init_db import get_connection, init_db
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from init_db import get_connection, init_db
 
 
 def _conn():

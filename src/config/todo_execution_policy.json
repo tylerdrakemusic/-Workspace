@@ -1,0 +1,7 @@
+{
+  "max_parallel_todos_per_fr": 8,
+  "max_total_todo_workers": 16,
+  "lease_seconds": 300,
+  "max_retries": 2,
+  "tuning": "Telemetry-guided tuning is permitted after observing queue depth, readiness, lease, retry, stale recovery, conflict, and gate outcomes."
+}

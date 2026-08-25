@@ -336,7 +336,10 @@ def init_db() -> None:
     """)
     conn.commit()
     _run_migrations(conn)
-    from .todo_execution_lifecycle import ExecutionLifecycle
+    if __package__:
+        from .todo_execution_lifecycle import ExecutionLifecycle
+    else:
+        from todo_execution_lifecycle import ExecutionLifecycle
     ExecutionLifecycle(conn)
     conn.close()
 
