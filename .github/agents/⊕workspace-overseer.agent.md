@@ -61,6 +61,12 @@ Record the assessed tier: `fr_cli.py record-event <FR-ID> ⊕workspace-overseer 
 ## Feature Request Flow
 Full state machine in `feature-request-flow.instructions.md`. Tyler's gateways: **open FR → approve scope → approve merge → post-soak signoff**. Agent-to-agent between gates.
 
+For FRs decomposed into child TODOs, require the serialized parent join before
+routing or recording `FUNCTIONAL_QA`, `ARCHITECTURE_REVIEW`, `TYLER_APPROVED`,
+`MERGED`, `SOAKING`, or `SIGNED_OFF`. The join must name every required child
+and report completion, validation, artifacts, branch integration, current-head
+freshness, and explicit blockers; a child completion alone is insufficient.
+
 Check conflicts before routing: `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py list --active`
 
 ## Workflow Patterns

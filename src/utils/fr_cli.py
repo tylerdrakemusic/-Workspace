@@ -19,14 +19,21 @@ import argparse
 import asyncio
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
 from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
 from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
+from parent_join_gates import (
+    PARENT_JOIN_EVALUATOR_IDENTITY,
+    ChildJoinSnapshot,
+    evaluate_parent_join,
+)
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -39,6 +46,42 @@ ACTIVE_STATES = {
 _ARCH_REVIEW_PASS_RE = re.compile(
     r"ARCHITECTURE_REVIEW\s*[:\-]?\s*(PASS_WITH_UPDATES|PASS)\b", re.IGNORECASE
 )
+_PARENT_JOIN_REQUIRED_RE = re.compile(r"PARENT_JOIN\s*[:\-]?\s*REQUIRED\b", re.IGNORECASE)
+_PARENT_JOIN_PASS_RE = re.compile(
+    r"PARENT_JOIN\s*[:\-]?\s*(PASS|COMPLETE)\b", re.IGNORECASE
+)
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_parent_head(parent_branch: str) -> str:
+    """Resolve the checked-out head when it is on the ledger's parent branch."""
+    if not parent_branch:
+        raise ValueError("parent branch is required")
+    command = ["git", "-C", str(_REPOSITORY_ROOT)]
+    branch_result = subprocess.run(
+        [*command, "branch", "--show-current"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if branch_result.returncode != 0:
+        raise RuntimeError("unable to resolve checked-out parent branch")
+    current_branch = branch_result.stdout.strip()
+    if current_branch != parent_branch:
+        raise ValueError("checked-out branch does not match the FR parent branch")
+    head_result = subprocess.run(
+        [*command, "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    current_head = head_result.stdout.strip()
+    if head_result.returncode != 0 or not re.fullmatch(r"[0-9a-fA-F]{40}", current_head):
+        raise RuntimeError("unable to resolve checked-out parent head")
+    return current_head
+
+
+_parent_head_resolver: Callable[[str], str | None] | None = _resolve_parent_head
 
 
 def _conn():
@@ -57,6 +100,110 @@ def _has_architecture_review_pass(conn, fr_id: str) -> bool:
         summary = row["summary"] if hasattr(row, "keys") else row[0]
         if summary and _ARCH_REVIEW_PASS_RE.search(summary):
             return True
+    return False
+
+
+def _parent_join_gate(conn, fr_id: str) -> bool:
+    """Require a passing parent join only for FRs that declare child TODOs."""
+    rows = conn.execute(
+        "SELECT ts, summary FROM fr_events WHERE fr_id=? ORDER BY ts", (fr_id,)
+    ).fetchall()
+    summaries = [row["summary"] if hasattr(row, "keys") else row[1] for row in rows]
+    if not any(summary and _PARENT_JOIN_REQUIRED_RE.search(summary) for summary in summaries):
+        return True
+    required_event_ts = max(
+        row["ts"] if hasattr(row, "keys") else row[0]
+        for row in rows
+        if (row["summary"] if hasattr(row, "keys") else row[1])
+        and _PARENT_JOIN_REQUIRED_RE.search(row["summary"] if hasattr(row, "keys") else row[1])
+    )
+    fr = conn.execute(
+        "SELECT branch, acceptance_criteria FROM feature_requests WHERE id=?", (fr_id,)
+    ).fetchone()
+    parent_branch = fr["branch"] if fr and hasattr(fr, "keys") else (fr[0] if fr else None)
+    acceptance_criteria = fr["acceptance_criteria"] if fr and hasattr(fr, "keys") else (fr[1] if fr else None)
+    try:
+        contract = json.loads(acceptance_criteria or "{}")
+        parent_join = contract["parent_join"]
+        required_todos = parent_join["required_todos"]
+        canonical_children = tuple(
+            ChildJoinSnapshot(**child) for child in parent_join["children"]
+        )
+        if not isinstance(required_todos, list) or not required_todos:
+            raise ValueError
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        required_todos = ()
+        canonical_children = ()
+    if _parent_head_resolver is None or not parent_branch:
+        current_parent_head = None
+    else:
+        try:
+            current_parent_head = _parent_head_resolver(parent_branch)
+        except (OSError, RuntimeError, ValueError):
+            current_parent_head = None
+    if not current_parent_head:
+        current_parent_head = None
+    evidence_rows = conn.execute(
+        "SELECT ts, label FROM fr_artifacts "
+        "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
+        (fr_id,),
+    ).fetchall()
+    evaluator_identity_blocked = False
+    for row in evidence_rows:
+        timestamp = row["ts"] if hasattr(row, "keys") else row[0]
+        label = row["label"] if hasattr(row, "keys") else row[1]
+        try:
+            evidence = json.loads(label)
+            if not isinstance(evidence, dict):
+                continue
+            if (
+                evidence.get("kind") != "parent_join_evidence"
+                or evidence.get("fr_id") != fr_id
+                or not parent_branch
+                or evidence.get("parent_branch") != parent_branch
+                or evidence.get("parent_head") != current_parent_head
+                or evidence.get("evaluated_at") != timestamp
+                or timestamp < required_event_ts
+            ):
+                continue
+            if evidence.get("evaluator") != PARENT_JOIN_EVALUATOR_IDENTITY:
+                evaluator_identity_blocked = True
+                continue
+            evaluated_at = datetime.fromisoformat(str(evidence["evaluated_at"]).replace("Z", "+00:00"))
+            if evaluated_at.tzinfo is None:
+                continue
+            if not required_todos or not canonical_children:
+                continue
+            result = evaluate_parent_join(
+                fr_id=fr_id,
+                parent_branch=parent_branch,
+                parent_head=current_parent_head,
+                required_todos=required_todos,
+                children=canonical_children,
+            )
+            if (
+                result.complete
+                and any(
+                    summary and _PARENT_JOIN_PASS_RE.search(summary)
+                    for summary in summaries
+                    if summary
+                )
+            ):
+                return True
+        except (AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+    blocker = (
+        "evaluator identity is missing or mismatched; "
+        if evaluator_identity_blocked
+        else ""
+    )
+    print(
+        f"[fr_cli] BLOCKED: cannot advance {fr_id} — {blocker}parent join is incomplete. "
+        "Complete and validate every required child TODO, persist fresh evaluator-backed "
+        "evidence with required artifacts and current branch/head integration, then record "
+        "PARENT_JOIN:PASS.",
+        file=sys.stderr,
+    )
     return False
 
 
@@ -146,6 +293,13 @@ def cmd_update_state(args: argparse.Namespace) -> None:
     fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
     if not fr:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        conn.close()
+        sys.exit(1)
+    gated_states = {
+        "FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "TYLER_APPROVED",
+        "MERGED", "SOAKING", "SIGNED_OFF",
+    }
+    if args.new_state.upper() in gated_states and not _parent_join_gate(conn, args.fr_id):
         conn.close()
         sys.exit(1)
     if args.new_state.upper() == "MERGED" and not _has_architecture_review_pass(conn, args.fr_id):

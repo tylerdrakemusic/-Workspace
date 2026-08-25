@@ -259,6 +259,34 @@ preserved. Invalid, unclaimed, expired, failed, or unvalidated child work is
 rejected. This coordinates implementation only and does not create a child FR
 state machine or bypass QA, review, merge, soak, or signoff gates.
 
+### Parent-Join Gate
+
+When an FR declares required child TODOs, the parent FR cannot advance to
+`FUNCTIONAL_QA`, `ARCHITECTURE_REVIEW`, `TYLER_APPROVED`, `MERGED`, `SOAKING`,
+or `SIGNED_OFF` until the parent join is complete. The coordinator evaluates
+every required child against the current parent branch head before recording
+`PARENT_JOIN:PASS`:
+
+- terminal state is exactly `completed`;
+- validation has passed;
+- every required artifact is present and complete;
+- the child is integrated into the current FR feature branch;
+- the child base matches the current parent head, or is explicitly rebased and
+  revalidated; and
+- the child belongs to this FR and every required child identity is present.
+
+Missing, stale, conflicting, invalid, or incomplete children produce explicit
+blockers naming the TODO and criterion. The passing result must be persisted as
+a `parent-join-evidence` artifact containing JSON with the FR ID, current parent
+branch and head, required TODO IDs, complete child snapshots, evaluator identity
+`parent_join_gates.evaluate_parent_join`, a passing result, and an evaluation
+timestamp at or after the `PARENT_JOIN:REQUIRED` event. The CLI recomputes the
+result from those snapshots; it does not trust event summaries or claimed
+booleans. A `PARENT_JOIN:REQUIRED` event without this evidence and the
+subsequent passing marker blocks all six states above. A child join never
+replaces the parent FR's QA, architecture, approval, merge, soak, or signoff
+gates.
+
 ## End-to-End Flow (Happy Path)
 
 ```

@@ -9,7 +9,9 @@ prevents merges from silently skipping the architecture review step.
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -50,6 +52,7 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
             closed_at TEXT,
             final_state TEXT,
             cycle_timer_run_id TEXT,
+            acceptance_criteria TEXT,
             cost_status TEXT,
             cost_source TEXT,
             cost_reconciliation_status TEXT
@@ -64,13 +67,26 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
             details TEXT,
             next_action TEXT
         );
+        CREATE TABLE fr_artifacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fr_id TEXT NOT NULL,
+            ts TEXT NOT NULL,
+            artifact_type TEXT NOT NULL,
+            label TEXT NOT NULL,
+            path_or_url TEXT
+        );
         """
     )
     conn.execute(
         "INSERT INTO feature_requests "
-        "(id, title, state, opened_at, updated_at, cost_status, cost_source) "
-        "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', '2026-07-03', "
-        "'2026-07-03', 'estimated', 'test')"
+        "(id, title, state, branch, opened_at, updated_at, cost_status, cost_source, acceptance_criteria) "
+        "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', 'feature/FR-TEST-001', "
+        "'2026-07-03', '2026-07-03', 'estimated', 'test', "
+        "'{\"parent_join\":{\"required_todos\":[\"333-1\"],\"children\":[{"
+        "\"todo_id\":\"333-1\",\"fr_id\":\"FR-TEST-001\",\"state\":\"completed\","
+        "\"validated\":true,\"required_artifacts\":[\"test-proof\"],"
+        "\"artifacts\":[\"test-proof\"],\"integrated_branch\":\"feature/FR-TEST-001\","
+        "\"parent_head\":\"parent-head-1\",\"child_base\":\"parent-head-1\"}]}}')"
     )
     conn.commit()
     return conn
@@ -90,6 +106,281 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
 
 
 class TestMergedGate:
+    def test_parent_join_valid_evidence_passes_through_production_resolver(
+        self, tmp_path
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        branch = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=PROJECT_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        head = fr_cli._resolve_parent_head(branch)
+        acceptance_criteria = json.loads(
+            conn.execute(
+                "SELECT acceptance_criteria FROM feature_requests WHERE id='FR-TEST-001'"
+            ).fetchone()[0]
+        )
+        acceptance_criteria["parent_join"]["children"][0].update(
+            parent_head=head,
+            child_base=head,
+            integrated_branch=branch,
+        )
+        conn.execute(
+            "UPDATE feature_requests SET branch=?, acceptance_criteria=? WHERE id='FR-TEST-001'",
+            (branch, json.dumps(acceptance_criteria)),
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 must be joined')"
+        )
+        evidence = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:01:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": branch,
+            "parent_head": head,
+            "required_todos": ["333-1"],
+            "children": [
+                {
+                    "todo_id": "333-1",
+                    "fr_id": "FR-TEST-001",
+                    "state": "completed",
+                    "validated": True,
+                    "required_artifacts": ["test-proof"],
+                    "artifacts": ["test-proof"],
+                    "integrated_branch": branch,
+                    "parent_head": head,
+                    "child_base": head,
+                }
+            ],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", evidence["evaluated_at"], "parent-join-evidence", json.dumps(evidence)),
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:02:00Z', 'test', 'note', "
+            "'PARENT_JOIN:PASS — everything is complete')"
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()
+        check_conn.close()
+        assert row[0] == "FUNCTIONAL_QA"
+
+    def test_parent_join_rejects_forged_children_and_stale_parent_head(
+        self, tmp_path, capsys
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 must be joined')"
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:02:00Z', 'test', 'note', "
+            "'PARENT_JOIN:PASS — everything is complete')"
+        )
+        forged = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:03:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": "feature/FR-TEST-001",
+            "parent_head": "old-head",
+            "required_todos": ["forged-todo"],
+            "children": [{
+                "todo_id": "forged-todo",
+                "fr_id": "FR-TEST-001",
+                "state": "completed",
+                "validated": True,
+                "required_artifacts": [],
+                "artifacts": [],
+                "integrated_branch": "feature/FR-TEST-001",
+                "parent_head": "old-head",
+                "child_base": "old-head",
+            }],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", forged["evaluated_at"], "parent-join-evidence", json.dumps(forged)),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="current-head"
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+
+        assert exc_info.value.code != 0
+        error = capsys.readouterr().err
+        assert "parent join is incomplete" in error
+
+    def test_parent_join_pass_requires_persisted_evaluator_evidence(self, tmp_path, capsys) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 must be joined')"
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:PASS — everything is complete')"
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+        assert exc_info.value.code != 0
+        error = capsys.readouterr().err
+        assert "parent join is incomplete" in error
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+
+        evidence = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:01:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": "feature/FR-TEST-001",
+            "parent_head": "parent-head-1",
+            "required_todos": ["333-1"],
+            "children": [
+                {
+                    "todo_id": "333-1",
+                    "fr_id": "FR-TEST-001",
+                    "state": "completed",
+                    "validated": True,
+                    "required_artifacts": ["test-proof"],
+                    "artifacts": ["test-proof"],
+                    "integrated_branch": "feature/FR-TEST-001",
+                    "parent_head": "parent-head-1",
+                    "child_base": "parent-head-1",
+                }
+            ],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) "
+            "VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", "2026-07-03T00:01:00Z", "parent-join-evidence", json.dumps(evidence)),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="parent-head-1"
+        ):
+            fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute("SELECT state FROM feature_requests WHERE id='FR-TEST-001'").fetchone()
+        check_conn.close()
+        assert row[0] == "FUNCTIONAL_QA"
+
+    def test_parent_join_rejects_forged_evaluator_identity(self, tmp_path, capsys) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 must be joined')"
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:PASS — everything is complete')"
+        )
+        evidence = {
+            "kind": "parent_join_evidence",
+            "evaluator": "forged.evaluator",
+            "evaluated_at": "2026-07-03T00:01:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": "feature/FR-TEST-001",
+            "parent_head": "parent-head-1",
+            "required_todos": ["333-1"],
+            "children": [{
+                "todo_id": "333-1",
+                "fr_id": "FR-TEST-001",
+                "state": "completed",
+                "validated": True,
+                "required_artifacts": ["test-proof"],
+                "artifacts": ["test-proof"],
+                "integrated_branch": "feature/FR-TEST-001",
+                "parent_head": "parent-head-1",
+                "child_base": "parent-head-1",
+            }],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", evidence["evaluated_at"], "parent-join-evidence", json.dumps(evidence)),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="parent-head-1"
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+
+        assert exc_info.value.code != 0
+        error = capsys.readouterr().err
+        assert "parent join is incomplete" in error
+        assert "evaluator identity is missing or mismatched" in error
+
+    @pytest.mark.parametrize(
+        "new_state",
+        ["FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "TYLER_APPROVED", "MERGED", "SOAKING", "SIGNED_OFF"],
+    )
+    def test_parent_join_blocks_every_post_implementation_state(
+        self, tmp_path, capsys, new_state: str
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 is not joined')"
+        )
+        conn.commit()
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", new_state))
+
+        assert exc_info.value.code != 0
+        assert "parent join is incomplete" in capsys.readouterr().err
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()
+        check_conn.close()
+        assert row[0] == "ARCHITECTURE_REVIEW"
+
     def test_merged_blocked_without_architecture_review_pass(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
