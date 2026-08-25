@@ -17,7 +17,10 @@ graph TB
         Orion[orion_portrait.py<br/>+ orion_config_db.py]
         ExecPolicyMod[execution_policy.py]
         AerNoise[aer_noise_model.py<br/>deterministic Aer noise model]
+        RealDataValidator[quantum_kernel_contract.py<br/>validates ∞ Life aggregate-only handoff]
     end
+    SufficiencyGate{Aggregate sufficiency gate}
+    ExecutionDenied[Real-data model execution denied]
     subgraph WalkMusic["src/quantum_walk_music.py<br/>src/quantum_walk_music/"]
         Midi[MIDI generation<br/>via midiutil<br/>FR-20260518-quantum-walk-music]
     end
@@ -53,6 +56,8 @@ graph TB
     ShorAnalysis --> ShorReplayTbl
     ShorReplayTbl --> Reports
     AerNoise --> Sim
+    RealDataValidator --> SufficiencyGate
+    SufficiencyGate --> ExecutionDenied
     Bench --> BenchTbl
     BenchTbl --> Reports
     GuardTask --> CacheGuard
@@ -76,9 +81,9 @@ graph TB
     class CacheHealthLog,BenchTbl,ShorReplayTbl,BackendHealthTbl,PolicyTbl db
     class CacheCapacity state
     class WSIntegrations ws
-    class Orion,ExecPolicyMod,AerNoise quantum
+    class Orion,ExecPolicyMod,AerNoise,RealDataValidator quantum
     class WalkMusic,Midi quantum
-    class PolicyJson state
+    class PolicyJson,SufficiencyGate,ExecutionDenied state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
