@@ -13,6 +13,8 @@ Writes and maintains Mermaid `.mmd` files. Triggered by `⊕workspace-architectu
 1. List `f:\⊕Workspace\diagrams\*.mmd` to match existing style
 2. Read ≥3 existing diagrams: `workspace-agent-topology.mmd`, `workspace-fr-flow.mmd`, `workspace-architecture.mmd`
 3. Start perf run
+4. Read `diagrams/DIAGRAM_BUDGETS.md` and `diagrams/STYLE_GUIDE.md` as the
+	canonical budget, split, naming, and rendering contract.
 
 ## House Style (MANDATORY)
 **Layout:** process/state → `stateDiagram-v2`; hierarchy/topology → `graph LR`; DB → `erDiagram`; sequence → `sequenceDiagram`
@@ -36,6 +38,23 @@ classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 - **Mode 1 — Update Existing:** read existing → apply changes minimally, preserve unrelated nodes/edges → re-apply house style if drifted → write back
 - **Mode 2 — Create New:** pick diagram type → translate description to nodes/edges → apply full classDef + class assignments → write to `f:\⊕Workspace\diagrams\<filename>.mmd`
 - **Mode 3 — Beautify Only:** re-apply house style, do NOT change semantic content
+
+## Budget, Split, and Traceability Rules
+- Measure each result against the category budgets in
+	`diagrams/DIAGRAM_BUDGETS.md`: UTF-8 characters, UTF-8 bytes, nodes, edges,
+	renderer URL risk, and fallback risk.
+- When a budget or split threshold is exceeded, split by the prescribed
+	project, subsystem, bounded data domain, technology layer, or lifecycle
+	phase. Preserve all architectural relationships: retain cross-view edges,
+	carry shared context into each view, and do not delete or invent edges while
+	splitting.
+- Mark every derived view with `is_derived_view=true`, set
+	`Traceability.parent` to the parent path, and update the parent's
+	`Traceability.derived_views` with non-empty derived paths. Keep the parent
+	scope and explain the narrower category in the inventory.
+- Before handoff, record renderer evidence for every written source. Report
+	the renderer backend and result; use `NOT RUN` plus the concrete reason when
+	no backend is available. Source inspection is not renderer evidence.
 
 ## Render Verification
 After writing: `C:\G\python.exe f:\⊕Workspace\tools\diagrams_dashboard.py --no-open`

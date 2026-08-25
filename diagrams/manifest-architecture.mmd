@@ -1,156 +1,21 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=false
+%% Traceability.derived_views: diagrams/manifest-derived-media-pipeline.mmd, diagrams/manifest-derived-todo-and-backup.mmd
 graph TB
-    Triggers[Task Scheduler · CLI · Manual] --> Tools[tools/<br/>executive_audio_brief.py]
+    Triggers[Task Scheduler, CLI, Manual] --> Tools[AI-Manifest tools]
     Tools --> Briefs[brief generators]
-    Tools --> LilyPortrait[src/utils/<br/>lily_portrait.py]
-    Tools --> RoadmapPanel[src/utils/<br/>roadmap_panel.py]
-    Briefs --> OpenAI[OpenAI<br/>OPENAPI_TOKEN]
-    Briefs --> ElevenLabs[ElevenLabs<br/>ELEVENLABS_API_KEY]
-    LilyPortrait -->|1st try| DallE3[DallE3Client<br/>⊕Workspace integration]
-    LilyPortrait -->|2nd try| HFImage[HuggingFaceImageClient<br/>⊕Workspace integration]
-    LilyPortrait -->|3rd try| HFSpaces[HFSpacesClient<br/>FLUX.1-schnell Gradio REST]
-    LilyPortrait -->|4th try| Pollinations[PollinationsClient<br/>image.pollinations.ai]
-    LilyPortrait -->|5th fallback| SVGFallback[SVG silhouette]
-    DallE3 -->|importlib cross-project| WSIntegrations[(⊕Workspace<br/>src/integrations/)]
-    HFImage -->|importlib cross-project| WSIntegrations
-    HFSpaces -->|importlib cross-project| WSIntegrations
-    Pollinations -->|importlib cross-project| WSIntegrations
-    DallE3 --> ImagesOut[output/images/*.png]
-    HFImage --> ImagesOut
-    HFSpaces --> ImagesOut
-    Pollinations --> ImagesOut
-    SVGFallback --> ImagesOut
-    ImagesOut --> Portal[output/<br/>executive_brief_portal.html]
-    OpenAI --> TextOut[output/briefs/*.md]
-    ElevenLabs --> AudioOut[output/tts/*.mp3]
-    TextOut --> Portal
-    AudioOut --> Portal
-    %% FR-20260630-cross-project-roadmap-generator
-    RoadmapGen[⊕Workspace<br/>roadmap_generator.py]
-    RoadmapJSON[(⊕Workspace<br/>roadmap.json)]:::db
-    Tools -->|subprocess: shells out| RoadmapGen
-    RoadmapGen --> RoadmapJSON
-    RoadmapPanel -.->|reads roadmap.json| RoadmapJSON
-    RoadmapPanel -->|Roadmap tab| Portal
-    %% PR#12 – todos DB
-    TodosUtil[src/utils/<br/>todos_db.py]
-    TodosDB[(src/data/<br/>manifest_todos.db)]
-    MigrateScript[tools/<br/>migrate_todos.py]
-    AllProjects([∞Life · ❤Music · ⟨ψ⟩Quantum<br/>· 👁Manifest · ⊕Workspace · ΣCapital])
-    TodoDoneAPI[POST /api/todo/done]
-    TodoCancelAPI[POST /api/todo/cancel]
-    CoordinationMCP[src/integrations/coordination/<br/>mcp_server.py]
-    CoordinationTodos[src/integrations/coordination/<br/>todos_db.py]
-    FrLinkGate{Tyler confirmation<br/>required for fr_id linkage}
-    Tools --> TodosUtil
-    TodosUtil --> TodosDB
-    MigrateScript -.->|reads TODO_*.md| AllProjects
-    MigrateScript -->|inserts| TodosDB
-    Tools -->|auto_migrate on startup| MigrateScript
-    Tools -->|gather_project_status| TodosDB
-    Portal --- TodoDoneAPI
-    TodoDoneAPI -->|mark_done| TodosDB
-    Portal --- TodoCancelAPI
-    TodoCancelAPI -->|cancel_todo| TodosUtil
-    TodosUtil -->|persists closure_reason| TodosDB
-    CoordinationMCP -->|governed todo operations| CoordinationTodos
-    CoordinationTodos ==> TodosDB
-    CoordinationMCP -->|fr_id linkage request| FrLinkGate
-    FrLinkGate -->|confirmed only| CoordinationTodos
-    %% FR-20260524 – priority auto-rescorer
-    RescorerTool[tools/<br/>weekly_priority_rescore.py]
-    PriorityScorer[src/utils/<br/>priority_scorer.py]
-    RescorerLog[logs/<br/>priority_rescore.jsonl]
-    Triggers --> RescorerTool
-    RescorerTool --> TodosUtil
-    RescorerTool --> PriorityScorer
-    RescorerTool --> RescorerLog
-    %% FR-20260703-tts-queue-vocal-ollama
-    TtsQueueWorker[src/services/<br/>tts_queue_worker.py]
-    TtsQueueDB[(src/data/<br/>tts_queue.db)]
-    VocalSynthesis[src/integrations/<br/>vocal_synthesis.py]
-    OllamaIntegration[src/integrations/ollama/<br/>client.py]
-    OllamaServer[[Ollama local server<br/>localhost:11434]]
-    Triggers -->|background thread pool| TtsQueueWorker
-    TtsQueueWorker --> TtsQueueDB
-    TtsQueueWorker --> ElevenLabs
-    TtsQueueWorker --> AudioOut
-    VocalSynthesis --> ElevenLabs
-    VocalSynthesis --> AudioOut
-    OllamaIntegration -->|importlib cross-project| WSIntegrations
-    OllamaIntegration --> OllamaServer
-    Tools --> OllamaIntegration
-    class TodosDB db
-    class TodosUtil,MigrateScript util
-    class AllProjects ws
-    class TodoDoneAPI,TodoCancelAPI manifest
-    class Triggers trig
-    class OpenAI,ElevenLabs,DallE3,HFImage,HFSpaces,Pollinations api
-    class TextOut,AudioOut,Portal,ImagesOut out
-    class WSIntegrations ws
-    class LilyPortrait util
-    class SVGFallback fallback
-    class RescorerTool util
-    class PriorityScorer util
-    class RescorerLog out
-    class RoadmapPanel util
-    class RoadmapJSON db
-    class RoadmapGen ws
-    class TtsQueueWorker,VocalSynthesis,OllamaIntegration util
-    class TtsQueueDB db
-    class OllamaServer ext
-    class CoordinationMCP,CoordinationTodos util
-    class FrLinkGate state
-
-    %% FR-20260816-ai-manifest-database-backup-restore
-    subgraph DatabaseBackup["👁 AI-Manifest canonical database backup and restore"]
-        BackupInventory[database_backup_inventory.json<br/>approved canonical source mapping]
-        BackupFacade[src/utils/database_backup.py<br/>compatibility facade]
-        SharedContract[⊕ Workspace<br/>provider-neutral backup contract]
-        BackupLauncher[/tools/run_database_backup.ps1<br/>PowerShell 5.1 · User-scope env hydration/]
-        BackupTask[/tools/register_database_backup_task.ps1<br/>daily 02:00 Scheduler task/]
-        BackupRunner[/tools/run_database_backup.py<br/>inventory + project-root + volume paths/]
-        BackupEnv{Environment-only custody:<br/>volume identity · manifest HMAC key<br/>MANIFEST_TODOS_DB_KEY}
-        TrustedVolume[/E:\\WorkspaceBackup<br/>.backup-volume-identity marker/]
-        BackupGenerations[Authenticated encrypted generations<br/>atomic publication · SHA-256 identity<br/>30-generation retention]
-        RestoreTool[/tools/restore_database_backup.py<br/>operator-approved isolated restore/]
-        RestoreSQLCipher[SQLCipher reopen + schema validation<br/>isolated restore root]
-        BackupAudit[Redacted backup / restore audit<br/>metadata only]
-        BackupExclusions[Excluded: todos.db · lily_config.db<br/>worktrees · virtualenvs · caches · output · tmp · logs]
-        NoCloud{No cloud-provider integration<br/>no key-management service}
-    end
-    BackupTask --> BackupLauncher
-    BackupLauncher --> BackupRunner
-    BackupEnv --> BackupLauncher
-    BackupRunner --> BackupInventory
-    BackupInventory --> BackupFacade
-    BackupFacade --> SharedContract
-    SharedContract --> TrustedVolume
-    TrustedVolume --> BackupGenerations
-    BackupGenerations --> RestoreTool
-    RestoreTool --> RestoreSQLCipher
-    RestoreSQLCipher --> BackupAudit
-    BackupExclusions -.->|fail closed| BackupInventory
-    SharedContract -.-> NoCloud
-    TodosDB -.->|explicit approved canonical source| BackupInventory
-    class BackupInventory,BackupFacade,BackupRunner,BackupLauncher,BackupTask,RestoreTool ws
-    class SharedContract,BackupGenerations,BackupAudit contract
-    class TrustedVolume ext
-    class BackupEnv,BackupExclusions,NoCloud state
-    class RestoreSQLCipher db
-
-classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
-classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
-classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
-classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
-classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
-classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
-classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
-classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
-classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
-classDef api      fill:#2a1a3a,stroke:#9e7aff,color:#e8d0f8
-classDef trig     fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
-classDef out      fill:#3a2a10,stroke:#d4a050,color:#f8e8c0
-classDef util     fill:#1a2a3a,stroke:#4a8ab4,color:#c0daf0
-classDef fallback fill:#2a2a2a,stroke:#888888,color:#cccccc
-classDef contract fill:#203a3a,stroke:#6ad4b4,color:#d0f8ee
+    Briefs --> OpenAI[OpenAI]
+    Briefs --> ElevenLabs[ElevenLabs]
+    Tools --> TodoDB[(manifest_todos.db)]
+    Tools --> Roadmap[roadmap generator]
+    Tools --> Backup[canonical backup and restore]
+    Tools -.->|parent details| Media[manifest-derived-media-pipeline]
+    Tools -.->|parent details| Todo[manifest-derived-todo-and-backup]
+    class Triggers,Tools,Briefs,Roadmap orch
+    class TodoDB db
+    class OpenAI,ElevenLabs ext
+    class Backup,Media,Todo ws
+classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0
