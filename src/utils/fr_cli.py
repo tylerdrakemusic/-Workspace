@@ -39,6 +39,10 @@ ACTIVE_STATES = {
 _ARCH_REVIEW_PASS_RE = re.compile(
     r"ARCHITECTURE_REVIEW\s*[:\-]?\s*(PASS_WITH_UPDATES|PASS)\b", re.IGNORECASE
 )
+_PARENT_JOIN_REQUIRED_RE = re.compile(r"PARENT_JOIN\s*[:\-]?\s*REQUIRED\b", re.IGNORECASE)
+_PARENT_JOIN_PASS_RE = re.compile(
+    r"PARENT_JOIN\s*[:\-]?\s*(PASS|COMPLETE)\b", re.IGNORECASE
+)
 
 
 def _conn():
@@ -57,6 +61,25 @@ def _has_architecture_review_pass(conn, fr_id: str) -> bool:
         summary = row["summary"] if hasattr(row, "keys") else row[0]
         if summary and _ARCH_REVIEW_PASS_RE.search(summary):
             return True
+    return False
+
+
+def _parent_join_gate(conn, fr_id: str) -> bool:
+    """Require a passing parent join only for FRs that declare child TODOs."""
+    rows = conn.execute(
+        "SELECT summary FROM fr_events WHERE fr_id=? ORDER BY ts", (fr_id,)
+    ).fetchall()
+    summaries = [row["summary"] if hasattr(row, "keys") else row[0] for row in rows]
+    if not any(summary and _PARENT_JOIN_REQUIRED_RE.search(summary) for summary in summaries):
+        return True
+    if any(summary and _PARENT_JOIN_PASS_RE.search(summary) for summary in summaries):
+        return True
+    print(
+        f"[fr_cli] BLOCKED: cannot advance {fr_id} — parent join is incomplete. "
+        "Complete and validate every required child TODO, record required artifacts, "
+        "integrate each child into the current FR branch, and record PARENT_JOIN:PASS.",
+        file=sys.stderr,
+    )
     return False
 
 
@@ -146,6 +169,13 @@ def cmd_update_state(args: argparse.Namespace) -> None:
     fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
     if not fr:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        conn.close()
+        sys.exit(1)
+    gated_states = {
+        "FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "TYLER_APPROVED",
+        "MERGED", "SOAKING", "SIGNED_OFF",
+    }
+    if args.new_state.upper() in gated_states and not _parent_join_gate(conn, args.fr_id):
         conn.close()
         sys.exit(1)
     if args.new_state.upper() == "MERGED" and not _has_architecture_review_pass(conn, args.fr_id):

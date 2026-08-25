@@ -87,6 +87,17 @@ Only restart servers explicitly registered in `portal_servers.json`. Skip silent
 FR state writes to `fr_ledgers.db` via `fr_cli.py` — no committed files or ledger-only PRs.
 Post-soak signoff: `update-state SIGNED_OFF` then `update-state ARCHIVED`.
 
+## 7a. Parent-Join Gate
+For an FR with a `PARENT_JOIN:REQUIRED` event, run the parent-join evaluator
+after child implementation and before any transition to `FUNCTIONAL_QA`,
+`ARCHITECTURE_REVIEW`, `TYLER_APPROVED`, `MERGED`, `SOAKING`, or `SIGNED_OFF`.
+Record `PARENT_JOIN:PASS` only after every required child is completed,
+validated, artifact-complete, integrated into the current FR branch, and
+rebased/revalidated when its base is stale. Report blockers with the TODO ID
+and criterion; preserve conflicted child sources for repair. `fr_cli.py` is the
+final enforcement point and must leave the FR state unchanged when the join is
+incomplete.
+
 ## 8. Reconcile FR Cycle Timers
 On-demand (`@⊕workspace-ci reconcile`): query `fr_cli.py list --active` for FRs in `TYLER_APPROVED`/`AUTO_REVIEWED` with open cycle timers → check each PR via `mcp_github` for `merged_at` → close timer with `--at <unix_merged_at>` backfill → update FR state + record reconciliation event.
 

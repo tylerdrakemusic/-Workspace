@@ -90,6 +90,34 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
 
 
 class TestMergedGate:
+    @pytest.mark.parametrize(
+        "new_state",
+        ["FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "TYLER_APPROVED", "MERGED", "SOAKING", "SIGNED_OFF"],
+    )
+    def test_parent_join_blocks_every_post_implementation_state(
+        self, tmp_path, capsys, new_state: str
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 is not joined')"
+        )
+        conn.commit()
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", new_state))
+
+        assert exc_info.value.code != 0
+        assert "parent join is incomplete" in capsys.readouterr().err
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()
+        check_conn.close()
+        assert row[0] == "ARCHITECTURE_REVIEW"
+
     def test_merged_blocked_without_architecture_review_pass(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)

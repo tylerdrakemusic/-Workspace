@@ -43,6 +43,13 @@ mode: ⊕workspace-overseer
      7. On confirmation → proceed to Phase B triage (ledger + registry + cycle timer).
      8. On amendments → update the draft and re-confirm.
 
+   PARENT JOIN: If the FR is decomposed into child TODOs, record the required
+   child IDs and join criteria in the FR plan. Before FUNCTIONAL_QA or any
+   later FR state, publish PARENT_JOIN:PASS only after every child is
+   completed, validated, artifact-complete, integrated into the current FR
+   branch, and current with the parent head. Missing, stale, conflicting, or
+   invalid children must remain explicit blockers.
+
      0. MODE CHECK: Confirm you are running as ⊕workspace-overseer. If not,
         hand off to that agent now — it provides MCP pre-flight, agent discovery,
         and the full workspace routing context required for accurate triage.
