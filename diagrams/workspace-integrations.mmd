@@ -17,8 +17,20 @@ graph LR
     Quantum --> QDB[(quantumpsi.db)]
     Manifest --> ManifestDB[(manifest_todos.db)]
     Capital --> CapitalDB[(sigmacapital.db)]
+    LifeWeightTrend[∞ Life aggregate weight-trend producer]
+    AggregateHandoff[Aggregate-only Life-to-Quantum handoff<br/>no rows, raw data, identifiers,<br/>features, labels, predictions, or nutrition]
+    QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
+    SufficiencyGate{Sufficiency gate}
+    ExecutionDenied[Real-data execution denied]
+    Life --> LifeWeightTrend
+    LifeWeightTrend ==> AggregateHandoff
+    AggregateHandoff ==> QuantumValidator
+    QuantumValidator --> SufficiencyGate
+    SufficiencyGate --> ExecutionDenied
     class Workspace,Services,Backup ws
     class Life,Music,Quantum,Manifest,Capital orch
+    class LifeWeightTrend,QuantumValidator quantum
+    class AggregateHandoff,SufficiencyGate,ExecutionDenied state
     class GitHub,Mermaid ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB db
 classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff

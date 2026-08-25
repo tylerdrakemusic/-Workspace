@@ -28,7 +28,7 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 2303 | 2303 | 15 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 1305 | 1305 | 1 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
 | diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 2855 | 2842 | 20 | 20 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
-| diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5368 | 5343 | 46 | 38 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1147 | 1145 | 6 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 1140 | 1140 | 7 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
@@ -38,7 +38,7 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/music-db-schema.mmd | ❤Music database entity relationships | ❤Music | 5956 | 5956 | 25 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/music-icecast-primary-architecture.mmd | ❤Music Icecast primary streaming architecture | ❤Music | 1072 | 1070 | 20 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels |
 | diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 2758 | 2743 | 21 | 18 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 3717 | 3713 | 45 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 4056 | 4050 | 50 | 22 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 3132 | 3132 | 9 | 7 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1196 | 1194 | 7 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
@@ -46,7 +46,7 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3026 | 3004 | 25 | 16 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 2956 | 2956 | 11 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4760 | 4747 | 52 | 56 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 1407 | 1392 | 13 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 2089 | 2067 | 21 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1387 | 1387 | 12 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |

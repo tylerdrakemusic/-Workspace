@@ -12,6 +12,9 @@ graph TB
     WithingsRefresh --> TokenFile[withings_tokens.json]
     DB --> Analytics[src/analytics/<br/>longevity · risk · trends]
     Analytics --> Reports[reports/<br/>longevity dashboard]
+    WeightTrendProducer[src/analysis/<br/>weight_trend_sufficiency_audit.py<br/>read-only aggregate producer]
+    QuantumEpisodeHandoff[build_quantum_episode_handoff<br/>schema v1 · weight_trend aggregates]
+    QuantumHandoffBoundary{Life-to-Quantum boundary:<br/>aggregate-only · no rows, raw data, IDs,<br/>features, labels, predictions, or nutrition}
     EvidenceFoundation[src/analysis/<br/>evidence_experiment_foundation.py<br/>provenance · safety · experiment contracts]
     ShadowReport[/tools/evidence_review_shadow_report.py<br/>read-only · synthetic shadow mode/]
     NoSchemaWrites{Boundary:<br/>no schema or DB writes}
@@ -29,6 +32,9 @@ graph TB
     LifeRiskReview -.->|must pass| ActionableUse
     TylerActionApproval -.->|must approve| ActionableUse
     ShadowReport -.->|actionable use prohibited| ActionableUse
+    DB --> WeightTrendProducer
+    WeightTrendProducer ==> QuantumEpisodeHandoff
+    QuantumEpisodeHandoff -.->|restricted health-data handoff| QuantumHandoffBoundary
     DB --> Dashboard[src/dashboard/<br/>gen_upcoming_workouts_dashboard.py]
     Dashboard --> Output[tmp/biomarker_dashboard.html<br/>upcoming workouts panel]
     DB --> Protocols[Protocols & Experiments]
@@ -55,9 +61,9 @@ graph TB
     MigrateFR --> DB
     class Inputs,Reports,Scheduler,TokenFile io
     class ETL,DB,Analytics,Protocols,Budget,Watchdog,WithingsWatcher,WithingsRefresh,TruDx core
-    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR,LifeInventoryAdapter,EvidenceFoundation,ShadowReport util
+    class NovaPortrait,WGSProvider,ResearchIndex,NovaConfigDB,MigrateFR,LifeInventoryAdapter,EvidenceFoundation,ShadowReport,WeightTrendProducer,QuantumEpisodeHandoff util
     class WSIntegrations,WSBackupContract,WSBackupExecution ws
-    class LifeApprovalProjection,LifeBackupExclusions,KeyCustody,NoSchemaWrites,NoIndividualizedOutput,NutritionGate,LifeRiskReview,TylerActionApproval,ActionableUse state
+    class LifeApprovalProjection,LifeBackupExclusions,KeyCustody,NoSchemaWrites,NoIndividualizedOutput,NutritionGate,LifeRiskReview,TylerActionApproval,ActionableUse,QuantumHandoffBoundary state
 
     DB -.->|redacted locator + classification metadata only| LifeInventoryAdapter
     LifeInventoryAdapter -.->|no database contents or key values| LifeApprovalProjection
