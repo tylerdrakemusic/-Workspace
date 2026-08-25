@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,7 +50,38 @@ _PARENT_JOIN_REQUIRED_RE = re.compile(r"PARENT_JOIN\s*[:\-]?\s*REQUIRED\b", re.I
 _PARENT_JOIN_PASS_RE = re.compile(
     r"PARENT_JOIN\s*[:\-]?\s*(PASS|COMPLETE)\b", re.IGNORECASE
 )
-_parent_head_resolver: Callable[[str], str | None] | None = None
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_parent_head(parent_branch: str) -> str:
+    """Resolve the checked-out head when it is on the ledger's parent branch."""
+    if not parent_branch:
+        raise ValueError("parent branch is required")
+    command = ["git", "-C", str(_REPOSITORY_ROOT)]
+    branch_result = subprocess.run(
+        [*command, "branch", "--show-current"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if branch_result.returncode != 0:
+        raise RuntimeError("unable to resolve checked-out parent branch")
+    current_branch = branch_result.stdout.strip()
+    if current_branch != parent_branch:
+        raise ValueError("checked-out branch does not match the FR parent branch")
+    head_result = subprocess.run(
+        [*command, "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    current_head = head_result.stdout.strip()
+    if head_result.returncode != 0 or not re.fullmatch(r"[0-9a-fA-F]{40}", current_head):
+        raise RuntimeError("unable to resolve checked-out parent head")
+    return current_head
+
+
+_parent_head_resolver: Callable[[str], str | None] | None = _resolve_parent_head
 
 
 def _conn():
