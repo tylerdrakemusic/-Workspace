@@ -7,6 +7,22 @@ stateDiagram-v2
     MCP_FIRST --> IN_PROGRESS: governed coordination MCP available
     MCP_FIRST --> LOCAL_FALLBACK: MCP unavailable
     LOCAL_FALLBACK --> IN_PROGRESS: canonical local utilities only
+    IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
+    state "FR implementation anchor · child TODO coordination" as FR_COORDINATION {
+        [*] --> TODO_ADMISSION
+        TODO_ADMISSION --> CHILD_ASSIGNED: FR match + executable TODO
+        CHILD_ASSIGNED --> CLAIM_VALIDATED: claim/lifecycle validation boundary
+        CLAIM_VALIDATED --> CHILD_WORK: isolated child branch + worktree
+        CHILD_WORK --> SERIALIZED_INTEGRATION: child ready for integration
+        SERIALIZED_INTEGRATION --> STALE_REBASE: child is stale
+        STALE_REBASE --> SERIALIZED_INTEGRATION: rebase passes
+        STALE_REBASE --> CONFLICT_HANDOFF: rebase conflict
+        SERIALIZED_INTEGRATION --> CONFLICT_HANDOFF: integration conflict
+        CONFLICT_HANDOFF --> CHILD_WORK: preserve source + sibling work
+        SERIALIZED_INTEGRATION --> CHILD_RETURN: integrate into FR feature branch
+        CHILD_RETURN --> [*]: return to FR lifecycle; no gate bypass
+    }
+    FR_COORDINATION --> IN_PROGRESS: child handoff complete
     IN_PROGRESS --> FUNCTIONAL_QA: implementation done
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
@@ -27,4 +43,11 @@ stateDiagram-v2
 
     AUTO_REVIEWED --> IN_PROGRESS: changes requested
 
-    class MCP_FIRST,LOCAL_FALLBACK state
+    class MCP_FIRST,LOCAL_FALLBACK,TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN state
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
