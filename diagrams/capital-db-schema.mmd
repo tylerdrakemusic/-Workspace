@@ -4,9 +4,22 @@
 erDiagram
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
     TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
+    WATCHLIST_OBSERVATIONS ||--o| TRADE_CANDIDATES : promotes_to_pending_candidate
     PORTFOLIO ||--o{ EXITS : has_exit
     TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves
     SENTIMENT_SHADOW_RUNS ||--o{ SENTIMENT_VALIDATION_EVALUATIONS : groups_by_run_id
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : contains
     POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : produces
     OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_LEGS : contains
+    WATCHLIST_OBSERVATIONS {
+        TEXT id PK
+        TEXT symbol
+        TEXT status "CHECK deferred|watchlist|promoted|archived"
+        TEXT reason
+        TEXT evidence_json "evidence"
+        TEXT provenance_json "provenance"
+        TEXT observed_at
+        TEXT enriched_at
+        TEXT promoted_at
+    }
+    %% Index: idx_watchlist_observations_symbol ON (symbol, observed_at)
