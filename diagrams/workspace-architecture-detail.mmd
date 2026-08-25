@@ -59,6 +59,14 @@ graph TB
         Audit[Redacted backup / restore audit output<br/>metadata only]
         Exclusions[Exclusions:<br/>legacy · generated · worktree<br/>virtualenv · cache · output · transient]
     end
+    subgraph ParentJoinContract["Evidence-backed parent join contract"]
+        ParentJoinEvaluator[parent_join_gates.evaluate_parent_join]
+        ParentJoinEvidence[(parent-join-evidence<br/>persisted evaluator evidence)]
+        ParentJoinRecompute[Recompute join criteria<br/>against latest evidence]
+        ParentJoinGate{Accept PARENT_JOIN:PASS?}
+        ParentJoinAdvance[Lifecycle may advance]
+        ParentJoinBlocked[Blocked lifecycle transitions:<br/>FUNCTIONAL_QA · ARCHITECTURE_REVIEW<br/>TYLER_APPROVED · MERGED · SOAKING · SIGNED_OFF]
+    end
     Portal --> Registry
     Registry --> PortalHtml
     Bench --> Dashes
@@ -94,6 +102,11 @@ graph TB
     BackupManifest --> Inventory
     BackupScope --> DiscoveryGate
     BackupPolicy -.->|provider-neutral; no cloud-provider integration| BackupGenerator
+    ParentJoinEvaluator -->|evaluates child joins| ParentJoinEvidence
+    ParentJoinEvidence --> ParentJoinRecompute
+    ParentJoinRecompute --> ParentJoinGate
+    ParentJoinGate -->|pass| ParentJoinAdvance
+    ParentJoinGate -->|missing, stale, or mismatched evidence| ParentJoinBlocked
     UtilsCore --> Data
     UtilsFR --> Data
     UtilsSec --> Data
@@ -114,6 +127,8 @@ graph TB
     class Preflight,EnvBoundary,DiscoveryGate state
     class WorkspaceDB,Data,FRLedger db
     class Destination,Generation,Integrity,Restore,Audit contract
+    class ParentJoinEvaluator,ParentJoinRecompute,ParentJoinGate,ParentJoinAdvance contract
+    class ParentJoinBlocked state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

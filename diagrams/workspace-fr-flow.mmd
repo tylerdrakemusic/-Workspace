@@ -23,7 +23,19 @@ stateDiagram-v2
         CHILD_RETURN --> [*]: return to FR lifecycle; no gate bypass
     }
     FR_COORDINATION --> IN_PROGRESS: child handoff complete
-    IN_PROGRESS --> FUNCTIONAL_QA: implementation done
+    IN_PROGRESS --> PARENT_JOIN_EVALUATION: implementation done
+    state "Evidence-backed parent join gate" as PARENT_JOIN_EVALUATION {
+        [*] --> PARENT_JOIN_EVALUATOR
+        PARENT_JOIN_EVALUATOR --> PARENT_JOIN_EVIDENCE: parent_join_gates.evaluate_parent_join
+        PARENT_JOIN_EVIDENCE --> PARENT_JOIN_RECOMPUTE: persist parent-join-evidence
+        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_PASS: recompute against latest evidence
+        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_BLOCKED: missing, stale, or mismatched evidence
+        PARENT_JOIN_PASS --> [*]: accept PARENT_JOIN:PASS
+        PARENT_JOIN_BLOCKED --> [*]: reject PARENT_JOIN:PASS
+    }
+    PARENT_JOIN_EVALUATION --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
+    PARENT_JOIN_EVALUATION --> IN_PROGRESS: PARENT_JOIN:PASS blocked
+    FUNCTIONAL_QA --> FUNCTIONAL_QA: blocked until parent join passes
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
     ARCHITECTURE_REVIEW --> ARCHITECTURE_REVIEW: STALE/MISSING → beautifier → re-verify
@@ -40,6 +52,13 @@ stateDiagram-v2
     MERGED --> SOAKING: post-merge soak window
     SOAKING --> SIGNED_OFF: signoff verified
     SIGNED_OFF --> [*]
+
+    note right of FUNCTIONAL_QA
+        Parent-join evidence blocks FUNCTIONAL_QA,
+        ARCHITECTURE_REVIEW, TYLER_APPROVED, MERGED,
+        SOAKING, and SIGNED_OFF until recomputation accepts
+        PARENT_JOIN:PASS.
+    end note
 
     AUTO_REVIEWED --> IN_PROGRESS: changes requested
 
