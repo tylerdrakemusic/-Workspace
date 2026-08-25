@@ -48,6 +48,21 @@ def test_operational_runtime_rejects_secret_bearing_telemetry() -> None:
         runtime.telemetry.emit("claim", "todo-1", token="must-not-be-recorded")
 
 
+def test_telemetry_query_filters_allowlisted_events_deterministically() -> None:
+    runtime = OperationalRuntime(sqlite3.connect(":memory:"), (TodoContract(todo_id="todo-1"),))
+    runtime.telemetry.emit("claim", "todo-1", attempt=1)
+    runtime.telemetry.emit("retry", "todo-1", attempt=2)
+    runtime.telemetry.emit("claim", "todo-2", attempt=1)
+
+    assert runtime.telemetry.query(kind="claim", todo_id="todo-1") == (
+        runtime.telemetry.events[0],
+    )
+    assert runtime.telemetry.query(attempt=2) == (runtime.telemetry.events[1],)
+
+    with pytest.raises(TelemetryFieldError, match="token"):
+        runtime.telemetry.query(token="must-not-be-queryable")
+
+
 def test_dispatch_is_deterministic_and_resource_conflicts_are_observable() -> None:
     contracts = (
         TodoContract(todo_id="todo-b", fr_id="FR-1", resources=(ResourceDeclaration("shared", "db"),)),

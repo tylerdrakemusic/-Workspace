@@ -22,7 +22,11 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from init_db import get_connection, init_db
+try:
+    from .init_db import get_connection, init_db
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from init_db import get_connection, init_db
 
 PROOF_TYPES = [
     "file_created", "file_modified", "db_write", "command_output",

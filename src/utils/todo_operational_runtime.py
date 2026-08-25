@@ -42,6 +42,27 @@ class OperationalTelemetry:
             raise TelemetryFieldError(f"telemetry fields are not allowlisted: {', '.join(sorted(forbidden))}")
         self.events.append(TelemetryEvent(kind, todo_id, dict(details)))
 
+    def query(
+        self,
+        *,
+        kind: str | None = None,
+        todo_id: str | None = None,
+        **filters: int | str | bool,
+    ) -> tuple[TelemetryEvent, ...]:
+        """Return events matching the supplied allowlisted fields in emit order."""
+        if kind is not None and kind not in self.allowed_kinds:
+            raise TelemetryFieldError(f"telemetry kind is not allowlisted: {kind}")
+        forbidden = set(filters) - self.allowed_fields
+        if forbidden:
+            raise TelemetryFieldError(f"telemetry fields are not allowlisted: {', '.join(sorted(forbidden))}")
+        return tuple(
+            event
+            for event in self.events
+            if (kind is None or event.kind == kind)
+            and (todo_id is None or event.todo_id == todo_id)
+            and all(event.details.get(name) == value for name, value in filters.items())
+        )
+
 
 @dataclass(frozen=True)
 class OperationalConfig:
