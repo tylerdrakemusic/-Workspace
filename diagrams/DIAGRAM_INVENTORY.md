@@ -31,7 +31,7 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5368 | 5343 | 46 | 38 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1147 | 1145 | 6 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 1119 | 1119 | 7 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 1140 | 1140 | 7 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 2624 | 2606 | 8 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive; Unicode labels |
 | diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3062 | 3051 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
@@ -46,7 +46,7 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3026 | 3004 | 25 | 16 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 2956 | 2956 | 11 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4760 | 4747 | 52 | 56 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 1380 | 1365 | 13 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 1407 | 1392 | 13 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1387 | 1387 | 12 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |

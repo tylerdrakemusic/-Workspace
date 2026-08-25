@@ -120,6 +120,7 @@ def measure_source(path: Path) -> DiagramMetrics:
     """Measure a Mermaid source using the inventory measurement contract."""
     with path.open("r", encoding="utf-8", newline="") as source_file:
         source = source_file.read()
+    source = source.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\r\n")
     lines = source.splitlines()
     node_count = sum(1 for line in lines if _looks_like_node(line))
     edge_count = sum(1 for line in lines if any(operator in line for operator in ("-->", "==>", "-.->", "---", "===", "}|")))

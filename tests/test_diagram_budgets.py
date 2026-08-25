@@ -121,13 +121,18 @@ def test_measure_source_uses_todo_302_utf8_contract() -> None:
 
 
 def test_measure_source_normalizes_checkout_line_endings(tmp_path: Path) -> None:
-    source_path = tmp_path / "line-endings.mmd"
-    source_path.write_bytes(b"graph LR\r\n    A --> B\r\n")
+    source_text = "graph LR\n    A --> B\n"
+    lf_path = tmp_path / "line-endings-lf.mmd"
+    crlf_path = tmp_path / "line-endings-crlf.mmd"
+    lf_path.write_bytes(source_text.encode("utf-8"))
+    crlf_path.write_bytes(source_text.replace("\n", "\r\n").encode("utf-8"))
 
-    metrics = measure_source(source_path)
+    lf_metrics = measure_source(lf_path)
+    crlf_metrics = measure_source(crlf_path)
 
-    assert metrics.utf8_characters == len("graph LR\r\n    A --> B\r\n")
-    assert metrics.utf8_bytes == len("graph LR\r\n    A --> B\r\n".encode("utf-8"))
+    assert lf_metrics == crlf_metrics
+    assert lf_metrics.utf8_characters == len(source_text.replace("\n", "\r\n"))
+    assert lf_metrics.utf8_bytes == len(source_text.replace("\n", "\r\n").encode("utf-8"))
 
 
 def test_validate_inventory_reconciles_committed_baseline_measurements() -> None:
