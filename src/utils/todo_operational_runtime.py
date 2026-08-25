@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import re
 import sqlite3
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Mapping
 
 from todo_execution_contracts import ExecutionState, TodoContract
@@ -15,6 +18,22 @@ from todo_readiness_scheduler import SchedulerConfig, schedule_todos
 
 class TelemetryFieldError(ValueError):
     """Raised when telemetry contains a field outside the operational allowlist."""
+
+
+_OPAQUE_ID = re.compile(r"^(?:todo|child|parent)-[A-Za-z0-9]+(?:[-_.][A-Za-z0-9]+)*$")
+_FORBIDDEN_VALUE = re.compile(
+    r"(?:medical|health|genomic|blood|account|routing|password|secret|token|api[-_ ]?key|credential)",
+    re.IGNORECASE,
+)
+_TELEMETRY_REASONS = frozenset(
+    {
+        "operational retry",
+        "capacity limit",
+        "resource conflict",
+        "child integration conflict",
+        "validated child integrated",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -37,9 +56,12 @@ class OperationalTelemetry:
     def emit(self, kind: str, todo_id: str | None = None, **details: int | str | bool) -> None:
         if kind not in self.allowed_kinds:
             raise TelemetryFieldError(f"telemetry kind is not allowlisted: {kind}")
+        _validate_telemetry_id(todo_id)
         forbidden = set(details) - self.allowed_fields
         if forbidden:
             raise TelemetryFieldError(f"telemetry fields are not allowlisted: {', '.join(sorted(forbidden))}")
+        for name, value in details.items():
+            _validate_telemetry_value(name, value)
         self.events.append(TelemetryEvent(kind, todo_id, dict(details)))
 
     def query(
@@ -52,9 +74,12 @@ class OperationalTelemetry:
         """Return events matching the supplied allowlisted fields in emit order."""
         if kind is not None and kind not in self.allowed_kinds:
             raise TelemetryFieldError(f"telemetry kind is not allowlisted: {kind}")
+        _validate_telemetry_id(todo_id)
         forbidden = set(filters) - self.allowed_fields
         if forbidden:
             raise TelemetryFieldError(f"telemetry fields are not allowlisted: {', '.join(sorted(forbidden))}")
+        for name, value in filters.items():
+            _validate_telemetry_value(name, value)
         return tuple(
             event
             for event in self.events
@@ -62,6 +87,27 @@ class OperationalTelemetry:
             and (todo_id is None or event.todo_id == todo_id)
             and all(event.details.get(name) == value for name, value in filters.items())
         )
+
+
+def _validate_telemetry_id(value: str | None) -> None:
+    if value is not None and (
+        not isinstance(value, str)
+        or _FORBIDDEN_VALUE.search(value)
+        or not _OPAQUE_ID.fullmatch(value)
+    ):
+        raise TelemetryFieldError("telemetry todo identity must be an opaque operational identifier")
+
+
+def _validate_telemetry_value(name: str, value: int | str | bool) -> None:
+    if isinstance(value, str):
+        if _FORBIDDEN_VALUE.search(value):
+            raise TelemetryFieldError(f"telemetry {name} contains a forbidden sensitive value")
+        if name == "reason" and value not in _TELEMETRY_REASONS:
+            raise TelemetryFieldError("telemetry reason is not an operational enum")
+    elif isinstance(value, bool):
+        return
+    elif not isinstance(value, int) or value < 0:
+        raise TelemetryFieldError(f"telemetry {name} must be a bounded non-negative integer")
 
 
 @dataclass(frozen=True)
@@ -73,6 +119,43 @@ class OperationalConfig:
     lease_seconds: int = 300
     max_retries: int = 2
     pre_fr_capacity: int = 16
+
+    @classmethod
+    def from_policy(cls, policy: Mapping[str, object]) -> "OperationalConfig":
+        required = {
+            "max_parallel_todos_per_fr",
+            "max_total_todo_workers",
+            "lease_seconds",
+            "max_retries",
+        }
+        allowed = required | {"pre_fr_capacity", "tuning"}
+        unknown = set(policy) - allowed
+        missing = required - set(policy)
+        if unknown:
+            raise ValueError(f"unknown execution policy fields: {', '.join(sorted(unknown))}")
+        if missing:
+            raise ValueError(f"missing execution policy fields: {', '.join(sorted(missing))}")
+        values = {key: policy[key] for key in required | {"pre_fr_capacity"} if key in policy}
+        invalid_types = sorted(key for key, value in values.items() if type(value) is not int)
+        if invalid_types:
+            raise ValueError(
+                f"execution policy limits must be integers: {', '.join(invalid_types)}"
+            )
+        return cls(
+            max_parallel_per_fr=values["max_parallel_todos_per_fr"],
+            global_worker_capacity=values["max_total_todo_workers"],
+            lease_seconds=values["lease_seconds"],
+            max_retries=values["max_retries"],
+            pre_fr_capacity=values.get("pre_fr_capacity", cls.pre_fr_capacity),
+        )
+
+    @classmethod
+    def from_policy_path(cls, path: str | Path) -> "OperationalConfig":
+        with Path(path).open(encoding="utf-8") as policy_file:
+            policy = json.load(policy_file)
+        if not isinstance(policy, dict):
+            raise ValueError("execution policy must be a JSON object")
+        return cls.from_policy(policy)
 
     def __post_init__(self) -> None:
         if self.max_parallel_per_fr <= 0 or self.global_worker_capacity <= 0:
@@ -91,10 +174,19 @@ class OperationalRuntime:
         *,
         config: OperationalConfig | None = None,
         priorities: Mapping[str, int] | None = None,
+        policy: Mapping[str, object] | None = None,
+        policy_path: str | Path | None = None,
     ) -> None:
+        if config is not None and (policy is not None or policy_path is not None):
+            raise ValueError("provide config or policy, not both")
         self.connection = connection
         self.contracts = contracts
-        self.config = config or OperationalConfig()
+        if policy is not None:
+            self.config = OperationalConfig.from_policy(policy)
+        elif policy_path is not None:
+            self.config = OperationalConfig.from_policy_path(policy_path)
+        else:
+            self.config = config or OperationalConfig()
         self.priorities = priorities or {}
         self.lifecycle = ExecutionLifecycle(connection)
         self.telemetry = OperationalTelemetry()
@@ -131,7 +223,7 @@ class OperationalRuntime:
             self.telemetry.emit("claim", record.todo_id, attempt=record.attempt)
             claimed.append(record)
         for item in result.queued:
-            self.telemetry.emit("conflict", item.todo_id, reason=item.reason)
+            self.telemetry.emit("conflict", item.todo_id, reason=_queue_reason(item.reason))
         return claimed
 
     def recover_stale(self, *, now: float) -> list[str]:
@@ -204,3 +296,7 @@ class OperationalRuntime:
             except KeyError:
                 states[contract.todo_id] = ExecutionState.QUEUED
         return states
+
+
+def _queue_reason(reason: str) -> str:
+    return "resource conflict" if "resource" in reason else "capacity limit"

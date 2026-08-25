@@ -14,6 +14,75 @@ from todo_operational_runtime import (
 )
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "medical-record-123",
+        "account-number-987654",
+        "password=secret-token",
+        "lease-token-abc123",
+        "operator supplied reason",
+    ],
+)
+def test_telemetry_rejects_non_opaque_or_unbounded_values(value: str) -> None:
+    runtime = OperationalRuntime(sqlite3.connect(":memory:"), (TodoContract(todo_id="todo-1"),))
+
+    with pytest.raises(TelemetryFieldError):
+        runtime.telemetry.emit("retry", value, reason=value)
+
+
+def test_telemetry_accepts_bounded_operational_reason() -> None:
+    telemetry = OperationalRuntime(sqlite3.connect(":memory:"), ()).telemetry
+
+    telemetry.emit("retry", "todo-1", reason="operational retry")
+
+    assert telemetry.events[0].details["reason"] == "operational retry"
+
+
+def test_runtime_loads_injected_policy_and_applies_capacity_lease_and_retry_limits() -> None:
+    policy = {
+        "max_parallel_todos_per_fr": 1,
+        "max_total_todo_workers": 1,
+        "lease_seconds": 42,
+        "max_retries": 0,
+    }
+    contracts = tuple(TodoContract(todo_id=f"todo-{index}", fr_id="FR-1") for index in range(2))
+    runtime = OperationalRuntime(sqlite3.connect(":memory:"), contracts, policy=policy)
+
+    claimed = runtime.dispatch(now=100.0)
+
+    assert len(claimed) == 1
+    assert claimed[0].lease_expires_at == 142.0
+    assert runtime.lifecycle.get("todo-0").max_retries == 0
+
+
+def test_runtime_rejects_invalid_injected_policy() -> None:
+    with pytest.raises(ValueError, match="max_total_todo_workers"):
+        OperationalRuntime(
+            sqlite3.connect(":memory:"),
+            (),
+            policy={
+                "max_parallel_todos_per_fr": 1,
+                "max_total_todo_workers": "unbounded",
+                "lease_seconds": 1,
+                "max_retries": 0,
+            },
+        )
+
+
+def test_runtime_loads_policy_from_explicit_json_path(tmp_path) -> None:
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_text(
+        '{"max_parallel_todos_per_fr": 1, "max_total_todo_workers": 1, '
+        '"lease_seconds": 17, "max_retries": 1}',
+        encoding="utf-8",
+    )
+
+    runtime = OperationalRuntime(sqlite3.connect(":memory:"), (), policy_path=policy_path)
+
+    assert runtime.config.lease_seconds == 17
+
+
 def test_operational_defaults_bound_dispatch_and_allowlisted_telemetry() -> None:
     config = OperationalConfig()
     assert config.max_parallel_per_fr == 8
