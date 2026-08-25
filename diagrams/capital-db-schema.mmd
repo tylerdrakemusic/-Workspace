@@ -2,6 +2,7 @@
 erDiagram
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
     TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
+    WATCHLIST_OBSERVATIONS ||--o| TRADE_CANDIDATES : promotes_to_pending_candidate
     PORTFOLIO ||--o{ EXITS : has_exit
     EXITS ||--o{ EXITS : supersedes
     TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
@@ -70,6 +71,18 @@ erDiagram
         real margin_buying_power
         real margin_cash_balance
     }
+    WATCHLIST_OBSERVATIONS {
+        TEXT id PK
+        TEXT symbol
+        TEXT status "CHECK deferred|watchlist|promoted|archived"
+        TEXT reason
+        TEXT evidence_json "evidence"
+        TEXT provenance_json "provenance"
+        TEXT observed_at
+        TEXT enriched_at
+        TEXT promoted_at
+    }
+    %% Index: idx_watchlist_observations_symbol ON (symbol, observed_at)
     MARKET_DATA_CACHE {
         integer id PK
         text symbol

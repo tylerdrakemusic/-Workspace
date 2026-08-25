@@ -33,6 +33,11 @@ graph TB
     Signals[Public market signals<br/>news · filings · sentiment] --> Ingest[src/ingest/<br/>signal fetchers — future]
     Ingest --> DB[(sigmacapital.db<br/>SQLCipher)]
     Research[src/research/<br/>off-market pick generation — future] --> DB
+    Research --> Watchlist[watchlist observations]
+    Watchlist --> Review[supervised watchlist review]
+    Review --> PromotionBoundary{promotion only<br/>no order execution}
+    PromotionBoundary --> Pending[trade candidate<br/>approval_status=pending]
+    Pending --> TradeGate
     Agents[src/agents/<br/>research, risk] --> DB
     CapitalBackupRestore[Capital-local authenticated<br/>manifest-driven backup/restore<br/>tools/database_backup.py + tools/database_restore.py]
     BackupManifest[Authenticated backup manifest<br/>canonical Capital database identity<br/>generation metadata + destination binding]:::state
@@ -280,18 +285,18 @@ graph TB
     PositionRealizationBoundary -.->|cannot mutate| AccountsTrading
     class ReconcileOrders orch
     class Signals,Manual state
-    class Ingest,Research,TradeCandidates,Portfolio,TradeApprovalGate orch
+    class Ingest,Research,Review,TradeCandidates,Portfolio,TradeApprovalGate orch
     class Agents,ResearchAgent,MarketData,Reauth,TradeGate,AccountsTrading,ScoringBoundary,PerplexityAdapter,QuoteService,QuoteParallel,QuotePersistence orch
     class ExitStrategy,ExitReeval,GtcOrder,Technicals,Backfill orch
     class SchwabOCOBuilder,OCOPreview,OCOConfirmations,DedicatedOCORoute,SchwabOCOSubmission,SchwabOCOLifecycle,OCOReconciliation,SiblingCancellation,ReconciliationRequired state
     class LogRealTrade orch
     class ApproveCandidate,SubmitRealOrder,MarginPolicy,MarginStore,MarginProof,SelectedAccount,PersistedAccount,MarginReservation orch
     class CapitalBackupRestore orch
-    class MarginGate,MarginUI,DeterministicFallback,QualificationGate,QuoteQuorum,QuoteReliability,QuoteDecision,QuoteIsolation state
+    class MarginGate,MarginUI,PromotionBoundary,DeterministicFallback,QualificationGate,QuoteQuorum,QuoteReliability,QuoteDecision,QuoteIsolation state
     class PositionRealizationScheduler,PositionRealizationBatch,DedicatedAccountBinding,HoldingsCapture,SnapshotIdentity,FreshnessBoundary,CorrelationBoundary,DirectionCompatibility,ReviewUniqueness,ProposalContract,PositionReviewQuery,PositionRealizationBoundary state
     class BackupManifest,DestinationIdentity,IntegrityVerification,CanonicalApproval,StagedRestore,NoPartialRestore state
     class OAuthLoop,TokenStore state
-    class DB,ValidationEvaluations,ShadowRuns,BackupArtifact,HoldingsSnapshot,PositionHoldings,PositionReview,ProposalDraft db
+    class DB,Watchlist,Pending,ValidationEvaluations,ShadowRuns,BackupArtifact,HoldingsSnapshot,PositionHoldings,PositionReview,ProposalDraft db
     class Perplexity,YFinance,Anthropic,Schwab,SchwabMarketData,YahooQuote,AlphaVantage,YFinanceQuotes ext
     class Tyler tyler
 
