@@ -4,6 +4,8 @@ graph TB
         Portal[reports/portal.html<br/>Unified Dashboard Portal]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
+        TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
+        TodoCoordination[Existing FR / child coordination]
         BackupContract[Provider-neutral local<br/>database backup contract]
         BackupVolume[/E: verified local volume/]
     end
@@ -28,6 +30,8 @@ graph TB
         CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
     end
     Portal --> Registry
+    TodoRuntime --> TodoCoordination
+    TodoRuntime -->|bounded execution lifecycle| FRBoard
     Registry -.scans.-> Life
     Registry -.scans.-> Music
     Registry -.scans.-> Quantum

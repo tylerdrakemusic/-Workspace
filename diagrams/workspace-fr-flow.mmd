@@ -7,6 +7,15 @@ stateDiagram-v2
     MCP_FIRST --> IN_PROGRESS: governed coordination MCP available
     MCP_FIRST --> LOCAL_FALLBACK: MCP unavailable
     LOCAL_FALLBACK --> IN_PROGRESS: canonical local utilities only
+    state "Bounded TODO operational runtime" as TODO_RUNTIME {
+        [*] --> TODO_DISPATCH
+        TODO_DISPATCH --> TODO_CLAIM: policy defaults 8 per FR / 16 global
+        TODO_CLAIM --> TODO_LEASE: durable claim / lease / retry
+        TODO_LEASE --> TODO_OUTCOME: allowlisted in-memory outcomes
+        TODO_OUTCOME --> [*]
+    }
+    IN_PROGRESS --> TODO_RUNTIME: operational TODO execution
+    TODO_RUNTIME --> IN_PROGRESS: required children, artifacts, current parent head validated
     IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
     state "FR implementation anchor · child TODO coordination" as FR_COORDINATION {
         [*] --> TODO_ADMISSION

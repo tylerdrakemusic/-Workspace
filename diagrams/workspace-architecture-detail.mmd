@@ -22,6 +22,9 @@ graph TB
             UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
             UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
             BackupScope[database_backup_scope.py<br/>manifest validation · discovery · report rendering]
+            TodoRuntime[todo_operational_runtime.py<br/>bounded scheduler · durable lifecycle<br/>package + direct-script imports]
+            TodoPolicy[todo_execution_policy.json<br/>8 per FR · 16 global<br/>leases · retries]
+            TodoTelemetry[In-memory allowlisted telemetry<br/>outcomes are not persisted]
             CoordinationMCP[coordination_mcp_server.py]
             GmailMCP[gmail_mcp_server.py<br/>gmail-service-email · stdio]
             GmailCreds{GMAIL_SERVICE_TOKEN<br/>environment only}
@@ -67,6 +70,11 @@ graph TB
         ParentJoinAdvance[Lifecycle may advance]
         ParentJoinBlocked[Blocked lifecycle transitions:<br/>FUNCTIONAL_QA · ARCHITECTURE_REVIEW<br/>TYLER_APPROVED · MERGED · SOAKING · SIGNED_OFF]
     end
+    TodoRuntime -->|loads| TodoPolicy
+    TodoRuntime -->|records allowlisted outcomes| TodoTelemetry
+    TodoRuntime -->|reuses existing lifecycle tables| Data
+    TodoRuntime -->|coordinates| FRCLI
+    TodoRuntime -->|joins required children and artifacts| ParentJoinEvaluator
     Portal --> Registry
     Registry --> PortalHtml
     Bench --> Dashes
