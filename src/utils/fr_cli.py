@@ -7,6 +7,7 @@ Mirrors the perf_cli / proof_cli conventions that agents already know.
 Usage:
     python fr_cli.py open   <FR-ID> <title> --type <type> --risk <risk> --projects "<p>"
     python fr_cli.py record-event <FR-ID> <agent> <event-type> "<summary>" [--details "..."] [--next "..."]
+    python fr_cli.py set-acceptance-criteria <FR-ID> "<JSON object>"
     python fr_cli.py update-state <FR-ID> <new-state> [--branch "..."] [--prs "..."]
     python fr_cli.py record-artifact <FR-ID> <artifact-type> "<label>" [--path "..."]
     python fr_cli.py close  <FR-ID> --final-state <state>
@@ -288,6 +289,42 @@ def cmd_record_event(args: argparse.Namespace) -> None:
     print(f"[fr_cli] event recorded → {args.fr_id}")
 
 
+def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
+    try:
+        criteria = json.loads(args.criteria_json)
+    except json.JSONDecodeError as exc:
+        print(f"[fr_cli] invalid acceptance criteria JSON: {exc}", file=sys.stderr)
+        sys.exit(2)
+    if not isinstance(criteria, dict):
+        print("[fr_cli] acceptance criteria JSON must be an object", file=sys.stderr)
+        sys.exit(2)
+
+    conn = _conn()
+    fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
+    if not fr:
+        print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        conn.close()
+        sys.exit(1)
+    now = _now()
+    conn.execute(
+        "UPDATE feature_requests SET acceptance_criteria=?, updated_at=? WHERE id=?",
+        (json.dumps(criteria, ensure_ascii=False), now, args.fr_id),
+    )
+    conn.execute(
+        "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?,?,?,?,?)",
+        (
+            args.fr_id,
+            now,
+            "⊕workspace-ci",
+            "metadata-repair",
+            "Acceptance criteria repaired through canonical fr_cli.py command",
+        ),
+    )
+    conn.commit()
+    conn.close()
+    print(f"[fr_cli] acceptance criteria updated → {args.fr_id}")
+
+
 def cmd_update_state(args: argparse.Namespace) -> None:
     conn = _conn()
     fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
@@ -523,6 +560,13 @@ def main() -> None:
     p_ev.add_argument("--details", default=None)
     p_ev.add_argument("--next", default=None)
 
+    # set-acceptance-criteria
+    p_ac = sub.add_parser(
+        "set-acceptance-criteria", help="Set an existing FR's acceptance criteria JSON"
+    )
+    p_ac.add_argument("fr_id")
+    p_ac.add_argument("criteria_json")
+
     # update-state
     p_st = sub.add_parser("update-state", help="Transition an FR to a new state")
     p_st.add_argument("fr_id")
@@ -584,6 +628,7 @@ def main() -> None:
     dispatch = {
         "open": cmd_open,
         "record-event": cmd_record_event,
+        "set-acceptance-criteria": cmd_set_acceptance_criteria,
         "update-state": cmd_update_state,
         "record-artifact": cmd_record_artifact,
         "cost-baseline": cmd_cost_baseline,
