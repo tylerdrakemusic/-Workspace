@@ -12,6 +12,7 @@ from diagram_budgets import (
     validate_inventory,
     validate_diagram,
 )
+from diagram_system import reconcile_architecture_relationships
 
 
 def _spec(category: DiagramCategory, **metrics: int | str) -> DiagramSpec:
@@ -190,3 +191,23 @@ def test_derived_views_preserve_canonical_origin_relationships() -> None:
     for filename, relationships in required_relationships.items():
         source = (diagrams_dir / filename).read_text(encoding="utf-8")
         assert all(relationship in source for relationship in relationships), filename
+
+
+def test_relationship_reconciliation_reports_missing_edges_and_sigma_db_mismatch(tmp_path: Path) -> None:
+    diagrams_dir = tmp_path / "diagrams"
+    diagrams_dir.mkdir()
+    (tmp_path / "ΣCapital" / "data").mkdir(parents=True)
+    (tmp_path / "ΣCapital" / "data" / "sigmacapital.db").touch()
+    (diagrams_dir / "capital-db-schema.mmd").write_text(
+        "erDiagram\n    CAPITAL_DB ||--o{ TRADE_CANDIDATES : contains\n",
+        encoding="utf-8",
+    )
+    (diagrams_dir / "capital-db-derived-trading.mmd").write_text(
+        "erDiagram\n    RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies\n",
+        encoding="utf-8",
+    )
+
+    findings = reconcile_architecture_relationships(diagrams_dir, tmp_path)
+
+    assert any(finding.code == "relationship_missing" for finding in findings)
+    assert any(finding.code == "sigma_db_mismatch" for finding in findings)
