@@ -102,6 +102,22 @@ def test_render_both_backends_fail_raises():
     assert "cli" in str(exc.value) and "http" in str(exc.value)
 
 
+def test_render_http_414_is_reported_with_status():
+    client = MermaidClient(mmdc_path=None, prefer="http")
+    import urllib.error
+
+    http_error = urllib.error.HTTPError(
+        url="https://mermaid.ink/svg/encoded",
+        code=414,
+        msg="Request-URI Too Long",
+        hdrs=None,
+        fp=io.BytesIO(),
+    )
+    with patch("integrations.mermaid.client.urllib.request.urlopen", side_effect=http_error):
+        with pytest.raises(MermaidRenderError, match=r"HTTP 414: Request-URI Too Long"):
+            client.render(SAMPLE_MMD)
+
+
 def test_render_unsupported_format_raises():
     client = MermaidClient(mmdc_path="mmdc-fake")
     with pytest.raises(ValueError):
