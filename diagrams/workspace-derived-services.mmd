@@ -1,0 +1,22 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-integrations.mmd
+graph LR
+    Workspace[⊕ Workspace] --> OpenAI[OpenAI]
+    Workspace --> HF[Hugging Face]
+    Workspace --> Pollinations[Pollinations.AI]
+    Workspace --> ElevenLabs[ElevenLabs]
+    Workspace --> Ollama[Ollama]
+    Workspace --> Perplexity[Perplexity.ai]
+    Workspace --> Schwab[Charles Schwab API]
+    Workspace --> GDrive[Google Drive]
+    Workspace --> Gmail[Gmail service]
+    Quantum[⟨ψ⟩ Quantum] -.->|QRNG entropy| Workspace
+    Capital[Σ Capital] -.->|research and audit events| Workspace
+    Manifest[👁 AI-Manifest] -.->|briefs and roadmap| Workspace
+    class Workspace ws
+    class Quantum,Capital,Manifest orch
+    class OpenAI,HF,Pollinations,ElevenLabs,Ollama,Perplexity,Schwab,GDrive,Gmail ext
+classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0

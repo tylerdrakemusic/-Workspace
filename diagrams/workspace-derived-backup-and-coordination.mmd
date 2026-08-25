@@ -1,0 +1,25 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-integrations.mmd
+graph TB
+    Workspace[⊕ Workspace] --> Backup[provider-neutral backup contract]
+    Backup --> Inventory[explicit canonical source inventory]
+    Inventory --> Discovery{registered, unambiguous, classified}
+    Discovery --> Volume[verified local backup volume]
+    Volume --> Generations[authenticated encrypted generations]
+    Generations --> Restore[operator-approved isolated restore]
+    Restore --> Audit[redacted audit boundary]
+    Workspace --> Coord[governed coordination MCP]
+    Coord --> FRLedger[(fr_ledgers.db)]
+    Coord --> TodoDB[(manifest_todos.db)]
+    Coord -.->|rejects| GenericSQL[no arbitrary SQL or routing]
+    Life[∞ Life] -.->|redacted metadata only| Inventory
+    Capital[Σ Capital] --> CapitalDB[(sigmacapital.db)]
+    class Workspace,Backup,Inventory,Volume,Generations,Restore,Audit,Coord ws
+    class Life,Capital orch
+    class Discovery,GenericSQL state
+    class FRLedger,TodoDB,CapitalDB db
+classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef state fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0

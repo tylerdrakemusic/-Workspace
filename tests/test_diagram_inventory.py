@@ -10,14 +10,18 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     inventory = INVENTORY_PATH.read_text(encoding="utf-8")
     source_paths = sorted(path.relative_to(REPO_ROOT).as_posix() for path in DIAGRAMS_DIR.glob("*.mmd"))
     expected_character_counts = {
-        "diagrams/manifest-architecture.mmd": 8137,
+        "diagrams/capital-architecture.mmd": 1943,
+        "diagrams/capital-db-schema.mmd": 822,
+        "diagrams/manifest-architecture.mmd": 1140,
         "diagrams/workspace-agent-topology.mmd": 5766,
         "diagrams/workspace-architecture-detail.mmd": 6556,
         "diagrams/workspace-architecture.mmd": 2765,
-        "diagrams/workspace-integrations.mmd": 9068,
+        "diagrams/workspace-integrations.mmd": 1407,
+        "diagrams/capital-derived-market-data.mmd": 1324,
+        "diagrams/workspace-derived-services.mmd": 1142,
     }
 
-    assert len(source_paths) == 23
+    assert len(source_paths) == 32
     assert "| Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details |" in inventory
     assert inventory.count("| diagrams/") == len(source_paths)
     for source_path in source_paths:

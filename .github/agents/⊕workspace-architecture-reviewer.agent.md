@@ -17,6 +17,25 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 3. List `f:\⊕Workspace\diagrams\*.mmd`
 4. Start perf run
 
+## Canonical Diagram Contract
+- Read `diagrams/DIAGRAM_BUDGETS.md` and `diagrams/STYLE_GUIDE.md` before
+	evaluating a diagram. Do not replace their approved budgets or style rules
+	with agent-local thresholds.
+- Measure `utf8_characters`, `utf8_bytes`, `nodes`, and `edges` using the
+	existing validator contract. Report every exceeded dimension and mark the source
+	`split_required` when its category threshold is exceeded.
+- Apply the category-specific split rule from `DIAGRAM_BUDGETS.md`: split by
+	project, subsystem, bounded data domain, technology layer, or lifecycle
+	phase as appropriate. Preserve every existing architectural relationship;
+	a split must retain cross-view edges or explicitly document their parent
+	and derived-view linkage.
+- Validate `is_derived_view=true` views through `Traceability.parent` and
+	require parents with derived views to list non-empty
+	`Traceability.derived_views` paths. Missing lineage is a hard finding.
+- Include renderer evidence in the report. Record the backend and result;
+	use `NOT RUN` with the concrete reason when no renderer is available. Do
+	not infer renderer success from source inspection alone.
+
 ## Detection Heuristics
 | Pattern in diff | Impact | Affected diagram(s) |
 |-----------------|--------|---------------------|

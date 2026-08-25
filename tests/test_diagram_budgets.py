@@ -137,17 +137,17 @@ def test_validate_inventory_reconciles_committed_baseline_measurements() -> None
 
     assert any(
         finding.code == "inventory_utf8_bytes"
-        and "diagrams/capital-architecture.mmd" in finding.message
+        and "diagrams/capital-tech-stack.mmd" in finding.message
         for finding in findings
     )
     assert any(
         finding.code == "inventory_utf8_characters"
-        and "diagrams/capital-architecture.mmd" in finding.message
+        and "diagrams/capital-tech-stack.mmd" in finding.message
         for finding in findings
     )
     assert any(
         finding.code == "inventory_nodes"
-        and "diagrams/capital-db-schema.mmd" in finding.message
+        and "diagrams/capital-tech-stack.mmd" in finding.message
         for finding in findings
     )
     assert any(

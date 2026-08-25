@@ -8,7 +8,7 @@ This inventory is the TODO 302 handoff artifact for
 
 - Baseline commit: `a704f0e` (committed `origin/main` baseline)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
-  count is 23.
+  count is 31.
 - Bytes: exact UTF-8 byte length of the source file.
 - Characters: Python `str` length after UTF-8 decoding, including newlines.
 - Nodes: count of node declaration lines matching the diagram's identifier
@@ -25,13 +25,13 @@ This inventory is the TODO 302 handoff artifact for
 
 | Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details | Risk evidence |
 |---|---|---|---:|---:|---:|---:|---|---|---|
-| diagrams/capital-architecture.mmd | ΣCapital system architecture | ΣCapital | 19254 | 19185 | 183 | 147 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
-| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships | ΣCapital | 10489 | 10475 | 18 | 11 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); init directive |
+| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 1943 | 1943 | 10 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 822 | 822 | 0 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
 | diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 1771 | 1765 | 10 | 10 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 4015 | 3995 | 36 | 29 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 6 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1147 | 1145 | 6 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture | 👁AI-Manifest | 8187 | 8137 | 98 | 71 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
+| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 1140 | 1140 | 7 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 2624 | 2606 | 8 | 7 | NOT RUN: no `mmdc` | Backend unavailable | init directive; Unicode labels |
 | diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3062 | 3051 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
@@ -46,7 +46,16 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 2787 | 2765 | 21 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 1973 | 1973 | 8 | 3 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 1670 | 1658 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology | ⊕Workspace | 9136 | 9068 | 118 | 88 | NOT RUN: no `mmdc` | Backend unavailable | OVERSIZED (>8000 chars); Unicode labels; init directive |
+| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 1392 | 1407 | 13 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1387 | 1387 | 12 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/capital-db-derived-position-and-validation.mmd | ΣCapital position and validation DB derived view | ΣCapital | 1258 | 1258 | 6 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/capital-db-derived-trading.mmd | ΣCapital trading DB derived view | ΣCapital | 982 | 982 | 4 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/manifest-derived-media-pipeline.mmd | 👁AI-Manifest media pipeline derived view | 👁AI-Manifest | 1314 | 1312 | 14 | 18 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/manifest-derived-todo-and-backup.mmd | 👁AI-Manifest TODO and backup derived view | 👁AI-Manifest | 1231 | 1231 | 10 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/workspace-derived-backup-and-coordination.mmd | ⊕Workspace backup and coordination derived view | ⊕Workspace | 1426 | 1421 | 12 | 13 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/workspace-derived-services.mmd | ⊕Workspace services derived view | ⊕Workspace | 1153 | 1142 | 12 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 1851 | 1851 | 16 | 16 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 
 ## Baseline Findings
