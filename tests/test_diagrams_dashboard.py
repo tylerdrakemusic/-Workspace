@@ -18,6 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 
 import diagrams_dashboard as dd  # noqa: E402
+from diagram_system import validate_gallery  # noqa: E402
 from integrations.mermaid import MermaidRenderError  # noqa: E402
 
 
@@ -169,3 +170,49 @@ def test_project_of_classifier():
     assert dd._project_of("quantum-architecture") == "quantum"
     assert dd._project_of("manifest-tech-stack") == "manifest"
     assert dd._project_of("orphan-diagram") == "workspace"
+
+
+def test_gallery_validation_requires_complete_sources_and_interaction_views() -> None:
+    results = {
+        "workspace-architecture": {
+            "status": "rendered",
+            "path": dd.REPORTS_DIR / "diagrams" / "workspace-architecture.svg",
+            "source": "graph LR\n A --> B\n",
+        }
+    }
+
+    html_str = dd.build_index(results)
+    findings = validate_gallery(results, ["workspace-architecture", "life-architecture"], html_str)
+
+    assert any(finding.code == "gallery_missing" for finding in findings)
+    assert not any(finding.code == "gallery_interaction_contract" for finding in findings)
+    assert 'class="lightbox"' in html_str
+    assert 'class="zoom-btn"' in html_str
+    assert '<details><summary>source</summary>' in html_str
+
+
+def test_ci_gallery_contract_covers_every_canonical_mermaid_source() -> None:
+    sources = dd.discover_diagrams()
+    results = {
+        source.stem: {
+            "status": "fallback",
+            "path": dd.SVG_OUT_DIR / f"{source.stem}.svg",
+            "source": source.read_text(encoding="utf-8"),
+            "fallback_error": "renderer unavailable in deterministic CI contract test",
+        }
+        for source in sources
+    }
+
+    html_str = dd.build_index(results)
+    findings = validate_gallery(results, [source.stem for source in sources], html_str)
+
+    assert len(sources) == 32
+    assert not [finding for finding in findings if finding.code != "gallery_interaction_contract"]
+    assert html_str.count('class="card"') == 32
+
+
+def test_gallery_includes_client_error_detection_hook() -> None:
+    html_str = dd.build_index({})
+
+    assert "window.addEventListener(\"error\"" in html_str
+    assert "window.addEventListener(\"unhandledrejection\"" in html_str

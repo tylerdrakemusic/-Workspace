@@ -326,6 +326,15 @@ def build_index(results: dict[str, dict]) -> str:
 </div>
 
 <script>
+  const dashboardErrors = [];
+  window.addEventListener("error", event => {{
+    dashboardErrors.push(String(event.error || event.message || "Unknown dashboard error"));
+    document.documentElement.dataset.dashboardJsErrors = String(dashboardErrors.length);
+  }});
+  window.addEventListener("unhandledrejection", event => {{
+    dashboardErrors.push(String(event.reason || "Unhandled dashboard rejection"));
+    document.documentElement.dataset.dashboardJsErrors = String(dashboardErrors.length);
+  }});
   // Lightbox: click thumb or zoom button → fullscreen pan/zoom view.
   (function() {{
     const lb = document.getElementById("lightbox");
