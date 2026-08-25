@@ -276,8 +276,14 @@ every required child against the current parent branch head before recording
 - the child belongs to this FR and every required child identity is present.
 
 Missing, stale, conflicting, invalid, or incomplete children produce explicit
-blockers naming the TODO and criterion. A `PARENT_JOIN:REQUIRED` event without
-the subsequent passing result blocks all six states above. A child join never
+blockers naming the TODO and criterion. The passing result must be persisted as
+a `parent-join-evidence` artifact containing JSON with the FR ID, current parent
+branch and head, required TODO IDs, complete child snapshots, evaluator identity
+`parent_join_gates.evaluate_parent_join`, a passing result, and an evaluation
+timestamp at or after the `PARENT_JOIN:REQUIRED` event. The CLI recomputes the
+result from those snapshots; it does not trust event summaries or claimed
+booleans. A `PARENT_JOIN:REQUIRED` event without this evidence and the
+subsequent passing marker blocks all six states above. A child join never
 replaces the parent FR's QA, architecture, approval, merge, soak, or signoff
 gates.
 

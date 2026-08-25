@@ -9,6 +9,7 @@ prevents merges from silently skipping the architecture review step.
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -64,13 +65,21 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
             details TEXT,
             next_action TEXT
         );
+        CREATE TABLE fr_artifacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fr_id TEXT NOT NULL,
+            ts TEXT NOT NULL,
+            artifact_type TEXT NOT NULL,
+            label TEXT NOT NULL,
+            path_or_url TEXT
+        );
         """
     )
     conn.execute(
         "INSERT INTO feature_requests "
-        "(id, title, state, opened_at, updated_at, cost_status, cost_source) "
-        "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', '2026-07-03', "
-        "'2026-07-03', 'estimated', 'test')"
+        "(id, title, state, branch, opened_at, updated_at, cost_status, cost_source) "
+        "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', 'feature/FR-TEST-001', "
+        "'2026-07-03', '2026-07-03', 'estimated', 'test')"
     )
     conn.commit()
     return conn
@@ -90,6 +99,68 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
 
 
 class TestMergedGate:
+    def test_parent_join_pass_requires_persisted_evaluator_evidence(self, tmp_path, capsys) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 must be joined')"
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:PASS — everything is complete')"
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+        assert exc_info.value.code != 0
+        assert "parent join is incomplete" in capsys.readouterr().err
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+
+        evidence = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:01:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": "feature/FR-TEST-001",
+            "parent_head": "parent-head-1",
+            "required_todos": ["333-1"],
+            "children": [
+                {
+                    "todo_id": "333-1",
+                    "fr_id": "FR-TEST-001",
+                    "state": "completed",
+                    "validated": True,
+                    "required_artifacts": ["test-proof"],
+                    "artifacts": ["test-proof"],
+                    "integrated_branch": "feature/FR-TEST-001",
+                    "parent_head": "parent-head-1",
+                    "child_base": "parent-head-1",
+                }
+            ],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) "
+            "VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", "2026-07-03T00:01:00Z", "parent-join-evidence", json.dumps(evidence)),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute("SELECT state FROM feature_requests WHERE id='FR-TEST-001'").fetchone()
+        check_conn.close()
+        assert row[0] == "FUNCTIONAL_QA"
+
     @pytest.mark.parametrize(
         "new_state",
         ["FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "TYLER_APPROVED", "MERGED", "SOAKING", "SIGNED_OFF"],

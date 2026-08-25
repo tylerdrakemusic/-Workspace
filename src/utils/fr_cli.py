@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
 from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
 from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
+from parent_join_gates import ChildJoinSnapshot, evaluate_parent_join
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -67,17 +68,77 @@ def _has_architecture_review_pass(conn, fr_id: str) -> bool:
 def _parent_join_gate(conn, fr_id: str) -> bool:
     """Require a passing parent join only for FRs that declare child TODOs."""
     rows = conn.execute(
-        "SELECT summary FROM fr_events WHERE fr_id=? ORDER BY ts", (fr_id,)
+        "SELECT ts, summary FROM fr_events WHERE fr_id=? ORDER BY ts", (fr_id,)
     ).fetchall()
-    summaries = [row["summary"] if hasattr(row, "keys") else row[0] for row in rows]
+    summaries = [row["summary"] if hasattr(row, "keys") else row[1] for row in rows]
     if not any(summary and _PARENT_JOIN_REQUIRED_RE.search(summary) for summary in summaries):
         return True
-    if any(summary and _PARENT_JOIN_PASS_RE.search(summary) for summary in summaries):
-        return True
+    required_event_ts = max(
+        row["ts"] if hasattr(row, "keys") else row[0]
+        for row in rows
+        if (row["summary"] if hasattr(row, "keys") else row[1])
+        and _PARENT_JOIN_REQUIRED_RE.search(row["summary"] if hasattr(row, "keys") else row[1])
+    )
+    fr = conn.execute(
+        "SELECT branch FROM feature_requests WHERE id=?", (fr_id,)
+    ).fetchone()
+    parent_branch = fr["branch"] if fr and hasattr(fr, "keys") else (fr[0] if fr else None)
+    evidence_rows = conn.execute(
+        "SELECT ts, label FROM fr_artifacts "
+        "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
+        (fr_id,),
+    ).fetchall()
+    for row in evidence_rows:
+        timestamp = row["ts"] if hasattr(row, "keys") else row[0]
+        label = row["label"] if hasattr(row, "keys") else row[1]
+        try:
+            evidence = json.loads(label)
+            if not isinstance(evidence, dict):
+                continue
+            if (
+                evidence.get("kind") != "parent_join_evidence"
+                or evidence.get("evaluator") != "parent_join_gates.evaluate_parent_join"
+                or evidence.get("fr_id") != fr_id
+                or not parent_branch
+                or evidence.get("parent_branch") != parent_branch
+                or evidence.get("evaluated_at") != timestamp
+                or timestamp < required_event_ts
+            ):
+                continue
+            evaluated_at = datetime.fromisoformat(str(evidence["evaluated_at"]).replace("Z", "+00:00"))
+            if evaluated_at.tzinfo is None:
+                continue
+            required_todos = evidence["required_todos"]
+            children = evidence["children"]
+            if (
+                not isinstance(required_todos, list)
+                or not required_todos
+                or not isinstance(children, list)
+                or not isinstance(evidence.get("parent_head"), str)
+            ):
+                continue
+            snapshots = tuple(ChildJoinSnapshot(**child) for child in children)
+            result = evaluate_parent_join(
+                fr_id=fr_id,
+                parent_branch=parent_branch,
+                parent_head=evidence["parent_head"],
+                required_todos=required_todos,
+                children=snapshots,
+            )
+            if (
+                result.complete
+                and evidence.get("complete") is True
+                and evidence.get("blockers") == list(result.blockers)
+                and any(summary and _PARENT_JOIN_PASS_RE.search(summary) for summary in summaries)
+            ):
+                return True
+        except (AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
     print(
         f"[fr_cli] BLOCKED: cannot advance {fr_id} — parent join is incomplete. "
-        "Complete and validate every required child TODO, record required artifacts, "
-        "integrate each child into the current FR branch, and record PARENT_JOIN:PASS.",
+        "Complete and validate every required child TODO, persist fresh evaluator-backed "
+        "evidence with required artifacts and current branch/head integration, then record "
+        "PARENT_JOIN:PASS.",
         file=sys.stderr,
     )
     return False

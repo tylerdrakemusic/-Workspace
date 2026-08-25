@@ -96,7 +96,12 @@ validated, artifact-complete, integrated into the current FR branch, and
 rebased/revalidated when its base is stale. Report blockers with the TODO ID
 and criterion; preserve conflicted child sources for repair. `fr_cli.py` is the
 final enforcement point and must leave the FR state unchanged when the join is
-incomplete.
+incomplete. Persist the evaluator output first as a `parent-join-evidence`
+artifact with structured JSON containing the FR ID, current parent branch/head,
+required child snapshots, evaluator identity
+`parent_join_gates.evaluate_parent_join`, the recomputed passing result, and a
+fresh timestamp after `PARENT_JOIN:REQUIRED`. The CLI rejects a free-form pass
+summary or a claimed result without this artifact.
 
 ## 8. Reconcile FR Cycle Timers
 On-demand (`@⊕workspace-ci reconcile`): query `fr_cli.py list --active` for FRs in `TYLER_APPROVED`/`AUTO_REVIEWED` with open cycle timers → check each PR via `mcp_github` for `merged_at` → close timer with `--at <unix_merged_at>` backfill → update FR state + record reconciliation event.
