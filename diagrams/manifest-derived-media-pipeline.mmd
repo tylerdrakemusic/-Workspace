@@ -19,6 +19,8 @@ graph TB
     HFImage --> Images
     Fallback --> Images
     Images --> Portal[executive brief portal]
+    AudioOut --> Portal
+    ElevenLabs --> AudioOut[output/tts/*.mp3]
     Briefs --> Portal
     class Tools,Briefs,Lily,DallE3,HFImage,HFSpaces,Pollinations,Images,Portal orch
     class Fallback state

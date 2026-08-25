@@ -3,6 +3,7 @@
 %% Traceability.parent: diagrams/workspace-integrations.mmd
 graph TB
     Workspace[⊕ Workspace] --> Backup[provider-neutral backup contract]
+    BackupContract --> BackupInventory
     Backup --> Inventory[explicit canonical source inventory]
     Inventory --> Discovery{registered, unambiguous, classified}
     Discovery --> Volume[verified local backup volume]

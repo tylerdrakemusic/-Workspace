@@ -3,6 +3,9 @@
 %% Traceability.parent: diagrams/workspace-integrations.mmd
 graph LR
     Workspace[⊕ Workspace] --> OpenAI[OpenAI]
+    Life -->|llm research| OpenAI
+    Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
+    Quantum -->|qiskit jobs| IBMQ
     Workspace --> HF[Hugging Face]
     Workspace --> Pollinations[Pollinations.AI]
     Workspace --> ElevenLabs[ElevenLabs]

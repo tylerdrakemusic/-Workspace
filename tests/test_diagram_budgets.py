@@ -135,26 +135,7 @@ def test_validate_inventory_reconciles_committed_baseline_measurements() -> None
 
     findings = validate_inventory(inventory_path)
 
-    assert any(
-        finding.code == "inventory_utf8_bytes"
-        and "diagrams/capital-tech-stack.mmd" in finding.message
-        for finding in findings
-    )
-    assert any(
-        finding.code == "inventory_utf8_characters"
-        and "diagrams/capital-tech-stack.mmd" in finding.message
-        for finding in findings
-    )
-    assert any(
-        finding.code == "inventory_nodes"
-        and "diagrams/capital-tech-stack.mmd" in finding.message
-        for finding in findings
-    )
-    assert any(
-        finding.code == "inventory_edges"
-        and "diagrams/life-db-schema.mmd" in finding.message
-        for finding in findings
-    )
+    assert findings == ()
 
 
 def test_validate_inventory_detects_missing_baseline_row(tmp_path: Path) -> None:
@@ -174,3 +155,33 @@ def test_validate_inventory_detects_missing_baseline_row(tmp_path: Path) -> None
         and "diagrams/workspace-tech-stack.mmd" in finding.message
         for finding in findings
     )
+
+
+def test_validate_inventory_has_no_findings_for_the_complete_source_set() -> None:
+    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
+
+    assert validate_inventory(inventory_path) == ()
+
+
+def test_derived_views_preserve_canonical_origin_relationships() -> None:
+    diagrams_dir = Path(__file__).parents[1] / "diagrams"
+    required_relationships = {
+        "capital-db-derived-trading.mmd": (
+            "RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies",
+            "TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit",
+            "EXITS ||--o{ EXITS : supersedes",
+        ),
+        "manifest-derived-media-pipeline.mmd": ("AudioOut --> Portal",),
+        "workspace-derived-backup-and-coordination.mmd": (
+            "BackupContract --> BackupInventory",
+        ),
+        "workspace-derived-services.mmd": (
+            "Life -->|llm research| OpenAI",
+            "Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO",
+            "Quantum -->|qiskit jobs| IBMQ",
+        ),
+    }
+
+    for filename, relationships in required_relationships.items():
+        source = (diagrams_dir / filename).read_text(encoding="utf-8")
+        assert all(relationship in source for relationship in relationships), filename

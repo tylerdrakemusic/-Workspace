@@ -2,9 +2,11 @@
 %% is_derived_view=true
 %% Traceability.parent: diagrams/capital-db-schema.mmd
 erDiagram
+    RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
     TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
     PORTFOLIO ||--o{ EXITS : has_exit
+    EXITS ||--o{ EXITS : supersedes
     TRADE_CANDIDATES ||--o{ REAL_MONEY_CONFIRMATIONS : audits
     TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves
     QUOTE_DECISIONS ||--o{ QUOTE_OBSERVATIONS : decision_link

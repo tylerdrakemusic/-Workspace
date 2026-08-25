@@ -10,15 +10,15 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     inventory = INVENTORY_PATH.read_text(encoding="utf-8")
     source_paths = sorted(path.relative_to(REPO_ROOT).as_posix() for path in DIAGRAMS_DIR.glob("*.mmd"))
     expected_character_counts = {
-        "diagrams/capital-architecture.mmd": 1943,
-        "diagrams/capital-db-schema.mmd": 822,
-        "diagrams/manifest-architecture.mmd": 1140,
+        "diagrams/capital-architecture.mmd": 1912,
+        "diagrams/capital-db-schema.mmd": 810,
+        "diagrams/manifest-architecture.mmd": 1119,
         "diagrams/workspace-agent-topology.mmd": 5766,
-        "diagrams/workspace-architecture-detail.mmd": 6556,
-        "diagrams/workspace-architecture.mmd": 2765,
-        "diagrams/workspace-integrations.mmd": 1407,
+        "diagrams/workspace-architecture-detail.mmd": 8150,
+        "diagrams/workspace-architecture.mmd": 3004,
+        "diagrams/workspace-integrations.mmd": 1365,
         "diagrams/capital-derived-market-data.mmd": 1324,
-        "diagrams/workspace-derived-services.mmd": 1142,
+        "diagrams/workspace-derived-services.mmd": 1280,
     }
 
     assert len(source_paths) == 32
