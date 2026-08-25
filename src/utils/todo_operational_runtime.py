@@ -34,6 +34,7 @@ _TELEMETRY_REASONS = frozenset(
         "validated child integrated",
     }
 )
+DEFAULT_POLICY_PATH = Path(__file__).resolve().parents[1] / "config" / "todo_execution_policy.json"
 
 
 @dataclass(frozen=True)
@@ -186,7 +187,7 @@ class OperationalRuntime:
         elif policy_path is not None:
             self.config = OperationalConfig.from_policy_path(policy_path)
         else:
-            self.config = config or OperationalConfig()
+            self.config = config or OperationalConfig.from_policy_path(DEFAULT_POLICY_PATH)
         self.priorities = priorities or {}
         self.lifecycle = ExecutionLifecycle(connection)
         self.telemetry = OperationalTelemetry()

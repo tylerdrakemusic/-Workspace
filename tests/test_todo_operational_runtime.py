@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import sqlite3
+import json
+from pathlib import Path
 
 import pytest
 
+import todo_operational_runtime
 from todo_execution_contracts import ResourceDeclaration, TodoContract
 from parent_join_gates import ChildJoinSnapshot
 from todo_child_coordination import ChildWorktree, ChildWorktreeCoordinator, IntegrationConflict
@@ -81,6 +84,30 @@ def test_runtime_loads_policy_from_explicit_json_path(tmp_path) -> None:
     runtime = OperationalRuntime(sqlite3.connect(":memory:"), (), policy_path=policy_path)
 
     assert runtime.config.lease_seconds == 17
+
+
+def test_default_runtime_loads_checked_in_policy_and_tracks_policy_changes(tmp_path, monkeypatch) -> None:
+    policy_path = Path(todo_operational_runtime.__file__).resolve().parents[1] / "config" / "todo_execution_policy.json"
+    checked_in_policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    default_runtime = OperationalRuntime(sqlite3.connect(":memory:"), ())
+
+    assert default_runtime.config == OperationalConfig.from_policy(checked_in_policy)
+
+    changed_policy_path = tmp_path / "changed-policy.json"
+    changed_policy_path.write_text(
+        '{"max_parallel_todos_per_fr": 1, "max_total_todo_workers": 1, '
+        '"lease_seconds": 17, "max_retries": 0}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(todo_operational_runtime, "DEFAULT_POLICY_PATH", changed_policy_path)
+    contracts = tuple(TodoContract(todo_id=f"todo-{index}", fr_id="FR-1") for index in range(2))
+
+    changed_runtime = OperationalRuntime(sqlite3.connect(":memory:"), contracts)
+    claimed = changed_runtime.dispatch(now=100.0)
+
+    assert len(claimed) == 1
+    assert claimed[0].lease_expires_at == 117.0
+    assert changed_runtime.lifecycle.get("todo-0").max_retries == 0
 
 
 def test_operational_defaults_bound_dispatch_and_allowlisted_telemetry() -> None:
