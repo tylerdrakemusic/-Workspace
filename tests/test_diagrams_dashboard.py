@@ -65,6 +65,7 @@ def test_render_all_success(diagrams_workspace):
     assert set(results.keys()) == {"workspace-architecture", "music-tech-stack"}
     for r in results.values():
         assert r["ok"] is True
+        assert r["status"] == "rendered"
         assert r["path"].exists()
         assert r["path"].read_bytes() == b"<svg/>"
 
@@ -75,10 +76,45 @@ def test_render_all_handles_errors(diagrams_workspace):
     fake_client.render.side_effect = MermaidRenderError("backend down")
 
     results = dd.render_all(client=fake_client)
-    assert results["workspace-broken"]["ok"] is True
+    assert results["workspace-broken"]["ok"] is False
+    assert results["workspace-broken"]["status"] == "fallback"
     assert results["workspace-broken"]["path"].exists()
     assert "fallback_error" in results["workspace-broken"]
     assert "backend down" in results["workspace-broken"]["fallback_error"]
+
+
+def test_main_no_render_no_open_rebuilds_index_from_existing_svgs(diagrams_workspace, monkeypatch):
+    _write_mmd(diagrams_workspace, "workspace-existing")
+    _write_mmd(diagrams_workspace, "workspace-missing")
+    existing_svg = diagrams_workspace / "reports" / "diagrams" / "workspace-existing.svg"
+    existing_svg.parent.mkdir(parents=True, exist_ok=True)
+    existing_svg.write_text('<svg viewBox="0 0 1200 760"></svg>', encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["diagrams_dashboard.py", "--no-render", "--no-open"])
+
+    assert dd.main() == 0
+
+    index = (diagrams_workspace / "reports" / "diagrams_dashboard.html").read_text(encoding="utf-8")
+    assert "1 rendered" in index
+    assert "Not rendered yet" in index
+
+
+def test_main_no_render_preserves_persisted_fallback_diagnostics(diagrams_workspace, monkeypatch):
+    _write_mmd(diagrams_workspace, "workspace-fallback")
+    fake_client = MagicMock()
+    fake_client.render.side_effect = MermaidRenderError("backend unavailable")
+
+    rendered = dd.render_all(client=fake_client)
+    assert rendered["workspace-fallback"]["status"] == "fallback"
+
+    monkeypatch.setattr(sys, "argv", ["diagrams_dashboard.py", "--no-render", "--no-open"])
+
+    assert dd.main() == 0
+
+    index = (diagrams_workspace / "reports" / "diagrams_dashboard.html").read_text(encoding="utf-8")
+    assert "0 rendered" in index
+    assert "1 fallback" in index
+    assert "fallback details" in index
+    assert "backend unavailable" in index
 
 
 def test_build_index_excludes_live_editor(diagrams_workspace):

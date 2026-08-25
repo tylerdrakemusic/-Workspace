@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import html
 import os
+import re
 import sys
 import webbrowser
 from datetime import datetime
@@ -39,6 +40,7 @@ PROJECT_LABELS = {
     "quantum": "⟨ψ⟩ Quantum",
     "manifest": "👁 AI-Manifest",
 }
+FALLBACK_MARKER = "diagrams-dashboard:fallback"
 
 
 def discover_diagrams() -> list[Path]:
@@ -54,6 +56,7 @@ def _fallback_svg_bytes(title: str, source: str, error: str) -> bytes:
   source_lines = [html.escape(line) for line in source.splitlines()[:18]]
   source_block = "\n".join(source_lines) if source_lines else "(empty diagram source)"
   svg = (
+    f'<!-- {FALLBACK_MARKER} -->'
     '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">'
     '<rect width="100%" height="100%" fill="#ffffff" />'
     '<rect x="24" y="24" width="1152" height="712" rx="12" fill="#fff8f8" stroke="#f5c2c7" />'
@@ -74,6 +77,18 @@ def _fallback_svg_bytes(title: str, source: str, error: str) -> bytes:
   return svg.encode("utf-8")
 
 
+def _fallback_provenance(svg_path: Path) -> str | None:
+    """Return the persisted fallback error, or None for a genuine SVG."""
+    try:
+        svg = svg_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+    if FALLBACK_MARKER not in svg and "Fallback Preview:" not in svg:
+        return None
+    match = re.search(r"Error:\s*(.*?)</text>", svg, flags=re.DOTALL)
+    return html.unescape(match.group(1).strip()) if match else "Mermaid render failed"
+
+
 def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
     """Render each .mmd to SVG. Returns {stem: {ok, path|error, source}}."""
     SVG_OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -89,6 +104,7 @@ def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
             out_path.write_bytes(svg_bytes)
             results[stem] = {
                 "ok": True,
+                "status": "rendered",
                 "path": out_path,
                 "source": source,
                 "mmd_path": mmd_path,
@@ -98,7 +114,8 @@ def render_all(client: MermaidClient | None = None) -> dict[str, dict]:
             fallback_svg = _fallback_svg_bytes(stem, source, str(exc))
             fallback_path.write_bytes(fallback_svg)
             results[stem] = {
-                "ok": True,
+                "ok": False,
+                "status": "fallback",
                 "path": fallback_path,
                 "source": source,
                 "mmd_path": mmd_path,
@@ -120,7 +137,6 @@ def _group_by_project(results: dict[str, dict]) -> dict[str, list[tuple[str, dic
     return groups
 
 
-import re
 _VIEWBOX_RE = re.compile(r'viewBox="([^"]+)"')
 
 
@@ -149,8 +165,8 @@ def build_index(results: dict[str, dict]) -> str:
     groups = _group_by_project(results)
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     total = len(results)
-    ok_count = sum(1 for r in results.values() if r["ok"])
-    fallback_count = sum(1 for r in results.values() if r.get("fallback_error"))
+    ok_count = sum(1 for r in results.values() if r.get("status") == "rendered")
+    fallback_count = sum(1 for r in results.values() if r.get("status") == "fallback")
 
     cards = []
     for proj in PROJECT_ORDER:
@@ -161,14 +177,14 @@ def build_index(results: dict[str, dict]) -> str:
         cards.append('<div class="grid">')
         for stem, info in items:
             title = stem.replace(f"{proj}-", "").replace("-", " ").title()
-            if info["ok"]:
+            if info.get("path") and info.get("status") in {"rendered", "fallback"}:
                 rel = info["path"].relative_to(REPORTS_DIR).as_posix()
                 w, h = _svg_dims(info["path"])
                 fallback_note = ""
                 fallback_details = ""
-                if info.get("fallback_error"):
+                if info.get("status") == "fallback":
                     fallback_note = (
-                        '<span class="fallback-pill" title="Rendered from fallback inline SVG">fallback</span>'
+                        '<span class="fallback-pill" title="Source snapshot; Mermaid render failed">fallback</span>'
                     )
                     fallback_details = (
                         '<details><summary>fallback details</summary><pre class="err">'
@@ -462,9 +478,32 @@ def main() -> int:
             svg_path = SVG_OUT_DIR / f"{stem}.svg"
             source = mmd_path.read_text(encoding="utf-8")
             if svg_path.exists():
-                results[stem] = {"ok": True, "path": svg_path, "source": source, "mmd_path": mmd_path}
+                fallback_error = _fallback_provenance(svg_path)
+                if fallback_error is not None:
+                    results[stem] = {
+                        "ok": False,
+                        "status": "fallback",
+                        "path": svg_path,
+                        "source": source,
+                        "mmd_path": mmd_path,
+                        "fallback_error": fallback_error,
+                    }
+                    continue
+                results[stem] = {
+                    "ok": True,
+                    "status": "rendered",
+                    "path": svg_path,
+                    "source": source,
+                    "mmd_path": mmd_path,
+                }
             else:
-                results[stem] = {"ok": False, "error": "Not rendered yet", "source": source, "mmd_path": mmd_path}
+                results[stem] = {
+                    "ok": False,
+                    "status": "error",
+                    "error": "Not rendered yet",
+                    "source": source,
+                    "mmd_path": mmd_path,
+                }
     else:
         client = MermaidClient()
         backend = "mmdc CLI" if client.cli_available() else "mermaid.ink HTTP"
