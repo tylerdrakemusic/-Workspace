@@ -106,6 +106,52 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
 
 
 class TestMergedGate:
+    def test_set_acceptance_criteria_updates_field_and_records_audit_event(self, tmp_path) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        criteria = {"acceptance_criteria": ["criterion one", "criterion two"]}
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_now", return_value="2026-08-25T17:00:00Z"
+        ):
+            fr_cli.cmd_set_acceptance_criteria(
+                argparse.Namespace(fr_id="FR-TEST-001", criteria_json=json.dumps(criteria))
+            )
+
+        check_conn = sqlite3.connect(str(db_path))
+        check_conn.row_factory = sqlite3.Row
+        fr = check_conn.execute(
+            "SELECT acceptance_criteria, state, updated_at FROM feature_requests WHERE id=?",
+            ("FR-TEST-001",),
+        ).fetchone()
+        event = check_conn.execute(
+            "SELECT agent, event_type, summary FROM fr_events WHERE fr_id=?",
+            ("FR-TEST-001",),
+        ).fetchone()
+        check_conn.close()
+
+        assert json.loads(fr["acceptance_criteria"]) == criteria
+        assert fr["state"] == "ARCHITECTURE_REVIEW"
+        assert fr["updated_at"] == "2026-08-25T17:00:00Z"
+        assert tuple(event) == (
+            "⊕workspace-ci",
+            "metadata-repair",
+            "Acceptance criteria repaired through canonical fr_cli.py command",
+        )
+
+    def test_set_acceptance_criteria_rejects_non_object_json(self, tmp_path, capsys) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_set_acceptance_criteria(
+                    argparse.Namespace(fr_id="FR-TEST-001", criteria_json="[\"criterion\"]")
+                )
+
+        assert exc_info.value.code == 2
+        assert "acceptance criteria JSON must be an object" in capsys.readouterr().err
+
     def test_parent_join_valid_evidence_passes_through_production_resolver(
         self, tmp_path
     ) -> None:

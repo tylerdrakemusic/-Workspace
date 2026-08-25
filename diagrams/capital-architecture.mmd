@@ -3,6 +3,11 @@
 %% Traceability.derived_views: diagrams/capital-derived-market-data.mmd, diagrams/capital-derived-trading-controls.mmd, diagrams/capital-derived-position-realization.mmd
 graph TB
     Tyler([Tyler]) --> TradeGate[Trade Gate]
+    Research[off-market research] --> Watchlist[watchlist observations]
+    Watchlist --> Review[supervised watchlist review]
+    Review --> PromotionBoundary{promotion only<br/>no order execution}
+    PromotionBoundary --> Pending[trade candidate<br/>approval_status=pending]
+    Pending --> TradeGate
     QuoteService[QuoteService<br/>read-only market data] --> QuoteDecision[quorum or degraded decision]
     QuoteDecision --> CapitalDB[(sigmacapital.db)]
     TradeGate --> Approval[human approval and account binding]
@@ -18,9 +23,9 @@ graph TB
     CapitalDB -.->|parent details| TradingView[capital-derived-trading-controls]
     CapitalDB -.->|parent details| PositionViewDetail[capital-derived-position-realization]
     class Tyler tyler
-    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView orch
-    class QuoteDecision,RealGate,Restore state
-    class CapitalDB db
+    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView,Research,Watchlist,Review orch
+    class QuoteDecision,RealGate,Restore,PromotionBoundary state
+    class CapitalDB,Pending db
     class Schwab ext
     class Backup,MarketView,TradingView,PositionViewDetail ws
 classDef tyler fill:#2a1a3a,stroke:#9e4aff,color:#fff
