@@ -247,6 +247,18 @@ F:\worktrees\FR-20260422-multi-agent-flow\workspace
 F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
 ```
 
+### Child TODO Coordination
+
+For an executable TODO under one FR anchor, `⊕workspace-ci` admits exactly one
+child branch/worktree identified by the TODO ID, FR ID, claim, and lifecycle
+state, subject to the existing capacity and approval gates. Completed,
+validated child work integrates into the shared FR feature branch under a
+serialized coordinator. A stale child is explicitly rebased before
+integration; a conflict is handed off with the source branch/worktree
+preserved. Invalid, unclaimed, expired, failed, or unvalidated child work is
+rejected. This coordinates implementation only and does not create a child FR
+state machine or bypass QA, review, merge, soak, or signoff gates.
+
 ## End-to-End Flow (Happy Path)
 
 ```
