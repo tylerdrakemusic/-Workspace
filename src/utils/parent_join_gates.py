@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
+PARENT_JOIN_EVALUATOR_IDENTITY = "parent_join_gates.evaluate_parent_join"
+
 
 @dataclass(frozen=True)
 class ChildJoinSnapshot:

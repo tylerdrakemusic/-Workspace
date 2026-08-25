@@ -28,7 +28,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
 from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
 from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
-from parent_join_gates import ChildJoinSnapshot, evaluate_parent_join
+from parent_join_gates import (
+    PARENT_JOIN_EVALUATOR_IDENTITY,
+    ChildJoinSnapshot,
+    evaluate_parent_join,
+)
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -112,6 +116,7 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
         "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
         (fr_id,),
     ).fetchall()
+    evaluator_identity_blocked = False
     for row in evidence_rows:
         timestamp = row["ts"] if hasattr(row, "keys") else row[0]
         label = row["label"] if hasattr(row, "keys") else row[1]
@@ -128,6 +133,9 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
                 or evidence.get("evaluated_at") != timestamp
                 or timestamp < required_event_ts
             ):
+                continue
+            if evidence.get("evaluator") != PARENT_JOIN_EVALUATOR_IDENTITY:
+                evaluator_identity_blocked = True
                 continue
             evaluated_at = datetime.fromisoformat(str(evidence["evaluated_at"]).replace("Z", "+00:00"))
             if evaluated_at.tzinfo is None:
@@ -152,8 +160,13 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
                 return True
         except (AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             continue
+    blocker = (
+        "evaluator identity is missing or mismatched; "
+        if evaluator_identity_blocked
+        else ""
+    )
     print(
-        f"[fr_cli] BLOCKED: cannot advance {fr_id} — parent join is incomplete. "
+        f"[fr_cli] BLOCKED: cannot advance {fr_id} — {blocker}parent join is incomplete. "
         "Complete and validate every required child TODO, persist fresh evaluator-backed "
         "evidence with required artifacts and current branch/head integration, then record "
         "PARENT_JOIN:PASS.",
