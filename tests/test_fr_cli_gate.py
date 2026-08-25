@@ -51,6 +51,7 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
             closed_at TEXT,
             final_state TEXT,
             cycle_timer_run_id TEXT,
+            acceptance_criteria TEXT,
             cost_status TEXT,
             cost_source TEXT,
             cost_reconciliation_status TEXT
@@ -77,9 +78,14 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
     )
     conn.execute(
         "INSERT INTO feature_requests "
-        "(id, title, state, branch, opened_at, updated_at, cost_status, cost_source) "
+        "(id, title, state, branch, opened_at, updated_at, cost_status, cost_source, acceptance_criteria) "
         "VALUES ('FR-TEST-001', 'Test FR', 'ARCHITECTURE_REVIEW', 'feature/FR-TEST-001', "
-        "'2026-07-03', '2026-07-03', 'estimated', 'test')"
+        "'2026-07-03', '2026-07-03', 'estimated', 'test', "
+        "'{\"parent_join\":{\"required_todos\":[\"333-1\"],\"children\":[{"
+        "\"todo_id\":\"333-1\",\"fr_id\":\"FR-TEST-001\",\"state\":\"completed\","
+        "\"validated\":true,\"required_artifacts\":[\"test-proof\"],"
+        "\"artifacts\":[\"test-proof\"],\"integrated_branch\":\"feature/FR-TEST-001\","
+        "\"parent_head\":\"parent-head-1\",\"child_base\":\"parent-head-1\"}]}}')"
     )
     conn.commit()
     return conn
@@ -99,6 +105,58 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
 
 
 class TestMergedGate:
+    def test_parent_join_rejects_forged_children_and_stale_parent_head(
+        self, tmp_path, capsys
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
+            "'PARENT_JOIN:REQUIRED — child TODO 333-1 must be joined')"
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES ('FR-TEST-001', '2026-07-03T00:02:00Z', 'test', 'note', "
+            "'PARENT_JOIN:PASS — everything is complete')"
+        )
+        forged = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:03:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": "feature/FR-TEST-001",
+            "parent_head": "old-head",
+            "required_todos": ["forged-todo"],
+            "children": [{
+                "todo_id": "forged-todo",
+                "fr_id": "FR-TEST-001",
+                "state": "completed",
+                "validated": True,
+                "required_artifacts": [],
+                "artifacts": [],
+                "integrated_branch": "feature/FR-TEST-001",
+                "parent_head": "old-head",
+                "child_base": "old-head",
+            }],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", forged["evaluated_at"], "parent-join-evidence", json.dumps(forged)),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="current-head"
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
+
+        assert exc_info.value.code != 0
+        assert "parent join is incomplete" in capsys.readouterr().err
+
     def test_parent_join_pass_requires_persisted_evaluator_evidence(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
@@ -153,7 +211,9 @@ class TestMergedGate:
         )
         conn.commit()
 
-        with patch.object(fr_cli, "_conn", return_value=conn):
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="parent-head-1"
+        ):
             fr_cli.cmd_update_state(_state_args("FR-TEST-001", "FUNCTIONAL_QA"))
 
         check_conn = sqlite3.connect(str(db_path))

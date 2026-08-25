@@ -22,6 +22,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
@@ -44,6 +45,7 @@ _PARENT_JOIN_REQUIRED_RE = re.compile(r"PARENT_JOIN\s*[:\-]?\s*REQUIRED\b", re.I
 _PARENT_JOIN_PASS_RE = re.compile(
     r"PARENT_JOIN\s*[:\-]?\s*(PASS|COMPLETE)\b", re.IGNORECASE
 )
+_parent_head_resolver: Callable[[str], str | None] | None = None
 
 
 def _conn():
@@ -80,9 +82,31 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
         and _PARENT_JOIN_REQUIRED_RE.search(row["summary"] if hasattr(row, "keys") else row[1])
     )
     fr = conn.execute(
-        "SELECT branch FROM feature_requests WHERE id=?", (fr_id,)
+        "SELECT branch, acceptance_criteria FROM feature_requests WHERE id=?", (fr_id,)
     ).fetchone()
     parent_branch = fr["branch"] if fr and hasattr(fr, "keys") else (fr[0] if fr else None)
+    acceptance_criteria = fr["acceptance_criteria"] if fr and hasattr(fr, "keys") else (fr[1] if fr else None)
+    try:
+        contract = json.loads(acceptance_criteria or "{}")
+        parent_join = contract["parent_join"]
+        required_todos = parent_join["required_todos"]
+        canonical_children = tuple(
+            ChildJoinSnapshot(**child) for child in parent_join["children"]
+        )
+        if not isinstance(required_todos, list) or not required_todos:
+            raise ValueError
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        required_todos = ()
+        canonical_children = ()
+    if _parent_head_resolver is None or not parent_branch:
+        current_parent_head = None
+    else:
+        try:
+            current_parent_head = _parent_head_resolver(parent_branch)
+        except (OSError, RuntimeError, ValueError):
+            current_parent_head = None
+    if not current_parent_head:
+        current_parent_head = None
     evidence_rows = conn.execute(
         "SELECT ts, label FROM fr_artifacts "
         "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
@@ -97,10 +121,10 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
                 continue
             if (
                 evidence.get("kind") != "parent_join_evidence"
-                or evidence.get("evaluator") != "parent_join_gates.evaluate_parent_join"
                 or evidence.get("fr_id") != fr_id
                 or not parent_branch
                 or evidence.get("parent_branch") != parent_branch
+                or evidence.get("parent_head") != current_parent_head
                 or evidence.get("evaluated_at") != timestamp
                 or timestamp < required_event_ts
             ):
@@ -108,28 +132,22 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
             evaluated_at = datetime.fromisoformat(str(evidence["evaluated_at"]).replace("Z", "+00:00"))
             if evaluated_at.tzinfo is None:
                 continue
-            required_todos = evidence["required_todos"]
-            children = evidence["children"]
-            if (
-                not isinstance(required_todos, list)
-                or not required_todos
-                or not isinstance(children, list)
-                or not isinstance(evidence.get("parent_head"), str)
-            ):
+            if not required_todos or not canonical_children:
                 continue
-            snapshots = tuple(ChildJoinSnapshot(**child) for child in children)
             result = evaluate_parent_join(
                 fr_id=fr_id,
                 parent_branch=parent_branch,
-                parent_head=evidence["parent_head"],
+                parent_head=current_parent_head,
                 required_todos=required_todos,
-                children=snapshots,
+                children=canonical_children,
             )
             if (
                 result.complete
-                and evidence.get("complete") is True
-                and evidence.get("blockers") == list(result.blockers)
-                and any(summary and _PARENT_JOIN_PASS_RE.search(summary) for summary in summaries)
+                and any(
+                    summary and _PARENT_JOIN_PASS_RE.search(summary)
+                    for summary in summaries
+                    if summary
+                )
             ):
                 return True
         except (AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError):
