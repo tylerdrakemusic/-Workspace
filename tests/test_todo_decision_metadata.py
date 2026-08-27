@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +12,42 @@ from todo_decision_metadata import (
     priority_guidance,
     validate_decision_metadata,
 )
+
+
+CONTRACT_PATH = Path(__file__).parents[1] / "src" / "contracts" / "todo_decision_metadata.v1.json"
+
+
+def _peer_contract_path() -> Path:
+    repo_root = Path(__file__).parents[1]
+    return repo_root.parents[2] / "👁AI-Manifest" / ".worktrees" / repo_root.name / "src" / "contracts" / "todo_decision_metadata.v1.json"
+
+
+def test_workspace_validator_is_derived_from_versioned_contract() -> None:
+    from todo_decision_metadata import (
+        BENEFIT_CATEGORIES,
+        EVIDENCE_POLICY,
+        REQUIRED_FIELDS,
+        SCALE_ANCHORS,
+        SCORE_FIELDS,
+    )
+
+    contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
+
+    assert tuple(contract["score_fields"]) == SCORE_FIELDS
+    assert frozenset(contract["required_fields"]) == REQUIRED_FIELDS
+    assert tuple(contract["benefit_categories"]) == tuple(BENEFIT_CATEGORIES)
+    assert contract["scale"] == {
+        "min": SCALE_ANCHORS["min"],
+        "max": SCALE_ANCHORS["max"],
+        "anchors": {str(key): value for key, value in SCALE_ANCHORS["anchors"].items()},
+    }
+    assert contract["evidence_policy"] == EVIDENCE_POLICY
+
+
+def test_workspace_and_ai_manifest_contract_artifacts_are_identical() -> None:
+    assert json.loads(CONTRACT_PATH.read_text(encoding="utf-8")) == json.loads(
+        _peer_contract_path().read_text(encoding="utf-8")
+    )
 
 
 def valid_metadata() -> dict:

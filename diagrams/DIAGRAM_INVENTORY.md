@@ -1,14 +1,15 @@
 # Mermaid Diagram Inventory
 
-This inventory is the TODO 302 handoff artifact for
-`FR-20260822-workspace-architecture-diagram-system`. It describes the
-**Committed baseline** in this worktree and does not copy the **Uncommitted local overlay** from the main checkout.
+This inventory is the diagram evidence artifact for
+`FR-20260827-workspace-todo-decision-metadata-standard`. It describes the
+**Committed baseline** diagram set in this FR worktree, including the seven approved
+decision-metadata diagram edits and the derived detail companion.
 
 ## Measurement Contract
 
-- Baseline commit: `a704f0e` (committed `origin/main` baseline)
+- Baseline commit: `4ee4f6e` (FR worktree diagram baseline)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
-  count is 32.
+  count is 33.
 - Bytes: exact UTF-8 byte length of the source file.
 - Characters: Python `str` length after UTF-8 decoding, including newlines.
 - Nodes: count of node declaration lines matching the diagram's identifier
@@ -31,8 +32,8 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1147 | 1145 | 6 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 1140 | 1140 | 7 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
-| diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 2624 | 2606 | 8 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive; Unicode labels |
+| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 2055 | 2050 | 10 | 13 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 4270 | 4252 | 10 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive; Unicode labels |
 | diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3062 | 3051 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/music-db-schema.mmd | ❤Music database entity relationships | ❤Music | 5956 | 5956 | 25 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
@@ -42,19 +43,20 @@ This inventory is the TODO 302 handoff artifact for
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 3132 | 3132 | 9 | 7 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1196 | 1194 | 7 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-architecture-detail.mmd | ⊕Workspace detailed system architecture | ⊕Workspace | 8185 | 8150 | 108 | 56 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3026 | 3004 | 25 | 16 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 2956 | 2956 | 11 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
+| diagrams/workspace-architecture-detail.mmd | ⊕Workspace decision-metadata ownership and persistence detail | ⊕Workspace | 2935 | 2930 | 23 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived companion listed; under detail budget |
+| diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3431 | 3409 | 29 | 19 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 4006 | 4006 | 13 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4760 | 4747 | 52 | 56 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 2089 | 2067 | 21 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 2807 | 2782 | 24 | 23 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1387 | 1387 | 12 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-db-derived-position-and-validation.mmd | ΣCapital position and validation DB derived view | ΣCapital | 1258 | 1258 | 6 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-db-derived-trading.mmd | ΣCapital trading DB derived view | ΣCapital | 1076 | 1076 | 4 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/manifest-derived-media-pipeline.mmd | 👁AI-Manifest media pipeline derived view | 👁AI-Manifest | 1386 | 1384 | 16 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
-| diagrams/manifest-derived-todo-and-backup.mmd | 👁AI-Manifest TODO and backup derived view | 👁AI-Manifest | 1231 | 1231 | 10 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/manifest-derived-todo-and-backup.mmd | 👁AI-Manifest TODO and backup derived view | 👁AI-Manifest | 2158 | 2153 | 13 | 16 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-derived-backup-and-coordination.mmd | ⊕Workspace backup and coordination derived view | ⊕Workspace | 1466 | 1461 | 13 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/workspace-derived-decision-metadata-implementation.mmd | ⊕Workspace decision-metadata implementation derived view | ⊕Workspace | 3994 | 3979 | 45 | 28 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability; under detail budget |
 | diagrams/workspace-derived-services.mmd | ⊕Workspace services derived view | ⊕Workspace | 1291 | 1280 | 15 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 1851 | 1851 | 16 | 16 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 

@@ -1,8 +1,11 @@
 # TODO Decision Metadata Standard
 
-The workspace contract is implemented by `src/utils/todo_decision_metadata.py`.
-AI-Manifest consumers should use the same field names and validation rules,
-without maintaining a second contract.
+The versioned contract is `src/contracts/todo_decision_metadata.v1.json`.
+Workspace and AI-Manifest each carry an identical repository-local snapshot,
+and each validator derives its field names, categories, scale anchors, and
+evidence thresholds from that snapshot. This keeps runtime paths isolated.
+The Workspace parity test compares the parsed JSON artifacts and fails when
+either repository drifts.
 
 ## Contract
 
