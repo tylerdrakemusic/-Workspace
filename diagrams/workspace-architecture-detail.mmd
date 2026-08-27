@@ -21,6 +21,7 @@ graph TB
             UtilsDiscovery[discovery/gen<br/>workspace_discovery · roadmap_generator<br/>gen_qee · complexity_router · tech_debt_scanner]
             UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
             UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
+            UtilsDecision[decision metadata contract<br/>validate_decision_metadata · priority_guidance<br/>Workspace canonical schema + helper ownership]
             BackupScope[database_backup_scope.py<br/>manifest validation · discovery · report rendering]
             TodoRuntime[todo_operational_runtime.py<br/>bounded scheduler · durable lifecycle<br/>package + direct-script imports]
             TodoPolicy[todo_execution_policy.json<br/>8 per FR · 16 global<br/>leases · retries]
@@ -36,6 +37,7 @@ graph TB
         BackupManifest[database_backup_scope.json<br/>versioned policy manifest]
         Data[(data/<br/>workspace.db)]
         FRLedger[(data/<br/>fr_ledgers.db)]
+        DecisionHistory[(todos.decision_metadata<br/>todo_decision_metadata_history)]
     end
     subgraph Reports["reports/"]
         PortalHtml[portal.html]
@@ -75,6 +77,9 @@ graph TB
     TodoRuntime -->|reuses existing lifecycle tables| Data
     TodoRuntime -->|coordinates| FRCLI
     TodoRuntime -->|joins required children and artifacts| ParentJoinEvaluator
+    UtilsDecision -->|validates and advises; does not mutate priority| Data
+    UtilsDecision -->|persists current JSON + append-only history| DecisionHistory
+    UtilsDecision -.->|canonical contract consumed by| ManifestDecision
     Portal --> Registry
     Registry --> PortalHtml
     Bench --> Dashes
@@ -121,6 +126,7 @@ graph TB
     UtilsDiscovery --> Data
     UtilsPerf --> Data
     UtilsData --> Data
+    ManifestDecision[👁 AI-Manifest todo_decision_metadata.py<br/>consumer implementation; current + assessment history]
     CoordinationMCP --> Allowlist
     GmailMCP -->|GmailServiceClient| Integrations
     GmailMCP -.->|credential lookup| GmailCreds
