@@ -24,6 +24,21 @@ they provide the needed operation. Use parameterized SQLite statements for
 fields without a helper. Use `fr_cli.py get <FR-ID>` for FR reads and
 `fr_cli.py record-event` for an approved event record.
 
+Decision metadata follows the workspace contract in
+`src/utils/todo_decision_metadata.py` and
+`docs/todo-decision-metadata-standard.md`. Consumers must use that validator
+and field vocabulary rather than defining a second schema.
+
+The canonical fields are `expected_value`, `user_or_system_benefit`,
+`strategic_alignment`, `confidence`, `cost_of_delay`,
+`primary_benefit_category`, optional `secondary_benefit_category`,
+`benefit_summary`, `justification`, and `evidence`. Categories are `user`,
+`system`, `strategic`, `revenue`, `risk_reduction`, `learning`, `maintenance`,
+and `compliance`. Scores use the inclusive 1-10 scale with anchors from
+minimal at 1 to exceptional at 10. Scores of 8 or more require evidence, and
+scores of 9 or 10 require at least two evidence items. Never translate legacy
+metadata into canonical values or invent missing historical values.
+
 ## Input
 
 Accept one of:
@@ -119,6 +134,9 @@ After confirmation only:
    refinement already stamped it.
 2. Use `update_priority()` when changing priority so `priority_history` is
    recorded. Do not change `done` or `closed_at` through this skill.
+   Decision metadata may provide advisory priority guidance only; it must
+   never automatically mutate `priority` or `priority_history`. Applying a
+   recommendation remains an explicit, human-approved priority operation.
 3. Set `fr_id` only to a confirmed existing FR ID. Never create an FR or
    transition its state here.
 4. If an FR event was explicitly approved, record it with `fr_cli.py` after the
@@ -142,5 +160,9 @@ and do not partially continue the handshake.
    the governed FR workflow and its CLI.
 - It only stamps `perfected_at` for an approved successful refinement
    transaction; failed or unapproved refinement does not stamp it.
+- Decision metadata migration is additive and idempotent. Legacy rows retain
+   null metadata, and no historical values may be fabricated or backfilled.
+- Validated assessments replace current metadata and append immutable history;
+   incomplete high-impact assessments and malformed evidence are rejected.
 - It does not modify unrelated todos or repair conflicts silently.
 - It does not create fallback files when either database is unavailable.

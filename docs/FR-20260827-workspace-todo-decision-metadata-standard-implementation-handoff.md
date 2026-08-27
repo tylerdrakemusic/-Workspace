@@ -8,13 +8,12 @@
 - Base: `main`
 - Scope: workspace-owned TODO decision metadata contract and validation
 - Companion repository: `tylerdrakemusic/AI-Manifest`
-- Status: approved handoff; implementation intentionally not started
+- Status: implementation complete; focused validation passed
 
-This baseline hands the approved FR to implementation. The implementation
-should define one workspace-wide decision metadata contract, identify the
-owning persistence and validation boundary, and add focused regression proof
-for valid, incomplete, and invalid decision metadata. Existing TODO content
-and unrelated project behavior remain unchanged.
+The implementation defines one workspace-wide decision metadata contract in
+`src/utils/todo_decision_metadata.py`, with focused regression proof for valid,
+incomplete, invalid, high-impact, persistence, and priority-guidance behavior.
+Existing TODO content and unrelated project behavior remain unchanged.
 
 The implementation must preserve sensitive-data boundaries, avoid creating
 child TODOs, and coordinate the companion AI-Manifest adapter or consumer
@@ -22,5 +21,6 @@ through the matching handoff artifact. The final implementation should record
 the contract, migration or compatibility behavior, and executable validation
 results in the FR ledger.
 
-This commit is a branch baseline only. It contains no feature implementation,
-schema mutation, generated data, credentials, or sensitive records.
+Validation: `C:\\G\\python.exe -m pytest tests/test_todo_decision_metadata.py -q`
+passed with 11 tests. This handoff contains no generated data, credentials, or
+sensitive records.
