@@ -33,4 +33,4 @@ jobs:
       - name: Run pytest
         env:
           PLAYWRIGHT_ENABLED: "0"  # Set to "1" locally to run Playwright tests (FR-20260513-playwright-ui-gate)
-        run: pytest -v --tb=short
+        run: pytest -v --tb=short -rs
