@@ -1,6 +1,6 @@
-"""Live integration tests for PerplexityClient — require PERPLEXITY_API_KEY and hit real API.
+"""Live integration tests for PerplexityClient, requiring PERPLEXITY_API_KEY and a real API.
 
-These tests are EXCLUDED from CI (pytest.ini: addopts = -m 'not integration').
+CI collects these tests and reports them as skipped when the key is unavailable.
 
 Run locally with:
     C:\\G\\python.exe -m pytest tests/test_perplexity_integration.py -m integration -v
@@ -24,7 +24,10 @@ pytestmark = pytest.mark.integration
 def client() -> PerplexityClient:
     key = os.environ.get("PERPLEXITY_API_KEY", "")
     if not key:
-        pytest.skip("PERPLEXITY_API_KEY not set")
+        pytest.skip(
+            "Perplexity live integration tests require PERPLEXITY_API_KEY; "
+            "external API is unavailable in this CI environment"
+        )
     return PerplexityClient(api_key=key)
 
 
