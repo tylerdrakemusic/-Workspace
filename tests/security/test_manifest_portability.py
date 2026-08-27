@@ -119,9 +119,22 @@ def test_all_external_mappings_are_explicitly_optional() -> None:
     assert all(repo["source_policy"] == "optional" for repo in config["repos"])
 
 
-def test_verify_allows_absent_external_sources_in_clean_checkout(tmp_path: Path) -> None:
+def test_verify_allows_absent_external_sources_in_clean_checkout(
+    tmp_path: Path, monkeypatch
+) -> None:
     module = load_manifest_module()
     clone_root = tmp_path / "clone"
+    monkeypatch.setenv("WORKSPACE_ROOT", str(clone_root))
+    for environment_name in (
+        "MP_SKILLS_ROOT",
+        "ADDYOSMANI_AGENT_SKILLS_ROOT",
+        "ANDREJ_KARPATHY_SKILLS_ROOT",
+        "DAVIDONDREJ_SKILLS_ROOT",
+        "SUPERPOWERS_ROOT",
+    ):
+        monkeypatch.setenv(
+            environment_name, str(tmp_path / "missing-external" / environment_name)
+        )
     for watched_dir in ("agents", "instructions", "skills"):
         shutil.copytree(
             WORKTREE_ROOT / ".github" / watched_dir,
