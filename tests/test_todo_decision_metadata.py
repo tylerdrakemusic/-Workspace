@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
@@ -18,6 +19,10 @@ CONTRACT_PATH = Path(__file__).parents[1] / "src" / "contracts" / "todo_decision
 
 
 def _peer_contract_path() -> Path:
+    configured_path = os.environ.get("AI_MANIFEST_CONTRACT_PATH")
+    if configured_path:
+        return Path(configured_path)
+
     repo_root = Path(__file__).parents[1]
     return repo_root.parents[2] / "👁AI-Manifest" / ".worktrees" / repo_root.name / "src" / "contracts" / "todo_decision_metadata.v1.json"
 
@@ -48,6 +53,13 @@ def test_workspace_and_ai_manifest_contract_artifacts_are_identical() -> None:
     assert json.loads(CONTRACT_PATH.read_text(encoding="utf-8")) == json.loads(
         _peer_contract_path().read_text(encoding="utf-8")
     )
+
+
+def test_peer_contract_path_honors_ci_contract_location(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    contract_path = tmp_path / "peer-contract.json"
+    monkeypatch.setenv("AI_MANIFEST_CONTRACT_PATH", str(contract_path))
+
+    assert _peer_contract_path() == contract_path
 
 
 def valid_metadata() -> dict:
