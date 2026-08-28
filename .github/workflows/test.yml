@@ -16,6 +16,9 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
+      - name: Create test branch
+        run: git switch --force-create ci-test-branch
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
