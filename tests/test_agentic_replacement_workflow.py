@@ -28,6 +28,8 @@ def test_open_order_replacement_workflow_is_proposal_only():
     assert "agentic open-order replacement proposal" in combined
     assert "no live write" in combined
     assert "only capital trade gate performs human-confirmed execution" in combined
+    assert "capital pr #106" in combined
+    assert "service execution" in combined
     assert "must not place, cancel, or replace live orders" in combined
 
     for forbidden in (

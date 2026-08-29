@@ -17,6 +17,7 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - Open-order replacement requests use an agentic open-order replacement proposal flow. The flow is proposal-only and has no live write behavior.
 - The replacement proposal must preserve immutable order identity: `account reference`, `symbol`, `side`, `logical execution ID`, and `current broker order ID`.
 - The proposal must state the `replacement intent`, every complete proposed replacement field, the `rationale/evidence`, `validation status`, and `operator-review status`.
+- This Workspace proposal workflow is separate from Capital PR #106 service execution. Workspace only proposes and validates; Capital Trade Gate executes only after human confirmation.
 - Only Capital Trade Gate performs human-confirmed execution. The Workspace agent must not place, cancel, or replace live orders.
 - Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
 - Ensure fresh yfinance pricing is available for the candidate symbol before recommending any pick.
