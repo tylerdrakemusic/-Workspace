@@ -24,3 +24,4 @@ google-auth-httplib2>=0.2.0
 google-auth-oauthlib>=1.1.0
 # FR-20260809-mcp-db-invocation-coverage: governed coordination MCP server
 mcp>=1.28.1,<2
+pytest-xdist>=3.6,<4.0

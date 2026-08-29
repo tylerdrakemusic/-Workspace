@@ -41,4 +41,11 @@ jobs:
         env:
           PLAYWRIGHT_ENABLED: "0"  # Set to "1" locally to run Playwright tests (FR-20260513-playwright-ui-gate)
           AI_MANIFEST_CONTRACT_PATH: ${{ github.workspace }}/ai-manifest-contract/src/contracts/todo_decision_metadata.v1.json
-        run: pytest -v --tb=short -rs
+        run: pytest -v --tb=short -rs --junitxml=tmp/pytest-junit.xml
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-junit
+          path: tmp/pytest-junit.xml

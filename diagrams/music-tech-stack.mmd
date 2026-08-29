@@ -5,6 +5,11 @@ graph LR
     Python --> Librosa["librosa<br/>BPM detection<br/>⚑ not in requirements.txt"]
     Python --> Mutagen[mutagen<br/>audio tags]
     Python --> Pytest["pytest<br/>⚑ not in requirements.txt"]
+    Python --> TestRunner[/tools/run_tests.py<br/>serial default · local --parallel/]
+    TestRunner --> Pytest
+    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=false]
+    Pytest -.-> Xdist[pytest-xdist<br/>optional local workers]
+    TestRunner -.-> ParallelEvidence[Local parallel run<br/>demonstrated for ❤Music]
     Python --> PythonDocx["python-docx<br/>lyrics .docx import"]
     Python --> Pypdf["pypdf<br/>lyrics .pdf import"]
     Python --> Pronouncing["pronouncing<br/>CMU phoneme lookup"]
@@ -24,7 +29,8 @@ graph LR
     HyperthreatDocker --> HyperthreatGate
     HyperthreatGate -->|"manual deploy after exact approval"| HyperthreatFly
     class Python,Web lang
-    class SQLCipher,Flask,Librosa,Mutagen,Pytest,Tone,PythonDocx,Pypdf,Pronouncing,Demucs,Requests lib
+    class SQLCipher,Flask,Librosa,Mutagen,Pytest,TestRunner,TestPolicy,Xdist,Tone,PythonDocx,Pypdf,Pronouncing,Demucs,Requests lib
+    class ParallelEvidence state
     class WSOllama ws
     class Ollama,FlyIO,HyperthreatFly ext
     class HyperthreatLauncher,HyperthreatTemplates,HyperthreatDocker svc

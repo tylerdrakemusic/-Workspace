@@ -1,13 +1,17 @@
 # Mermaid Diagram Inventory
 
 This inventory is the diagram evidence artifact for
-`FR-20260827-workspace-todo-decision-metadata-standard`. It describes the
-**Committed baseline** diagram set in this FR worktree, including the seven approved
-decision-metadata diagram edits and the derived detail companion.
+`FR-20260829-parallel-test-execution`. It describes the current six-project
+diagram set in this FR worktree, including the six target technology-stack
+diagrams updated for this FR. This is the Committed baseline inventory for the
+current branch evidence, not a claim that every row was rendered. The prior
+baseline's seven approved decision-metadata edits remain historical context;
+the unrelated fallback and NOT RUN rows remain preserved as documented evidence.
 
 ## Measurement Contract
 
 - Baseline commit: `4ee4f6e` (FR worktree diagram baseline)
+- Evidence head: `00f1cdc9f600d0c4542a2ca1131a2ea14e083c72` (current FR worktree)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
   count is 33.
 - Bytes: exact UTF-8 byte length of the source file.
@@ -18,9 +22,10 @@ decision-metadata diagram edits and the derived detail companion.
 - Edges: count of lines containing a Mermaid edge operator (`-->`, `==>`,
   `-.->`, `---`, `===`, or ER relationship operators). A line with multiple
   operators is counted once.
-- Renderer check: attempted backend discovery found no `mmdc` executable in
-  the worktree environment. No network renderer was invoked. Therefore every
-  result below is explicitly `NOT RUN`, rather than an inferred pass or fail.
+- Renderer check: exactly six target technology-stack diagrams were rendered
+  through mermaid.ink and each returned HTTP 200: capital, life, manifest,
+  music, quantum, and workspace. All unrelated fallback rows remain documented
+  as `NOT RUN` where no local `mmdc` backend was available.
 
 ## Source Inventory
 
@@ -28,20 +33,20 @@ decision-metadata diagram edits and the derived detail companion.
 |---|---|---|---:|---:|---:|---:|---|---|---|
 | diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 2303 | 2303 | 15 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 1305 | 1305 | 1 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
-| diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 2855 | 2842 | 20 | 20 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
+| diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 3271 | 3257 | 22 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
-| diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1147 | 1145 | 6 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1562 | 1557 | 8 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 2055 | 2050 | 10 | 13 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 4270 | 4252 | 10 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive; Unicode labels |
-| diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3062 | 3051 | 24 | 25 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3478 | 3466 | 26 | 30 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/music-db-schema.mmd | ❤Music database entity relationships | ❤Music | 5956 | 5956 | 25 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/music-icecast-primary-architecture.mmd | ❤Music Icecast primary streaming architecture | ❤Music | 1072 | 1070 | 20 | 9 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels |
-| diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 2758 | 2743 | 21 | 18 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 3174 | 3156 | 23 | 23 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 4056 | 4050 | 50 | 22 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 3132 | 3132 | 9 | 7 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
-| diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1196 | 1194 | 7 | 6 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1612 | 1609 | 9 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-architecture-detail.mmd | ⊕Workspace decision-metadata ownership and persistence detail | ⊕Workspace | 2935 | 2930 | 23 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived companion listed; under detail budget |
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3431 | 3409 | 29 | 19 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
@@ -58,7 +63,7 @@ decision-metadata diagram edits and the derived detail companion.
 | diagrams/workspace-derived-backup-and-coordination.mmd | ⊕Workspace backup and coordination derived view | ⊕Workspace | 1466 | 1461 | 13 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-derived-decision-metadata-implementation.mmd | ⊕Workspace decision-metadata implementation derived view | ⊕Workspace | 3994 | 3979 | 45 | 28 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability; under detail budget |
 | diagrams/workspace-derived-services.mmd | ⊕Workspace services derived view | ⊕Workspace | 1291 | 1280 | 15 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
-| diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 2200 | 2200 | 18 | 19 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
+| diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 2655 | 2650 | 21 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 
 ## Baseline Findings
 
@@ -69,8 +74,10 @@ decision-metadata diagram edits and the derived detail companion.
 - Sources containing Mermaid `%%{init: ...}%%` directives are fallback-prone
   for renderers that do not support initialization directives; the affected
   rows identify that evidence.
-- No renderer result is claimed. The only backend evidence available on this
-  branch is the failed `mmdc` executable discovery described above.
+- The six target technology-stack diagrams have verified mermaid.ink HTTP 200
+  results, one for each canonical project. The unrelated architecture, schema,
+  and derived-view rows retain their `NOT RUN` evidence from the failed local
+  `mmdc` executable discovery; those rows are not target-render claims.
 
 ## Main-Checkout Overlay Evidence
 
