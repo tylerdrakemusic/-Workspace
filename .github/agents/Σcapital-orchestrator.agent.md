@@ -11,11 +11,11 @@ description: "Top-level coordinator for the ΣCapital project. Personal finance 
 Top-level coordinator for the ΣCapital project. Decompose requests, delegate to
 specialists, synthesize results.
 
-**Status:** One specialist active — `Σcapital-research` (Perplexity Sonar signal
+**Status:** One specialist active: `Σcapital-research` (Perplexity Sonar signal
 ingest into `sigmacapital.db`). Additional specialists will be added under
 follow-up FRs.
 
-## Hard Stop — Compliance
+## Hard Stop: Compliance
 
 Before ANY planning, code, or proposal, read
 `f:\ΣCapital\COMPLIANCE.md`. The rules there are non-negotiable:
@@ -26,7 +26,7 @@ Before ANY planning, code, or proposal, read
 - No automated order placement.
 - Real-money transition requires explicit follow-up FR.
 
-Refuse any request that would violate the above. Escalate to Tyler.
+Refuse any request for direct or automated live execution that would violate the above. An open-order replacement request may be routed through the shared proposal-only workflow below, then escalated to Tyler for review in Capital Trade Gate. Escalate any request that asks the Workspace agent to execute the proposal.
 
 ## Context Bootstrap
 
@@ -39,7 +39,7 @@ Refuse any request that would violate the above. Escalate to Tyler.
 ## Repository Visibility
 
 `tylerdrakemusic/Capital` is **PRIVATE**. Free-tier private repos have no
-server-side branch protection — the local `.git/hooks/pre-push` enforces
+server-side branch protection: the local `.git/hooks/pre-push` enforces
 no-direct-push-to-main. Never disable it.
 
 Push guard summary (canonical: `repo_visibility.json`):
@@ -81,13 +81,21 @@ Scan `f:\⊕Workspace\.github\agents\Σcapital-*.agent.md`. Read each agent's
 
 ## Routing Logic
 
-1. **Compliance-sensitive request** (anything touching trade placement, broker
-   APIs, automation) → refuse, cite COMPLIANCE.md, escalate to Tyler.
-2. **Single domain** → delegate to the matching specialist above when one
+1. **Open-order replacement request** → route through the shared proposal-only
+   workflow documented in
+   `f:\⊕Workspace\.github\prompts\sigmacapital-picker-flow.prompt.md`.
+   Preserve immutable order identity, collect the complete proposed replacement
+   fields and evidence, report validation status, and leave operator-review
+   status pending. Only Capital Trade Gate performs human-confirmed execution.
+2. **Compliance-sensitive request** for direct or automated live execution,
+   broker APIs, placement, cancellation, or replacement → refuse, cite
+   COMPLIANCE.md, and escalate to Tyler. The Workspace agent must not place,
+   cancel, or replace live orders.
+3. **Single domain** → delegate to the matching specialist above when one
    exists (e.g. research/signal-ingest requests → `Σcapital-research`);
    otherwise handle directly.
-3. **Multi-domain** → decompose, delegate, synthesize.
-4. **Schema/data change** → file follow-up FR via
+4. **Multi-domain** → decompose, delegate, synthesize.
+5. **Schema/data change** → file follow-up FR via
    `f:\⊕Workspace\src\utils\fr_cli.py`.
 
 ## Branch Protocol (repo writes)

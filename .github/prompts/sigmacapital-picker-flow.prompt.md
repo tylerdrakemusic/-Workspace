@@ -14,6 +14,10 @@ Use this prompt as the canonical instruction set for ΣCapital's off-market/even
 - The agent must consult the deferred-symbol watchlist workflow at `f:\⊕Workspace\.github\instructions\sigmacapital-watchlist-workflow.instructions.md` before classifying, persisting, enriching, reviewing, or promoting watchlist observations. That document is the runtime handoff for `research.py`, `watchlist.py`, `init_db.py`, and the separate Trade Gate review API.
 - Read-only Schwab account API access (including live buying power) may ground recommendations. Order placement is not part of generation or insertion; `place_order` is reachable only through the Trade Gate's human-confirmed live approval path. Cancel/replace behavior is unchanged and must not be expanded.
 - No automated order placement is allowed.
+- Open-order replacement requests use an agentic open-order replacement proposal flow. The flow is proposal-only and has no live write behavior.
+- The replacement proposal must preserve immutable order identity: `account reference`, `symbol`, `side`, `logical execution ID`, and `current broker order ID`.
+- The proposal must state the `replacement intent`, every complete proposed replacement field, the `rationale/evidence`, `validation status`, and `operator-review status`.
+- Only Capital Trade Gate performs human-confirmed execution. The Workspace agent must not place, cancel, or replace live orders.
 - Before proposing any candidates, confirm that a fresh ΣCapital research batch exists in `sigmacapital.db.signals` and that the latest batch is no older than four hours. If no current batch is available or it is stale, automatically run the Σcapital-research agent batch immediately and do not generate any picks until the latest Perplexity signals have been ingested and verified.
 - Ensure fresh yfinance pricing is available for the candidate symbol before recommending any pick.
 - Do not add or infer a `mode` field on `trade_candidates`. Candidate rows remain pending recommendations until the Trade Gate creates the execution decision. The execution row records its own gated mode after manual approval.
@@ -67,6 +71,18 @@ The agent must generate trade candidates using the following fields:
 
 ## Output Format
 Return candidates in a structured format that can be mapped to ΣCapital's `trade_candidates` table and approval gate. Each candidate should clearly include: `symbol`, `side`, `unit`, `quantity`, `order_type`, `limit_price`, `stop_price`, `trailing_amount`, `trailing_amount_type`, `timing`, `execution_certainty`, `model`, `rationale`, and `confidence`. Do not include a candidate `mode` column.
+
+## Open-Order Replacement Proposal Format
+For an open-order replacement request, return a structured proposal with these inputs and outputs:
+
+- Immutable order identity inputs: `account reference`, `symbol`, `side`, `logical execution ID`, and `current broker order ID`.
+- Replacement intent: the requested change and the reason the existing open order should be replaced.
+- Complete proposed replacement fields: `unit`, `quantity`, `order_type`, `limit_price`, `stop_price`, `trailing_amount`, `trailing_amount_type`, `timing`, and any other fields required by the current Trade Gate contract. Use `null` only when a field is not applicable to the proposed order type, and preserve the existing order identity separately.
+- Rationale/evidence: the fresh research, pricing, account context, risk checks, and other evidence supporting the proposal.
+- Validation status: explicit results for identity, field completeness, supported order type, timing, quantity, pricing, buying power, and risk validation, including any failures or unknowns.
+- Operator-review status: `pending` until Tyler reviews the proposal through Capital Trade Gate; proposal generation must not approve, submit, cancel, or replace an order.
+
+The output must include an explicit `no live write` marker and must state that the proposal is not an execution instruction. The Workspace workflow only prepares and validates the proposal. Only Capital Trade Gate performs human-confirmed execution.
 
 ## Compliance Guardrails
 - Manual human review through the Trade Gate is required before any Schwab order is placed.
