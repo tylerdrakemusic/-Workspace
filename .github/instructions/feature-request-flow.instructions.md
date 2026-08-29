@@ -262,9 +262,11 @@ state machine or bypass QA, review, merge, soak, or signoff gates.
 ### Parent-Join Gate
 
 When an FR declares required child TODOs, the parent FR cannot advance to
-`FUNCTIONAL_QA`, `ARCHITECTURE_REVIEW`, `TYLER_APPROVED`, `MERGED`, `SOAKING`,
-or `SIGNED_OFF` until the parent join is complete. The coordinator evaluates
-every required child against the current parent branch head before recording
+`TYLER_APPROVED`, `MERGED`, `SOAKING`, or `SIGNED_OFF` until the parent join is
+complete. Technical progression through `FUNCTIONAL_QA`, `ARCHITECTURE_REVIEW`,
+`REVIEW_REQUESTED`, and `AUTO_REVIEWED` remains available so incomplete child
+TODO bookkeeping can be repaired while implementation proceeds. The coordinator
+evaluates every required child against the current parent branch head before recording
 `PARENT_JOIN:PASS`:
 
 - terminal state is exactly `completed`;
@@ -283,7 +285,7 @@ branch and head, required TODO IDs, complete child snapshots, evaluator identity
 timestamp at or after the `PARENT_JOIN:REQUIRED` event. The CLI recomputes the
 result from those snapshots; it does not trust event summaries or claimed
 booleans. A `PARENT_JOIN:REQUIRED` event without this evidence and the
-subsequent passing marker blocks all six states above. A child join never
+subsequent passing marker blocks the four finality states above. A child join never
 replaces the parent FR's QA, architecture, approval, merge, soak, or signoff
 gates.
 

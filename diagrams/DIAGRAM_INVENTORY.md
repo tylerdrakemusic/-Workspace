@@ -46,7 +46,7 @@ decision-metadata diagram edits and the derived detail companion.
 | diagrams/workspace-architecture-detail.mmd | ⊕Workspace decision-metadata ownership and persistence detail | ⊕Workspace | 2935 | 2930 | 23 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived companion listed; under detail budget |
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3431 | 3409 | 29 | 19 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 4006 | 4006 | 13 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
-| diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4760 | 4747 | 52 | 56 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
+| diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4878 | 4865 | 51 | 55 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 2807 | 2782 | 24 | 23 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
