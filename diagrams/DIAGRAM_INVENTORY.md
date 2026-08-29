@@ -47,7 +47,7 @@ decision-metadata diagram edits and the derived detail companion.
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3431 | 3409 | 29 | 19 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 4006 | 4006 | 13 | 0 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4878 | 4865 | 51 | 55 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
-| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 2807 | 2782 | 24 | 23 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 3187 | 3162 | 27 | 27 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1387 | 1387 | 12 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
@@ -58,7 +58,7 @@ decision-metadata diagram edits and the derived detail companion.
 | diagrams/workspace-derived-backup-and-coordination.mmd | ⊕Workspace backup and coordination derived view | ⊕Workspace | 1466 | 1461 | 13 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-derived-decision-metadata-implementation.mmd | ⊕Workspace decision-metadata implementation derived view | ⊕Workspace | 3994 | 3979 | 45 | 28 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability; under detail budget |
 | diagrams/workspace-derived-services.mmd | ⊕Workspace services derived view | ⊕Workspace | 1291 | 1280 | 15 | 15 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
-| diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 1851 | 1851 | 16 | 16 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
+| diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 2200 | 2200 | 18 | 19 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 
 ## Baseline Findings
 
