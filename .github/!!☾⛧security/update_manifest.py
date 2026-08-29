@@ -4,6 +4,7 @@
 import hashlib
 import json
 import os
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -43,7 +44,9 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
         provenance = repo.get("provenance", "external-source")
         source_policy = repo.get("source_policy", "required")
         for skill in repo["skills"]:
-            source = Path(repo["path"]) / repo["skill_root"] / skill / "SKILL.md"
+            source = Path(repo["path"]) / repo["skill_root"] / repo.get(
+                "source_path", f"{skill}/SKILL.md"
+            )
             target = destination / skill / "SKILL.md"
             entries.append(
                 {
@@ -51,8 +54,10 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
                     "target": str(target),
                     "manifest_key": f".github/skills/{skill}/SKILL.md",
                     "source_repository": repo["name"],
+                    "repository_path": str(repo["path"]),
                     "provenance": provenance,
                     "source_policy": source_policy,
+                    "pinned_commit": repo.get("pinned_commit", ""),
                 }
             )
     return entries
@@ -103,8 +108,13 @@ def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillInteg
         manifest_hash = manifest_files.get(target_key)
         target_hash = sha256_file(target) if target.exists() else None
         source_hash = sha256_file(source) if source.exists() else None
+        pinned_source_matches = validate_pinned_source(
+            Path(item["repository_path"]), item["pinned_commit"]
+        )
 
-        if target_hash is None or manifest_hash is None:
+        if not pinned_source_matches:
+            status = "integrity_failure"
+        elif target_hash is None or manifest_hash is None:
             status = "integrity_failure"
         elif source_hash is None and item["source_policy"] == "optional":
             status = "source_unavailable"
@@ -137,6 +147,20 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def validate_pinned_source(repository_path: Path, pinned_commit: str) -> bool:
+    """Return whether an available git source is at its declared revision."""
+    if not pinned_commit or not (repository_path / ".git").exists():
+        return True
+    result = subprocess.run(
+        ["git", "-C", str(repository_path), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    return result.returncode == 0 and result.stdout.strip() == pinned_commit
 
 
 def update_manifest_entries(

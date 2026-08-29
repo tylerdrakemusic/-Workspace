@@ -88,6 +88,8 @@ def test_copied_sync_config_resolves_from_relocated_checkout(tmp_path: Path, mon
 
     assert config["destination"] == clone_root / ".github" / "skills"
     assert config["log_file"] == clone_root / "logs" / "skill-sync.log"
+    repo_names = [repo["name"] for repo in config["repos"]]
+    assert repo_names.index("humanizer") < repo_names.index("superpowers")
     assert config["repos"][-1]["path"] == superpowers_root
     assert all(
         not str(path).lower().startswith("f:\\")

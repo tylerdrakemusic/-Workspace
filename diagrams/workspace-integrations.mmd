@@ -3,6 +3,10 @@
 %% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd
 graph LR
     Workspace[⊕ Workspace] --> GitHub[GitHub]
+    GitHub --> HumanizerSource[GitHub Humanizer source<br/>blader/humanizer]
+    HumanizerSource --> SkillSyncConfig[skill-sync-config.json<br/>pinned commit]
+    SkillSyncConfig --> SkillSyncScript[sync-skills.ps1]
+    SkillSyncScript ==> LocalSkillCatalog[local skill catalog / agent manifest]
     Workspace --> Mermaid[mermaid renderer]
     Workspace --> Life[∞ Life]
     Workspace --> Music[❤ Music]
@@ -36,7 +40,8 @@ graph LR
     class Life,Music,Quantum,Manifest,Capital orch
     class LifeWeightTrend,QuantumValidator quantum
     class AggregateHandoff,SufficiencyGate,ExecutionDenied state
-    class GitHub,Mermaid ext
+    class GitHub,Mermaid,HumanizerSource ext
+    class SkillSyncConfig,SkillSyncScript,LocalSkillCatalog ws
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
