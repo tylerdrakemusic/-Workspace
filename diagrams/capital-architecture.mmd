@@ -7,9 +7,9 @@ graph TB
     Discovery --> Watchlist[watchlist observations]
     Watchlist --> Review[supervised watchlist review]
     Review --> PromotionBoundary{promotion only<br/>no order execution}
-    PromotionBoundary --> Pending[trade candidate<br/>approval_status=pending; mode=simulated]
+    PromotionBoundary --> Pending[real order candidate<br/>approval_status=pending]
     Pending --> TradeGate
-    Research --> Picker[simulated picker recommendations<br/>entry/take-profit/stop-loss targets]
+    Research --> Picker[real picker recommendations<br/>entry/take-profit/stop-loss targets]
     Picker ==> CapitalDB
     Picker -.->|no OCO or order side effects| TradeGate
     Research --> ModelProvenance[signal/candidate provenance<br/>runtime model or unavailable]

@@ -18,12 +18,11 @@ erDiagram
     TRADE_CANDIDATES {
         INTEGER id PK
         TEXT symbol
-        TEXT mode "additive migration; default simulated"
         REAL entry_target
         REAL exit_target "take-profit target"
         REAL stop_loss_target
         TEXT model "runtime model or unavailable"
-        TEXT approval_status
+        TEXT approval_status "pending until Trade Gate approval"
     }
     WATCHLIST_OBSERVATIONS {
         TEXT id PK

@@ -12,8 +12,8 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     inventory = INVENTORY_PATH.read_text(encoding="utf-8")
     source_paths = sorted(path.relative_to(REPO_ROOT).as_posix() for path in DIAGRAMS_DIR.glob("*.mmd"))
     expected_character_counts = {
-        "diagrams/capital-architecture.mmd": 2303,
-        "diagrams/capital-db-schema.mmd": 1305,
+    "diagrams/capital-architecture.mmd": 3542,
+    "diagrams/capital-db-schema.mmd": 2676,
         "diagrams/manifest-architecture.mmd": 2050,
         "diagrams/workspace-agent-topology.mmd": 5766,
         "diagrams/workspace-architecture-detail.mmd": 2930,
