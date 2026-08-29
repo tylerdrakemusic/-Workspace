@@ -333,8 +333,7 @@ def cmd_update_state(args: argparse.Namespace) -> None:
         conn.close()
         sys.exit(1)
     gated_states = {
-        "FUNCTIONAL_QA", "ARCHITECTURE_REVIEW", "TYLER_APPROVED",
-        "MERGED", "SOAKING", "SIGNED_OFF",
+        "TYLER_APPROVED", "MERGED", "SOAKING", "SIGNED_OFF",
     }
     if args.new_state.upper() in gated_states and not _parent_join_gate(conn, args.fr_id):
         conn.close()

@@ -44,7 +44,6 @@ stateDiagram-v2
     }
     PARENT_JOIN_EVALUATION --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
     PARENT_JOIN_EVALUATION --> IN_PROGRESS: PARENT_JOIN:PASS blocked
-    FUNCTIONAL_QA --> FUNCTIONAL_QA: blocked until parent join passes
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
     ARCHITECTURE_REVIEW --> ARCHITECTURE_REVIEW: STALE/MISSING → beautifier → re-verify
@@ -63,10 +62,13 @@ stateDiagram-v2
     SIGNED_OFF --> [*]
 
     note right of FUNCTIONAL_QA
-        Parent-join evidence blocks FUNCTIONAL_QA,
-        ARCHITECTURE_REVIEW, TYLER_APPROVED, MERGED,
-        SOAKING, and SIGNED_OFF until recomputation accepts
-        PARENT_JOIN:PASS.
+        Parent-join evidence is required before
+        TYLER_APPROVED, MERGED, SOAKING, and SIGNED_OFF.
+        Technical progression through FUNCTIONAL_QA,
+        ARCHITECTURE_REVIEW, REVIEW_REQUESTED, and
+        AUTO_REVIEWED remains available while child
+        TODO bookkeeping is incomplete. Recompute accepts
+        PARENT_JOIN:PASS only with fresh valid evidence.
     end note
 
     AUTO_REVIEWED --> IN_PROGRESS: changes requested
