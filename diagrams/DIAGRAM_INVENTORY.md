@@ -26,8 +26,8 @@ decision-metadata diagram edits and the derived detail companion.
 
 | Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details | Risk evidence |
 |---|---|---|---:|---:|---:|---:|---|---|---|
-| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 2303 | 2303 | 15 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
-| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 1305 | 1305 | 1 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
+| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 3555 | 3555 | 26 | 36 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 2640 | 2640 | 5 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
 | diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 2855 | 2842 | 20 | 20 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | NOT RUN: no `mmdc` | Backend unavailable | init directive |

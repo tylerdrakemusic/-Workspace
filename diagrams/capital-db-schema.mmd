@@ -11,6 +11,19 @@ erDiagram
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : contains
     POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : produces
     OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_LEGS : contains
+    RECONCILIATION_RUNS ||--o{ BROKER_FILL_RECONCILIATIONS : records
+    RECONCILIATION_RUNS ||--o{ RECONCILIATION_EXCLUSIONS : records
+    EXECUTION_HISTORY ||--o{ BROKER_FILL_RECONCILIATIONS : reconciles
+    TRADE_CANDIDATES ||--o{ BROKER_FILL_RECONCILIATIONS : approves
+    TRADE_CANDIDATES {
+        INTEGER id PK
+        TEXT symbol
+        REAL entry_target
+        REAL exit_target "take-profit target"
+        REAL stop_loss_target
+        TEXT model "runtime model or unavailable"
+        TEXT approval_status
+    }
     WATCHLIST_OBSERVATIONS {
         TEXT id PK
         TEXT symbol
@@ -21,5 +34,36 @@ erDiagram
         TEXT observed_at
         TEXT enriched_at
         TEXT promoted_at
+    }
+    RECONCILIATION_RUNS {
+        TEXT run_id PK
+        TEXT window_start
+        TEXT window_end
+        INTEGER order_count
+        INTEGER transaction_count
+    }
+    BROKER_FILL_RECONCILIATIONS {
+        INTEGER id PK
+        TEXT run_id FK
+        INTEGER execution_id FK
+        TEXT broker_order_id
+        TEXT normalized_transaction_id
+        TEXT transaction_ids
+        TEXT symbol
+        TEXT side
+        REAL fill_quantity
+        REAL fill_price
+        TEXT fill_timestamp
+        REAL realized_pnl
+        REAL realized_pnl_pct
+        TEXT unresolved_reason
+        TEXT exclusion_reason
+    }
+    RECONCILIATION_EXCLUSIONS {
+        INTEGER id PK
+        TEXT run_id FK
+        TEXT source_type
+        TEXT source_id
+        TEXT reason
     }
     %% Index: idx_watchlist_observations_symbol ON (symbol, observed_at)
