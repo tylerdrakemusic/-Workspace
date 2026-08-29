@@ -14,16 +14,16 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     expected_character_counts = {
         "diagrams/capital-architecture.mmd": 2303,
         "diagrams/capital-db-schema.mmd": 1305,
-        "diagrams/manifest-architecture.mmd": 1140,
+        "diagrams/manifest-architecture.mmd": 2050,
         "diagrams/workspace-agent-topology.mmd": 5766,
-        "diagrams/workspace-architecture-detail.mmd": 8150,
-        "diagrams/workspace-architecture.mmd": 3004,
-        "diagrams/workspace-integrations.mmd": 2067,
+        "diagrams/workspace-architecture-detail.mmd": 2930,
+        "diagrams/workspace-architecture.mmd": 3409,
+        "diagrams/workspace-integrations.mmd": 2782,
         "diagrams/capital-derived-market-data.mmd": 1324,
         "diagrams/workspace-derived-services.mmd": 1280,
     }
 
-    assert len(source_paths) == 32
+    assert len(source_paths) == 33
     assert "| Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details |" in inventory
     assert inventory.count("| diagrams/") == len(source_paths)
     for source_path in source_paths:
@@ -33,5 +33,5 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
         assert measure_source(REPO_ROOT / source_path).utf8_characters == character_count
         assert int(inventory_row.split("|")[5].strip()) == character_count
     assert "Committed baseline" in inventory
-    assert "Baseline commit: `a704f0e` (committed `origin/main` baseline)" in inventory
-    assert "Uncommitted local overlay" in inventory
+    assert "Baseline commit: `4ee4f6e` (FR worktree diagram baseline)" in inventory
+    assert "seven approved" in inventory

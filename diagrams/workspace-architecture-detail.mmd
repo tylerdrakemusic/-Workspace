@@ -1,142 +1,46 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=false
+%% Traceability.derived_views: diagrams/workspace-derived-decision-metadata-implementation.mmd
 graph TB
-    subgraph Tools["tools/"]
-        Portal[dashboard_portal.py]
-        Registry[dashboard_registry.py]
-        Bench[bench_dashboard.py]
-        Diagrams[diagrams_dashboard.py]
-        FR[fr_dashboard.py]
-        Sec[security_dashboard.py]
-        Ops[agent_ops_monitor.py]
-        BackupGenerator[/generate_database_backup_scope_report.py/]
-        BackupRegister[/register_database_backup_task.ps1/]
-        BackupRunner[/run_database_backup.ps1<br/>run_database_backup.py/]
+    subgraph Workspace["⊕ Workspace decision-metadata boundary"]
+        Schema[contracts/todo_decision_metadata.v1.json<br/>Workspace canonical schema]
+        Validator[src/utils/todo_decision_metadata.py<br/>validator + evidence thresholds]
+        Guidance[src/utils/priority_guidance.py<br/>advisory only]
+        Runtime[todo operational runtime<br/>decision metadata producer]
+        Current[(todos.decision_metadata<br/>current assessment JSON)]
+        History[(todo_decision_metadata_history<br/>append-only assessment history)]
+        FRLedger[(FR ledger<br/>parent and child coordination)]
     end
-    subgraph Src["src/"]
-        subgraph UtilsGroup["utils/"]
-            direction LR
-            UtilsCore[core<br/>perf_cli · proof_cli<br/>init_db]
-            UtilsFR[FR lifecycle<br/>fr_cli · fr_server<br/>init_fr_db · migrate_fr_target_quarter<br/>seed_target_quarters]
-            UtilsSec[security<br/>security_scan · security_scan_nightly<br/>agent_frontmatter_integrity]
-            UtilsDiscovery[discovery/gen<br/>workspace_discovery · roadmap_generator<br/>gen_qee · complexity_router · tech_debt_scanner]
-            UtilsPerf[perf/health<br/>perf_regression_alerter · api_health_monitor<br/>proof_health_verifier · record_overseer_perf]
-            UtilsData[data/infra<br/>mcp_status · sqlcipher_mcp_server<br/>ollama_model_inventory · migrate_ledgers_to_db]
-            BackupScope[database_backup_scope.py<br/>manifest validation · discovery · report rendering]
-            TodoRuntime[todo_operational_runtime.py<br/>bounded scheduler · durable lifecycle<br/>package + direct-script imports]
-            TodoPolicy[todo_execution_policy.json<br/>8 per FR · 16 global<br/>leases · retries]
-            TodoTelemetry[In-memory allowlisted telemetry<br/>outcomes are not persisted]
-            CoordinationMCP[coordination_mcp_server.py]
-            GmailMCP[gmail_mcp_server.py<br/>gmail-service-email · stdio]
-            GmailCreds{GMAIL_SERVICE_TOKEN<br/>environment only}
-            FRCLI[fr_cli.py]
-            Allowlist{Fixed allowlisted<br/>operation boundary}
-        end
-        Integrations[integrations/<br/>elevenlabs · mermaid<br/>dalle3 · huggingface<br/>gdrive · gmail<br/>ollama · pollinations<br/>perplexity]
-        Config[config/<br/>repo_visibility · playwright_servers<br/>service_email]
-        BackupManifest[database_backup_scope.json<br/>versioned policy manifest]
-        Data[(data/<br/>workspace.db)]
-        FRLedger[(data/<br/>fr_ledgers.db)]
+    subgraph Consumer["👁 AI-Manifest consumer boundary"]
+        ManifestValidator[todo_decision_contract.py<br/>loads synchronized schema]
+        ManifestCurrent[(TODOS.decision_metadata<br/>consumer current view)]
+        ManifestHistory[(TODO_DECISION_METADATA_HISTORY<br/>consumer assessment history)]
     end
-    subgraph Reports["reports/"]
-        PortalHtml[portal.html]
-        Dashes[*_dashboard.html]
-        BackupReport[database_backup_scope.md<br/>deterministic generated report]
+    subgraph PriorityBoundary["Priority boundary"]
+        Priority[Existing priority / score]
+        Advisory[Advisory priority guidance]
+        NoMutation{Validator and guidance<br/>do not mutate priority}
     end
-    subgraph BackupContract["Local database backup contract"]
-        BackupPolicy[Provider-neutral backup contract]
-        Scheduler([Windows Task Scheduler<br/>daily 02:00])
-        BackupTask[Registered backup task]
-        Launcher[/PowerShell 5.1 launcher<br/>User-scope env hydration/]
-        Preflight{Fail-closed preflight:<br/>volume + marker identity match?}
-        EnvBoundary{Environment-only secret custody:<br/>volume identity · manifest key<br/>SQLCipher key; no CLI secrets}
-        Inventory[Manifest + inventory discovery]
-        ManifestScope[Approved canonical mapping:<br/>👁AI-Manifest/src/data/<br/>manifest_todos.db]
-        WorkspaceDB[(workspace.db<br/>approved inventory entry)]
-        FutureDBs[Future approved database entries]
-        DiscoveryGate{Registered, unambiguous,<br/>classified database?}
-        Destination[Trusted E:\\WorkspaceBackup<br/>.backup-volume-identity marker]
-        Generation[Authenticated encrypted generations<br/>atomic publication]
-        Integrity[HMAC manifest + SHA-256 identity]
-        Retention[30-generation retention]
-        Restore[Operator-approved isolated restore<br/>SQLCipher reopen validation]
-        Audit[Redacted backup / restore audit output<br/>metadata only]
-        Exclusions[Exclusions:<br/>legacy · generated · worktree<br/>virtualenv · cache · output · transient]
-    end
-    subgraph ParentJoinContract["Evidence-backed parent join contract"]
-        ParentJoinEvaluator[parent_join_gates.evaluate_parent_join]
-        ParentJoinEvidence[(parent-join-evidence<br/>persisted evaluator evidence)]
-        ParentJoinRecompute[Recompute join criteria<br/>against latest evidence]
-        ParentJoinGate{Accept PARENT_JOIN:PASS?}
-        ParentJoinAdvance[Lifecycle may advance]
-        ParentJoinBlocked[Blocked lifecycle transitions:<br/>FUNCTIONAL_QA · ARCHITECTURE_REVIEW<br/>TYLER_APPROVED · MERGED · SOAKING · SIGNED_OFF]
-    end
-    TodoRuntime -->|loads| TodoPolicy
-    TodoRuntime -->|records allowlisted outcomes| TodoTelemetry
-    TodoRuntime -->|reuses existing lifecycle tables| Data
-    TodoRuntime -->|coordinates| FRCLI
-    TodoRuntime -->|joins required children and artifacts| ParentJoinEvaluator
-    Portal --> Registry
-    Registry --> PortalHtml
-    Bench --> Dashes
-    Diagrams --> Dashes
-    FR --> Dashes
-    BackupGenerator -->|loads + validates| BackupManifest
-    BackupGenerator -->|uses| BackupScope
-    BackupScope -->|path metadata discovery + report rendering| BackupGenerator
-    BackupGenerator -->|writes deterministic Markdown| BackupReport
-    Scheduler --> BackupTask
-    BackupRegister -->|registers| BackupTask
-    BackupTask --> BackupRunner
-    BackupTask --> Launcher
-    Launcher --> BackupRunner
-    BackupRunner --> Preflight
-    EnvBoundary --> Preflight
-    Preflight -->|pass| BackupPolicy
-    Preflight -->|absent or mismatched E: -> stop| Audit
-    BackupPolicy --> Inventory
-    ManifestScope --> Inventory
-    WorkspaceDB --> Inventory
-    FutureDBs -.->|approved entries| Inventory
-    Inventory --> DiscoveryGate
-    DiscoveryGate -->|fail closed on unknown or ambiguous DBs| BackupPolicy
-    Exclusions -.->|excluded from discovery| Inventory
-    BackupPolicy --> Destination
-    Destination --> Generation
-    Generation --> Integrity
-    Generation --> Retention
-    Integrity --> Restore
-    Restore --> Audit
-    BackupPolicy --> Audit
-    BackupManifest --> Inventory
-    BackupScope --> DiscoveryGate
-    BackupPolicy -.->|provider-neutral; no cloud-provider integration| BackupGenerator
-    ParentJoinEvaluator -->|evaluates child joins| ParentJoinEvidence
-    ParentJoinEvidence --> ParentJoinRecompute
-    ParentJoinRecompute --> ParentJoinGate
-    ParentJoinGate -->|pass| ParentJoinAdvance
-    ParentJoinGate -->|missing, stale, or mismatched evidence| ParentJoinBlocked
-    UtilsCore --> Data
-    UtilsFR --> Data
-    UtilsSec --> Data
-    UtilsDiscovery --> Data
-    UtilsPerf --> Data
-    UtilsData --> Data
-    CoordinationMCP --> Allowlist
-    GmailMCP -->|GmailServiceClient| Integrations
-    GmailMCP -.->|credential lookup| GmailCreds
-    Allowlist -->|FR operations only| FRCLI
-    FRCLI ==> FRLedger
-    class Tools tool
-    class Src src
-    class Reports out
-    class BackupContract contract
-    class Scheduler ext
-    class BackupRegister,BackupRunner,BackupTask,BackupGenerator,BackupReport ws
-    class Preflight,EnvBoundary,DiscoveryGate state
-    class WorkspaceDB,Data,FRLedger db
-    class Destination,Generation,Integrity,Restore,Audit contract
-    class ParentJoinEvaluator,ParentJoinRecompute,ParentJoinGate,ParentJoinAdvance contract
-    class ParentJoinBlocked state
+    Schema -->|authoritative fields, categories, scales, thresholds| Validator
+    Schema -.->|synchronized consumer contract| ManifestValidator
+    Validator -->|validates and records| Current
+    Validator ==> History
+    Runtime -->|supplies assessment input| Validator
+    Runtime -->|coordinates lifecycle| FRLedger
+    Validator --> NoMutation
+    Guidance --> Advisory
+    Advisory --> NoMutation
+    Priority --> NoMutation
+    NoMutation -->|preserved| Priority
+    ManifestValidator -->|validates consumer payload| ManifestCurrent
+    ManifestValidator ==> ManifestHistory
+    Current -.->|shared current contract shape| ManifestCurrent
+    History -.->|shared append-only assessment shape| ManifestHistory
+
+    class Schema,Validator,Guidance,Runtime,FRLedger ws
+    class ManifestValidator manifest
+    class Current,History,ManifestCurrent,ManifestHistory db
+    class NoMutation state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -147,4 +51,3 @@ classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
-classDef contract fill:#203a3a,stroke:#6ad4b4,color:#d0f8ee

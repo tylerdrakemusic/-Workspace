@@ -8,6 +8,8 @@ graph LR
     Workspace --> Music[❤ Music]
     Workspace --> Quantum[⟨ψ⟩ Quantum]
     Workspace --> Manifest[👁 AI-Manifest]
+    Workspace --> DecisionContract[Workspace decision metadata contract<br/>canonical fields + 1-10 scale + evidence rules]
+    DecisionContract --> ManifestValidator[👁 consumer validator/helper<br/>todo_decision_metadata.py]
     Workspace --> Capital[Σ Capital]
     Workspace --> WSDB[(workspace.db)]
     Workspace -.-> Services[workspace-derived-services]
@@ -16,6 +18,7 @@ graph LR
     Music --> MusicDB[(heartmusic.db)]
     Quantum --> QDB[(quantumpsi.db)]
     Manifest --> ManifestDB[(manifest_todos.db)]
+    ManifestValidator --> ManifestDB
     Capital --> CapitalDB[(sigmacapital.db)]
     LifeWeightTrend[∞ Life aggregate weight-trend producer]
     AggregateHandoff[Aggregate-only Life-to-Quantum handoff<br/>no rows, raw data, identifiers,<br/>features, labels, predictions, or nutrition]
@@ -28,12 +31,20 @@ graph LR
     QuantumValidator --> SufficiencyGate
     SufficiencyGate --> ExecutionDenied
     class Workspace,Services,Backup ws
+    class DecisionContract ws
+    class ManifestValidator orch
     class Life,Music,Quantum,Manifest,Capital orch
     class LifeWeightTrend,QuantumValidator quantum
     class AggregateHandoff,SufficiencyGate,ExecutionDenied state
     class GitHub,Mermaid ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB db
-classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
-classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
-classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
-classDef db fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc

@@ -1,0 +1,85 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-architecture-detail.mmd
+%% Scope: implementation support for the decision-metadata boundary
+graph TB
+    Backup[/database backup scripts/]
+    subgraph Services["⊕ Workspace services"]
+        TodoRuntime[todo_operational_runtime.py<br/>bounded lifecycle]
+        TodoPolicy[todo_execution_policy.json<br/>claims, leases, retries]
+        Coordination[coordination_mcp_server.py<br/>allowlisted operations]
+        FRCLI[fr_cli.py<br/>FR lifecycle]
+        DecisionBoundary[Decision metadata boundary<br/>see parent detail diagram]
+        WorkspaceDB[(workspace.db)]
+        FRLedger[(fr_ledgers.db)]
+        DecisionCurrent[(todos.decision_metadata)]
+        DecisionHistory[(todo_decision_metadata_history)]
+    end
+    subgraph Contracts["Evidence and gate contracts"]
+        JoinEvaluator[parent_join_gates.evaluate_parent_join]
+        JoinEvidence[(parent-join-evidence)]
+        JoinRecompute[Recompute against latest evidence]
+        JoinGate{Accept PARENT_JOIN:PASS?}
+        QA[FUNCTIONAL_QA]
+        Architecture[ARCHITECTURE_REVIEW]
+    end
+    subgraph BackupContract["Provider-neutral local backup"]
+        Scope[database_backup_scope.py]
+        Manifest[database_backup_scope.json]
+        Discovery[registered database discovery]
+        Destination[trusted encrypted generations]
+        Restore[isolated SQLCipher restore]
+    end
+    subgraph Projects["Cross-project consumers"]
+        ManifestConsumer[👁 AI-Manifest<br/>todo decision consumer]
+        Life[∞ Life]
+        Music[❤ Music]
+        Quantum[⟨ψ⟩ Quantum]
+        Capital[Σ Capital]
+    end
+    TodoRuntime --> TodoPolicy
+    TodoRuntime -->|coordinates| Coordination
+    TodoRuntime --> FRCLI
+    TodoRuntime -->|decision assessment input| DecisionBoundary
+    DecisionBoundary --> DecisionCurrent
+    DecisionBoundary ==> DecisionHistory
+    TodoRuntime --> WorkspaceDB
+    FRCLI ==> FRLedger
+    TodoRuntime --> JoinEvaluator
+    JoinEvaluator --> JoinEvidence
+    JoinEvidence --> JoinRecompute
+    JoinRecompute --> JoinGate
+    JoinGate -->|pass| QA
+    JoinGate -->|missing, stale, mismatched evidence| TodoRuntime
+    QA -->|pass| Architecture
+    QA -->|fail| TodoRuntime
+    Backup --> Scope
+    Scope --> Manifest
+    Scope --> Discovery
+    Discovery --> Destination
+    Destination --> Restore
+    DecisionCurrent -.->|consumer payload| ManifestConsumer
+    DecisionHistory -.->|assessment history| ManifestConsumer
+    Backup -.->|cross-project backup boundary| Life
+    Backup -.->|cross-project backup boundary| Music
+    Backup -.->|cross-project backup boundary| Quantum
+    Backup -.->|cross-project backup boundary| Capital
+    DecisionBoundary -.->|parent detail owns schema, history, priority boundary| DecisionCurrent
+    class TodoRuntime,TodoPolicy,Coordination,FRCLI,DecisionBoundary,JoinEvaluator,JoinRecompute,JoinGate,Backup,Scope,Manifest,Discovery,Destination,Restore ws
+    class WorkspaceDB,FRLedger,DecisionCurrent,DecisionHistory,JoinEvidence db
+    class ManifestConsumer manifest
+    class Life life
+    class Music music
+    class Quantum quantum
+    class Capital ws
+    class QA,Architecture state
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
