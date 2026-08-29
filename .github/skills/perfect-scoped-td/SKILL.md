@@ -27,7 +27,10 @@ fields without a helper. Use `fr_cli.py get <FR-ID>` for FR reads and
 Decision metadata follows the workspace contract in
 `src/utils/todo_decision_metadata.py` and
 `docs/todo-decision-metadata-standard.md`. Consumers must use that validator
-and field vocabulary rather than defining a second schema.
+and field vocabulary rather than defining a second schema. Metadata may be
+assessed, created, or revised through an ordinary validated write without
+Tyler approval. The write appends its historical assessment automatically and
+does not change any todo field, including `priority`.
 
 The canonical fields are `expected_value`, `user_or_system_benefit`,
 `strategic_alignment`, `confidence`, `cost_of_delay`,
@@ -84,7 +87,9 @@ Preserve the source intent while producing:
 - Values for `rationale`, `implementation_hints`, `context_snapshot`,
   `estimated_effort`, and `dependencies`.
 - A recommended `priority`, `source`, and `autonomy_level` only when the
-  evidence supports changing them.
+   evidence supports changing them. Priority guidance may weigh the candidate
+   against other current todos in the same project whose binary `done` field
+   is `0`; the recommendation remains advisory and is not a mutation.
 
 Do not invent project facts, FR approvals, dependencies, or implementation
 details. Preserve existing fields when the input does not justify a change.
@@ -119,12 +124,18 @@ Show a handshake report and proposed mutations before writing:
 - <event type and summary, or none>
 ```
 
-Ask for explicit confirmation of the listed mutations. A request to “perfect”
-or “sync” a todo is not by itself permission to write.
+Ask for explicit confirmation only for governed todo-field mutations. Changing
+or setting the actual `priority` field always requires explicit Tyler
+approval, including applying an advisory recommendation. The generic
+refinement approval gate does not encompass creating or revising decision
+metadata, because metadata is an ordinary validated write. It also does not
+encompass another todo field unless that field is listed as a separately
+governed mutation. A request to “perfect” or “sync” a todo is not by itself
+permission to change a governed field.
 
 ## Approved Writes
 
-After confirmation only:
+For approved governed mutations only:
 
 1. Update the existing todo using a transaction and parameterized values.
    When the approved refinement transaction succeeds, set the nullable
@@ -132,11 +143,13 @@ After confirmation only:
    A denied, unapproved, or failed refinement must not set or update
    `perfected_at`; it remains null unless a prior approved successful
    refinement already stamped it.
-2. Use `update_priority()` when changing priority so `priority_history` is
-   recorded. Do not change `done` or `closed_at` through this skill.
-   Decision metadata may provide advisory priority guidance only; it must
-   never automatically mutate `priority` or `priority_history`. Applying a
-   recommendation remains an explicit, human-approved priority operation.
+2. Save or revise decision metadata as an ordinary validated write; append its
+   assessment history automatically. Decision metadata may provide advisory
+   priority guidance only; it must never automatically mutate `priority` or
+   `priority_history`. Use `update_priority()` when changing priority so
+   `priority_history` is recorded, but do so only after explicit Tyler approval
+   of that priority mutation. Do not change `done` or `closed_at` through this
+   skill.
 3. Set `fr_id` only to a confirmed existing FR ID. Never create an FR or
    transition its state here.
 4. If an FR event was explicitly approved, record it with `fr_cli.py` after the
@@ -162,7 +175,11 @@ and do not partially continue the handshake.
    transaction; failed or unapproved refinement does not stamp it.
 - Decision metadata migration is additive and idempotent. Legacy rows retain
    null metadata, and no historical values may be fabricated or backfilled.
-- Validated assessments replace current metadata and append immutable history;
-   incomplete high-impact assessments and malformed evidence are rejected.
+- Validated assessments replace current metadata and append immutable history
+   without an approval gate; incomplete high-impact assessments and malformed
+   evidence are rejected.
+- Only changing or setting the actual `priority` field requires explicit Tyler
+   approval. Recommendations may compare open project todos (`done = 0`) but
+   remain advisory and non-mutating.
 - It does not modify unrelated todos or repair conflicts silently.
 - It does not create fallback files when either database is unavailable.
