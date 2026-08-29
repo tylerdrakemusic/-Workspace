@@ -56,4 +56,6 @@ def test_workspace_workflow_keeps_pytest_failures_blocking() -> None:
     )
 
     run_pytest_lines = [line for line in workflow.splitlines() if "run: pytest" in line]
-    assert run_pytest_lines == ["        run: pytest -v --tb=short -rs"]
+    assert run_pytest_lines == [
+        "        run: pytest -v --tb=short -rs --junitxml=tmp/pytest-junit.xml"
+    ]

@@ -12,15 +12,22 @@ graph LR
     Python --> Safety[safety<br/>security scan]
     Python --> PipAudit[pip-audit<br/>requirements.txt<br/>strict installed-environment audit]
     Python --> Radon[radon<br/>complexity scan]
+    Python --> TestRunner[/tools/run_tests.py<br/>serial default · local --parallel/]
+    TestRunner --> Pytest
+    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=false]
+    Pytest -.-> Xdist[pytest-xdist<br/>optional local workers]
+    TestRunner -.-> ParallelEvidence[Local parallel evidence<br/>∞Life + ❤Music only]
     Node[Node.js] --> Mmdc[mermaid-cli<br/>mmdc]
     PowerShell[PowerShell 7] --> LaunchScripts[open_portal.ps1<br/>start_*.ps1]
     GitHub[GitHub Actions] --> CI_Tests[test workflow]
     CI_Tests --> PipAudit --> Pytest
+    CI_Tests -->|serial CI| Pytest
     HumanizerSource[GitHub Humanizer source<br/>blader/humanizer] --> SkillSyncConfig[skill-sync-config.json<br/>pinned commit]
     SkillSyncConfig --> SkillSyncScript[sync-skills.ps1]
     SkillSyncScript ==> LocalSkillCatalog[local skill catalog / agent manifest]
     class Python,Node,PowerShell lang
-    class SQLCipher,Pytest,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,PipAudit,Radon,SkillSyncConfig,SkillSyncScript,LocalSkillCatalog tool
+    class SQLCipher,Pytest,TestRunner,TestPolicy,Xdist,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,PipAudit,Radon,SkillSyncConfig,SkillSyncScript,LocalSkillCatalog tool
+    class ParallelEvidence state
     class HumanizerSource ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
