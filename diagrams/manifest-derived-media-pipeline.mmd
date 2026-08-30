@@ -3,6 +3,8 @@
 %% Traceability.parent: diagrams/manifest-architecture.mmd
 graph TB
     Tools[executive_audio_brief.py] --> Briefs[brief generators]
+    Tools --> MCP[TTS MCP server]
+    Tools --> Vocal[Vocal synthesis]
     Briefs --> OpenAI[OpenAI]
     Briefs --> ElevenLabs[ElevenLabs]
     Tools --> Lily[src/utils/lily_portrait.py]
@@ -19,10 +21,18 @@ graph TB
     HFImage --> Images
     Fallback --> Images
     Images --> Portal[executive brief portal]
+    MCP --> ElevenLabs
+    Vocal --> ElevenLabs
+    MCP --> AudioPolicy[audio_output_policy.py]
+    Vocal --> AudioPolicy
+    AudioPolicy --> Reject[reject unsafe names/paths]
+    Reject --> RootContainment[resolved-root containment]
+    RootContainment --> AtomicPublish[atomic publication]
+    AtomicPublish --> AudioOut[validated audio artifacts]
     AudioOut --> Portal
-    ElevenLabs --> AudioOut[output/tts/*.mp3]
     Briefs --> Portal
-    class Tools,Briefs,Lily,DallE3,HFImage,HFSpaces,Pollinations,Images,Portal orch
+    class Tools,Briefs,MCP,Vocal,Lily,DallE3,HFImage,HFSpaces,Pollinations,Images,Portal,AudioOut orch
+    class AudioPolicy,Reject,RootContainment,AtomicPublish manifest
     class Fallback state
     class WS ws
     class OpenAI,ElevenLabs ext

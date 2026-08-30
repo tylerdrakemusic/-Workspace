@@ -4,6 +4,8 @@
 graph TB
     Triggers[Task Scheduler, CLI, Manual] --> Tools[AI-Manifest tools]
     Tools --> Briefs[brief generators]
+    Tools --> AudioPolicy[audio_output_policy.py]
+    AudioPolicy --> AudioBoundary[Audio-output policy boundary<br/>strict rejection · resolved-root containment · atomic publication]
     Briefs --> OpenAI[OpenAI]
     Briefs --> ElevenLabs[ElevenLabs]
     Tools --> TodoDB[(manifest_todos.db)]
