@@ -6,11 +6,11 @@ graph LR
     Python --> MFP[myfitnesspal · rookiepy<br/>Win-only]
     Python --> YAML[PyYAML<br/>etl_expected_markers.yaml]
     Python --> Pytest[pytest]
-    Python --> TestRunner[/tools/run_tests.py<br/>serial default · local --parallel/]
+    Python --> TestRunner[/tools/run_tests.py<br/>canonical CI --parallel · serial local/evaluation fallback/]
     TestRunner --> Pytest
-    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=false]
-    Pytest -.-> Xdist[pytest-xdist<br/>optional local workers]
-    TestRunner -.-> ParallelEvidence[Local parallel run<br/>demonstrated for ∞Life]
+    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=true · exclude playwright]
+    Pytest -.-> Xdist[pytest-xdist<br/>controlled CI workers]
+    TestRunner -.-> ParallelEvidence[CI parallel execution<br/>playwright excluded · no fixed worker count claimed]
     class Python lang
     class SQLCipher,Garmin,Requests,MFP,YAML,Pytest,TestRunner,TestPolicy,Xdist lib
     class ParallelEvidence state
