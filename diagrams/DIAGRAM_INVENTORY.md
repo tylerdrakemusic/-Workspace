@@ -17,11 +17,11 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 
 ## Measurement Contract
 
-- Current baseline commit: `3e2eef6` (main baseline for this FR)
-- Evidence head: current `feature/FR-20260830-workspace-xdist-diagram-reconciliation` worktree
+- Current baseline commit: `a4bf3b6` (existing Quantum cache lifecycle PR baseline)
+- Evidence head: current `feature/FR-20260830-quantum-cache-integrity-lifecycle-diagram` worktree
 - Baseline commit: `4ee4f6e` (FR worktree diagram baseline)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
-  count is 33.
+  count is 34.
 - Bytes: exact UTF-8 byte length of the source file.
 - Characters: Python `str` length after UTF-8 decoding, including newlines.
 - Nodes: count of node declaration lines matching the diagram's identifier
@@ -30,9 +30,9 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 - Edges: count of lines containing a Mermaid edge operator (`-->`, `==>`,
   `-.->`, `---`, `===`, or ER relationship operators). A line with multiple
   operators is counted once.
-- Renderer check: all four reconciled technology-stack sources were rendered
-  through mermaid.ink and returned HTTP 200. All unrelated fallback rows remain
-  documented as `NOT RUN` where no local `mmdc` backend was available.
+- Renderer check: 32 of 34 sources were rendered through mermaid.ink and
+  returned HTTP 200. The two unrelated fallback rows remain documented with
+  their HTTP 414 and HTTP 400 results.
 
 ## Source Inventory
 
@@ -51,7 +51,8 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/music-db-schema.mmd | ❤Music database entity relationships | ❤Music | 5956 | 5956 | 25 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/music-icecast-primary-architecture.mmd | ❤Music Icecast primary streaming architecture | ❤Music | 1072 | 1070 | 20 | 9 | Fallback: mermaid.ink HTTP 400 | Bad Request | Unicode labels |
 | diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 3280 | 3262 | 23 | 23 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
-| diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 5209 | 5203 | 67 | 31 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830-quantum-cache-integrity-lifecycle; split_required=true under overview node threshold |
+| diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture overview | ⟨ψ⟩Quantum | 2557 | 2555 | 30 | 16 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived view: diagrams/quantum-derived-cache-integrity.mmd; split_required=false |
+| diagrams/quantum-derived-cache-integrity.mmd | ⟨ψ⟩Quantum cache integrity lifecycle derived detail | ⟨ψ⟩Quantum | 2743 | 2743 | 28 | 14 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent: diagrams/quantum-architecture.mmd; split_required=false |
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 3132 | 3132 | 9 | 7 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1729 | 1723 | 9 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
@@ -82,7 +83,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 - Sources containing Mermaid `%%{init: ...}%%` directives are fallback-prone
   for renderers that do not support initialization directives; the affected
   rows identify that evidence.
-- The renderer probe used mermaid.ink directly: 31 sources returned HTTP 200;
+- The renderer probe used mermaid.ink directly: 32 sources returned HTTP 200;
   `music-architecture.mmd` returned HTTP 414 (URI Too Long), and
   `music-icecast-primary-architecture.mmd` returned HTTP 400 (Bad Request).
 
