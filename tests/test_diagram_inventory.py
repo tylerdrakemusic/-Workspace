@@ -21,6 +21,7 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
         "diagrams/workspace-integrations.mmd": 3162,
         "diagrams/capital-derived-market-data.mmd": 1324,
         "diagrams/workspace-derived-services.mmd": 1280,
+        "diagrams/manifest-derived-media-pipeline.mmd": 1935,
     }
 
     assert len(source_paths) == 33
@@ -35,3 +36,10 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     assert "Committed baseline" in inventory
     assert "Baseline commit: `4ee4f6e` (FR worktree diagram baseline)" in inventory
     assert "seven approved" in inventory
+
+
+def test_manifest_media_pipeline_declares_governed_audio_output_boundary() -> None:
+    source = (DIAGRAMS_DIR / "manifest-derived-media-pipeline.mmd").read_text(encoding="utf-8")
+
+    assert "classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0" in source
+    assert "AtomicPublish --> AudioOut[validated audio artifacts: output/tts/*.mp3]" in source

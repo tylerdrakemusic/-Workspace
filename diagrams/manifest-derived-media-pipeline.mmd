@@ -28,7 +28,7 @@ graph TB
     AudioPolicy --> Reject[reject unsafe names/paths]
     Reject --> RootContainment[resolved-root containment]
     RootContainment --> AtomicPublish[atomic publication]
-    AtomicPublish --> AudioOut[validated audio artifacts]
+    AtomicPublish --> AudioOut[validated audio artifacts: output/tts/*.mp3]
     AudioOut --> Portal
     Briefs --> Portal
     class Tools,Briefs,MCP,Vocal,Lily,DallE3,HFImage,HFSpaces,Pollinations,Images,Portal,AudioOut orch
@@ -39,4 +39,5 @@ graph TB
 classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef state fill:#1a1a1a,stroke:#888888,color:#cccccc
