@@ -1,5 +1,5 @@
 {
-  "parallel_ci": false,
+  "parallel_ci": true,
   "parallel_supported": true,
   "excluded_markers": ["playwright", "live"],
   "serial_reason": "Encrypted database and process-global integration fixtures require isolation evidence before CI parallelism."

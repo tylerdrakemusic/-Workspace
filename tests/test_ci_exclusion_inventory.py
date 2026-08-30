@@ -36,12 +36,13 @@ def test_workspace_ci_does_not_deselect_integration_tests_and_reports_skips() ->
     workflow = (project_root / ".github" / "workflows" / "test.yml").read_text(
         encoding="utf-8"
     )
+    runner = (project_root / "tools" / "run_tests.py").read_text(encoding="utf-8")
     integration_tests = (project_root / "tests" / "test_perplexity_integration.py").read_text(
         encoding="utf-8"
     )
 
     assert '-m "not integration"' not in pytest_config
-    assert "-rs" in workflow
+    assert "-rs" in runner
     assert "continue-on-error" not in workflow
     assert "--deselect" not in workflow
     assert "--ignore" not in workflow
@@ -55,7 +56,9 @@ def test_workspace_workflow_keeps_pytest_failures_blocking() -> None:
         encoding="utf-8"
     )
 
-    run_pytest_lines = [line for line in workflow.splitlines() if "run: pytest" in line]
+    run_pytest_lines = [
+        line for line in workflow.splitlines() if "run: python tools/run_tests.py" in line
+    ]
     assert run_pytest_lines == [
-        "        run: pytest -v --tb=short -rs --junitxml=tmp/pytest-junit.xml"
+        "        run: python tools/run_tests.py --parallel --junitxml=tmp/pytest-junit.xml"
     ]
