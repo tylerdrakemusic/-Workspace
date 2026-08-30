@@ -1,96 +1,50 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=false
+%% Traceability.derived_views: diagrams/quantum-derived-cache-integrity.mmd
 graph TB
-    subgraph Bench["tools/ — benchmark scripts"]
-        Shor[bench_shors_v2.py<br/>run_shors_bench.py]
-        VQE[bench_vqe.py<br/>run_vqe_bench.py]
-    end
-    subgraph OfflineReplay["Offline seeded replay analysis"]
-        ShorAnalysis[tools/shor_ideal_noisy_analysis.py]
-        IdealReplay[Local Aer<br/>ideal seeded replay]
-        NoisyReplay[Local Aer<br/>noisy seeded replay]
-    end
-    subgraph Backends
-        IBM[IBM Quantum<br/>QISKIT_TOKEN]
-        Sim[Aer Simulator<br/>local]
-    end
-    subgraph Util["src/utils/"]
-        Orion[orion_portrait.py<br/>+ orion_config_db.py]
-        ExecPolicyMod[execution_policy.py]
-        AerNoise[aer_noise_model.py<br/>deterministic Aer noise model]
-        RealDataValidator[quantum_kernel_contract.py<br/>validates ∞ Life aggregate-only handoff]
-    end
-    SufficiencyGate{Aggregate sufficiency gate}
-    ExecutionDenied[Real-data model execution denied]
-    subgraph WalkMusic["src/quantum_walk_music.py<br/>src/quantum_walk_music/"]
-        Midi[MIDI generation<br/>via midiutil<br/>FR-20260518-quantum-walk-music]
-    end
-    subgraph Storage
-        DB[(quantumpsi.db<br/>SQLCipher)]
-        BenchTbl[benchmarks<br/>shors_qpu_bench<br/>vqe_runs table]
-        ShorReplayTbl[shor_replay_benchmarks table]
-        CacheHealthLog[cache_health_log table]
-        BackendHealthTbl[backend_health table]
-        PolicyTbl[policy_events<br/>policy_audit_runs table]
-    end
-    subgraph Outputs
-        Reports[reports/<br/>benchmark dashboard]
-        CacheCapacity[qbackups/<br/>ty_string_cache_capacity.txt]
-    end
-    subgraph Tools["tools/"]
-        FillCache[fill_cache.py]
-        CacheGuard[cache_depletion_guard.py]
-        BackendMonitor[backend_availability_monitor.py]
-        AuditPolicy[audit_policy.py]
-    end
-    subgraph Config["src/config/"]
-        PolicyJson[execution_policy.json]
-    end
-    subgraph Scheduler["Windows Task Scheduler"]
-        GuardTask[QuantumCacheDepletionGuard_Daily]
-    end
-    Bench --> IBM
-    Bench --> Sim
-    ShorAnalysis --> IdealReplay & NoisyReplay
-    IdealReplay --> Sim
-    NoisyReplay --> Sim
-    ShorAnalysis --> ShorReplayTbl
-    ShorReplayTbl --> Reports
-    AerNoise --> Sim
-    RealDataValidator --> SufficiencyGate
-    SufficiencyGate --> ExecutionDenied
-    Bench --> BenchTbl
-    BenchTbl --> Reports
-    GuardTask --> CacheGuard
-    CacheGuard --> CacheHealthLog
-    CacheGuard --> FillCache
-    FillCache --> CacheCapacity
-    Orion -.lazy import.-> WSIntegrations[⊕Workspace/src/integrations]
-    Orion --> DB
-    BackendMonitor --> BackendHealthTbl
-    AuditPolicy --> PolicyJson
-    AuditPolicy --> PolicyTbl
-    ExecPolicyMod --> PolicyJson
-    WalkMusic --> Midi
-    class Bench alg
-    class Backends back
-    class Storage,Outputs store
-    class OfflineReplay quantum
-    class ShorAnalysis,IdealReplay,NoisyReplay quantum
-    class FillCache,CacheGuard,BackendMonitor,AuditPolicy quantum
-    class GuardTask ext
-    class CacheHealthLog,BenchTbl,ShorReplayTbl,BackendHealthTbl,PolicyTbl db
-    class CacheCapacity state
-    class WSIntegrations ws
-    class Orion,ExecPolicyMod,AerNoise,RealDataValidator quantum
-    class WalkMusic,Midi quantum
-    class PolicyJson,SufficiencyGate,ExecutionDenied state
+    Bench[Benchmark scripts<br/>Shor + VQE]:::quantum
+    Replay[Offline seeded replay analysis<br/>ideal + noisy Aer]:::quantum
+    Backends[Quantum backends<br/>IBM Quantum + local Aer]:::back
+    Policy[Execution policy modules<br/>contract validation + audit]:::quantum
+    Gate{Aggregate sufficiency gate}:::state
+    Denied[Real-data model execution denied]:::state
+    Music[Quantum walk music<br/>MIDI generation]:::quantum
+    QuantumDB[(quantumpsi.db<br/>SQLCipher)]:::db
+    BenchData[Benchmark + replay tables]:::db
+    HealthData[Backend and cache health tables]:::db
+    Reports[reports/<br/>benchmark dashboard]:::store
+    GuardTask[Windows Task Scheduler<br/>QuantumCacheDepletionGuard_Daily]:::ext
+    CacheTools[Cache guard, fill, and verify tools]:::quantum
+    CacheCapacity[qbackups/<br/>ty_string_cache_capacity.txt]:::state
+    CacheLifecycle[Cache integrity lifecycle<br/>see quantum-derived-cache-integrity.mmd]:::quantum
+    Workspace[⊕Workspace/src/integrations]:::ws
+    Bench --> Backends
+    Bench --> BenchData
+    Replay --> Backends
+    Replay --> BenchData
+    BenchData --> Reports
+    Policy --> Gate
+    Gate --> Denied
+    Policy --> QuantumDB
+    Music --> QuantumDB
+    GuardTask --> CacheTools
+    CacheTools --> HealthData
+    CacheTools --> CacheCapacity
+    CacheTools --> CacheLifecycle
+    CacheLifecycle -.-> CacheDetail[quantum-derived-cache-integrity.mmd]:::quantum
+    HealthData --> Reports
+    Policy -.-> Workspace
 
-classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
-classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
-classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef tyler   fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext     fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db      fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state   fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef life    fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music   fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
-classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
-classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
-classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
-classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
-classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef alg     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef back    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef store   fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee

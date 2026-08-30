@@ -23,7 +23,7 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
         "diagrams/workspace-derived-services.mmd": 1280,
     }
 
-    assert len(source_paths) == 33
+    assert len(source_paths) == 34
     assert "| Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details |" in inventory
     assert inventory.count("| diagrams/") == len(source_paths)
     for source_path in source_paths:
