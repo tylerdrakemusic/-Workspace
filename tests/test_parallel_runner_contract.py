@@ -21,6 +21,22 @@ def test_parallel_runner_contract_is_declared():
     assert runner.is_file()
 
 
+def test_parallel_ci_policy_is_enabled():
+    policy = Path(__file__).parents[1] / "tools" / "parallel_test_policy.json"
+
+    assert json.loads(policy.read_text(encoding="utf-8"))["parallel_ci"] is True
+
+
+def test_ci_workflow_uses_parallel_runner_with_junit_and_playwright_guard():
+    workflow = Path(__file__).parents[1] / ".github" / "workflows" / "test.yml"
+    workflow_text = workflow.read_text(encoding="utf-8")
+
+    assert "PLAYWRIGHT_ENABLED: \"0\"" in workflow_text
+    assert (
+        "python tools/run_tests.py --parallel --junitxml=tmp/pytest-junit.xml" in workflow_text
+    )
+
+
 def test_build_command_composes_policy_exclusions_with_repository_marker_defaults():
     root = Path(__file__).parents[1]
     command = load_runner().build_command(parallel=False, junitxml=None)
