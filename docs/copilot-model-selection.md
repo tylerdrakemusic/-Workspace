@@ -7,6 +7,12 @@ availability, benchmark provenance, pricing provenance, latency, retries,
 failure state, and accepted-outcome state. They must never contain prompts,
 task payloads, source code, medical data, financial data, or task outputs.
 
+The metadata contracts are deliberately separate: `ProviderIdentity` describes
+the provider catalog identity, `PricingContract` describes versioned unit-cost
+provenance, and `AvailabilityFreshness` describes the capture timestamp,
+freshness window, and availability status. Each record validates
+`schema_version` independently.
+
 ## Availability
 
 `CachedInventory` prefers a supported Copilot or VS Code enumeration provider.
@@ -17,7 +23,11 @@ supported enumeration or cache exists, selection and dispatch are fail-closed.
 The repository does not claim an undocumented Copilot activation API. A live
 consumer must implement the narrow `DelegationConsumer` boundary. The default
 `UnsupportedDelegationConsumer` always fails closed until a supported consumer
-is supplied.
+is supplied. `SupportedConsumerAdapter` is the documented in-process test
+double for that boundary. `supported_consumer_demonstration` exercises
+`dispatch` and records a manifest fingerprint plus activation status. Its
+default `live_available=False` result is explicit and is not evidence that a
+real Copilot consumer is present.
 
 ## Selection
 
@@ -46,3 +56,6 @@ failure, accepted outcome, and pricing provenance. Use the existing
 reconciliation, and `perf_cli.py` for run timing. Persist only ledger-compatible
 metadata. `shadow_replay` exercises selection without activation and is the
 preferred dry-run for FR-flow validation.
+The committed demonstration proof is in
+`proof/copilot-consumer-demonstration.json`; rerun the focused contract test to
+reconstruct its supported boundary and metadata-only assertions.

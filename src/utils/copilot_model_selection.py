@@ -66,6 +66,87 @@ def _require_version(payload: Any) -> dict[str, Any]:
     return payload
 
 
+@dataclass(frozen=True)
+class ProviderIdentity:
+    provider_id: str
+    display_name: str
+    contract_version: str
+
+    def __post_init__(self) -> None:
+        if not all(isinstance(value, str) and value.strip() for value in (self.provider_id, self.display_name, self.contract_version)):
+            raise ContractValidationError("provider identity requires non-empty metadata")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"schema_version": SCHEMA_VERSION, **asdict(self)}
+
+    @classmethod
+    def from_dict(cls, payload: Any) -> "ProviderIdentity":
+        data = _require_version(payload)
+        try:
+            return cls(data["provider_id"], data["display_name"], data["contract_version"])
+        except (KeyError, TypeError) as exc:
+            raise ContractValidationError("provider identity is incomplete") from exc
+
+
+@dataclass(frozen=True)
+class PricingContract:
+    model_id: str
+    pricing_version: str
+    currency: str
+    source: str
+    input_unit_cost: str
+    output_unit_cost: str
+
+    def __post_init__(self) -> None:
+        if not all(isinstance(value, str) and value.strip() for value in (self.model_id, self.pricing_version, self.currency, self.source)):
+            raise ContractValidationError("pricing contract metadata is required")
+        try:
+            if Decimal(self.input_unit_cost) < 0 or Decimal(self.output_unit_cost) < 0:
+                raise ContractValidationError("pricing costs must be non-negative")
+        except (InvalidOperation, TypeError) as exc:
+            raise ContractValidationError("pricing costs must be decimal values") from exc
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"schema_version": SCHEMA_VERSION, **asdict(self)}
+
+    @classmethod
+    def from_dict(cls, payload: Any) -> "PricingContract":
+        data = _require_version(payload)
+        allowed = {"schema_version", "model_id", "pricing_version", "currency", "source", "input_unit_cost", "output_unit_cost"}
+        if set(data) != allowed:
+            raise ContractValidationError("pricing contract contains unknown or missing metadata")
+        try:
+            return cls(**{key: data[key] for key in allowed - {"schema_version"}})
+        except (KeyError, TypeError) as exc:
+            raise ContractValidationError("pricing contract is incomplete") from exc
+
+
+@dataclass(frozen=True)
+class AvailabilityFreshness:
+    captured_at: datetime
+    freshness_seconds: int
+    status: str
+    source: str
+
+    def __post_init__(self) -> None:
+        if self.freshness_seconds < 0 or self.status not in {"available", "stale-fallback", "unavailable"} or not self.source.strip():
+            raise ContractValidationError("availability freshness is invalid")
+
+    def to_dict(self) -> dict[str, Any]:
+        result = asdict(self)
+        result["captured_at"] = _iso(self.captured_at)
+        result["schema_version"] = SCHEMA_VERSION
+        return result
+
+    @classmethod
+    def from_dict(cls, payload: Any) -> "AvailabilityFreshness":
+        data = _require_version(payload)
+        try:
+            return cls(_parse_time(data["captured_at"]), int(data["freshness_seconds"]), data["status"], data["source"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ContractValidationError("availability freshness is incomplete") from exc
+
+
 def _tuple_strings(values: Any, allowed: frozenset[str], field_name: str) -> tuple[str, ...]:
     if not isinstance(values, (list, tuple)) or not values or not all(isinstance(v, str) for v in values):
         raise ContractValidationError(f"{field_name} must be a non-empty string list")
@@ -191,6 +272,22 @@ class DelegationConsumer(Protocol):
 class UnsupportedDelegationConsumer:
     def delegate(self, manifest: "DelegationManifest") -> dict[str, Any]:
         raise UnsupportedCopilotError("supported Copilot delegation consumer is unavailable")
+
+
+@dataclass(frozen=True)
+class SupportedConsumerAdapter:
+    """Documented in-process stand-in for the supported consumer boundary."""
+
+    live_available: bool = False
+    consumer: str = "supported-consumer-adapter"
+
+    def preflight(self, manifest: "DelegationManifest") -> bool:
+        return self.live_available and bool(manifest.model_id and manifest.provider)
+
+    def delegate(self, manifest: "DelegationManifest") -> dict[str, Any]:
+        if not self.live_available:
+            raise UnsupportedCopilotError("real Copilot consumer is unavailable")
+        return {"accepted": True, "model_id": manifest.model_id, "provider": manifest.provider}
 
 
 @dataclass
@@ -366,6 +463,20 @@ def dispatch(manifest: DelegationManifest, consumer: DelegationConsumer | None, 
             pass
     reason = "supported Copilot delegation consumer is unavailable" if consumer is None else "all bounded delegation attempts failed"
     return None, FallbackRecord(manifest.model_id, tuple(attempted), None, reason)
+
+
+def supported_consumer_demonstration(manifest: DelegationManifest, adapter: SupportedConsumerAdapter) -> dict[str, Any]:
+    result, fallback = dispatch(manifest, adapter, preflight=adapter.preflight, retry_limit=0)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "consumer": adapter.consumer,
+        "boundary": "DelegationConsumer.delegate(DelegationManifest)",
+        "live_available": adapter.live_available,
+        "manifest_fingerprint": manifest_fingerprint(manifest),
+        "result_status": "accepted" if result else "not-activated",
+        "fallback_reason": fallback.reason,
+        "attempted_models": list(fallback.attempted_models),
+    }
 
 
 @dataclass(frozen=True)

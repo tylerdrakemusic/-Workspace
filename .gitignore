@@ -97,6 +97,7 @@ reports/diagrams/*.svg
 # Architecture-review proof is generated evidence; ledger and database records
 # remain the durable proof for FR review.
 proof/*
+!proof/copilot-consumer-demonstration.json
 proof/architecture-review-FR-*.md
 proof/FR-20260815-qec-security-maintenance-*.md
 
