@@ -2,11 +2,11 @@
 graph LR
     Python[Python 3.11] --> Requests[requests · httpx]
     Python --> Pytest[pytest]
-    Python --> TestRunner[/tools/run_tests.py<br/>serial default · local --parallel/]
+    Python --> TestRunner[/tools/run_tests.py<br/>canonical parallel runner · serial deterministic debugging fallback/]
     TestRunner --> Pytest
-    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=false]
-    Pytest -.-> Xdist[pytest-xdist<br/>optional local workers]
-    TestRunner -.-> ParallelEvidence[No local parallel evidence<br/>CI remains serial]
+    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=true<br/>exclude playwright + live]
+    Pytest -.-> Xdist[pytest-xdist<br/>controlled workers via merged policy]
+    TestRunner -.-> ParallelEvidence[Controlled CI parallelism<br/>playwright/live excluded · serial deterministic debugging fallback]
     Python --> Flask[flask>=3.0]
     Python --> Pydantic[pydantic>=2.0]
     Python --> Sounddevice[sounddevice>=0.4]
