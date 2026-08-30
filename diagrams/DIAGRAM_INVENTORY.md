@@ -51,7 +51,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/music-db-schema.mmd | ❤Music database entity relationships | ❤Music | 5956 | 5956 | 25 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/music-icecast-primary-architecture.mmd | ❤Music Icecast primary streaming architecture | ❤Music | 1072 | 1070 | 20 | 9 | Fallback: mermaid.ink HTTP 400 | Bad Request | Unicode labels |
 | diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 3280 | 3262 | 23 | 23 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
-| diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 4056 | 4050 | 50 | 22 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
+| diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 5209 | 5203 | 67 | 31 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830-quantum-cache-integrity-lifecycle; split_required=true under overview node threshold |
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 3132 | 3132 | 9 | 7 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1729 | 1723 | 9 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
