@@ -4,6 +4,9 @@
 erDiagram
     RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    EXECUTION_HISTORY ||--o{ REPLACEMENT_PROPOSALS : persists_pending_proposal
+    EXECUTION_HISTORY ||--o{ ORDER_REPLACEMENTS : records_replacements
+    REPLACEMENT_PROPOSALS ||--o| ORDER_REPLACEMENTS : approval_audits_replacement
     TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
     PORTFOLIO ||--o{ EXITS : has_exit
     EXITS ||--o{ EXITS : supersedes
@@ -13,5 +16,7 @@ erDiagram
     QUOTE_DECISIONS ||--o{ QUOTE_PROVIDER_HEALTH : window_link
     TRADE_CANDIDATES { integer id PK text symbol text mode real confidence }
     EXECUTION_HISTORY { integer id PK text broker_order_id text status text mode }
+    REPLACEMENT_PROPOSALS { text id PK integer execution_history_id FK text account_ref text symbol text side text replacement_payload real stop_loss_target real exit_target text status "pending|approved|confirmed|rejected|reconciliation_required" text replacement_order_id text error text created_at text approved_at }
+    ORDER_REPLACEMENTS { integer id PK integer execution_history_id FK text prior_broker_order_id text replacement_broker_order_id text current_broker_order_id text verification_status text reconciliation_status text duplicate_fill_guard_status }
     EXITS { integer id PK integer position_id FK text status integer version }
     MARGIN_RESERVATIONS { integer id PK integer candidate_id FK text status }

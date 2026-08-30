@@ -14,6 +14,13 @@ graph TB
     Approval --> RealGate[real-money authorization gate]
     RealGate --> AccountsTrading[AccountsTradingClient]
     AccountsTrading --> Schwab[Charles Schwab API]
+    TradeGate --> ReplaceService[broker-neutral replace-order service]
+    ReplaceService --> ReplaceConfirm[Trade Gate explicit confirmation]
+    ReplaceConfirm --> SchwabReplace[Schwab replace adapter]
+    SchwabReplace --> ReplacementVerify[strict distinct replacement-ID verification]
+    ReplacementVerify --> BrokerIdReconcile[current broker ID reconciliation]
+    BrokerIdReconcile -.->|ambiguous| ReconciliationRequired[reconciliation_required]
+    ReplacementVerify --> DuplicateFillGuard[duplicate-fill prevention]
     CapitalDB --> Backup[authenticated backup and restore]
     Backup --> Restore[isolated validation before publication]
     TradeGate --> PositionView[position realization read-only view]
@@ -23,8 +30,8 @@ graph TB
     CapitalDB -.->|parent details| TradingView[capital-derived-trading-controls]
     CapitalDB -.->|parent details| PositionViewDetail[capital-derived-position-realization]
     class Tyler tyler
-    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView,Research,Watchlist,Review orch
-    class QuoteDecision,RealGate,Restore,PromotionBoundary state
+    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView,Research,Watchlist,Review,ReplaceService,ReplaceConfirm,SchwabReplace,ReplacementVerify,BrokerIdReconcile,DuplicateFillGuard orch
+    class QuoteDecision,RealGate,Restore,PromotionBoundary,ReconciliationRequired state
     class CapitalDB,Pending db
     class Schwab ext
     class Backup,MarketView,TradingView,PositionViewDetail ws

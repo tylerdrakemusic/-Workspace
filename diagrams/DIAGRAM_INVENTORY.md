@@ -31,8 +31,8 @@ the unrelated fallback and NOT RUN rows remain preserved as documented evidence.
 
 | Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details | Risk evidence |
 |---|---|---|---:|---:|---:|---:|---|---|---|
-| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 2303 | 2303 | 15 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
-| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 1305 | 1305 | 1 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
+| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 2957 | 2957 | 21 | 27 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
+| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 2388 | 2388 | 3 | 0 | Rendered: mermaid.ink HTTP | Backend available | Unicode labels; init directive; derived views listed |
 | diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 3271 | 3257 | 22 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | NOT RUN: no `mmdc` | Backend unavailable | init directive |
@@ -55,9 +55,9 @@ the unrelated fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 3187 | 3162 | 27 | 27 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; derived views listed |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
-| diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1387 | 1387 | 12 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1976 | 1976 | 18 | 21 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/capital-db-derived-position-and-validation.mmd | ΣCapital position and validation DB derived view | ΣCapital | 1258 | 1258 | 6 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
-| diagrams/capital-db-derived-trading.mmd | ΣCapital trading DB derived view | ΣCapital | 1076 | 1076 | 4 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
+| diagrams/capital-db-derived-trading.mmd | ΣCapital trading DB derived view | ΣCapital | 1880 | 1880 | 6 | 0 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/manifest-derived-media-pipeline.mmd | 👁AI-Manifest media pipeline derived view | 👁AI-Manifest | 1386 | 1384 | 16 | 20 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/manifest-derived-todo-and-backup.mmd | 👁AI-Manifest TODO and backup derived view | 👁AI-Manifest | 2158 | 2153 | 13 | 16 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-derived-backup-and-coordination.mmd | ⊕Workspace backup and coordination derived view | ⊕Workspace | 1466 | 1461 | 13 | 14 | NOT RUN: no `mmdc` | Backend unavailable | Unicode labels; init directive; parent traceability |

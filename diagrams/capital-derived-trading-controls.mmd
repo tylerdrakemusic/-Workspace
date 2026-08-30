@@ -9,14 +9,21 @@ graph TB
     Confirm --> OCO[dedicated OCO route]
     OCO --> AccountsTrading[AccountsTradingClient]
     AccountsTrading --> Schwab[Charles Schwab API]
+    TradeGate --> ReplaceService[broker-neutral replace-order service]
+    ReplaceService --> ReplaceConfirm[Trade Gate explicit confirmation]
+    ReplaceConfirm --> SchwabReplace[Schwab replace adapter]
+    SchwabReplace --> ReplacementVerify[strict distinct replacement-ID verification]
+    ReplacementVerify --> BrokerIdReconcile[current broker ID reconciliation]
+    BrokerIdReconcile -.->|ambiguous| Block[reconciliation_required]
+    ReplacementVerify --> DuplicateFillGuard[duplicate-fill prevention]
     OCO --> Reconcile[OCO reconciliation]
-    Reconcile -.->|ambiguous state| Block[reconciliation_required]
+    Reconcile -.->|ambiguous state| Block
     MarginGate --> MarginStore[reservation persistence]
     TradeGate --> RealGate[real-money authorization gate]
     RealGate --> Submit[submit_real_order]
     Submit --> AccountsTrading
     Submit ==> DB[(sigmacapital.db)]
-    class Research,TradeGate,MarginGate,Preview,Confirm,OCO,AccountsTrading,Reconcile,MarginStore,Submit orch
+    class Research,TradeGate,MarginGate,Preview,Confirm,OCO,AccountsTrading,Reconcile,MarginStore,Submit,ReplaceService,ReplaceConfirm,SchwabReplace,ReplacementVerify,BrokerIdReconcile,DuplicateFillGuard orch
     class RealGate,Block state
     class DB db
     class Schwab ext
