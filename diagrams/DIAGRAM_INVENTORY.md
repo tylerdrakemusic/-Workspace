@@ -1,17 +1,25 @@
 # Mermaid Diagram Inventory
 
-This inventory is the diagram evidence artifact for
-`FR-20260829-sigmacapital-replacement-trade-gate-oco`. It describes the current six-project
-diagram set in this FR worktree, including the six target technology-stack
-diagrams updated for this FR. This is the Committed baseline inventory for the
-current branch evidence, not a claim that every row was rendered. The prior
-baseline's seven approved decision-metadata edits remain historical context;
-the unrelated fallback and NOT RUN rows remain preserved as documented evidence.
+This inventory is refreshed under the umbrella attribution of
+`FR-20260830-workspace-xdist-diagram-reconciliation` for the confirmed
+Workspace-owned documentation scope. It describes the current six-project
+diagram set and the four reconciled technology-stack sources:
+`diagrams/life-tech-stack.mmd`, `diagrams/music-tech-stack.mmd`,
+`diagrams/quantum-tech-stack.mmd`, and `diagrams/manifest-tech-stack.mmd`.
+Their xdist claims reflect merged project behavior: Life parallel CI with a
+Playwright exclusion and no invented worker count; Music bounded two-worker
+paired parallel/serial lanes with exclusions; Quantum bounded two workers with
+`ci_long_running` excluded; and AI-Manifest controlled parallel workers with
+Playwright/live exclusions plus a serial debugging fallback. This is the
+Committed baseline inventory for current branch evidence. The prior baseline's
+seven approved decision-metadata edits remain historical context; unrelated
+fallback and NOT RUN rows remain preserved as documented evidence.
 
 ## Measurement Contract
 
+- Current baseline commit: `3e2eef6` (main baseline for this FR)
+- Evidence head: current `feature/FR-20260830-workspace-xdist-diagram-reconciliation` worktree
 - Baseline commit: `4ee4f6e` (FR worktree diagram baseline)
-- Evidence head: `00f1cdc9f600d0c4542a2ca1131a2ea14e083c72` (current FR worktree)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
   count is 33.
 - Bytes: exact UTF-8 byte length of the source file.
@@ -22,10 +30,9 @@ the unrelated fallback and NOT RUN rows remain preserved as documented evidence.
 - Edges: count of lines containing a Mermaid edge operator (`-->`, `==>`,
   `-.->`, `---`, `===`, or ER relationship operators). A line with multiple
   operators is counted once.
-- Renderer check: exactly six target technology-stack diagrams were rendered
-  through mermaid.ink and each returned HTTP 200: capital, life, manifest,
-  music, quantum, and workspace. All unrelated fallback rows remain documented
-  as `NOT RUN` where no local `mmdc` backend was available.
+- Renderer check: all four reconciled technology-stack sources were rendered
+  through mermaid.ink and returned HTTP 200. All unrelated fallback rows remain
+  documented as `NOT RUN` where no local `mmdc` backend was available.
 
 ## Source Inventory
 
@@ -36,17 +43,17 @@ the unrelated fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 3271 | 3257 | 22 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
-| diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1562 | 1557 | 8 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
+| diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1638 | 1633 | 8 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 2055 | 2050 | 10 | 13 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived views listed |
 | diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 4270 | 4252 | 10 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive; Unicode labels |
-| diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3478 | 3466 | 26 | 30 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
+| diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3604 | 3591 | 26 | 30 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | Fallback: mermaid.ink HTTP 414 | URI Too Long | Unicode labels; init directive |
 | diagrams/music-db-schema.mmd | ❤Music database entity relationships | ❤Music | 5956 | 5956 | 25 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/music-icecast-primary-architecture.mmd | ❤Music Icecast primary streaming architecture | ❤Music | 1072 | 1070 | 20 | 9 | Fallback: mermaid.ink HTTP 400 | Bad Request | Unicode labels |
-| diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 3174 | 3156 | 23 | 23 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
+| diagrams/music-tech-stack.mmd | ❤Music technology stack | ❤Music | 3280 | 3262 | 23 | 23 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/quantum-architecture.mmd | ⟨ψ⟩Quantum system architecture | ⟨ψ⟩Quantum | 4056 | 4050 | 50 | 22 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/quantum-db-schema.mmd | ⟨ψ⟩Quantum database entity relationships | ⟨ψ⟩Quantum | 3132 | 3132 | 9 | 7 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
-| diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1612 | 1609 | 9 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
+| diagrams/quantum-tech-stack.mmd | ⟨ψ⟩Quantum technology stack | ⟨ψ⟩Quantum | 1729 | 1723 | 9 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/workspace-agent-topology.mmd | ⊕Workspace agent topology and delegation flow | ⊕Workspace | 5910 | 5766 | 70 | 32 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/workspace-architecture-detail.mmd | ⊕Workspace decision-metadata ownership and persistence detail | ⊕Workspace | 2935 | 2930 | 23 | 15 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived companion listed; measured under detail budget |
 | diagrams/workspace-architecture.mmd | ⊕Workspace high-level architecture | ⊕Workspace | 3431 | 3409 | 29 | 19 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
