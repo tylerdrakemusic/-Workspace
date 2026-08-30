@@ -3,6 +3,8 @@
 %% Traceability.derived_views: diagrams/capital-db-derived-trading.mmd, diagrams/capital-db-derived-position-and-validation.mmd
 erDiagram
     TRADE_CANDIDATES ||--o{ EXECUTION_HISTORY : generates
+    EXECUTION_HISTORY ||--o{ REPLACEMENT_PROPOSALS : proposes_replacement
+    EXECUTION_HISTORY ||--o{ ORDER_REPLACEMENTS : records_replacements
     TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit
     WATCHLIST_OBSERVATIONS ||--o| TRADE_CANDIDATES : promotes_to_pending_candidate
     PORTFOLIO ||--o{ EXITS : has_exit
@@ -11,6 +13,33 @@ erDiagram
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : contains
     POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : produces
     OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_LEGS : contains
+    REPLACEMENT_PROPOSALS ||--o| ORDER_REPLACEMENTS : approval_audits_replacement
+    REPLACEMENT_PROPOSALS {
+        TEXT id PK
+        INTEGER execution_history_id FK
+        TEXT account_ref
+        TEXT symbol
+        TEXT side
+        TEXT replacement_payload
+        REAL stop_loss_target
+        REAL exit_target
+        TEXT status "pending|approved|confirmed|rejected|reconciliation_required"
+        TEXT replacement_order_id
+        TEXT error
+        TEXT created_at
+        TEXT approved_at
+    }
+    ORDER_REPLACEMENTS {
+        TEXT id PK
+        INTEGER execution_history_id FK
+        TEXT prior_broker_order_id
+        TEXT replacement_broker_order_id
+        TEXT current_broker_order_id
+        TEXT verification_status "strictly distinct IDs"
+        TEXT reconciliation_status "reconciliation_required on ambiguity"
+        TEXT duplicate_fill_guard_status
+        TEXT created_at
+    }
     WATCHLIST_OBSERVATIONS {
         TEXT id PK
         TEXT symbol
