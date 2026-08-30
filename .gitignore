@@ -88,6 +88,8 @@ src/config/mcp_status.json
 *.png
 
 # generated dump artifacts
+reports.md
+reports/
 reports/all_diagrams_dump.txt
 reports/*.html
 reports/diagrams/*.svg

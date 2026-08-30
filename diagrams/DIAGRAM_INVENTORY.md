@@ -70,7 +70,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/workspace-derived-backup-and-coordination.mmd | ⊕Workspace backup and coordination derived view | ⊕Workspace | 1466 | 1461 | 13 | 14 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent traceability |
 | diagrams/workspace-derived-decision-metadata-implementation.mmd | ⊕Workspace decision-metadata implementation derived view | ⊕Workspace | 3994 | 3979 | 45 | 28 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent traceability; under detail budget |
 | diagrams/workspace-derived-services.mmd | ⊕Workspace services derived view | ⊕Workspace | 1291 | 1280 | 15 | 15 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent traceability |
-| diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 2655 | 2650 | 21 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
+| diagrams/workspace-tech-stack.mmd | ⊕Workspace technology stack | ⊕Workspace | 2730 | 2725 | 22 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 
 ## Baseline Findings
 
