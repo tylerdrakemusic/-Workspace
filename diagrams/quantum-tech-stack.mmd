@@ -6,9 +6,15 @@ graph LR
     Python --> SQLCipher[sqlcipher3-binary<br/>python-dotenv]
     Python --> Midi[midiutil]
     Python --> Pytest[pytest]
+    Python --> TestRunner[/tools/run_tests.py<br/>canonical CI --parallel · serial local/evaluation fallback/]
+    TestRunner --> Pytest
+    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=true · worker_count=2<br/>exclude ci_long_running]
+    Pytest -.-> Xdist[pytest-xdist<br/>canonical CI · 2 bounded workers]
+    TestRunner -.-> ParallelEvidence[Bounded parallel CI<br/>ci_long_running excluded · serial local/evaluation fallback]
     HF[Hugging Face<br/>HF_TOKEN] -.optional, lazy import via orion_portrait module.-> Python
     class Python lang
-    class Qiskit,Chem,Numpy,SQLCipher,Pytest,Midi,HF lib
+    class Qiskit,Chem,Numpy,SQLCipher,Pytest,TestRunner,TestPolicy,Xdist,Midi,HF lib
+    class ParallelEvidence state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

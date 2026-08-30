@@ -206,7 +206,7 @@ def test_ci_gallery_contract_covers_every_canonical_mermaid_source() -> None:
     html_str = dd.build_index(results)
     findings = validate_gallery(results, [source.stem for source in sources], html_str)
 
-    assert len(sources) == 33
+    assert len(sources) == 34
     assert not [finding for finding in findings if finding.code != "gallery_interaction_contract"]
     assert html_str.count('class="card"') == len(sources)
 
