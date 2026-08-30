@@ -14,7 +14,7 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     expected_character_counts = {
         "diagrams/capital-architecture.mmd": 2957,
         "diagrams/capital-db-schema.mmd": 2388,
-        "diagrams/manifest-architecture.mmd": 2236,
+        "diagrams/manifest-architecture.mmd": 2262,
         "diagrams/workspace-agent-topology.mmd": 5766,
         "diagrams/workspace-architecture-detail.mmd": 2930,
         "diagrams/workspace-architecture.mmd": 3409,

@@ -44,7 +44,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/life-tech-stack.mmd | ∞Life technology stack | ∞Life | 1638 | 1633 | 8 | 11 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
-| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 2243 | 2236 | 12 | 15 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived views listed |
+| diagrams/manifest-architecture.mmd | 👁AI-Manifest system architecture overview | 👁AI-Manifest | 2269 | 2262 | 12 | 15 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived views listed |
 | diagrams/manifest-db-schema.mmd | 👁AI-Manifest database entity relationships | 👁AI-Manifest | 4270 | 4252 | 10 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive; Unicode labels |
 | diagrams/manifest-tech-stack.mmd | 👁AI-Manifest technology stack | 👁AI-Manifest | 3604 | 3591 | 26 | 30 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; FR-20260830 xdist reconciliation |
 | diagrams/music-architecture.mmd | ❤Music system architecture | ❤Music | 6604 | 6574 | 88 | 47 | Fallback: mermaid.ink HTTP 414 | URI Too Long | Unicode labels; init directive |
