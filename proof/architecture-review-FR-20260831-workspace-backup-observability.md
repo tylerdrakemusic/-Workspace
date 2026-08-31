@@ -2,7 +2,7 @@
 
 **Decision:** PASS_WITH_UPDATES
 **Validated:** 2026-08-31
-**Published head:** `c19320327e043716b7cd19249f0d8cc3f2faf2ce`
+**Published head:** `84ce8e60c15fbed54b942cfa4a532a47d42bb922`
 
 ## Diff Classification
 

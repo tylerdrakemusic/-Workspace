@@ -3,7 +3,7 @@
 **Decision:** FUNCTIONAL_QA PASS
 **Validated:** 2026-08-31
 **Worktree:** `feature-FR-20260831-workspace-backup-observability`
-**Published head:** `c19320327e043716b7cd19249f0d8cc3f2faf2ce`
+**Published head:** `84ce8e60c15fbed54b942cfa4a532a47d42bb922`
 
 The published feature ref and the current worktree resolve to the same commit.
 The exact focused suite used by the published review was rerun in the current
@@ -36,7 +36,7 @@ C:\G\python.exe -m pytest -q tests/test_database_backup_operational.py tests/tes
 
 Result: **99 passed in 0.76s**.
 
-The required published-branch CI check for head `c193203...` is green:
+The required published-branch CI check for head `84ce8e6...` is green:
 GitHub Actions `test`, conclusion `success`.
 
 ## Negative paths
