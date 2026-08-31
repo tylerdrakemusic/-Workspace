@@ -10,6 +10,10 @@ erDiagram
     PORTFOLIO ||--o{ EXITS : has_exit
     TRADE_CANDIDATES ||--o{ MARGIN_RESERVATIONS : reserves
     SENTIMENT_SHADOW_RUNS ||--o{ SENTIMENT_VALIDATION_EVALUATIONS : groups_by_run_id
+    RESEARCH_RUNS }o..o{ FINANCIAL_EXPERTS : "verified expert_context JSON, attribution only"
+    TRADE_CANDIDATES }o..o{ FINANCIAL_EXPERTS : "rationale attribution only"
+    FINANCIAL_EXPERTS ||--o{ FINANCIAL_EXPERT_TAGS : has_tags
+    FINANCIAL_EXPERTS ||--o{ FINANCIAL_EXPERT_CONNECTIONS : source_or_target
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : contains
     POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : produces
     OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_LEGS : contains
@@ -51,4 +55,52 @@ erDiagram
         TEXT enriched_at
         TEXT promoted_at
     }
+    FINANCIAL_EXPERTS {
+        INTEGER id PK
+        TEXT first_name "individual only"
+        TEXT last_name "individual only"
+        TEXT canonical_name UK
+        TEXT resource_type "CHECK individual"
+        TEXT financial_focus
+        TEXT philosophy
+        TEXT asset_classes "JSON list"
+        TEXT time_horizon
+        TEXT affiliations "JSON list"
+        TEXT track_record_notes
+        TEXT public_source_url "HTTP(S) only"
+        TEXT public_source_title
+        TEXT public_source_type
+        TEXT verification_status "CHECK unverified|verified|rejected"
+        TEXT provenance
+        TEXT relevance_notes
+        TEXT retrieval_timestamp
+        TEXT identity_confidence
+        TEXT verification_notes
+        TEXT created_at
+        TEXT updated_at
+    }
+    FINANCIAL_EXPERT_TAGS {
+        INTEGER id PK
+        INTEGER expert_id FK "ON DELETE CASCADE"
+        TEXT tag
+        TEXT unique_expert_tag "UNIQUE expert_id, tag"
+    }
+    FINANCIAL_EXPERT_CONNECTIONS {
+        INTEGER id PK
+        INTEGER source_expert_id FK "ON DELETE CASCADE"
+        INTEGER target_expert_id FK "ON DELETE CASCADE"
+        TEXT relationship_type
+        TEXT relationship_context
+        TEXT provenance
+        TEXT created_at
+        TEXT updated_at
+    }
+    RESEARCH_RUNS {
+        TEXT run_id PK
+        TEXT batch_id
+        TEXT expert_context "JSON verified experts, attribution only"
+        TEXT created_at
+    }
+    %% expert_context and candidate rationale are provenance metadata only;
+    %% they are excluded from scoring, qualification, ranking, risk, and execution.
     %% Index: idx_watchlist_observations_symbol ON (symbol, observed_at)

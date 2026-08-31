@@ -12,8 +12,8 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     inventory = INVENTORY_PATH.read_text(encoding="utf-8")
     source_paths = sorted(path.relative_to(REPO_ROOT).as_posix() for path in DIAGRAMS_DIR.glob("*.mmd"))
     expected_character_counts = {
-        "diagrams/capital-architecture.mmd": 2957,
-        "diagrams/capital-db-schema.mmd": 2388,
+        "diagrams/capital-architecture.mmd": 4314,
+        "diagrams/capital-db-schema.mmd": 4344,
         "diagrams/manifest-architecture.mmd": 2688,
         "diagrams/workspace-agent-topology.mmd": 5766,
         "diagrams/workspace-architecture-detail.mmd": 3902,
@@ -36,6 +36,14 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
     assert "Committed baseline" in inventory
     assert "Baseline commit: `4ee4f6e` (FR worktree diagram baseline)" in inventory
     assert "seven approved" in inventory
+
+    capital_architecture = (DIAGRAMS_DIR / "capital-architecture.mmd").read_text(encoding="utf-8")
+    assert "TrustedImportPrompt" in capital_architecture
+    assert "ProvenanceDiscovery" in capital_architecture
+    assert "AuthoritativeSourceAllowlist" in capital_architecture
+    assert "TrustedImportPrompt[" in capital_architecture
+    assert "TrustedImportPrompt[" in capital_architecture and "--> ProvenanceDiscovery[" in capital_architecture
+    assert "ProvenanceDiscovery --> AuthoritativeSourceAllowlist" in capital_architecture
 
 
 def test_manifest_media_pipeline_declares_governed_audio_output_boundary() -> None:
