@@ -6,6 +6,16 @@ graph TB
     Tools --> Briefs[brief generators]
     Tools --> AudioPolicy[audio_output_policy.py]
     AudioPolicy --> AudioBoundary[Audio-output policy boundary<br/>strict rejection · resolved-root containment · atomic publication]
+    AudioPolicy --> RootContainment[resolved-root containment]
+    RootContainment --> AtomicPublish[atomic publication]
+    Tools --> VoiceOrchestration[voice_orchestration.py]
+    VoiceOrchestration --> VoiceRegistry[VoicePresetRegistry<br/>immutable versioned presets]
+    VoiceRegistry --> PresetApproval[intended-use approval]
+    VoiceRegistry --> AvailabilityGate[provider availability gating]
+    AvailabilityGate --> OrderedVoices[ordered multi-voice orchestration]
+    OrderedVoices --> ElevenLabsClient[existing ElevenLabsClient]
+    ElevenLabsClient --> ElevenLabs
+    VoiceOrchestration --> AudioPolicy
     Briefs --> OpenAI[OpenAI]
     Briefs --> ElevenLabs[ElevenLabs]
     Tools --> TodoDB[(manifest_todos.db)]
@@ -23,7 +33,7 @@ graph TB
     Tools --> Backup[canonical backup and restore]
     Tools -.->|parent details| Media[manifest-derived-media-pipeline]
     Tools -.->|parent details| Todo[manifest-derived-todo-and-backup]
-    class Triggers,Tools,Briefs,Roadmap orch
+    class Triggers,Tools,Briefs,Roadmap,VoiceOrchestration,VoiceRegistry,PresetApproval,AvailabilityGate,OrderedVoices,ElevenLabsClient orch
     class TodoDB db
     class CurrentMetadata,AssessmentHistory db
     class AudioPolicy,AudioBoundary,DecisionMetadata manifest
