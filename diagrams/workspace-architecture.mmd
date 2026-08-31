@@ -8,6 +8,10 @@ graph TB
         TodoCoordination[Existing FR / child coordination]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
         DecisionHistory[(todos.decision_metadata<br/>+ todo_decision_metadata_history)]
+        HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
+        HandoffEnvelope[/versioned immutable envelope<br/>SHA-256 payload digest/]
+        HandoffResult[/directional result<br/>digest only, no raw payload/]
+        TakeoverGate{takeover_enabled<br/>+ explicit approval}
         BackupContract[Provider-neutral local<br/>database backup contract]
         BackupVolume[/E: verified local volume/]
     end
@@ -35,6 +39,11 @@ graph TB
     TodoRuntime --> TodoCoordination
     TodoRuntime --> DecisionMetadata
     DecisionMetadata --> DecisionHistory
+    TodoRuntime --> HandoffRuntime
+    HandoffRuntime ==> HandoffEnvelope
+    HandoffRuntime ==> HandoffResult
+    HandoffRuntime --> TakeoverGate
+    TakeoverGate -->|stale lifecycle only| TodoRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
     TodoRuntime -->|bounded execution lifecycle| FRBoard
     Registry -.scans.-> Life

@@ -128,6 +128,29 @@ erDiagram
         text error
     }
 
+    AGENT_HANDOFF_ENVELOPES ||--o{ AGENT_HANDOFF_RESULTS : exchanges
+    AGENT_HANDOFF_ENVELOPES {
+        text handoff_id PK
+        integer version
+        text fr_id
+        text todo_id
+        text source_agent
+        text target_agent
+        text claim_id
+        real created_at
+        text context_json
+        text payload_digest UK
+    }
+    AGENT_HANDOFF_RESULTS {
+        integer result_id PK
+        text handoff_id FK
+        text sender_agent
+        text receiver_agent
+        text direction
+        real created_at
+        text result_digest
+    }
+
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
