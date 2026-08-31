@@ -21,6 +21,16 @@ graph TB
         Advisory[Advisory priority guidance]
         NoMutation{Validator and guidance<br/>do not mutate priority}
     end
+    subgraph HandoffBoundary["⊕ Workspace agent handoff boundary"]
+        HandoffRuntime[OperationalRuntime<br/>handoff/result API owner]
+        HandoffStore[HandoffStore<br/>durable metadata only]
+        Envelope[/HandoffEnvelope<br/>versioned + immutable/]
+        EnvelopeDigest[/SHA-256 payload_digest<br/>canonical context/]
+        Result[/HandoffResult<br/>inbound/outbound digest/]
+        TakeoverGate{takeover_enabled<br/>and explicit approval}
+        Stale[stale lifecycle record]
+        Claimed[claimed replacement lease]
+    end
     Schema -->|authoritative fields, categories, scales, thresholds| Validator
     Schema -.->|synchronized consumer contract| ManifestValidator
     Validator -->|validates and records| Current
@@ -36,6 +46,16 @@ graph TB
     ManifestValidator ==> ManifestHistory
     Current -.->|shared current contract shape| ManifestCurrent
     History -.->|shared append-only assessment shape| ManifestHistory
+    Runtime --> HandoffRuntime
+    HandoffRuntime --> HandoffStore
+    HandoffStore ==> Envelope
+    Envelope ==> EnvelopeDigest
+    HandoffStore ==> Result
+    Result -.->|directional exchange; raw result excluded| HandoffRuntime
+    Runtime -->|recover expired lease| Stale
+    Stale --> TakeoverGate
+    TakeoverGate -->|policy gate passes| Claimed
+    Claimed -->|new lease resumes lifecycle| Runtime
 
     class Schema,Validator,Guidance,Runtime,FRLedger ws
     class ManifestValidator manifest
