@@ -104,4 +104,3 @@ proof/FR-20260815-qec-security-maintenance-*.md
 # Worktrees live at .worktrees/{branch-slug}/ — gitignored and IDE-excluded.
 # Pre-commit hook blocks any accidental staging of these paths.
 .worktrees/
-

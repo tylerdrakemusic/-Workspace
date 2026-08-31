@@ -348,6 +348,14 @@ gates.
 
 ## Complexity Assessment & Tier Routing (COMPLEXITY_ASSESSED)
 
+For Copilot model-selection FRs, the implementation lane uses the versioned
+metadata-only contracts in `docs/copilot-model-selection.md`. The overseer
+records a `shadow replay` before live delegation, requires live preflight, and
+routes only through a supported `DelegationConsumer`. Missing consumers,
+stale-only inventory without successful preflight, unverifiable benchmark
+evidence, and failed provider-health gates are fail-closed conditions. Scoped
+overrides must carry a reason and must not edit agent YAML frontmatter.
+
 Before starting implementation (`IN_PROGRESS`), the project orchestrator **must** assess the FR's complexity and select the appropriate model tier. This ensures TDD, QA, and Review agents run on models matched to the task's difficulty and cost budget.
 
 ### Tier Selection
