@@ -17,6 +17,7 @@ from src.utils.database_backup_scope import (
     discover_databases,
     validate_manifest,
 )
+from src.utils.database_backup_observability import enforce_retention
 
 
 MANIFEST_KEY_ENV = "WORKSPACE_BACKUP_MANIFEST_KEY"
@@ -401,13 +402,22 @@ class DatabaseBackup:
 
     def _prune_generations(self) -> None:
         generations_root = self._destination.path() / "generations"
-        generations = sorted(
-            (path for path in generations_root.iterdir() if path.is_dir()),
-            key=lambda path: (path.name[:8].isdigit(), path.name),
-            reverse=True,
+        valid_generations: set[str] = set()
+        for generation in generations_root.iterdir():
+            if not generation.is_dir():
+                continue
+            manifest_path = generation / "manifest.json"
+            if manifest_path.is_file():
+                try:
+                    validate_backup(manifest_path)
+                except BackupError:
+                    continue
+                valid_generations.add(generation.name)
+        enforce_retention(
+            generations_root,
+            retention=self._retention,
+            valid_generations=valid_generations,
         )
-        for obsolete in generations[self._retention :]:
-            shutil.rmtree(obsolete)
 
     @staticmethod
     def restore(
