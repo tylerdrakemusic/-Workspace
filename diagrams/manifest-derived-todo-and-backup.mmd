@@ -11,7 +11,14 @@ graph TB
     Tools --> Migrate[migrate_todos.py]
     Migrate -.->|reads TODO files| Projects[all project scopes]
     Tools --> Coordination[governed coordination MCP]
-    Coordination --> TodosDB
+    Coordination --> Update[todo.update<br/>auth · protected priority confirmation · optimistic precondition]
+    Coordination --> Graph[todo.graph<br/>read-back snapshot]
+    Coordination --> Batch[todo.create_children_batch<br/>atomic transaction · idempotency key]
+    Update --> TodosDB
+    Graph --> TodosDB
+    Batch --> TodosDB
+    Coordination -.->|unsupported operation| Fallback[governed local todos_db fallback]
+    Fallback --> TodosDB
     Tools --> BackupRunner[run_database_backup.py]
     BackupRunner --> Inventory[canonical source inventory]
     Inventory --> Generations[authenticated encrypted generations]

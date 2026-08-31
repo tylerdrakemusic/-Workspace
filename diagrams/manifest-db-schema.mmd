@@ -27,6 +27,7 @@ erDiagram
     TODOS ||--o{ TODO_PREREQUISITES : dependent
     TODOS ||--o{ TODO_PREREQUISITES : prerequisite
     TODOS ||--o{ TODO_FR_LINKS : links
+    TODOS ||--o{ TODO_BATCH_OPERATIONS : records
     FR_LEDGER ||--o{ TODO_FR_LINKS : "confirmed logical link"
     TODOS {
         integer id PK
@@ -47,6 +48,7 @@ erDiagram
         text estimated_effort "nullable — XS|S|M|L|XL"
         text dependencies "nullable — todo IDs / FR IDs (comma-sep)"
         integer parent_id "nullable — logical parent todo self-reference; no DB FK"
+        text updated_at "UTC optimistic-concurrency version"
     }
     TODO_PREREQUISITES {
         integer todo_id PK, FK
@@ -100,6 +102,12 @@ erDiagram
         text evidence "JSON list"
         text assessed_by
         text assessed_at
+    }
+    TODO_BATCH_OPERATIONS {
+        text idempotency_key PK
+        integer parent_id FK
+        text child_ids "JSON replay payload"
+        text created_at
     }
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
