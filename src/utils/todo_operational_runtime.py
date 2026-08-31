@@ -10,10 +10,16 @@ from pathlib import Path
 from typing import Mapping
 
 from todo_execution_contracts import ExecutionState, TodoContract
-from todo_execution_lifecycle import ExecutionLifecycle, ExecutionRecord
+from todo_execution_lifecycle import ExecutionLifecycle, ExecutionRecord, LeaseOwnershipError
 from parent_join_gates import ChildJoinSnapshot, ParentJoinResult, evaluate_parent_join
 from todo_child_coordination import ChildWorktreeCoordinator, IntegrationConflict
 from todo_readiness_scheduler import SchedulerConfig, schedule_todos
+from agent_handoff_protocol import (
+    HandoffEnvelope,
+    HandoffResult,
+    HandoffStore,
+    TakeoverNotAllowedError,
+)
 
 
 class TelemetryFieldError(ValueError):
@@ -120,6 +126,7 @@ class OperationalConfig:
     lease_seconds: int = 300
     max_retries: int = 2
     pre_fr_capacity: int = 16
+    takeover_enabled: bool = False
 
     @classmethod
     def from_policy(cls, policy: Mapping[str, object]) -> "OperationalConfig":
@@ -129,7 +136,7 @@ class OperationalConfig:
             "lease_seconds",
             "max_retries",
         }
-        allowed = required | {"pre_fr_capacity", "tuning"}
+        allowed = required | {"pre_fr_capacity", "takeover_enabled", "tuning"}
         unknown = set(policy) - allowed
         missing = required - set(policy)
         if unknown:
@@ -137,6 +144,9 @@ class OperationalConfig:
         if missing:
             raise ValueError(f"missing execution policy fields: {', '.join(sorted(missing))}")
         values = {key: policy[key] for key in required | {"pre_fr_capacity"} if key in policy}
+        takeover_enabled = policy.get("takeover_enabled", False)
+        if type(takeover_enabled) is not bool:
+            raise ValueError("takeover_enabled must be a boolean")
         invalid_types = sorted(key for key, value in values.items() if type(value) is not int)
         if invalid_types:
             raise ValueError(
@@ -148,6 +158,7 @@ class OperationalConfig:
             lease_seconds=values["lease_seconds"],
             max_retries=values["max_retries"],
             pre_fr_capacity=values.get("pre_fr_capacity", cls.pre_fr_capacity),
+            takeover_enabled=takeover_enabled,
         )
 
     @classmethod
@@ -190,6 +201,7 @@ class OperationalRuntime:
             self.config = config or OperationalConfig.from_policy_path(DEFAULT_POLICY_PATH)
         self.priorities = priorities or {}
         self.lifecycle = ExecutionLifecycle(connection)
+        self.handoffs = HandoffStore(connection)
         self.telemetry = OperationalTelemetry()
 
     def dispatch(self, *, now: float, worker_prefix: str = "worker") -> list[ExecutionRecord]:
@@ -232,6 +244,76 @@ class OperationalRuntime:
         recovered = self.lifecycle.recover_stale(now)
         self.telemetry.emit("stale_recovery", depth=len(recovered))
         return recovered
+
+    def takeover_resume(
+        self,
+        *,
+        todo_id: str,
+        worker_id: str,
+        claim_id: str,
+        lease_token: str,
+        now: float,
+        approved: bool,
+    ) -> ExecutionRecord:
+        """Resume stale work only when policy and explicit approval both allow it."""
+        if not self.config.takeover_enabled or not approved:
+            raise TakeoverNotAllowedError("takeover requires enabled policy and approval")
+        resumed = self.lifecycle.takeover(
+            todo_id=todo_id,
+            worker_id=worker_id,
+            claim_id=claim_id,
+            lease_token=lease_token,
+            now=now,
+            lease_seconds=self.config.lease_seconds,
+            reason="approved takeover resumed",
+        )
+        self.telemetry.emit("lease", resumed.todo_id, attempt=resumed.attempt)
+        return resumed
+
+    def create_handoff(
+        self, record: ExecutionRecord, *, target_agent: str, created_at: float
+    ) -> HandoffEnvelope:
+        """Create an immutable handoff envelope for an owned execution record."""
+        try:
+            current = self.lifecycle.get(record.todo_id)
+        except KeyError as exc:
+            raise LeaseOwnershipError(
+                "execution record does not match current persisted execution"
+            ) from exc
+        if current != record:
+            raise LeaseOwnershipError(
+                "execution record does not match current persisted execution"
+            )
+        return self.handoffs.create_envelope(
+            handoff_id=f"handoff-{record.todo_id}-{record.claim_id}",
+            fr_id=record.fr_id or self._fr_id(),
+            todo_id=record.todo_id,
+            source_agent=record.worker_id,
+            target_agent=target_agent,
+            claim_id=record.claim_id,
+            created_at=created_at,
+            context={"state": record.state, "attempt": record.attempt},
+        )
+
+    def publish_result(
+        self,
+        envelope: HandoffEnvelope,
+        *,
+        sender_agent: str,
+        receiver_agent: str,
+        direction: str,
+        result: Mapping[str, object],
+        created_at: float,
+    ) -> HandoffResult:
+        """Publish a digest-only directional result for a handoff."""
+        return self.handoffs.publish_result(
+            envelope, sender_agent=sender_agent, receiver_agent=receiver_agent,
+            direction=direction, result=result, created_at=created_at,
+        )
+
+    def handoff_results(self, handoff_id: str) -> tuple[HandoffResult, ...]:
+        """Read durable result metadata for a handoff."""
+        return self.handoffs.results(handoff_id)
 
     def heartbeat(self, record: ExecutionRecord, *, now: float) -> ExecutionRecord:
         """Renew a lease through the durable lifecycle and record its outcome."""

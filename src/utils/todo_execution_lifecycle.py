@@ -269,6 +269,40 @@ class ExecutionLifecycle:
             self.connection.rollback()
             raise
 
+    def takeover(
+        self,
+        *,
+        todo_id: str,
+        worker_id: str,
+        claim_id: str,
+        lease_token: str,
+        now: float,
+        lease_seconds: int,
+        reason: str,
+    ) -> ExecutionRecord:
+        """Assign a new lease to one explicitly recovered stale execution."""
+        if lease_seconds <= 0:
+            raise ValueError("lease duration must be positive")
+        self.connection.execute("BEGIN IMMEDIATE")
+        try:
+            row = self._row(todo_id)
+            if row is None or row["state"] != "stale":
+                raise InvalidTransitionError("takeover requires stale state")
+            self.connection.execute(
+                """UPDATE todo_execution_lifecycle
+                   SET worker_id = ?, claim_id = ?, lease_token = ?, state = 'claimed',
+                       lease_expires_at = ?, heartbeat_at = ?, updated_at = ?
+                   WHERE todo_id = ? AND state = 'stale'""",
+                (worker_id, claim_id, lease_token, now + lease_seconds, now, now, todo_id),
+            )
+            updated = self._record(self._row(todo_id))
+            self._event(updated, reason, None, now)
+            self.connection.commit()
+            return updated
+        except Exception:
+            self.connection.rollback()
+            raise
+
     def get(self, todo_id: str) -> ExecutionRecord:
         """Return the current durable record for a TODO."""
         row = self._row(todo_id)
