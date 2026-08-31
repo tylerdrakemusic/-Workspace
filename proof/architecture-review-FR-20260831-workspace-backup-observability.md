@@ -2,7 +2,8 @@
 
 **Decision:** PASS_WITH_UPDATES
 **Validated:** 2026-08-31
-**Published head:** `84ce8e60c15fbed54b942cfa4a532a47d42bb922`
+**Reviewed implementation baseline:** `84ce8e60c15fbed54b942cfa4a532a47d42bb922`
+**Proof scope:** the branch state represented by the containing commit.
 
 ## Diff Classification
 
@@ -22,7 +23,7 @@ No `requirements.txt` change, new database schema/table, integration module,
 cross-project import, or external dependency was found. The new module is an
 implementation-level addition to the existing workspace backup architecture,
 and the runner/runbook extend its operational workflow. The current diagrams
-and inventory were updated in the same published head and match these
+and inventory were updated in the same implementation baseline and match these
 responsibilities.
 
 ## Topology Completeness
