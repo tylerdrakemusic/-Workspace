@@ -107,6 +107,7 @@ erDiagram
         text idempotency_key PK
         integer parent_id FK
         text child_ids "JSON replay payload"
+        text request_payload "nullable JSON input payload for idempotency validation"
         text created_at
     }
 
