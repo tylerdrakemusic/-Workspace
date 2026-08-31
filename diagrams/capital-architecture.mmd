@@ -4,10 +4,16 @@
 graph TB
     Tyler([Tyler]) --> TradeGate[Trade Gate]
     Research[off-market research] --> Watchlist[watchlist observations]
+    Research --> ExpertRegistry[verified financial-expert registry]
+    ExpertRegistry --> ExpertContext{expert context<br/>attribution only}
+    Research ==> ResearchRuns[(research_runs<br/>expert_context JSON)]
+    ExpertContext ==> CapitalDB
+    ExpertContext -.->|attribution suffix only| Watchlist
     Watchlist --> Review[supervised watchlist review]
     Review --> PromotionBoundary{promotion only<br/>no order execution}
     PromotionBoundary --> Pending[trade candidate<br/>approval_status=pending]
     Pending --> TradeGate
+    CandidateScoring[signal and candidate scoring] --> Pending
     QuoteService[QuoteService<br/>read-only market data] --> QuoteDecision[quorum or degraded decision]
     QuoteDecision --> CapitalDB[(sigmacapital.db)]
     TradeGate --> Approval[human approval and account binding]
@@ -24,15 +30,24 @@ graph TB
     CapitalDB --> Backup[authenticated backup and restore]
     Backup --> Restore[isolated validation before publication]
     TradeGate --> PositionView[position realization read-only view]
+    ExpertContext -.->|excluded| CandidateScoring
+    ExpertContext -.->|excluded| Eligibility[eligibility and qualification]
+    ExpertContext -.->|excluded| RiskScreen[risk screening]
+    ExpertContext -.->|excluded| Approval
+    ExpertContext -.->|excluded| TradeGate
+    ExpertContext -.->|excluded from execution| AccountsTrading
+    ExpertContext -.->|excluded from Schwab placement| Schwab
     PositionView -.->|cannot approve or execute| RealGate
     QuoteService -.->|excluded| RealGate
     CapitalDB -.->|parent details| MarketView[capital-derived-market-data]
     CapitalDB -.->|parent details| TradingView[capital-derived-trading-controls]
     CapitalDB -.->|parent details| PositionViewDetail[capital-derived-position-realization]
     class Tyler tyler
-    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView,Research,Watchlist,Review,ReplaceService,ReplaceConfirm,SchwabReplace,ReplacementVerify,BrokerIdReconcile,DuplicateFillGuard orch
+    class QuoteService,TradeGate,Approval,AccountsTrading,PositionView,Research,Watchlist,Review,ReplaceService,ReplaceConfirm,SchwabReplace,ReplacementVerify,BrokerIdReconcile,DuplicateFillGuard,ExpertRegistry orch
+    class CandidateScoring,Eligibility,RiskScreen state
+    class ExpertContext state
     class QuoteDecision,RealGate,Restore,PromotionBoundary,ReconciliationRequired state
-    class CapitalDB,Pending db
+    class CapitalDB,Pending,ResearchRuns db
     class Schwab ext
     class Backup,MarketView,TradingView,PositionViewDetail ws
 classDef tyler fill:#2a1a3a,stroke:#9e4aff,color:#fff

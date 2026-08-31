@@ -38,8 +38,8 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 
 | Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details | Risk evidence |
 |---|---|---|---:|---:|---:|---:|---|---|---|
-| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 2957 | 2957 | 21 | 27 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived views listed |
-| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 2388 | 2388 | 3 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived views listed |
+| diagrams/capital-architecture.mmd | ΣCapital system architecture overview | ΣCapital | 3849 | 3849 | 24 | 40 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive; derived views listed; FR-20260830 expert attribution boundary |
+| diagrams/capital-db-schema.mmd | ΣCapital database entity relationships overview | ΣCapital | 4344 | 4344 | 7 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive; derived views listed; FR-20260830 expert registry provenance fields and attribution metadata |
 | diagrams/capital-tech-stack.mmd | ΣCapital technology stack | ΣCapital | 3271 | 3257 | 22 | 25 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
 | diagrams/life-architecture.mmd | ∞Life system architecture | ∞Life | 5962 | 5935 | 50 | 41 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/life-db-schema.mmd | ∞Life database entity relationships | ∞Life | 5266 | 5266 | 30 | 1 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive |
