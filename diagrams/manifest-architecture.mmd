@@ -9,6 +9,12 @@ graph TB
     Briefs --> OpenAI[OpenAI]
     Briefs --> ElevenLabs[ElevenLabs]
     Tools --> TodoDB[(manifest_todos.db)]
+    Tools --> Coordinator[👁 coordination MCP server]
+    Coordinator --> Operations[todo.update · todo.graph · todo.create_children_batch]
+    Operations --> Governance[authenticated updates · confirmation for protected priority<br/>optimistic preconditions · idempotency]
+    Governance --> TodoDB
+    Coordinator -.->|unsupported operation| LocalFallback[governed local todos_db fallback]
+    LocalFallback --> TodoDB
     Tools --> DecisionMetadata[👁 todo_decision_metadata.py<br/>consumer validator + persistence helper]
     DecisionMetadata --> CurrentMetadata[(todo_decision_metadata<br/>current normalized assessment)]
     DecisionMetadata --> AssessmentHistory[(todo_decision_assessments<br/>append-only assessment history)]

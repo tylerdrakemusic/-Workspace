@@ -13,8 +13,14 @@ graph LR
     Python --> Soundfile[soundfile>=0.12]
     Python --> SQLite[SQLite 3]
     SQLite --> TodosDB[manifest_todos.db]
+    Python --> CoordinatorMCP[coordination MCP server<br/>todo.update · todo.graph · todo.create_children_batch]
+    CoordinatorMCP --> Contract[authenticated and confirmed mutation contract<br/>optimistic preconditions · idempotent replay · atomic child creation · graph read-back]
+    Contract --> SQLite
+    CoordinatorMCP -.-> LocalFallback[governed local todos_db fallback]
+    LocalFallback --> SQLite
     class SQLite lib
     class TodosDB db
+    class CoordinatorMCP,Contract,LocalFallback util
     OpenAI[OpenAI API] --> GPT[GPT models]
     ElevenLabs[ElevenLabs API] --> TTS[Voice synthesis]
     HF[Hugging Face] --> Models[hosted models]
