@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.utils.scheduler_architecture import validate_scheduler_architecture
+import pytest
+
+from src.utils.scheduler_architecture import _diagram_token, validate_scheduler_architecture
 
 
 REPO_ROOT = Path(__file__).parents[1]
@@ -66,6 +68,53 @@ def test_scheduler_architecture_validation_rejects_missing_evidence_and_uncovere
         "evidence_missing",
         "diagram_coverage",
     }
+
+
+@pytest.mark.parametrize(
+    "evidence",
+    [r"C:\other-repository\proof.md", r"\\server\share\proof.md", r"tools\..\proof.md"],
+)
+def test_scheduler_architecture_rejects_windows_absolute_and_traversal_evidence(
+    tmp_path: Path, evidence: str
+) -> None:
+    inventory = tmp_path / "inventory.md"
+    inventory.write_text(
+        f"""| Project | Trigger | Command | Owner | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Demo | manual | `tools/run_task.py` | owner | documented | `{evidence}` |
+""",
+        encoding="utf-8",
+    )
+    diagram = tmp_path / "diagram.mmd"
+    diagram.write_text("graph LR\n    Demo --> run_task.py\n", encoding="utf-8")
+
+    findings = validate_scheduler_architecture(inventory, diagram, {"Demo": tmp_path})
+
+    finding_codes = {finding.code for finding in findings}
+    assert "evidence_path" in finding_codes
+    assert "evidence_missing" not in finding_codes
+
+
+def test_diagram_token_uses_command_filename_instead_of_tools_directory() -> None:
+    assert _diagram_token(r"tools\register_hygiene_task.ps1") == "register_hygiene_task.ps1"
+
+
+def test_scheduler_architecture_requires_command_filename_in_diagram(tmp_path: Path) -> None:
+    inventory = tmp_path / "inventory.md"
+    inventory.write_text(
+        """| Project | Trigger | Command | Owner | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Demo | manual | `tools/run_task.py` | owner | documented | proof.md |
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "proof.md").write_text("fixture evidence\n", encoding="utf-8")
+    diagram = tmp_path / "diagram.mmd"
+    diagram.write_text("graph LR\n    Demo --> tools\n", encoding="utf-8")
+
+    findings = validate_scheduler_architecture(inventory, diagram, {"Demo": tmp_path})
+
+    assert {finding.code for finding in findings} == {"diagram_coverage"}
 
 
 def test_scheduler_reference_declares_statuses_and_excludes_runtime_scheduler_scope() -> None:

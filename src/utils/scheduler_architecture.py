@@ -10,7 +10,6 @@ from typing import Mapping
 
 REQUIRED_COLUMNS = ("Project", "Trigger", "Command", "Owner", "Status", "Evidence")
 ALLOWED_STATUSES = {"documented", "deployed", "unverified", "no-entry"}
-PROJECT_NAME_PATTERN = re.compile(r"^\|\s*([^|]+?)\s*\|(.+?)\|\s*$")
 
 
 @dataclass(frozen=True)
@@ -54,8 +53,12 @@ def validate_scheduler_architecture(
             findings.append(Finding("record_fields", f"{record.project} has an empty required field"))
         if record.status not in ALLOWED_STATUSES:
             findings.append(Finding("status", f"{record.project} has unsupported status {record.status!r}"))
-        evidence_path = Path(record.evidence)
-        if evidence_path.is_absolute() or ".." in evidence_path.parts:
+        normalized_evidence = record.evidence.replace("\\", "/")
+        evidence_path = Path(normalized_evidence)
+        is_windows_absolute = bool(re.match(r"^[A-Za-z]:/", normalized_evidence))
+        is_unc_absolute = normalized_evidence.startswith("//")
+        has_traversal = ".." in normalized_evidence.split("/")
+        if evidence_path.is_absolute() or is_windows_absolute or is_unc_absolute or has_traversal:
             findings.append(Finding("evidence_path", f"{record.project} evidence must be repository-relative"))
         elif record.project in project_roots and not (project_roots[record.project] / evidence_path).is_file():
             findings.append(Finding("evidence_missing", f"{record.project} evidence does not exist: {record.evidence}"))
@@ -87,5 +90,9 @@ def _read_records(inventory_path: Path) -> tuple[InventoryRecord, ...]:
 
 def _diagram_token(command: str) -> str:
     """Use a stable command token while allowing prose labels in the diagram."""
+    normalized_command = command.replace("\\", "/")
+    path_match = re.search(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", normalized_command)
+    if path_match:
+        return path_match.group(0).rsplit("/", 1)[-1].lower()
     words = re.findall(r"[A-Za-z][A-Za-z0-9_.-]*", command)
     return words[0].lower() if words else "none"
