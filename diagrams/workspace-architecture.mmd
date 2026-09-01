@@ -14,6 +14,8 @@ graph TB
         TakeoverGate{takeover_enabled<br/>+ explicit approval}
         BackupContract[Provider-neutral local<br/>database backup contract]
         BackupVolume[/E: verified local volume/]
+        BackupRunner[/run_database_backup.py<br/>scheduled backup/]
+        BackupObservability[database_backup_observability.py<br/>retention enforcement · restore-drill evidence<br/>redacted failure reporting · recovery-objective reporting<br/>RPO 24h · RTO 4h]
     end
     subgraph Life["∞ Life"]
         LifeDB[(infinitelife.db<br/>SQLCipher)]
@@ -63,8 +65,11 @@ graph TB
     ManifestDB -.->|explicit approved canonical mapping| BackupContract
     BackupContract --> BackupVolume
     BackupVolume -.->|trusted marker · encrypted generations · retention| BackupContract
+    BackupContract --> BackupRunner
+    BackupContract --> BackupObservability
+    BackupVolume -.->|trusted marker · encrypted generations · retention enforcement · 30 generations · newest valid recovery point| BackupContract
     BackupContract -.->|operator-approved isolated SQLCipher restore| ManifestDB
-    BackupContract -.->|fail-closed discovery and redacted audit boundary| Registry
+    BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
     class DecisionMetadata ws

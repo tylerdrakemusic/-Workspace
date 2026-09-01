@@ -3,22 +3,31 @@
 %% Traceability.parent: diagrams/workspace-integrations.mmd
 graph TB
     Workspace[⊕ Workspace] --> Backup[provider-neutral backup contract]
+    BackupRunner[/run_database_backup.py<br/>scheduled backup/] --> Backup
+    Backup --> Observability[database_backup_observability.py]
     BackupContract --> BackupInventory
     Backup --> Inventory[explicit canonical source inventory]
     Inventory --> Discovery{registered, unambiguous, classified}
     Discovery --> Volume[verified local backup volume]
     Volume --> Generations[authenticated encrypted generations]
     Generations --> Restore[operator-approved isolated restore]
-    Restore --> Audit[redacted audit boundary]
+    Restore --> Audit[redacted audit records]
+    Observability --> Retention[retention enforcement<br/>30-generation retention]
+    Retention --> NewestValid[newest-valid recovery point preserved]
+    NewestValid --> Generations
+    Observability -.-> Failure[redacted failure reporting]
+    Restore --> Drill[bounded restore drill]
+    Drill ==> Evidence[latest 12 restore-drill evidence records]
+    Observability --> Objectives[RPO 24h / RTO 4h reporting]
     Workspace --> Coord[governed coordination MCP]
     Coord --> FRLedger[(fr_ledgers.db)]
     Coord --> TodoDB[(manifest_todos.db)]
     Coord -.->|rejects| GenericSQL[no arbitrary SQL or routing]
     Life[∞ Life] -.->|redacted metadata only| Inventory
     Capital[Σ Capital] --> CapitalDB[(sigmacapital.db)]
-    class Workspace,Backup,Inventory,Volume,Generations,Restore,Audit,Coord ws
+    class Workspace,Backup,BackupRunner,Observability,Inventory,Volume,Generations,Restore,Audit,Retention,NewestValid,Drill,Evidence,Objectives ws
     class Life,Capital orch
-    class Discovery,GenericSQL state
+    class Discovery,GenericSQL,Failure state
     class FRLedger,TodoDB,CapitalDB db
 classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
