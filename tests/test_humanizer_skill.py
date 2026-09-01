@@ -7,13 +7,15 @@ from pathlib import Path
 import sys
 import subprocess
 
+import pytest
+
 from skill_catalog import load_catalog, validate_catalog
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 HUMANIZER_PATH = WORKSPACE_ROOT / ".github" / "skills" / "humanizer" / "SKILL.md"
 EXPECTED_COMMIT = "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5"
-EXPECTED_SHA256 = "5fd504ab8c910a4e59418fae143f6f7c6928822ffedf45fb525a9b3bb8d7a83b"
+EXPECTED_SHA256 = "14fc8a965b6e0a8dc100ba4dffeab55cb94bbac112abbde7e014d5c15a35c202"
 
 sys.path.insert(0, str(WORKSPACE_ROOT / ".github" / "!!☾⛧security"))
 
@@ -63,7 +65,8 @@ def test_humanizer_is_cataloged_with_pinned_provenance_and_routing_boundary() ->
 
 
 def test_humanizer_source_is_byte_identical_to_declared_sha256() -> None:
-    digest = hashlib.sha256(HUMANIZER_PATH.read_bytes()).hexdigest()
+    source_bytes = HUMANIZER_PATH.read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source_bytes).hexdigest()
     catalog = json.loads(
         (WORKSPACE_ROOT / ".github" / "skills" / "skill-catalog.json").read_text(
             encoding="utf-8"

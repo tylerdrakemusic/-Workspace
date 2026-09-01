@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -359,6 +360,8 @@ def test_music_registration_selector_is_explicit_and_secret_free() -> None:
 
 
 def test_registration_script_is_ascii_source_and_parses_with_windows_powershell() -> None:
+    if os.name != "nt":
+        pytest.skip("Windows PowerShell is unavailable on this platform")
     script_path = Path(__file__).resolve().parents[1] / "tools" / "register_database_backup_task.ps1"
     script = script_path.read_bytes().decode("ascii")
 

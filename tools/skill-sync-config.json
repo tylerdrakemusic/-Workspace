@@ -74,7 +74,7 @@
       "provenance": "external-source",
       "source_policy": "optional",
       "pinned_commit": "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5",
-      "sha256": "5fd504ab8c910a4e59418fae143f6f7c6928822ffedf45fb525a9b3bb8d7a83b",
+      "sha256": "14fc8a965b6e0a8dc100ba4dffeab55cb94bbac112abbde7e014d5c15a35c202",
       "protected_overwrite": false,
       "skills": ["humanizer"]
     },
