@@ -55,19 +55,19 @@ def validate_scheduler_architecture(
             findings.append(Finding("status", f"{record.project} has unsupported status {record.status!r}"))
         normalized_evidence = record.evidence.replace("\\", "/")
         evidence_path = Path(normalized_evidence)
-        is_windows_absolute = bool(re.match(r"^[A-Za-z]:/", normalized_evidence))
+        has_windows_drive_prefix = bool(re.match(r"^[A-Za-z]:", normalized_evidence))
         is_unc_absolute = normalized_evidence.startswith("//")
         has_traversal = ".." in normalized_evidence.split("/")
-        if evidence_path.is_absolute() or is_windows_absolute or is_unc_absolute or has_traversal:
+        if evidence_path.is_absolute() or has_windows_drive_prefix or is_unc_absolute or has_traversal:
             findings.append(Finding("evidence_path", f"{record.project} evidence must be repository-relative"))
         elif record.project in project_roots and not (project_roots[record.project] / evidence_path).is_file():
             findings.append(Finding("evidence_missing", f"{record.project} evidence does not exist: {record.evidence}"))
 
     diagram = diagram_path.read_text(encoding="utf-8") if diagram_path.is_file() else ""
-    diagram_without_spaces = re.sub(r"\s+", "", diagram)
+    diagram_without_spaces = re.sub(r"\s+", "", diagram).casefold()
     for record in records:
-        project_token = re.sub(r"\s+", "", record.project)
-        if project_token not in diagram_without_spaces or _diagram_token(record.command) not in diagram:
+        project_token = re.sub(r"\s+", "", record.project).casefold()
+        if project_token not in diagram_without_spaces or _diagram_token(record.command).casefold() not in diagram.casefold():
             findings.append(Finding("diagram_coverage", f"diagram does not cover {record.project} and its command"))
     return tuple(findings)
 

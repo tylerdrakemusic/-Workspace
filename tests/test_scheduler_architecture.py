@@ -72,7 +72,7 @@ def test_scheduler_architecture_validation_rejects_missing_evidence_and_uncovere
 
 @pytest.mark.parametrize(
     "evidence",
-    [r"C:\other-repository\proof.md", r"\\server\share\proof.md", r"tools\..\proof.md"],
+    [r"C:\other-repository\proof.md", r"C:proof.md", r"\\server\share\proof.md", r"tools\..\proof.md"],
 )
 def test_scheduler_architecture_rejects_windows_absolute_and_traversal_evidence(
     tmp_path: Path, evidence: str
@@ -115,6 +115,24 @@ def test_scheduler_architecture_requires_command_filename_in_diagram(tmp_path: P
     findings = validate_scheduler_architecture(inventory, diagram, {"Demo": tmp_path})
 
     assert {finding.code for finding in findings} == {"diagram_coverage"}
+
+
+def test_scheduler_architecture_matches_diagram_coverage_case_insensitively(tmp_path: Path) -> None:
+    inventory = tmp_path / "inventory.md"
+    inventory.write_text(
+        """| Project | Trigger | Command | Owner | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Demo | manual | `tools/run_task.py` | owner | documented | proof.md |
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "proof.md").write_text("fixture evidence\n", encoding="utf-8")
+    diagram = tmp_path / "diagram.mmd"
+    diagram.write_text("graph LR\n    demo --> RUN_TASK.PY\n", encoding="utf-8")
+
+    findings = validate_scheduler_architecture(inventory, diagram, {"Demo": tmp_path})
+
+    assert findings == ()
 
 
 def test_scheduler_reference_declares_statuses_and_excludes_runtime_scheduler_scope() -> None:
