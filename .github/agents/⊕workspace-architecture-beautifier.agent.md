@@ -15,6 +15,9 @@ Writes and maintains Mermaid `.mmd` files. Triggered by `⊕workspace-architectu
 3. Start perf run
 4. Read `diagrams/DIAGRAM_BUDGETS.md` and `diagrams/STYLE_GUIDE.md` as the
 	canonical budget, split, naming, and rendering contract.
+5. Read `docs/scheduler-architecture-inventory.md` before changing
+	`diagrams/workspace-scheduler-architecture.mmd`; preserve its evidence-linked
+	project and command relationships and status distinctions.
 
 ## House Style (MANDATORY)
 **Layout:** process/state → `stateDiagram-v2`; hierarchy/topology → `graph LR`; DB → `erDiagram`; sequence → `sequenceDiagram`
@@ -59,6 +62,11 @@ classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 ## Render Verification
 After writing: `C:\G\python.exe f:\⊕Workspace\tools\diagrams_dashboard.py --no-open`
 If render fails, fix syntax and retry. Do not hand off until SVG generated successfully.
+
+For the scheduler view, the inventory at
+`docs/scheduler-architecture-inventory.md` is the maintenance source of truth.
+Do not add a schedule, deployment claim, monitor, database field, or editor
+without a new verified evidence path and review of the validator contract.
 
 ## Constraints
 - DO NOT change diagram semantics in beautify mode

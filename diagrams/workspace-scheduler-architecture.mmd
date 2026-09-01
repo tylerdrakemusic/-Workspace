@@ -1,0 +1,61 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+graph LR
+    subgraph Life["∞ Life"]
+        LifeScheduler([∞ Life scheduler\ndocumented]):::documented
+        LifeProject[∞ Life project]:::life
+        LifeCommand[/tools/nightly_master_sync.ps1/]:::life
+        LifeScheduler --> LifeProject
+        LifeScheduler --> LifeCommand
+    end
+    subgraph Music["❤ Music"]
+        MusicScheduler([❤ Music scheduler\nno-entry]):::noentry
+        MusicProject[❤ Music project]:::music
+        MusicCommand[/none verified/]:::music
+        MusicScheduler --> MusicProject
+        MusicScheduler --> MusicCommand
+    end
+    subgraph Quantum["⟨ψ⟩ Quantum"]
+        QuantumScheduler([⟨ψ⟩ Quantum scheduler\ndocumented]):::documented
+        QuantumProject[⟨ψ⟩ Quantum project]:::quantum
+        QuantumCommand[/tools/fill_cache.py/]:::quantum
+        QuantumScheduler --> QuantumProject
+        QuantumScheduler --> QuantumCommand
+    end
+    subgraph Manifest["👁 AI-Manifest"]
+        ManifestScheduler([👁 AI-Manifest scheduler\ndocumented]):::documented
+        ManifestProject[👁 AI-Manifest project]:::manifest
+        ManifestCommand[/tools/register_database_backup_task.ps1/]:::manifest
+        ManifestScheduler --> ManifestProject
+        ManifestScheduler --> ManifestCommand
+    end
+    subgraph Workspace["⊕ Workspace"]
+        WorkspaceScheduler([⊕ Workspace scheduler\ndocumented]):::documented
+        WorkspaceProject[⊕ Workspace project]:::ws
+        WorkspaceCommand[/tools/run_hygiene.py/]:::ws
+        WorkspaceScheduler --> WorkspaceProject
+        WorkspaceScheduler --> WorkspaceCommand
+    end
+    subgraph Capital["Σ Capital"]
+        CapitalScheduler([Σ Capital scheduler\ndocumented]):::documented
+        CapitalProject[Σ Capital project]:::capital
+        CapitalCommand[/tools/run_position_realization.py/]:::capital
+        CapitalScheduler --> CapitalProject
+        CapitalScheduler --> CapitalCommand
+    end
+    subgraph Legend["Legend"]
+        Documented([documented]):::documented
+        Deployed([deployed]):::deployed
+        Unverified([unverified]):::unverified
+        NoEntry([no-entry]):::noentry
+    end
+
+    classDef life fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+    classDef music fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+    classDef quantum fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+    classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+    classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+    classDef capital fill:#3a3020,stroke:#d4c050,color:#f8f0c0
+    classDef documented fill:#243d30,stroke:#6ad4b4,color:#d0f8ee
+    classDef deployed fill:#203a52,stroke:#6ab4d4,color:#d0ecf8
+    classDef unverified fill:#4a3a20,stroke:#d4a96a,color:#f8ead0
+    classDef noentry fill:#303030,stroke:#888888,color:#cccccc
