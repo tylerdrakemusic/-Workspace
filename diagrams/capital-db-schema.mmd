@@ -17,6 +17,7 @@ erDiagram
     HOLDINGS_SNAPSHOTS ||--o{ POSITION_HOLDINGS : contains
     POSITION_REVIEWS ||--o{ POSITION_PROPOSAL_DRAFTS : produces
     OCO_PROTECTIVE_PAIRS ||--o{ OCO_PROTECTIVE_LEGS : contains
+    OCO_PROTECTIVE_PAIRS ||--o{ OCO_RECALIBRATION_PROPOSALS : recalibrates
     REPLACEMENT_PROPOSALS ||--o| ORDER_REPLACEMENTS : approval_audits_replacement
     REPLACEMENT_PROPOSALS {
         TEXT id PK
@@ -42,6 +43,27 @@ erDiagram
         TEXT verification_status "strictly distinct IDs"
         TEXT reconciliation_status "reconciliation_required on ambiguity"
         TEXT duplicate_fill_guard_status
+        TEXT created_at
+    }
+    OCO_RECALIBRATION_PROPOSALS {
+        TEXT id PK
+        TEXT pair_id FK
+        INTEGER version
+        REAL current_stop_price
+        REAL proposed_stop_price
+        REAL current_target_price
+        REAL proposed_target_price
+        REAL current_quote
+        REAL atr
+        TEXT thesis
+        TEXT volatility_assessment
+        TEXT protection_assessment
+        TEXT risk_result
+        REAL confidence
+        TEXT source_provenance
+        TEXT approval_state "pending_approval|approved|rejected|superseded"
+        TEXT supersedes_id FK
+        TEXT idempotency_key UK
         TEXT created_at
     }
     WATCHLIST_OBSERVATIONS {
