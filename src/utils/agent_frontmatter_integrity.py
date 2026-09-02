@@ -27,6 +27,7 @@ AGENT_DIRS: list[Path] = [
 INSTRUCTION_DIR: Path = Path(r"f:\.github\instructions")
 INSTRUCTION_DIRS: list[Path] = [
     INSTRUCTION_DIR,
+    Path(r"f:\⊕Workspace\.github\instructions"),
     Path(r"f:\∞Life\.github\instructions"),
     Path(r"f:\❤Music\.github\instructions"),
     Path(r"f:\⟨ψ⟩Quantum\.github\instructions"),
