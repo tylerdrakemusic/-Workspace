@@ -35,6 +35,7 @@ INSTRUCTION_DIRS: list[Path] = [
 ]
 MD_ROOTS: list[Path] = [
     Path(r"f:\.github"),
+    Path(r"f:\⊕Workspace\.github"),
     Path(r"f:\∞Life\.github"),
     Path(r"f:\❤Music\.github"),
     Path(r"f:\⟨ψ⟩Quantum\.github"),
