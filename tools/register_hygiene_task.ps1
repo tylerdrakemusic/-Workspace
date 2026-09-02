@@ -8,7 +8,7 @@
     Task name : WorkspaceHygiene
     Schedule  : Weekly on Sunday at 03:00 local time
     User      : Current logged-in user (needs WORKSPACE_DB_KEY in env)
-    Script    : f:\⊕Workspace\tools\run_hygiene.py
+    Script    : <checkout>\tools\run_hygiene.py
     Python    : C:\G\python.exe
 
     Run once (as yourself — admin not required for per-user tasks):
@@ -24,7 +24,7 @@
 
     To check the last proof artifact written:
         $env:PYTHONUTF8='1'
-        C:\G\python.exe f:\⊕Workspace\src\utils\proof_cli.py report --all | Select-Object -Last 30
+        C:\G\python.exe <checkout>\src\utils\proof_cli.py report --all | Select-Object -Last 30
 
     To unregister:
         Unregister-ScheduledTask -TaskName 'WorkspaceHygiene' -Confirm:$false
@@ -33,12 +33,13 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$WorkspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $TaskName   = 'WorkspaceHygiene'
 $Python     = 'C:\G\python.exe'
-$Script     = 'f:\⊕Workspace\tools\run_hygiene.py'
+$Script     = Join-Path $WorkspaceRoot 'tools\run_hygiene.py'
 $RunDay     = 'Sunday'
 $RunTime    = '03:00'
-$WorkingDir = 'f:\⊕Workspace'
+$WorkingDir = $WorkspaceRoot
 
 # ── Validate prerequisites ─────────────────────────────────────────────────────
 if (-not (Test-Path $Python)) {

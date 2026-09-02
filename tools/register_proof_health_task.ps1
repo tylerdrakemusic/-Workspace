@@ -8,10 +8,10 @@
     Task name : ProofHealthVerifier
     Schedule  : Weekly on Sunday at 04:00 local time (after WorkspaceHygiene @ 03:00)
     User      : Current logged-in user (needs WORKSPACE_DB_KEY in env)
-    Script    : f:\⊕Workspace\src\utils\proof_health_verifier.py
+    Script    : <checkout>\src\utils\proof_health_verifier.py
     Python    : C:\G\python.exe
-    Output    : f:\⊕Workspace\reports\proof_health.json
-               f:\⊕Workspace\logs\proof_health.log
+    Output    : <checkout>\reports\proof_health.json
+               <checkout>\logs\proof_health.log
 
     Run once (as yourself — admin not required for per-user tasks):
         .\register_proof_health_task.ps1
@@ -25,10 +25,10 @@
         Get-ScheduledTaskInfo -TaskName 'ProofHealthVerifier'
 
     To inspect the last report:
-        Get-Content 'f:\⊕Workspace\reports\proof_health.json' | ConvertFrom-Json
+        Get-Content (Join-Path $WorkspaceRoot 'reports\proof_health.json') | ConvertFrom-Json
 
     To inspect the log:
-        Get-Content 'f:\⊕Workspace\logs\proof_health.log' -Tail 20
+        Get-Content (Join-Path $WorkspaceRoot 'logs\proof_health.log') -Tail 20
 
     To unregister:
         Unregister-ScheduledTask -TaskName 'ProofHealthVerifier' -Confirm:$false
@@ -39,12 +39,13 @@ FR: FR-20260524-proof-artifact-staleness-verifier
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$WorkspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $TaskName   = 'ProofHealthVerifier'
 $Python     = 'C:\G\python.exe'
-$Script     = 'f:\⊕Workspace\src\utils\proof_health_verifier.py'
+$Script     = Join-Path $WorkspaceRoot 'src\utils\proof_health_verifier.py'
 $RunDay     = 'Sunday'
 $RunTime    = '04:00'
-$WorkingDir = 'f:\⊕Workspace'
+$WorkingDir = $WorkspaceRoot
 
 # ── Validate prerequisites ─────────────────────────────────────────────────────
 if (-not (Test-Path $Python)) {
