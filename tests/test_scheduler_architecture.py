@@ -17,14 +17,10 @@ def test_scheduler_architecture_test_does_not_require_sibling_worktrees() -> Non
 
 
 def _portable_project_roots(tmp_path: Path) -> dict[str, Path]:
-    evidence_paths = {
-        "∞Life": "tools/Register-NightlySync.ps1",
-        "❤Music": "AGENT_STARTUP.md",
-        "⟨ψ⟩Quantum": "src/config/execution_policy.json",
-        "👁AI-Manifest": "docs/scheduled_tasks.md",
-        "⊕Workspace": "tools/register_hygiene_task.ps1",
-        "ΣCapital": "tools/schedule_position_realization.xml",
-    }
+    evidence_paths = {project: "docs/scheduler-live-audit-2026-09-01.md" for project in (
+        "∞Life", "⟨ψ⟩Quantum", "👁AI-Manifest", "⊕Workspace", "ΣCapital"
+    )}
+    evidence_paths["❤Music"] = "AGENT_STARTUP.md"
     project_roots = {}
     for project, evidence_path in evidence_paths.items():
         project_root = tmp_path / project
@@ -45,6 +41,46 @@ def test_scheduler_architecture_reference_covers_six_projects_and_diagram_eviden
     assert findings == ()
 
 
+def test_scheduler_architecture_reference_has_one_record_per_audited_job() -> None:
+    inventory = (REPO_ROOT / "docs" / "scheduler-architecture-inventory.md").read_text(encoding="utf-8")
+
+    expected_jobs = {
+        "InfiniteLife-NightlySync",
+        "InfiniteLife_Withings_Token_Watcher",
+        "QuantumCacheDepletionGuard_Daily",
+        "QuantumCacheFill_Monthly",
+        "ShorsMonthlyBench",
+        "VQEMonthlyBench",
+        "PolicyComplianceAudit_Daily",
+        "AI_Manifest_Priority_Rescore",
+        "⊕Workspace-DatabaseBackup",
+        "⊕Workspace-SecurityScan",
+        "WorkspaceHygiene",
+        "Workspace-PerfRegressionAlerter",
+        "ProofHealthVerifier",
+        "SkillSyncNightly",
+        "PositionRealization",
+        "ProductionFillReconciliation",
+        "ReconcileOrders",
+    }
+
+    assert inventory.count("| ") >= 19
+    for job_name in expected_jobs:
+        assert job_name in inventory
+    assert "❤Music" in inventory
+    assert "no-entry" in inventory
+
+
+def test_scheduler_architecture_records_expose_job_identity_task_path_and_action() -> None:
+    inventory = (REPO_ROOT / "docs" / "scheduler-architecture-inventory.md").read_text(encoding="utf-8")
+
+    assert "Task Name" in inventory
+    assert "Task Path" in inventory
+    assert "Action / Command" in inventory
+    assert "Last Observed Result" in inventory
+    assert "Operational Findings" in inventory
+
+
 def test_scheduler_architecture_validation_rejects_missing_evidence_and_uncovered_records(
     tmp_path: Path,
 ) -> None:
@@ -52,9 +88,9 @@ def test_scheduler_architecture_validation_rejects_missing_evidence_and_uncovere
     inventory.write_text(
         """# Scheduler Architecture Inventory
 
-| Project | Trigger | Command | Owner | Status | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| Demo | none verified | none | unknown | no-entry | missing.md |
+    | Project | Task Name | Task Path | Trigger / Cadence | Action / Command | Owner | Status | Evidence | Last Observed Result | Operational Findings |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | Demo | DemoTask | none | none verified | none | unknown | no-entry | missing.md | none | none |
 """,
         encoding="utf-8",
     )
@@ -79,9 +115,9 @@ def test_scheduler_architecture_rejects_windows_absolute_and_traversal_evidence(
 ) -> None:
     inventory = tmp_path / "inventory.md"
     inventory.write_text(
-        f"""| Project | Trigger | Command | Owner | Status | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| Demo | manual | `tools/run_task.py` | owner | documented | `{evidence}` |
+        f"""| Project | Task Name | Task Path | Trigger / Cadence | Action / Command | Owner | Status | Evidence | Last Observed Result | Operational Findings |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | Demo | DemoTask | \\Demo\\DemoTask | manual | `tools/run_task.py` | owner | documented | `{evidence}` | none | none |
 """,
         encoding="utf-8",
     )
@@ -102,9 +138,9 @@ def test_diagram_token_uses_command_filename_instead_of_tools_directory() -> Non
 def test_scheduler_architecture_requires_command_filename_in_diagram(tmp_path: Path) -> None:
     inventory = tmp_path / "inventory.md"
     inventory.write_text(
-        """| Project | Trigger | Command | Owner | Status | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| Demo | manual | `tools/run_task.py` | owner | documented | proof.md |
+        """| Project | Task Name | Task Path | Trigger / Cadence | Action / Command | Owner | Status | Evidence | Last Observed Result | Operational Findings |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | Demo | DemoTask | \\Demo\\DemoTask | manual | `tools/run_task.py` | owner | documented | proof.md | none | none |
 """,
         encoding="utf-8",
     )
@@ -120,15 +156,18 @@ def test_scheduler_architecture_requires_command_filename_in_diagram(tmp_path: P
 def test_scheduler_architecture_matches_diagram_coverage_case_insensitively(tmp_path: Path) -> None:
     inventory = tmp_path / "inventory.md"
     inventory.write_text(
-        """| Project | Trigger | Command | Owner | Status | Evidence |
-| --- | --- | --- | --- | --- | --- |
-| Demo | manual | `tools/run_task.py` | owner | documented | proof.md |
+        """| Project | Task Name | Task Path | Trigger / Cadence | Action / Command | Owner | Status | Evidence | Last Observed Result | Operational Findings |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | Demo | DemoTask | \\Demo\\DemoTask | manual | `tools/run_task.py` | owner | documented | proof.md | none | none |
 """,
         encoding="utf-8",
     )
     (tmp_path / "proof.md").write_text("fixture evidence\n", encoding="utf-8")
     diagram = tmp_path / "diagram.mmd"
-    diagram.write_text("graph LR\n    demo --> RUN_TASK.PY\n", encoding="utf-8")
+    diagram.write_text(
+        "graph LR\n    demo --> DemoTask\n    DemoTask --> \\Demo\\DemoTask\n    DemoTask --> RUN_TASK.PY\n",
+        encoding="utf-8",
+    )
 
     findings = validate_scheduler_architecture(inventory, diagram, {"Demo": tmp_path})
 

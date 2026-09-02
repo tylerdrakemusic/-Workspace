@@ -1,46 +1,64 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
+    %% Audited task paths are retained as safe metadata; live XML and host paths are excluded.
+    %% \∞Life\InfiniteLife-NightlySync | \∞Life\InfiniteLife_Withings_Token_Watcher
+    %% \⟨ψ⟩Quantum\QuantumCacheDepletionGuard_Daily | \⟨ψ⟩Quantum\QuantumCacheFill_Monthly | \⟨ψ⟩Quantum\ShorsMonthlyBench | \⟨ψ⟩Quantum\VQEMonthlyBench | \⟨ψ⟩Quantum\PolicyComplianceAudit_Daily
+    %% \👁AI-Manifest\AI_Manifest_Priority_Rescore
+    %% \⊕Workspace\⊕Workspace-DatabaseBackup | \⊕Workspace\⊕Workspace-SecurityScan | \⊕Workspace\WorkspaceHygiene | \⊕Workspace\Workspace-PerfRegressionAlerter | \⊕Workspace\ProofHealthVerifier | \⊕Workspace\SkillSyncNightly
+    %% \ΣCapital\PositionRealization | \ΣCapital\ProductionFillReconciliation | \ΣCapital\ReconcileOrders
     subgraph Life["∞ Life"]
-        LifeScheduler([∞ Life scheduler\ndocumented]):::documented
         LifeProject[∞ Life project]:::life
-        LifeCommand[/tools/nightly_master_sync.ps1/]:::life
-        LifeScheduler --> LifeProject
-        LifeScheduler --> LifeCommand
+        Life1([InfiniteLife-NightlySync\ndeployed]):::deployed --> LifeProject
+        Life1 --> Life1Command[/nightly_master_sync.ps1/]:::life
+        Life2([InfiniteLife_Withings_Token_Watcher\ndeployed]):::deployed --> LifeProject
+        Life2 --> Life2Command[/withings_token_watcher.py/]:::life
     end
     subgraph Music["❤ Music"]
-        MusicScheduler([❤ Music scheduler\nno-entry]):::noentry
         MusicProject[❤ Music project]:::music
-        MusicCommand[/none verified/]:::music
-        MusicScheduler --> MusicProject
-        MusicScheduler --> MusicCommand
+        MusicScheduler([No verified external job\nno-entry]):::noentry --> MusicProject
+        MusicScheduler --> MusicCommand[/none/]:::music
     end
     subgraph Quantum["⟨ψ⟩ Quantum"]
-        QuantumScheduler([⟨ψ⟩ Quantum scheduler\ndocumented]):::documented
         QuantumProject[⟨ψ⟩ Quantum project]:::quantum
-        QuantumCommand[/tools/fill_cache.py/]:::quantum
-        QuantumScheduler --> QuantumProject
-        QuantumScheduler --> QuantumCommand
+        Quantum1([QuantumCacheDepletionGuard_Daily\ndeployed]):::deployed --> QuantumProject
+        Quantum1 --> Quantum1Command[/cache_depletion_guard.py/]:::quantum
+        Quantum2([QuantumCacheFill_Monthly\ndeployed]):::deployed --> QuantumProject
+        Quantum2 --> Quantum2Command[/fill_cache.py/]:::quantum
+        Quantum3([ShorsMonthlyBench\ndeployed]):::deployed --> QuantumProject
+        Quantum3 --> Quantum3Command[/run_shors_monthly.py/]:::quantum
+        Quantum4([VQEMonthlyBench\ndeployed]):::deployed --> QuantumProject
+        Quantum4 --> Quantum4Command[/run_vqe_monthly.py/]:::quantum
+        Quantum5([PolicyComplianceAudit_Daily\ndeployed]):::deployed --> QuantumProject
+        Quantum5 --> Quantum5Command[/policy_compliance_audit.py/]:::quantum
     end
     subgraph Manifest["👁 AI-Manifest"]
-        ManifestScheduler([👁 AI-Manifest scheduler\ndocumented]):::documented
         ManifestProject[👁 AI-Manifest project]:::manifest
-        ManifestCommand[/tools/register_database_backup_task.ps1/]:::manifest
-        ManifestScheduler --> ManifestProject
-        ManifestScheduler --> ManifestCommand
+        Manifest1([AI_Manifest_Priority_Rescore\ndeployed]):::deployed --> ManifestProject
+        Manifest1 --> Manifest1Command[/priority_rescore.py/]:::manifest
     end
     subgraph Workspace["⊕ Workspace"]
-        WorkspaceScheduler([⊕ Workspace scheduler\ndocumented]):::documented
         WorkspaceProject[⊕ Workspace project]:::ws
-        WorkspaceCommand[/tools/run_hygiene.py/]:::ws
-        WorkspaceScheduler --> WorkspaceProject
-        WorkspaceScheduler --> WorkspaceCommand
+        Workspace1([⊕Workspace-DatabaseBackup\ndeployed]):::deployed --> WorkspaceProject
+        Workspace1 --> Workspace1Command[/backup_database.py/]:::ws
+        Workspace2([⊕Workspace-SecurityScan\ndeployed]):::deployed --> WorkspaceProject
+        Workspace2 --> Workspace2Command[/run_security_scan.py/]:::ws
+        Workspace3([WorkspaceHygiene\ndeployed]):::deployed --> WorkspaceProject
+        Workspace3 --> Workspace3Command[/run_hygiene.py/]:::ws
+        Workspace4([Workspace-PerfRegressionAlerter\ndeployed]):::deployed --> WorkspaceProject
+        Workspace4 --> Workspace4Command[/perf_regression_alerter.py/]:::ws
+        Workspace5([ProofHealthVerifier\ndeployed]):::deployed --> WorkspaceProject
+        Workspace5 --> Workspace5Command[/verify_proof_health.py/]:::ws
+        Workspace6([SkillSyncNightly\ndeployed]):::deployed --> WorkspaceProject
+        Workspace6 --> Workspace6Command[/sync_skills.ps1/]:::ws
     end
     subgraph Capital["Σ Capital"]
-        CapitalScheduler([Σ Capital scheduler\ndocumented]):::documented
         CapitalProject[Σ Capital project]:::capital
-        CapitalCommand[/tools/run_position_realization.py/]:::capital
-        CapitalScheduler --> CapitalProject
-        CapitalScheduler --> CapitalCommand
+        Capital1([PositionRealization\ndeployed]):::deployed --> CapitalProject
+        Capital1 --> Capital1Command[/run_position_realization.py/]:::capital
+        Capital2([ProductionFillReconciliation\ndeployed]):::deployed --> CapitalProject
+        Capital2 --> Capital2Command[/reconcile_production_fills.py/]:::capital
+        Capital3([ReconcileOrders\ndeployed]):::deployed --> CapitalProject
+        Capital3 --> Capital3Command[/reconcile_orders.py/]:::capital
     end
     subgraph Legend["Legend"]
         Documented([documented]):::documented

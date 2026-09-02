@@ -8,8 +8,39 @@ import re
 from typing import Mapping
 
 
-REQUIRED_COLUMNS = ("Project", "Trigger", "Command", "Owner", "Status", "Evidence")
+REQUIRED_COLUMNS = (
+    "Project",
+    "Task Name",
+    "Task Path",
+    "Trigger / Cadence",
+    "Action / Command",
+    "Owner",
+    "Status",
+    "Evidence",
+    "Last Observed Result",
+    "Operational Findings",
+)
 ALLOWED_STATUSES = {"documented", "deployed", "unverified", "no-entry"}
+CANONICAL_PROJECTS = {"∞Life", "❤Music", "⟨ψ⟩Quantum", "👁AI-Manifest", "⊕Workspace", "ΣCapital"}
+AUDITED_JOB_NAMES = {
+    "InfiniteLife-NightlySync",
+    "InfiniteLife_Withings_Token_Watcher",
+    "QuantumCacheDepletionGuard_Daily",
+    "QuantumCacheFill_Monthly",
+    "ShorsMonthlyBench",
+    "VQEMonthlyBench",
+    "PolicyComplianceAudit_Daily",
+    "AI_Manifest_Priority_Rescore",
+    "⊕Workspace-DatabaseBackup",
+    "⊕Workspace-SecurityScan",
+    "WorkspaceHygiene",
+    "Workspace-PerfRegressionAlerter",
+    "ProofHealthVerifier",
+    "SkillSyncNightly",
+    "PositionRealization",
+    "ProductionFillReconciliation",
+    "ReconcileOrders",
+}
 
 
 @dataclass(frozen=True)
@@ -21,11 +52,15 @@ class Finding:
 @dataclass(frozen=True)
 class InventoryRecord:
     project: str
+    task_name: str
+    task_path: str
     trigger: str
     command: str
     owner: str
     status: str
     evidence: str
+    last_observed_result: str
+    operational_findings: str
 
 
 def validate_scheduler_architecture(
@@ -39,16 +74,38 @@ def validate_scheduler_architecture(
     expected_projects = set(project_roots)
     actual_projects = {record.project for record in records}
 
-    if actual_projects != expected_projects or len(records) != len(expected_projects):
+    expected_record_count = 18 if expected_projects == CANONICAL_PROJECTS else len(expected_projects)
+    if actual_projects != expected_projects or len(records) != expected_record_count:
         findings.append(
             Finding(
                 "project_count",
-                f"inventory has {len(records)} records for {len(expected_projects)} canonical projects",
+                f"inventory has {len(records)} records; expected {expected_record_count} for {len(expected_projects)} canonical projects",
             )
         )
 
+    task_names = [record.task_name for record in records if record.task_name and record.status != "no-entry"]
+    if len(task_names) != len(set(task_names)):
+        findings.append(Finding("task_identity", "inventory contains duplicate task names"))
+    if expected_projects == CANONICAL_PROJECTS:
+        if set(task_names) != AUDITED_JOB_NAMES:
+            findings.append(Finding("task_identity", "inventory does not contain exactly the 17 audited jobs"))
+        music_records = [record for record in records if record.project == "❤Music"]
+        if len(music_records) != 1 or music_records[0].status != "no-entry":
+            findings.append(Finding("no_entry", "❤Music must have exactly one no-entry record"))
+
     for record in records:
-        fields = (record.project, record.trigger, record.command, record.owner, record.status, record.evidence)
+        fields = (
+            record.project,
+            record.task_name,
+            record.task_path,
+            record.trigger,
+            record.command,
+            record.owner,
+            record.status,
+            record.evidence,
+            record.last_observed_result,
+            record.operational_findings,
+        )
         if not all(field.strip() for field in fields):
             findings.append(Finding("record_fields", f"{record.project} has an empty required field"))
         if record.status not in ALLOWED_STATUSES:
@@ -60,15 +117,23 @@ def validate_scheduler_architecture(
         has_traversal = ".." in normalized_evidence.split("/")
         if evidence_path.is_absolute() or has_windows_drive_prefix or is_unc_absolute or has_traversal:
             findings.append(Finding("evidence_path", f"{record.project} evidence must be repository-relative"))
-        elif record.project in project_roots and not (project_roots[record.project] / evidence_path).is_file():
-            findings.append(Finding("evidence_missing", f"{record.project} evidence does not exist: {record.evidence}"))
+        elif record.project in project_roots:
+            project_evidence = project_roots[record.project] / evidence_path
+            shared_evidence = inventory_path.parent.parent / evidence_path
+            if not project_evidence.is_file() and not shared_evidence.is_file():
+                findings.append(Finding("evidence_missing", f"{record.project} evidence does not exist: {record.evidence}"))
 
     diagram = diagram_path.read_text(encoding="utf-8") if diagram_path.is_file() else ""
     diagram_without_spaces = re.sub(r"\s+", "", diagram).casefold()
     for record in records:
         project_token = re.sub(r"\s+", "", record.project).casefold()
-        if project_token not in diagram_without_spaces or _diagram_token(record.command).casefold() not in diagram.casefold():
-            findings.append(Finding("diagram_coverage", f"diagram does not cover {record.project} and its command"))
+        if (
+            project_token not in diagram_without_spaces
+            or record.task_name.casefold() not in diagram.casefold()
+            or record.task_path.casefold() not in diagram.casefold()
+            or _diagram_token(record.command).casefold() not in diagram.casefold()
+        ):
+            findings.append(Finding("diagram_coverage", f"diagram does not cover {record.project} and {record.task_name}"))
     return tuple(findings)
 
 
