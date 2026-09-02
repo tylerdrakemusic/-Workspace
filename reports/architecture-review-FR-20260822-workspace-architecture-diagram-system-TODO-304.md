@@ -18,7 +18,7 @@ The committed diff is limited to diagram sources and derived views, the diagram 
 | `diagrams/capital-db-schema.mmd` | Parent DB relationship view split into bounded derived views | `capital-db-derived-trading.mmd`, `capital-db-derived-position-and-validation.mmd` |
 | `diagrams/manifest-architecture.mmd` | Parent overview split into bounded derived views | `manifest-derived-media-pipeline.mmd`, `manifest-derived-todo-and-backup.mmd` |
 | `diagrams/workspace-integrations.mmd` | Parent integration overview split into bounded derived views | `workspace-derived-services.mmd`, `workspace-derived-backup-and-coordination.mmd` |
-| `diagrams/DIAGRAM_INVENTORY.md`, `src/utils/diagram_budgets.py`, diagram tests | Inventory and measurement contract updates | All 32 Mermaid sources |
+| `diagrams/DIAGRAM_DISCOVERY.md`, `src/utils/diagram_budgets.py`, diagram tests | Inventory and measurement contract updates | All 32 Mermaid sources |
 | Architecture agent guidance files | Budget, split, traceability, relationship-preservation, and renderer guidance | Architecture review and beautifier workflows |
 
 All four parent families contain non-empty `Traceability.derived_views` metadata. All nine derived sources contain `is_derived_view=true` and a `Traceability.parent` path. The QA relationship reconciliation passed after repair, including the previously dropped parent relationships. Inventory validation reports zero findings across 32 sources, and the focused architecture suite passed 16 tests.

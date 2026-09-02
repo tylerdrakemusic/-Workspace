@@ -1,11 +1,9 @@
 # Diagram Budgets
 
 The validator in `src/utils/diagram_budgets.py` applies these budgets to each
-Mermaid source. Measurements follow `DIAGRAM_INVENTORY.md`: source text is
-decoded as UTF-8, line endings are normalized to the inventory's canonical
-CRLF representation, characters are Python string length, and bytes are exact
-UTF-8 length of that canonical representation. This keeps measurements stable
-across Windows and Linux checkouts.
+Mermaid source. Measurements support the generated discovery contract in
+`DIAGRAM_DISCOVERY.md`; they are not a fixed source inventory. The producer
+manifests remain authoritative for ownership, risk, split, and lineage.
 
 ## Machine-Checked Limits
 

@@ -22,7 +22,7 @@
 
 The repair changes runtime result classification and persisted fallback diagnostics inside the existing dashboard boundary. It adds no agent, dependency, database table, integration, top-level module, cross-project import, or FR-flow behavior. The mandatory topology completeness check found no workspace agent file missing from `diagrams/workspace-agent-topology.mmd`.
 
-**Required updates:** None. `diagrams/*.mmd`, `DIAGRAM_INVENTORY.md`, diagram budgets/style documentation, Mermaid integration documentation, and architecture documentation do not require updates for TODO 305. Existing diagram budget, traceability, and derived-view work belongs to TODO 304 and is not reopened. TODO 306 is not reviewed.
+**Required updates:** None. `diagrams/*.mmd`, `DIAGRAM_DISCOVERY.md`, diagram budgets/style documentation, Mermaid integration documentation, and architecture documentation do not require updates for TODO 305. Existing diagram budget, traceability, and derived-view work belongs to TODO 304 and is not reopened. TODO 306 is not reviewed.
 
 ## Renderer Evidence
 

@@ -54,7 +54,7 @@ The companion view is [../diagrams/workspace-scheduler-architecture.mmd](../diag
 The Mermaid view links each inventory record to its project and command node;
 its legend retains the documented, deployed, unverified, and no-entry states.
 Architecture review checks this document, the evidence paths, the diagram
-coverage, and the measured row in [../diagrams/DIAGRAM_INVENTORY.md](../diagrams/DIAGRAM_INVENTORY.md).
+coverage, and the generated discovery contract in [../diagrams/DIAGRAM_DISCOVERY.md](../diagrams/DIAGRAM_DISCOVERY.md).
 Architecture beautification may change layout or styling, but must preserve
 the inventory relationships and classifications.
 
