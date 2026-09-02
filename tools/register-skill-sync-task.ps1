@@ -2,12 +2,14 @@
 # Run once as Administrator, or with Developer Mode if elevation is unavailable.
 
 $taskName = "SkillSyncNightly"
-$scriptPath = "f:\⊕Workspace\tools\sync-skills.ps1"
-$logPath = "f:\⊕Workspace\logs\skill-sync-task.log"
+$WorkspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$scriptPath = Join-Path $WorkspaceRoot "tools\sync-skills.ps1"
+$logPath = Join-Path $WorkspaceRoot "logs\skill-sync-task.log"
 
 $action = New-ScheduledTaskAction `
     -Execute "powershell.exe" `
-    -Argument "-NonInteractive -ExecutionPolicy RemoteSigned -File `"$scriptPath`" >> `"$logPath`" 2>&1"
+    -Argument "-NonInteractive -ExecutionPolicy RemoteSigned -File `"$scriptPath`" >> `"$logPath`" 2>&1" `
+    -WorkingDirectory $WorkspaceRoot
 
 $trigger = New-ScheduledTaskTrigger -Daily -At "3:00AM"
 
