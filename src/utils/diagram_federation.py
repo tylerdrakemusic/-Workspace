@@ -11,6 +11,14 @@ from typing import Any
 MANIFEST_RELATIVE_PATH = Path("diagrams") / "diagram-manifest.json"
 SCHEMA_VERSION = 1
 REPOSITORIES = ("workspace", "life", "music", "quantum", "manifest", "capital")
+REPOSITORY_ROOT_NAMES = {
+    "workspace": "⊕Workspace",
+    "life": "∞Life",
+    "music": "❤Music",
+    "quantum": "⟨ψ⟩Quantum",
+    "manifest": "👁AI-Manifest",
+    "capital": "ΣCapital",
+}
 _REQUIRED_DIAGRAM_FIELDS = {
     "path",
     "kind",
@@ -104,17 +112,19 @@ def discover_diagram_manifests(workspace_root: Path) -> tuple[DiagramManifest, .
     """Discover one owned diagram manifest per direct repository root."""
     manifests = []
     for repository in REPOSITORIES:
-        root = workspace_root / ("⊕Workspace" if repository == "workspace" else repository)
-        if repository == "workspace" and not root.exists():
-            root = workspace_root / "workspace"
-        manifest_path = root / MANIFEST_RELATIVE_PATH
-        if manifest_path.is_file() and ".worktrees" not in manifest_path.parts:
+        root_names = (REPOSITORY_ROOT_NAMES[repository], repository)
+        for root_name in root_names:
+            root = workspace_root / root_name
+            manifest_path = root / MANIFEST_RELATIVE_PATH
+            if ".worktrees" in manifest_path.parts or not manifest_path.is_file():
+                continue
             manifest = _load_manifest(manifest_path)
             if manifest.repository != repository:
                 raise ValueError(
                     f"{manifest_path}: repository {manifest.repository!r} does not match {repository!r}"
                 )
             manifests.append(manifest)
+            break
     return tuple(manifests)
 
 

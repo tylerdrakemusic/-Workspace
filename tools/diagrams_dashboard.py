@@ -33,13 +33,14 @@ from integrations.mermaid import MermaidClient, MermaidRenderError  # noqa: E402
 from utils.diagram_federation import discover_diagram_sources  # noqa: E402
 
 # Project sigil → display order
-PROJECT_ORDER = ["workspace", "life", "music", "quantum", "manifest"]
+PROJECT_ORDER = ["workspace", "life", "music", "quantum", "manifest", "capital"]
 PROJECT_LABELS = {
     "workspace": "⊕ Workspace",
     "life": "∞ Life",
     "music": "❤ Music",
     "quantum": "⟨ψ⟩ Quantum",
     "manifest": "👁 AI-Manifest",
+    "capital": "Σ Capital",
 }
 FALLBACK_MARKER = "diagrams-dashboard:fallback"
 

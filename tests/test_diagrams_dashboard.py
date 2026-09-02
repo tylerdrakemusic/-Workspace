@@ -142,13 +142,14 @@ def test_build_index_groups_by_project(diagrams_workspace):
         "music-db-schema",
         "quantum-tech-stack",
         "manifest-architecture",
+        "capital-architecture",
     ]:
         _write_mmd(diagrams_workspace, name)
     fake_client = MagicMock()
     fake_client.render.return_value = b"<svg/>"
     results = dd.render_all(client=fake_client)
     html_str = dd.build_index(results)
-    for label in ["⊕ Workspace", "∞ Life", "❤ Music", "⟨ψ⟩ Quantum", "👁 AI-Manifest"]:
+    for label in ["⊕ Workspace", "∞ Life", "❤ Music", "⟨ψ⟩ Quantum", "👁 AI-Manifest", "Σ Capital"]:
         assert label in html_str
 
 
@@ -169,6 +170,7 @@ def test_project_of_classifier():
     assert dd._project_of("music-tech-stack") == "music"
     assert dd._project_of("quantum-architecture") == "quantum"
     assert dd._project_of("manifest-tech-stack") == "manifest"
+    assert dd._project_of("capital-db-schema") == "capital"
     assert dd._project_of("orphan-diagram") == "workspace"
 
 

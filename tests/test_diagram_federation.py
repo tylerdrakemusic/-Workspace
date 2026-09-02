@@ -53,6 +53,27 @@ def test_discovery_aggregates_six_owned_manifests_and_excludes_worktrees(tmp_pat
     assert all(manifest.root in roots for manifest in discovered)
 
 
+def test_discovery_uses_sibling_repository_roots(tmp_path: Path) -> None:
+    repository_roots = {
+        "workspace": "⊕Workspace",
+        "life": "∞Life",
+        "music": "❤Music",
+        "quantum": "⟨ψ⟩Quantum",
+        "manifest": "👁AI-Manifest",
+        "capital": "ΣCapital",
+    }
+    roots = []
+    for repository, directory_name in repository_roots.items():
+        root = tmp_path / directory_name
+        _write_manifest(root, repository)
+        roots.append(root)
+
+    discovered = discover_diagram_manifests(tmp_path)
+
+    assert [manifest.repository for manifest in discovered] == list(repository_roots)
+    assert [manifest.root for manifest in discovered] == roots
+
+
 def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
     project_root = Path(__file__).resolve().parent.parent
     manifest = json.loads(
