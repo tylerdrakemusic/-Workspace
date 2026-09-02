@@ -13,16 +13,17 @@ def test_architecture_agents_reference_approved_budget_lineage_and_renderer_cont
     for required_text in (
         "diagrams/DIAGRAM_BUDGETS.md",
         "diagrams/STYLE_GUIDE.md",
-        "utf8_characters",
-        "utf8_bytes",
         "nodes",
         "edges",
+        "UTF-8 byte and character counts are diagnostic only",
         "split_required",
         "is_derived_view=true",
         "Traceability.parent",
         "Traceability.derived_views",
         "renderer",
         "NOT RUN",
+        "repository-local manifests",
+        "generated aggregate registry",
     ):
         assert required_text in combined
 
@@ -40,9 +41,7 @@ def test_architecture_agents_preserve_relationships_when_splitting() -> None:
 def test_oversized_parent_diagrams_are_replaced_by_bounded_views() -> None:
     diagrams_dir = Path(__file__).parents[1] / "diagrams"
     categories = {
-        "capital-architecture.mmd": DiagramCategory.OVERVIEW,
-        "capital-db-schema.mmd": DiagramCategory.DATABASE_SCHEMA,
-        "manifest-architecture.mmd": DiagramCategory.OVERVIEW,
+        "workspace-architecture.mmd": DiagramCategory.OVERVIEW,
         "workspace-integrations.mmd": DiagramCategory.OVERVIEW,
     }
 
@@ -59,6 +58,6 @@ def test_oversized_parent_diagrams_are_replaced_by_bounded_views() -> None:
         )
         assert result.is_compliant, (filename, result.findings)
 
-    derived = sorted(diagrams_dir.glob("*-derived-*.mmd"))
+    derived = sorted(diagrams_dir.glob("workspace-derived-*.mmd"))
     assert derived
     assert all("Traceability.parent" in path.read_text(encoding="utf-8") for path in derived)

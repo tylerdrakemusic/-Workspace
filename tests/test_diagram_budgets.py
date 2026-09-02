@@ -9,7 +9,7 @@ from diagram_budgets import (
     Traceability,
     BUDGETS,
     measure_source,
-    validate_inventory,
+    validate_discovery_report,
     validate_diagram,
 )
 from diagram_system import reconcile_architecture_relationships
@@ -54,8 +54,6 @@ def test_oversized_diagram_reports_each_exceeded_machine_budget() -> None:
 
     assert not result.is_compliant
     assert {finding.code for finding in result.findings} == {
-        "utf8_characters",
-        "utf8_bytes",
         "nodes",
         "edges",
         "renderer_url_risk",
@@ -136,48 +134,24 @@ def test_measure_source_normalizes_checkout_line_endings(tmp_path: Path) -> None
     assert lf_metrics.utf8_bytes == len(source_text.replace("\n", "\r\n").encode("utf-8"))
 
 
-def test_validate_inventory_reconciles_committed_baseline_measurements() -> None:
-    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
+def test_validate_discovery_report_accepts_the_generated_contract() -> None:
+    discovery_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_DISCOVERY.md"
 
-    findings = validate_inventory(inventory_path)
-
-    assert findings == ()
+    assert validate_discovery_report(discovery_path) == ()
 
 
-def test_validate_inventory_detects_missing_baseline_row(tmp_path: Path) -> None:
-    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
-    inventory = inventory_path.read_text(encoding="utf-8")
-    inventory = inventory.replace(
-        "| diagrams/workspace-tech-stack.mmd |",
-        "| diagrams/workspace-tech-stack.removed.mmd |",
-    )
-    reduced_inventory_path = tmp_path / "DIAGRAM_INVENTORY.md"
-    reduced_inventory_path.write_text(inventory, encoding="utf-8")
+def test_validate_discovery_report_detects_missing_contract_section(tmp_path: Path) -> None:
+    discovery_path = tmp_path / "DIAGRAM_DISCOVERY.md"
+    discovery_path.write_text("# Mermaid Diagram Discovery Contract\n", encoding="utf-8")
 
-    findings = validate_inventory(reduced_inventory_path, source_root=inventory_path.parents[1])
+    findings = validate_discovery_report(discovery_path, workspace_root=Path(__file__).parents[1])
 
-    assert any(
-        finding.code == "inventory_missing"
-        and "diagrams/workspace-tech-stack.mmd" in finding.message
-        for finding in findings
-    )
-
-
-def test_validate_inventory_has_no_findings_for_the_complete_source_set() -> None:
-    inventory_path = Path(__file__).parents[1] / "diagrams" / "DIAGRAM_INVENTORY.md"
-
-    assert validate_inventory(inventory_path) == ()
+    assert any(finding.code == "discovery_section_missing" for finding in findings)
 
 
 def test_derived_views_preserve_canonical_origin_relationships() -> None:
     diagrams_dir = Path(__file__).parents[1] / "diagrams"
     required_relationships = {
-        "capital-db-derived-trading.mmd": (
-            "RISK_THRESHOLDS ||--o{ TRADE_CANDIDATES : qualifies",
-            "TRADE_CANDIDATES ||--o{ EXITS : creates_entry_exit",
-            "EXITS ||--o{ EXITS : supersedes",
-        ),
-        "manifest-derived-media-pipeline.mmd": ("AudioOut --> Portal",),
         "workspace-derived-backup-and-coordination.mmd": (
             "BackupContract --> BackupInventory",
         ),

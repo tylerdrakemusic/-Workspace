@@ -37,7 +37,7 @@ graph TB
         CapitalDB[(sigmacapital.db<br/>SQLCipher)]
         CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
     end
-    Portal --> Registry
+    Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
     TodoRuntime --> TodoCoordination
     TodoRuntime --> DecisionMetadata
     DecisionMetadata --> DecisionHistory

@@ -30,23 +30,28 @@ INDEX_PATH = REPORTS_DIR / "diagrams_dashboard.html"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from integrations.mermaid import MermaidClient, MermaidRenderError  # noqa: E402
+from utils.diagram_federation import discover_diagram_sources  # noqa: E402
 
 # Project sigil → display order
-PROJECT_ORDER = ["workspace", "life", "music", "quantum", "manifest"]
+PROJECT_ORDER = ["workspace", "life", "music", "quantum", "manifest", "capital"]
 PROJECT_LABELS = {
     "workspace": "⊕ Workspace",
     "life": "∞ Life",
     "music": "❤ Music",
     "quantum": "⟨ψ⟩ Quantum",
     "manifest": "👁 AI-Manifest",
+    "capital": "Σ Capital",
 }
 FALLBACK_MARKER = "diagrams-dashboard:fallback"
 
 
 def discover_diagrams() -> list[Path]:
-    if not DIAGRAMS_DIR.exists():
-        return []
-    return sorted(DIAGRAMS_DIR.glob("*.mmd"))
+  workspace_root = PROJECT_ROOT
+  for candidate in (PROJECT_ROOT, PROJECT_ROOT.parent.parent.parent):
+    if (candidate / "⊕Workspace").is_dir():
+      workspace_root = candidate
+      break
+  return list(discover_diagram_sources(workspace_root, DIAGRAMS_DIR))
 
 
 def _fallback_svg_bytes(title: str, source: str, error: str) -> bytes:

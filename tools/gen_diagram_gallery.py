@@ -3,20 +3,20 @@ import html as htmllib
 import pathlib
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))
+from utils.diagram_federation import discover_diagram_sources_by_repository
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIAGRAMS = ROOT / "diagrams"
 OUT = ROOT / "reports" / "diagrams_viewer.html"
 
-GROUPS = {
-    "∞ Life":       ["life-architecture", "life-db-schema", "life-tech-stack"],
-    "❤ Music":      ["music-architecture", "music-db-schema", "music-tech-stack"],
-    "⟨ψ⟩ Quantum":  ["quantum-architecture", "quantum-db-schema", "quantum-tech-stack"],
-    "👁 AI-Manifest": ["manifest-architecture", "manifest-db-schema", "manifest-tech-stack"],
-    "⊕ Workspace":  [
-        "workspace-architecture", "workspace-architecture-detail",
-        "workspace-db-schema", "workspace-tech-stack",
-        "workspace-agent-topology", "workspace-fr-flow", "workspace-integrations",
-    ],
+PROJECT_LABELS = {
+    "∞Life": "∞ Life",
+    "❤Music": "❤ Music",
+    "⟨ψ⟩Quantum": "⟨ψ⟩ Quantum",
+    "👁AI-Manifest": "👁 AI-Manifest",
+    "⊕Workspace": "⊕ Workspace",
+    "ΣCapital": "Σ Capital",
 }
 
 SIGIL_CLS = {
@@ -25,31 +25,43 @@ SIGIL_CLS = {
     "⟨ψ⟩ Quantum": "quantum",
     "👁 AI-Manifest": "manifest",
     "⊕ Workspace": "ws",
+    "Σ Capital": "capital",
 }
+
+
+def _project_group(path: pathlib.Path, repository: str) -> str:
+    """Return the display group from federated ownership, with local fallback."""
+    repository_labels = {
+        "life": "∞ Life",
+        "music": "❤ Music",
+        "quantum": "⟨ψ⟩ Quantum",
+        "manifest": "👁 AI-Manifest",
+        "workspace": "⊕ Workspace",
+        "capital": "Σ Capital",
+    }
+    return repository_labels.get(repository, PROJECT_LABELS.get(path.parent.parent.name, "⊕ Workspace"))
 
 def main():
     sections = {}
     total = 0
-    for group, names in GROUPS.items():
-        for name in names:
-            p = DIAGRAMS / (name + ".mmd")
-            if not p.exists():
-                print(f"  [WARN] missing: {p.name}", file=sys.stderr)
-                continue
-            content = p.read_text(encoding="utf-8")
-            label = name.replace("-", " ").title()
-            safe = htmllib.escape(content)
-            card = (
-                f'<div class="card" id="{name}">'
-                f'<div class="card-title">{label}</div>'
-                f'<div class="mermaid">{safe}</div>'
-                f'</div>'
-            )
-            sections.setdefault(group, []).append(card)
-            total += 1
+    sources = discover_diagram_sources_by_repository(ROOT.parent, DIAGRAMS)
+    for repository, p in sources:
+        name = p.stem
+        group = _project_group(p, repository)
+        content = p.read_text(encoding="utf-8")
+        label = name.replace("-", " ").title()
+        safe = htmllib.escape(content)
+        card = (
+            f'<div class="card" id="{name}">'
+            f'<div class="card-title">{label}</div>'
+            f'<div class="mermaid">{safe}</div>'
+            f'</div>'
+        )
+        sections.setdefault(group, []).append(card)
+        total += 1
 
     body_parts = []
-    for group, names in GROUPS.items():
+    for group in PROJECT_LABELS.values():
         if group not in sections:
             continue
         cls = SIGIL_CLS[group]
