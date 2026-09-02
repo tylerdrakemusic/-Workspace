@@ -21,7 +21,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 - Evidence head: current `feature/FR-20260830-quantum-cache-integrity-lifecycle-diagram` worktree
 - Baseline commit: `4ee4f6e` (FR worktree diagram baseline)
 - Source set: `diagrams/*.mmd`, sorted by relative POSIX path. The expected
-  count is 34.
+  count is 35.
 - Bytes: exact UTF-8 byte length of the source file.
 - Characters: Python `str` length after UTF-8 decoding, including newlines.
 - Nodes: count of node declaration lines matching the diagram's identifier
@@ -30,7 +30,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 - Edges: count of lines containing a Mermaid edge operator (`-->`, `==>`,
   `-.->`, `---`, `===`, or ER relationship operators). A line with multiple
   operators is counted once.
-- Renderer check: 32 of 34 sources were rendered through mermaid.ink and
+- Renderer check: 33 of 35 sources were rendered through mermaid.ink and
   returned HTTP 200. The two unrelated fallback rows remain documented with
   their HTTP 414 and HTTP 400 results.
 
@@ -61,6 +61,7 @@ fallback and NOT RUN rows remain preserved as documented evidence.
 | diagrams/workspace-db-schema.mmd | ⊕Workspace database entity relationships | ⊕Workspace | 4599 | 4599 | 15 | 0 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | init directive; agent handoff envelope/result relationship |
 | diagrams/workspace-fr-flow.mmd | ⊕Workspace feature-request lifecycle | ⊕Workspace | 4878 | 4865 | 51 | 55 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive |
 | diagrams/workspace-integrations.mmd | ⊕Workspace external integration topology overview | ⊕Workspace | 3187 | 3162 | 27 | 27 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; derived views listed |
+| diagrams/workspace-scheduler-architecture.mmd | Evidence-linked external scheduler architecture view across six projects | Cross-project | 5279 | 5194 | 46 | 36 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Workspace-owned source; 17 live-audit job records plus explicit ❤Music no-entry; evidence: docs/scheduler-architecture-inventory.md and docs/scheduler-live-audit-2026-09-01.md; no live scheduler, monitoring, DB schedule fields, or schedule editing |
 | diagrams/capital-derived-market-data.mmd | ΣCapital market-data architecture derived view | ΣCapital | 1324 | 1324 | 8 | 10 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-position-realization.mmd | ΣCapital position-realization architecture derived view | ΣCapital | 1299 | 1299 | 9 | 12 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent traceability |
 | diagrams/capital-derived-trading-controls.mmd | ΣCapital trading-controls architecture derived view | ΣCapital | 1976 | 1976 | 18 | 21 | Rendered: mermaid.ink HTTP 200 | HTTP 200 | Unicode labels; init directive; parent traceability |

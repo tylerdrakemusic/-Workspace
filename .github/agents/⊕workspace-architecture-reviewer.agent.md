@@ -16,6 +16,8 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 2. Get PR diff (via `mcp_github` or `git diff`)
 3. List `f:\⊕Workspace\diagrams\*.mmd`
 4. Start perf run
+5. Read `docs/scheduler-architecture-inventory.md` and validate its six
+	canonical project records against real repository-relative evidence paths.
 
 ## Canonical Diagram Contract
 - Read `diagrams/DIAGRAM_BUDGETS.md` and `diagrams/STYLE_GUIDE.md` before
@@ -47,6 +49,18 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 | New top-level `src/` dir | New module | project `*-architecture.mmd` |
 | Cross-project import / `sys.path` shim | New cross-project wiring | `workspace-integrations.mmd` |
 | Modified `feature-request-flow.instructions.md` | FR flow change | `workspace-fr-flow.mmd` |
+
+## Scheduler Architecture Reference
+
+`docs/scheduler-architecture-inventory.md` is the canonical workspace-owned
+reference for external scheduler architecture. During discovery, inspect the
+six canonical worktrees and record exactly one row per project. Preserve
+`documented`, `deployed`, `unverified`, and `no-entry` distinctions; require a
+repository-relative evidence path for every row. Treat in-process timers,
+queue polling, database schedule fields, live monitoring, and schedule editing
+as out of scope. Run the deterministic scheduler validator and confirm every
+inventory project and command is represented in
+`diagrams/workspace-scheduler-architecture.mmd`.
 
 ## Staleness Check
 For each affected diagram: read `.mmd` source → search for new element name as string → STALE if absent, MISSING if diagram doesn't exist.

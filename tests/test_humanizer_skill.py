@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 import subprocess
 
+import pytest
+
 from skill_catalog import load_catalog, validate_catalog
 
 
@@ -63,7 +65,8 @@ def test_humanizer_is_cataloged_with_pinned_provenance_and_routing_boundary() ->
 
 
 def test_humanizer_source_is_byte_identical_to_declared_sha256() -> None:
-    digest = hashlib.sha256(HUMANIZER_PATH.read_bytes()).hexdigest()
+    source_bytes = HUMANIZER_PATH.read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source_bytes).hexdigest()
     catalog = json.loads(
         (WORKSPACE_ROOT / ".github" / "skills" / "skill-catalog.json").read_text(
             encoding="utf-8"
