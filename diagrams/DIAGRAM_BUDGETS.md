@@ -42,9 +42,11 @@ even when they do not independently trigger a split recommendation.
 Every derived view must set `is_derived_view=true` and name its parent path in
 `Traceability.parent`. Every parent that has derived views must list their
 non-empty paths in `Traceability.derived_views`. A derived view should retain
-the parent scope and explain its narrower category in the owning diagram
-inventory entry. Missing lineage is a `traceability` finding.
+the parent scope and explain its narrower category in the generated discovery
+report. Missing lineage is a `traceability` finding.
 
 The validator intentionally does not render Mermaid or fetch renderer URLs.
-Renderer availability remains an explicit inventory result (`NOT RUN` when no
-backend is installed), so budget validation is deterministic and offline.
+Renderer availability remains a generated discovery report field (`NOT RUN`
+when no backend is installed), while producer manifests remain authoritative
+for declared renderer and fallback risk; budget validation is deterministic and
+offline.
