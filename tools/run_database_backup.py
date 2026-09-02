@@ -15,6 +15,7 @@ from src.utils.database_backup import (
     DestinationIdentityError,
     LocalVolumeDestination,
 )
+from src.utils.database_backup_observability import redact_failure
 from src.utils.database_backup_scope import load_manifest
 
 
@@ -33,6 +34,7 @@ class ScheduledBackupResult:
     overall_status: str
     project_outcomes: dict[str, ProjectOutcome]
     failure_reason: str = ""
+    failure: dict[str, str] | None = None
 
 
 def run_backup(
@@ -64,10 +66,12 @@ def run_scheduled_backups(
         run_backup(manifest_path, project_roots, volume_root, volume_identity)
     except Exception as error:  # noqa: BLE001 - scheduler must report all project failures
         detail = type(error).__name__
+        failure = redact_failure(error)
         return ScheduledBackupResult(
             overall_status="failed",
             project_outcomes={label: ProjectOutcome("failed", detail) for label in project_roots},
             failure_reason=detail,
+            failure=failure,
         )
     return ScheduledBackupResult(
         overall_status="succeeded",
@@ -113,6 +117,7 @@ def main() -> int:
         "overall_status": result.overall_status,
         "projects": {label: outcome.status for label, outcome in result.project_outcomes.items()},
         "failure": result.failure_reason,
+        "failure_details": result.failure,
     }, sort_keys=True))
     return 0 if result.overall_status == "succeeded" else 1
 

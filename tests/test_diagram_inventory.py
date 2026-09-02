@@ -17,7 +17,7 @@ def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -
         "diagrams/manifest-architecture.mmd": 3410,
         "diagrams/workspace-agent-topology.mmd": 5766,
         "diagrams/workspace-architecture-detail.mmd": 3902,
-        "diagrams/workspace-architecture.mmd": 3929,
+        "diagrams/workspace-architecture.mmd": 4428,
         "diagrams/workspace-integrations.mmd": 3162,
         "diagrams/workspace-scheduler-architecture.mmd": 5194,
         "diagrams/capital-derived-market-data.mmd": 1324,
