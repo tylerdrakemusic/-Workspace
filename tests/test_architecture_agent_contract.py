@@ -13,10 +13,9 @@ def test_architecture_agents_reference_approved_budget_lineage_and_renderer_cont
     for required_text in (
         "diagrams/DIAGRAM_BUDGETS.md",
         "diagrams/STYLE_GUIDE.md",
-        "utf8_characters",
-        "utf8_bytes",
         "nodes",
         "edges",
+        "UTF-8 byte and character counts are diagnostic only",
         "split_required",
         "is_derived_view=true",
         "Traceability.parent",

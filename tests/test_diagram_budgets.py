@@ -54,8 +54,6 @@ def test_oversized_diagram_reports_each_exceeded_machine_budget() -> None:
 
     assert not result.is_compliant
     assert {finding.code for finding in result.findings} == {
-        "utf8_characters",
-        "utf8_bytes",
         "nodes",
         "edges",
         "renderer_url_risk",

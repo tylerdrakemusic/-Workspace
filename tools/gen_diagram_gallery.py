@@ -3,20 +3,20 @@ import html as htmllib
 import pathlib
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))
+from utils.diagram_federation import discover_diagram_sources
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIAGRAMS = ROOT / "diagrams"
 OUT = ROOT / "reports" / "diagrams_viewer.html"
 
-GROUPS = {
-    "∞ Life":       ["life-architecture", "life-db-schema", "life-tech-stack"],
-    "❤ Music":      ["music-architecture", "music-db-schema", "music-tech-stack"],
-    "⟨ψ⟩ Quantum":  ["quantum-architecture", "quantum-db-schema", "quantum-tech-stack"],
-    "👁 AI-Manifest": ["manifest-architecture", "manifest-db-schema", "manifest-tech-stack"],
-    "⊕ Workspace":  [
-        "workspace-architecture", "workspace-architecture-detail",
-        "workspace-db-schema", "workspace-tech-stack",
-        "workspace-agent-topology", "workspace-fr-flow", "workspace-integrations",
-    ],
+PROJECT_LABELS = {
+    "∞Life": "∞ Life",
+    "❤Music": "❤ Music",
+    "⟨ψ⟩Quantum": "⟨ψ⟩ Quantum",
+    "👁AI-Manifest": "👁 AI-Manifest",
+    "⊕Workspace": "⊕ Workspace",
+    "ΣCapital": "Σ Capital",
 }
 
 SIGIL_CLS = {
@@ -30,12 +30,10 @@ SIGIL_CLS = {
 def main():
     sections = {}
     total = 0
-    for group, names in GROUPS.items():
-        for name in names:
-            p = DIAGRAMS / (name + ".mmd")
-            if not p.exists():
-                print(f"  [WARN] missing: {p.name}", file=sys.stderr)
-                continue
+    sources = discover_diagram_sources(ROOT.parent, DIAGRAMS)
+    for p in sources:
+            name = p.stem
+            group = PROJECT_LABELS.get(p.parent.parent.name, "⊕ Workspace")
             content = p.read_text(encoding="utf-8")
             label = name.replace("-", " ").title()
             safe = htmllib.escape(content)
@@ -49,7 +47,7 @@ def main():
             total += 1
 
     body_parts = []
-    for group, names in GROUPS.items():
+    for group in PROJECT_LABELS.values():
         if group not in sections:
             continue
         cls = SIGIL_CLS[group]

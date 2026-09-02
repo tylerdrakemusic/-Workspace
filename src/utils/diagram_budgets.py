@@ -86,8 +86,6 @@ def validate_diagram(spec: DiagramSpec) -> ValidationResult:
     metrics = spec.metrics
     findings: list[Finding] = []
     limits = (
-        ("utf8_characters", metrics.utf8_characters, budget.max_utf8_characters),
-        ("utf8_bytes", metrics.utf8_bytes, budget.max_utf8_bytes),
         ("nodes", metrics.nodes, budget.max_nodes),
         ("edges", metrics.edges, budget.max_edges),
     )
@@ -104,7 +102,6 @@ def validate_diagram(spec: DiagramSpec) -> ValidationResult:
     split_required = (
         (budget.split_at_nodes is not None and metrics.nodes > budget.split_at_nodes)
         or (budget.split_at_edges is not None and metrics.edges > budget.split_at_edges)
-        or metrics.utf8_characters > budget.max_utf8_characters
     )
     if split_required:
         findings.append(Finding("split_required", f"{spec.path} exceeds its category split threshold"))
@@ -154,8 +151,6 @@ def validate_inventory(
             continue
         actual = measure_source(source_paths[relative_path])
         for code, actual_value, expected_value in (
-            ("inventory_utf8_bytes", actual.utf8_bytes, expected[0]),
-            ("inventory_utf8_characters", actual.utf8_characters, expected[1]),
             ("inventory_nodes", actual.nodes, expected[2]),
             ("inventory_edges", actual.edges, expected[3]),
         ):

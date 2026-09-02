@@ -23,9 +23,10 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 - Read `diagrams/DIAGRAM_BUDGETS.md` and `diagrams/STYLE_GUIDE.md` before
 	evaluating a diagram. Do not replace their approved budgets or style rules
 	with agent-local thresholds.
-- Measure `utf8_characters`, `utf8_bytes`, `nodes`, and `edges` using the
-	existing validator contract. Report every exceeded dimension and mark the source
-	`split_required` when its category threshold is exceeded.
+- Measure `nodes` and `edges` using the existing validator contract. Report every
+	exceeded semantic dimension and mark the source `split_required` when its
+	category threshold is exceeded. UTF-8 byte and character counts are diagnostic
+	only and must not enforce acceptance or splitting.
 - Apply the category-specific split rule from `DIAGRAM_BUDGETS.md`: split by
 	project, subsystem, bounded data domain, technology layer, or lifecycle
 	phase as appropriate. Preserve every existing architectural relationship;

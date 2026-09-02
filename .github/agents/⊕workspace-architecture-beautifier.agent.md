@@ -44,8 +44,9 @@ classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 
 ## Budget, Split, and Traceability Rules
 - Measure each result against the category budgets in
-	`diagrams/DIAGRAM_BUDGETS.md`: UTF-8 characters, UTF-8 bytes, nodes, edges,
-	renderer URL risk, and fallback risk.
+	`diagrams/DIAGRAM_BUDGETS.md`: nodes, edges, renderer URL risk, and fallback
+	risk. UTF-8 byte and character counts are diagnostic only and must not enforce
+	budgets or trigger a split.
 - When a budget or split threshold is exceeded, split by the prescribed
 	project, subsystem, bounded data domain, technology layer, or lifecycle
 	phase. Preserve all architectural relationships: retain cross-view edges,

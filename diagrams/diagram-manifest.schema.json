@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workspace.local/diagram-manifest.schema.json",
+  "title": "Repository-owned Mermaid diagram manifest",
+  "type": "object",
+  "required": ["schema_version", "repository", "diagrams"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "repository": {
+      "enum": ["workspace", "life", "music", "quantum", "manifest", "capital"]
+    },
+    "diagrams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "kind", "renderer_risk", "fallback_risk", "split_required", "lineage"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^diagrams/.+\\.mmd$" },
+          "kind": { "type": "string" },
+          "renderer_risk": { "type": "string" },
+          "fallback_risk": { "type": "string" },
+          "split_required": { "type": "boolean" },
+          "lineage": {
+            "type": "object",
+            "required": ["parent", "derived_views"],
+            "properties": {
+              "parent": { "type": ["string", "null"] },
+              "derived_views": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
