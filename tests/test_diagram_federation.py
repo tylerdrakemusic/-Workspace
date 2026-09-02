@@ -53,6 +53,28 @@ def test_discovery_aggregates_six_owned_manifests_and_excludes_worktrees(tmp_pat
     assert all(manifest.root in roots for manifest in discovered)
 
 
+def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
+    project_root = Path(__file__).resolve().parent.parent
+    manifest = json.loads(
+        (project_root / "diagrams" / "diagram-manifest.json").read_text(encoding="utf-8")
+    )
+
+    assert manifest["repository"] == "workspace"
+    assert {diagram["path"] for diagram in manifest["diagrams"]} == {
+        "diagrams/workspace-agent-topology.mmd",
+        "diagrams/workspace-architecture-detail.mmd",
+        "diagrams/workspace-architecture.mmd",
+        "diagrams/workspace-db-schema.mmd",
+        "diagrams/workspace-derived-backup-and-coordination.mmd",
+        "diagrams/workspace-derived-decision-metadata-implementation.mmd",
+        "diagrams/workspace-derived-services.mmd",
+        "diagrams/workspace-fr-flow.mmd",
+        "diagrams/workspace-integrations.mmd",
+        "diagrams/workspace-scheduler-architecture.mmd",
+        "diagrams/workspace-tech-stack.mmd",
+    }
+
+
 def test_manifest_contract_does_not_measure_utf8_bytes_or_characters(tmp_path: Path) -> None:
     root = tmp_path / "music"
     _write_manifest(root, "music")

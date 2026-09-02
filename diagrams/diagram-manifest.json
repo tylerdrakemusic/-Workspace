@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "repository": "workspace",
+  "diagrams": [
+    {
+      "path": "diagrams/workspace-agent-topology.mmd",
+      "kind": "agent-topology",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": null,
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-architecture-detail.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-architecture.mmd",
+        "derived_views": [
+          "diagrams/workspace-derived-decision-metadata-implementation.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-architecture.mmd",
+      "kind": "architecture",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": null,
+        "derived_views": [
+          "diagrams/workspace-architecture-detail.mmd",
+          "diagrams/workspace-derived-backup-and-coordination.mmd",
+          "diagrams/workspace-derived-services.mmd",
+          "diagrams/workspace-integrations.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-db-schema.mmd",
+      "kind": "database-schema",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": null,
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-derived-backup-and-coordination.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-architecture.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-derived-decision-metadata-implementation.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-architecture-detail.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-derived-services.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-architecture.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-fr-flow.mmd",
+      "kind": "workflow",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": null,
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-integrations.mmd",
+      "kind": "architecture",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-architecture.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-scheduler-architecture.mmd",
+      "kind": "architecture",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": null,
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-tech-stack.mmd",
+      "kind": "technology-stack",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": null,
+        "derived_views": []
+      }
+    }
+  ]
+}
