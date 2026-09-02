@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 CAPITAL_ROOT = Path(r"f:\ΣCapital")
@@ -8,6 +10,9 @@ ORCHESTRATOR = CAPITAL_ROOT / ".github" / "agents" / "Σcapital-orchestrator.age
 
 
 def test_open_order_replacement_workflow_is_proposal_only():
+    if not CAPITAL_ROOT.exists():
+        pytest.skip("ΣCapital checkout is unavailable in this test environment")
+
     prompt = PICKER_PROMPT.read_text(encoding="utf-8")
     orchestrator = ORCHESTRATOR.read_text(encoding="utf-8")
     combined = f"{prompt}\n{orchestrator}".lower()
