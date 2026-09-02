@@ -17,8 +17,32 @@ from typing import Any, cast
 AGENT_DIRS: list[Path] = [
     Path(r"f:\.github\agents"),
     Path(r"f:\superpowers\agents"),
+    Path(r"f:\⊕Workspace\.github\agents"),
+    Path(r"f:\∞Life\.github\agents"),
+    Path(r"f:\❤Music\.github\agents"),
+    Path(r"f:\⟨ψ⟩Quantum\.github\agents"),
+    Path(r"f:\👁AI-Manifest\.github\agents"),
+    Path(r"f:\ΣCapital\.github\agents"),
 ]
 INSTRUCTION_DIR: Path = Path(r"f:\.github\instructions")
+INSTRUCTION_DIRS: list[Path] = [
+    INSTRUCTION_DIR,
+    Path(r"f:\⊕Workspace\.github\instructions"),
+    Path(r"f:\∞Life\.github\instructions"),
+    Path(r"f:\❤Music\.github\instructions"),
+    Path(r"f:\⟨ψ⟩Quantum\.github\instructions"),
+    Path(r"f:\👁AI-Manifest\.github\instructions"),
+    Path(r"f:\ΣCapital\.github\instructions"),
+]
+MD_ROOTS: list[Path] = [
+    Path(r"f:\.github"),
+    Path(r"f:\⊕Workspace\.github"),
+    Path(r"f:\∞Life\.github"),
+    Path(r"f:\❤Music\.github"),
+    Path(r"f:\⟨ψ⟩Quantum\.github"),
+    Path(r"f:\👁AI-Manifest\.github"),
+    Path(r"f:\ΣCapital\.github"),
+]
 MANIFEST_DB: Path = Path(r"f:\👁AI-Manifest\src\data\manifest_todos.db")
 SCAN_TODO_PROJECT = "workspace"
 SCAN_TODO_SOURCE = "SCAN"
@@ -50,6 +74,13 @@ def _extract_inherits(text: str) -> list[str]:
     return re.findall(r"<!--\s*inherits:\s*(.*?)\s*-->", text)
 
 
+def _inherit_exists(inherit: str, source: Path) -> bool:
+    target = Path(inherit)
+    if target.is_absolute():
+        return target.exists()
+    return (source.parent / target).exists()
+
+
 def _discover_agent_files() -> list[Path]:
     files: list[Path] = []
     for directory in AGENT_DIRS:
@@ -62,16 +93,18 @@ def _discover_agent_files() -> list[Path]:
 
 
 def _discover_instruction_files() -> list[Path]:
-    if not INSTRUCTION_DIR.exists():
-        return []
-    return sorted(INSTRUCTION_DIR.glob("*.instructions.md"))
+    directories = [INSTRUCTION_DIR] if INSTRUCTION_DIR != INSTRUCTION_DIRS[0] else INSTRUCTION_DIRS
+    return sorted({path for directory in directories for path in directory.glob("*.instructions.md") if path.is_file()})
 
 
 def _all_workspace_md_files() -> list[Path]:
-    root = Path(r"f:\.github")
-    if not root.exists():
-        return []
-    return [p for p in root.rglob("*.md") if p.is_file()]
+    return [
+        path
+        for root in MD_ROOTS
+        if root.exists()
+        for path in root.rglob("*.md")
+        if path.is_file()
+    ]
 
 
 def _apply_to_matches(pattern: str, all_files: list[Path]) -> bool:
@@ -160,7 +193,7 @@ def run_agent_frontmatter_integrity(fr_id: str | None = None) -> dict[str, Any]:
             warnings.append(f"NO INHERITANCE: {path}")
         else:
             for inh in inherits:
-                if not Path(inh).exists():
+                if not _inherit_exists(inh, path):
                     issues.append(f"BROKEN INHERIT: {path} → {inh}")
 
     for path in _discover_instruction_files():

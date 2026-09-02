@@ -35,6 +35,11 @@ PROJECT_SIGILS: dict[str, str] = {
 # This makes CI (ubuntu) and local (Windows) both work correctly.
 _WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent
 AGENTS_DIR = _WORKSPACE_ROOT / ".github" / "agents"
+AGENT_DIRS: list[Path] = [AGENTS_DIR] + [
+    root / ".github" / "agents"
+    for name, root in PROJECT_ROOTS.items()
+    if name != "⊕Workspace"
+]
 
 # ---------------------------------------------------------------------------
 # Internal routing helpers
@@ -71,7 +76,13 @@ def discover_projects() -> list[dict]:
 def discover_agents() -> list[dict]:
     """Returns list of {name, sigil, path: Path} for each *.agent.md file."""
     agents: list[dict] = []
-    for agent_path in sorted(AGENTS_DIR.glob("*.agent.md")):
+    agent_paths = [
+        agent_path
+        for agent_dir in AGENT_DIRS
+        if agent_dir.is_dir()
+        for agent_path in agent_dir.glob("*.agent.md")
+    ]
+    for agent_path in sorted(set(agent_paths)):
         # Strip the double extension ".agent.md" to get a clean stem
         raw_name: str = agent_path.name.removesuffix(".agent.md")
         # ⊕workspace-overseer acts as the orchestrator for ⊕Workspace scope;

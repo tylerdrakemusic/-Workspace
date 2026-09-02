@@ -1,12 +1,18 @@
 from pathlib import Path
 
+import pytest
+
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
-PICKER_PROMPT = WORKSPACE_ROOT / ".github" / "prompts" / "sigmacapital-picker-flow.prompt.md"
-ORCHESTRATOR = WORKSPACE_ROOT / ".github" / "agents" / "Σcapital-orchestrator.agent.md"
+CAPITAL_ROOT = Path(r"f:\ΣCapital")
+PICKER_PROMPT = CAPITAL_ROOT / ".github" / "prompts" / "sigmacapital-picker-flow.prompt.md"
+ORCHESTRATOR = CAPITAL_ROOT / ".github" / "agents" / "Σcapital-orchestrator.agent.md"
 
 
 def test_open_order_replacement_workflow_is_proposal_only():
+    if not CAPITAL_ROOT.exists():
+        pytest.skip("ΣCapital checkout is unavailable in this test environment")
+
     prompt = PICKER_PROMPT.read_text(encoding="utf-8")
     orchestrator = ORCHESTRATOR.read_text(encoding="utf-8")
     combined = f"{prompt}\n{orchestrator}".lower()
