@@ -51,6 +51,7 @@ def test_integrity_scans_project_local_markdown(tmp_path: Path, monkeypatch) -> 
     result = integrity.run_agent_frontmatter_integrity()
 
     assert result["issues"] == 0
+    assert result["warnings"] == 0
 
 
 def test_workspace_tree_keeps_shared_markdown_and_removes_project_copies() -> None:
