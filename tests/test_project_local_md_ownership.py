@@ -51,3 +51,28 @@ def test_integrity_scans_project_local_markdown(tmp_path: Path, monkeypatch) -> 
     result = integrity.run_agent_frontmatter_integrity()
 
     assert result["issues"] == 0
+
+
+def test_workspace_tree_keeps_shared_markdown_and_removes_project_copies() -> None:
+    workspace_root = Path(__file__).resolve().parents[1]
+    project_owned = (
+        ".github/agents/∞life-orchestrator.agent.md",
+        ".github/instructions/∞life-base.instructions.md",
+        ".github/agents/❤music-orchestrator.agent.md",
+        ".github/instructions/❤music-base.instructions.md",
+        ".github/agents/⟨ψ⟩quantum-orchestrator.agent.md",
+        ".github/instructions/⟨ψ⟩quantum-base.instructions.md",
+        ".github/agents/👁ai-manifest-orchestrator.agent.md",
+        ".github/agents/Σcapital-orchestrator.agent.md",
+        ".github/instructions/sigmacapital-watchlist-workflow.instructions.md",
+        ".github/prompts/sigmacapital-picker-flow.prompt.md",
+    )
+    shared = (
+        ".github/agents/⊕workspace-overseer.agent.md",
+        ".github/instructions/feature-request-flow.instructions.md",
+        ".github/skills/test-driven-development/SKILL.md",
+        ".github/copilot-instructions.md",
+    )
+
+    assert all(not (workspace_root / path).exists() for path in project_owned)
+    assert all((workspace_root / path).exists() for path in shared)
