@@ -23,6 +23,9 @@ Runs as **ARCHITECTURE_REVIEW** state between `IN_PROGRESS` and `REVIEW_REQUESTE
 - Read `diagrams/DIAGRAM_BUDGETS.md` and `diagrams/STYLE_GUIDE.md` before
 	evaluating a diagram. Do not replace their approved budgets or style rules
 	with agent-local thresholds.
+- Treat repository-local manifests (`diagrams/diagram-manifest.json`) as the
+	authoritative ownership and source manifest. The generated aggregate
+	registry is the Workspace consumer output, not a second ownership source.
 - Measure `nodes` and `edges` using the existing validator contract. Report every
 	exceeded semantic dimension and mark the source `split_required` when its
 	category threshold is exceeded. UTF-8 byte and character counts are diagnostic

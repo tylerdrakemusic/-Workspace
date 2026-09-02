@@ -153,6 +153,12 @@ def test_build_index_groups_by_project(diagrams_workspace):
         assert label in html_str
 
 
+def test_gallery_project_class_supports_capital() -> None:
+    gallery = Path(PROJECT_ROOT / "tools" / "gen_diagram_gallery.py").read_text(encoding="utf-8")
+
+    assert '"Σ Capital": "capital"' in gallery
+
+
 def test_build_index_renders_fallback_details(diagrams_workspace):
     _write_mmd(diagrams_workspace, "workspace-broken")
     fake_client = MagicMock()
@@ -208,7 +214,7 @@ def test_ci_gallery_contract_covers_every_canonical_mermaid_source() -> None:
     html_str = dd.build_index(results)
     findings = validate_gallery(results, [source.stem for source in sources], html_str)
 
-    assert len(sources) == 35
+    assert len(sources) == 11
     assert not [finding for finding in findings if finding.code != "gallery_interaction_contract"]
     assert html_str.count('class="card"') == len(sources)
 

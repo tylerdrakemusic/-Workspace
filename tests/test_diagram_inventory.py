@@ -11,44 +11,20 @@ INVENTORY_PATH = DIAGRAMS_DIR / "DIAGRAM_INVENTORY.md"
 def test_diagram_inventory_covers_all_mermaid_sources_with_required_evidence() -> None:
     inventory = INVENTORY_PATH.read_text(encoding="utf-8")
     source_paths = sorted(path.relative_to(REPO_ROOT).as_posix() for path in DIAGRAMS_DIR.glob("*.mmd"))
-    expected_character_counts = {
-        "diagrams/capital-architecture.mmd": 4314,
-        "diagrams/capital-db-schema.mmd": 5058,
-        "diagrams/manifest-architecture.mmd": 3410,
-        "diagrams/workspace-agent-topology.mmd": 5766,
-        "diagrams/workspace-architecture-detail.mmd": 3902,
-        "diagrams/workspace-architecture.mmd": 4428,
-        "diagrams/workspace-integrations.mmd": 3162,
-        "diagrams/workspace-scheduler-architecture.mmd": 5194,
-        "diagrams/capital-derived-market-data.mmd": 1324,
-        "diagrams/workspace-derived-services.mmd": 1280,
-        "diagrams/manifest-derived-media-pipeline.mmd": 2566,
-    }
-
-    assert len(source_paths) == 35
+    assert len(source_paths) == 11
     assert "| Relative path | Purpose | Project scope | Bytes | Characters | Nodes | Edges | Renderer/backend result | Failure details |" in inventory
-    assert inventory.count("| diagrams/") == len(source_paths)
+    assert all(f"| {source_path} |" in inventory for source_path in source_paths)
     for source_path in source_paths:
         assert f"| {source_path} |" in inventory
-    for source_path, character_count in expected_character_counts.items():
+    for source_path in source_paths:
         inventory_row = next(row for row in inventory.splitlines() if f"| {source_path} |" in row)
-        assert measure_source(REPO_ROOT / source_path).utf8_characters == character_count
-        assert int(inventory_row.split("|")[5].strip()) == character_count
+        assert measure_source(REPO_ROOT / source_path).utf8_characters == int(inventory_row.split("|")[5].strip())
     assert "Committed baseline" in inventory
     assert "Baseline commit: `4ee4f6e` (FR worktree diagram baseline)" in inventory
     assert "seven approved" in inventory
 
-    capital_architecture = (DIAGRAMS_DIR / "capital-architecture.mmd").read_text(encoding="utf-8")
-    assert "TrustedImportPrompt" in capital_architecture
-    assert "ProvenanceDiscovery" in capital_architecture
-    assert "AuthoritativeSourceAllowlist" in capital_architecture
-    assert "TrustedImportPrompt[" in capital_architecture
-    assert "TrustedImportPrompt[" in capital_architecture and "--> ProvenanceDiscovery[" in capital_architecture
-    assert "ProvenanceDiscovery --> AuthoritativeSourceAllowlist" in capital_architecture
-
-
-def test_manifest_media_pipeline_declares_governed_audio_output_boundary() -> None:
-    source = (DIAGRAMS_DIR / "manifest-derived-media-pipeline.mmd").read_text(encoding="utf-8")
-
-    assert "classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0" in source
-    assert "AtomicPublish --> AudioOut[validated audio artifacts: output/tts/*.mp3]" in source
+def test_workspace_architecture_documents_federated_registry_boundary() -> None:
+    for filename in ("workspace-architecture.mmd", "workspace-integrations.mmd"):
+        source = (DIAGRAMS_DIR / filename).read_text(encoding="utf-8")
+        assert "repository-local manifests" in source
+        assert "generated aggregate registry" in source

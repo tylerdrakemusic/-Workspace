@@ -42,6 +42,13 @@ classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 - **Mode 2 — Create New:** pick diagram type → translate description to nodes/edges → apply full classDef + class assignments → write to `f:\⊕Workspace\diagrams\<filename>.mmd`
 - **Mode 3 — Beautify Only:** re-apply house style, do NOT change semantic content
 
+## Federated Manifest Boundary
+- Repository-local manifests (`diagrams/diagram-manifest.json`) are authoritative for
+	ownership and canonical Mermaid source paths.
+- The generated aggregate registry is the Workspace discovery and gallery
+	consumer output. Do not edit it as a substitute for a repository-local
+	manifest or claim that it transfers ownership.
+
 ## Budget, Split, and Traceability Rules
 - Measure each result against the category budgets in
 	`diagrams/DIAGRAM_BUDGETS.md`: nodes, edges, renderer URL risk, and fallback

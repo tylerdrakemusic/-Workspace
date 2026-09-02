@@ -133,15 +133,28 @@ def discover_diagram_sources(
     local_root: Path | None = None,
 ) -> tuple[Path, ...]:
     """Resolve federated manifest records to existing Mermaid source files."""
+    return tuple(path for _, path in discover_diagram_sources_by_repository(workspace_root, local_root))
+
+
+def discover_diagram_sources_by_repository(
+    workspace_root: Path,
+    local_root: Path | None = None,
+) -> tuple[tuple[str, Path], ...]:
+    """Resolve source files while retaining their owning repository."""
     manifests = discover_diagram_manifests(workspace_root)
     sources = [
-        manifest.root / record.path
+        (manifest.repository, manifest.root / record.path)
         for manifest in manifests
         for record in manifest.diagrams
         if (manifest.root / record.path).is_file()
     ]
     if sources:
-        return tuple(sorted(sources))
+        return tuple(sorted(sources, key=lambda item: item[1]))
     if local_root is None:
         local_root = workspace_root / "diagrams"
-    return tuple(sorted(local_root.glob("*.mmd")))
+    return tuple(
+        sorted(
+            ((path.stem.split("-", 1)[0], path) for path in local_root.glob("*.mmd")),
+            key=lambda item: item[1],
+        )
+    )

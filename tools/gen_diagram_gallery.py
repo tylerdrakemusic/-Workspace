@@ -4,7 +4,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))
-from utils.diagram_federation import discover_diagram_sources
+from utils.diagram_federation import discover_diagram_sources_by_repository
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DIAGRAMS = ROOT / "diagrams"
@@ -25,26 +25,40 @@ SIGIL_CLS = {
     "⟨ψ⟩ Quantum": "quantum",
     "👁 AI-Manifest": "manifest",
     "⊕ Workspace": "ws",
+    "Σ Capital": "capital",
 }
+
+
+def _project_group(path: pathlib.Path, repository: str) -> str:
+    """Return the display group from federated ownership, with local fallback."""
+    repository_labels = {
+        "life": "∞ Life",
+        "music": "❤ Music",
+        "quantum": "⟨ψ⟩ Quantum",
+        "manifest": "👁 AI-Manifest",
+        "workspace": "⊕ Workspace",
+        "capital": "Σ Capital",
+    }
+    return repository_labels.get(repository, PROJECT_LABELS.get(path.parent.parent.name, "⊕ Workspace"))
 
 def main():
     sections = {}
     total = 0
-    sources = discover_diagram_sources(ROOT.parent, DIAGRAMS)
-    for p in sources:
-            name = p.stem
-            group = PROJECT_LABELS.get(p.parent.parent.name, "⊕ Workspace")
-            content = p.read_text(encoding="utf-8")
-            label = name.replace("-", " ").title()
-            safe = htmllib.escape(content)
-            card = (
-                f'<div class="card" id="{name}">'
-                f'<div class="card-title">{label}</div>'
-                f'<div class="mermaid">{safe}</div>'
-                f'</div>'
-            )
-            sections.setdefault(group, []).append(card)
-            total += 1
+    sources = discover_diagram_sources_by_repository(ROOT.parent, DIAGRAMS)
+    for repository, p in sources:
+        name = p.stem
+        group = _project_group(p, repository)
+        content = p.read_text(encoding="utf-8")
+        label = name.replace("-", " ").title()
+        safe = htmllib.escape(content)
+        card = (
+            f'<div class="card" id="{name}">'
+            f'<div class="card-title">{label}</div>'
+            f'<div class="mermaid">{safe}</div>'
+            f'</div>'
+        )
+        sections.setdefault(group, []).append(card)
+        total += 1
 
     body_parts = []
     for group in PROJECT_LABELS.values():

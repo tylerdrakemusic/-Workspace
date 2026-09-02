@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from src.utils.diagram_federation import discover_diagram_manifests
+from tools.gen_diagram_gallery import _project_group
 from src.utils.diagram_budgets import (
     DiagramCategory,
     DiagramMetrics,
@@ -105,6 +106,15 @@ def test_manifest_contract_does_not_measure_utf8_bytes_or_characters(tmp_path: P
     assert manifest.diagrams[0].path == "diagrams/architecture.mmd"
     assert not hasattr(manifest.diagrams[0], "utf8_bytes")
     assert not hasattr(manifest.diagrams[0], "utf8_characters")
+
+
+def test_gallery_groups_sources_by_manifest_repository_when_root_is_a_worktree(tmp_path: Path) -> None:
+    worktree = tmp_path / "feature-FR-20260901-mermaid-diagram-repository-ownership"
+    source = worktree / "diagrams" / "capital-architecture.mmd"
+    source.parent.mkdir(parents=True)
+    source.write_text("graph LR\n A --> B\n", encoding="utf-8")
+
+    assert _project_group(source, "capital") == "Σ Capital"
 
 
 def test_validation_does_not_enforce_utf8_dimensions() -> None:
