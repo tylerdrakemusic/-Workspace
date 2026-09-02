@@ -78,7 +78,7 @@ def _inherit_exists(inherit: str, source: Path) -> bool:
     target = Path(inherit)
     if target.is_absolute():
         return target.exists()
-    return (source.parent / target).exists() or target.exists()
+    return (source.parent / target).exists()
 
 
 def _discover_agent_files() -> list[Path]:
