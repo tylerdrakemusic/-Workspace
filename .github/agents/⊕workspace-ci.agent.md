@@ -23,6 +23,30 @@ If missing for any repo: `pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1`
 
 **Sigil convention:** `⊕ workspace:` · `∞ life:` · `❤ music:` · `⟨ψ⟩ quantum:` · `👁 manifest:` · `🔧 root:`
 
+## Repository Voice at Blocking Gates
+When CI reaches a blocking decision that requires Tyler's input, keep the
+normal text approval or remediation request authoritative and optionally
+enqueue one concise spoken repository-voice message through the governed
+AI-Manifest capability. Use the existing bridge with a stable decision ID and
+explicit authorization, for example:
+
+```python
+enqueue_blocking_decision_repository_voice(
+   decision_id=<stable-decision-id>,
+   text=<concise-text-request>,
+   workflow_result=<unchanged-workflow-result>,
+   enqueue_capability=<governed-AI-Manifest-repository-voice-capability>,
+   blocking_decision=True,
+   repository_voice_authorized=True,
+)
+```
+
+This is best effort and fail open. Do not call ElevenLabs directly, announce
+ordinary status, duplicate a decision, or let voice timeout, queue rejection,
+synthesis failure, or local playback failure delay CI or alter FR/workflow
+state. Continue with the text request and record the voice outcome when the
+governed bridge returns one.
+
 ## 2. Test-Before-Commit
 Run `pytest` in each project with `tests/`. All pass → commit. Any fail → report, do NOT commit.
 

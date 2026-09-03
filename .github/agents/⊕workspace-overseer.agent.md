@@ -32,6 +32,30 @@ Top-level coordinator for cross-project work. Decompose requirements into per-pr
 ## Branch Protocol (repo writes)
 One code-changing session = one branch = one worktree = one draft PR. Branch creation, rebases, merges, and commit batching → `⊕workspace-ci`.
 
+## Repository Voice
+When a workflow reaches a blocking decision that genuinely requires Tyler's
+input, preserve the normal text request and optionally enqueue a concise spoken
+message through the governed repository-voice bridge:
+
+```python
+enqueue_blocking_decision_repository_voice(
+	decision_id=<stable-decision-id>,
+	text=<concise-text-request>,
+	workflow_result=<unchanged-workflow-result>,
+	enqueue_capability=<governed-AI-Manifest-repository-voice-capability>,
+	blocking_decision=True,
+	repository_voice_authorized=True,
+)
+```
+
+Use the existing AI-Manifest TTS queue and local Windows playback boundary; do
+not call ElevenLabs directly or create ad hoc audio files. Voice is the
+repository's additional communication channel, not the source of truth:
+ordinary status narration is out of scope, the decision ID must be stable so
+retries deduplicate, and a timeout, rejection, synthesis failure, or playback
+failure must leave the text request, workflow result, and workflow state
+unchanged. Never wait indefinitely for voice delivery.
+
 ## Routing Logic
 1. Code-changing FR → `⊕workspace-intake` FIRST; wait for `BRANCHED` before delegating implementation
 2. Single-project (non-FR) → that project's orchestrator
