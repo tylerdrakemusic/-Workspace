@@ -16,9 +16,9 @@ graph LR
     DecisionContract --> ManifestValidator[👁 consumer validator/helper<br/>todo_decision_metadata.py]
     Workspace --> Capital[Σ Capital]
     Workspace --> WSDB[(workspace.db)]
-    OverseerAlert[⊕ governed overseer alert bridge<br/>voice_alert_authorized + bounded timeout]
-    AlertAuthorization{voice_alert_authorized}
-    ManifestAlertCapability[👁 governed_voice_alerts.py<br/>validated asynchronous enqueue]
+    OverseerAlert[⊕ governed repository voice bridge<br/>repository_voice_authorized + bounded timeout]
+    AlertAuthorization{repository_voice_authorized}
+    ManifestAlertCapability[👁 governed_repository_voice.py<br/>validated asynchronous enqueue]
     TTSQueue[(tts_queue<br/>decision_id deduplication)]
     LocalPlayback[👁 injected/local Windows playback]
     TextFallback[Failure-open text result<br/>caller workflow preserved]

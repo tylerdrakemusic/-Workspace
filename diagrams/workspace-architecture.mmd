@@ -6,8 +6,8 @@ graph TB
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
         TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
-        AlertBridge[governed overseer alert bridge<br/>authorization + bounded timeout]
-        AlertFallback[Failure-open text result<br/>blocking decision workflow preserved]
+        AlertBridge[governed overseer repository voice bridge<br/>authorization + bounded timeout]
+        AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
         BackupContract[Provider-neutral local<br/>database backup contract]
     end
@@ -26,7 +26,7 @@ graph TB
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
         ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
-        AlertCapability[governed voice alert capability<br/>asynchronous TTS enqueue]
+        AlertCapability[governed repository voice capability<br/>asynchronous TTS enqueue]
         TTSQueue[(tts_queue<br/>decision_id deduplication)]
         LocalPlayback[injected/local Windows playback]
     end
@@ -39,7 +39,7 @@ graph TB
     TodoRuntime --> HandoffRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
     TodoRuntime --> AlertBridge
-    AlertBridge -->|voice_alert_authorized gate| AlertCapability
+    AlertBridge -->|repository_voice_authorized gate| AlertCapability
     AlertBridge -->|timeout or queue failure| AlertFallback
     AlertCapability -.->|async enqueue| TTSQueue
     TTSQueue -.->|durable output| LocalPlayback

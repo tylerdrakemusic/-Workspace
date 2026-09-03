@@ -31,9 +31,9 @@ graph TB
         Stale[stale lifecycle record]
         Claimed[claimed replacement lease]
     end
-    subgraph VoiceAlertBoundary["⊕ governed overseer blocking-decision alert boundary"]
-        AlertBridge[governed_voice_alerts.py bridge<br/>bounded timeout + fail-open result]
-        AlertAuthorization{voice_alert_authorized}
+    subgraph VoiceAlertBoundary["⊕ governed overseer blocking-decision repository voice boundary"]
+        AlertBridge[governed_repository_voice.py bridge<br/>bounded timeout + fail-open result]
+        AlertAuthorization{repository_voice_authorized}
         AsyncEnqueue[/asynchronous enqueue request<br/>decision_id + validated text/]
         ManifestCapability[👁 governed alert capability<br/>no provider call in caller]
         TTSQueue[(tts_queue<br/>decision_id + partial unique deduplication index)]
