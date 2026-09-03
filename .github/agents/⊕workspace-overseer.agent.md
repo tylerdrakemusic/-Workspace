@@ -32,6 +32,12 @@ Top-level coordinator for cross-project work. Decompose requirements into per-pr
 ## Branch Protocol (repo writes)
 One code-changing session = one branch = one worktree = one draft PR. Branch creation, rebases, merges, and commit batching → `⊕workspace-ci`.
 
+## Repository Voice
+For the shared invocation, authorization, failure, and fallback contract, read
+`.github/instructions/repository-voice.instructions.md`. Use it when a workflow
+reaches a blocking decision that genuinely requires Tyler's input; preserve the
+normal text request and do not use voice for ordinary status narration.
+
 ## Routing Logic
 1. Code-changing FR → `⊕workspace-intake` FIRST; wait for `BRANCHED` before delegating implementation
 2. Single-project (non-FR) → that project's orchestrator

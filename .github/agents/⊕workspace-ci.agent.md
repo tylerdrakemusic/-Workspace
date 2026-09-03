@@ -23,6 +23,13 @@ If missing for any repo: `pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1`
 
 **Sigil convention:** `⊕ workspace:` · `∞ life:` · `❤ music:` · `⟨ψ⟩ quantum:` · `👁 manifest:` · `🔧 root:`
 
+## Repository Voice at Blocking Gates
+For the shared invocation, authorization, failure, and fallback contract, read
+`.github/instructions/repository-voice.instructions.md`. When CI reaches a
+blocking decision requiring Tyler's input, keep the normal text approval or
+remediation request authoritative and optionally use the governed repository
+voice. Do not use voice for ordinary status or let delivery affect CI/FR state.
+
 ## 2. Test-Before-Commit
 Run `pytest` in each project with `tests/`. All pass → commit. Any fail → report, do NOT commit.
 
