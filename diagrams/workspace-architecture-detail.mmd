@@ -37,7 +37,7 @@ graph TB
         AsyncEnqueue[/asynchronous enqueue request<br/>decision_id + validated text/]
         ManifestCapability[👁 governed alert capability<br/>no provider call in caller]
         TTSQueue[(tts_queue<br/>decision_id + partial unique deduplication index)]
-        Playback[👁 injected playback<br/>local Windows associated player]
+        Playback[👁 injected playback<br/>native Windows winmm/MCI background playback<br/>no associated player or visible application launch]
         TextFallback[text result fallback<br/>workflow result preserved]
     end
     Schema -->|authoritative fields, categories, scales, thresholds| Validator
