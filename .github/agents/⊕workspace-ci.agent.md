@@ -24,54 +24,11 @@ If missing for any repo: `pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1`
 **Sigil convention:** `⊕ workspace:` · `∞ life:` · `❤ music:` · `⟨ψ⟩ quantum:` · `👁 manifest:` · `🔧 root:`
 
 ## Repository Voice at Blocking Gates
-When CI reaches a blocking decision that requires Tyler's input, keep the
-normal text approval or remediation request authoritative and optionally
-enqueue one concise spoken repository-voice message through the governed
-AI-Manifest capability. Use the existing bridge with a stable decision ID and
-explicit authorization, for example:
-
-```python
-from src.integrations.ai_manifest.governed_repository_voice import (
-    enqueue_blocking_decision_repository_voice,
-)
-
-workflow_result = run_ci_workflow()
-voice_result = enqueue_blocking_decision_repository_voice(
-   decision_id=<stable-decision-id>,
-   text=<concise-text-request>,
-   workflow_result=workflow_result,
-   # This must be the governed AI-Manifest MCP-facing repository-voice
-   # callable that submits to the existing AI-Manifest TTS queue.
-   enqueue_capability=<ai_manifest_mcp_repository_voice_callable>,
-   blocking_decision=True,
-   repository_voice_authorized=True,
-)
-return voice_result.workflow_result  # unchanged CI/FR workflow result
-```
-
-`enqueue_capability` must be the governed AI-Manifest MCP-facing
-repository-voice callable, injected by the AI-Manifest integration boundary.
-Do not substitute the bridge function, a direct ElevenLabs call, or ad hoc
-audio generation. The text request, workflow result, and FR/CI state remain
-authoritative and unchanged if voice times out, is rejected, or fails; inspect
-`voice_result.voice_status` and `voice_result.voice_error` only for diagnostics.
-
-```python
-enqueue_blocking_decision_repository_voice(
-   decision_id=<stable-decision-id>,
-   text=<concise-text-request>,
-   workflow_result=<unchanged-workflow-result>,
-   enqueue_capability=<ai_manifest_mcp_repository_voice_callable>,
-   blocking_decision=True,
-   repository_voice_authorized=True,
-)
-```
-
-This is best effort and fail open. Do not call ElevenLabs directly, announce
-ordinary status, duplicate a decision, or let voice timeout, queue rejection,
-synthesis failure, or local playback failure delay CI or alter FR/workflow
-state. Continue with the text request and record the voice outcome when the
-governed bridge returns one.
+For the shared invocation, authorization, failure, and fallback contract, read
+`.github/instructions/repository-voice.instructions.md`. When CI reaches a
+blocking decision requiring Tyler's input, keep the normal text approval or
+remediation request authoritative and optionally use the governed repository
+voice. Do not use voice for ordinary status or let delivery affect CI/FR state.
 
 ## 2. Test-Before-Commit
 Run `pytest` in each project with `tests/`. All pass → commit. Any fail → report, do NOT commit.
