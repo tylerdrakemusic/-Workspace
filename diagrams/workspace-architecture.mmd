@@ -5,17 +5,11 @@ graph TB
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
         TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
-        TodoCoordination[Existing FR / child coordination]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
-        DecisionHistory[(todos.decision_metadata<br/>+ todo_decision_metadata_history)]
+        AlertBridge[governed overseer alert bridge<br/>authorization + bounded timeout]
+        AlertFallback[Failure-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
-        HandoffEnvelope[/versioned immutable envelope<br/>SHA-256 payload digest/]
-        HandoffResult[/directional result<br/>digest only, no raw payload/]
-        TakeoverGate{takeover_enabled<br/>+ explicit approval}
         BackupContract[Provider-neutral local<br/>database backup contract]
-        BackupVolume[/E: verified local volume/]
-        BackupRunner[/run_database_backup.py<br/>scheduled backup/]
-        BackupObservability[database_backup_observability.py<br/>retention enforcement · restore-drill evidence<br/>redacted failure reporting · recovery-objective reporting<br/>RPO 24h · RTO 4h]
     end
     subgraph Life["∞ Life"]
         LifeDB[(infinitelife.db<br/>SQLCipher)]
@@ -32,21 +26,23 @@ graph TB
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
         ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
+        AlertCapability[governed voice alert capability<br/>asynchronous TTS enqueue]
+        TTSQueue[(tts_queue<br/>decision_id deduplication)]
+        LocalPlayback[injected/local Windows playback]
     end
     subgraph Capital["Σ Capital"]
         CapitalDB[(sigmacapital.db<br/>SQLCipher)]
         CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
     end
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
-    TodoRuntime --> TodoCoordination
     TodoRuntime --> DecisionMetadata
-    DecisionMetadata --> DecisionHistory
     TodoRuntime --> HandoffRuntime
-    HandoffRuntime ==> HandoffEnvelope
-    HandoffRuntime ==> HandoffResult
-    HandoffRuntime --> TakeoverGate
-    TakeoverGate -->|stale lifecycle only| TodoRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
+    TodoRuntime --> AlertBridge
+    AlertBridge -->|voice_alert_authorized gate| AlertCapability
+    AlertBridge -->|timeout or queue failure| AlertFallback
+    AlertCapability -.->|async enqueue| TTSQueue
+    TTSQueue -.->|durable output| LocalPlayback
     TodoRuntime -->|bounded execution lifecycle| FRBoard
     Registry -.scans.-> Life
     Registry -.scans.-> Music
@@ -63,17 +59,13 @@ graph TB
     QDB -.-> BackupContract
     CapitalDB -.-> BackupContract
     ManifestDB -.->|explicit approved canonical mapping| BackupContract
-    BackupContract --> BackupVolume
-    BackupVolume -.->|trusted marker · encrypted generations · retention| BackupContract
-    BackupContract --> BackupRunner
-    BackupContract --> BackupObservability
-    BackupVolume -.->|trusted marker · encrypted generations · retention enforcement · 30 generations · newest valid recovery point| BackupContract
     BackupContract -.->|operator-approved isolated SQLCipher restore| ManifestDB
     BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
-    class DecisionMetadata ws
-    class DecisionHistory db
+    class DecisionMetadata,AlertBridge,AlertFallback ws
+    class AlertCapability,LocalPlayback manifest
+    class TTSQueue db
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

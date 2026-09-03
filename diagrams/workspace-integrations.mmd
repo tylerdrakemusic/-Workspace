@@ -16,6 +16,20 @@ graph LR
     DecisionContract --> ManifestValidator[👁 consumer validator/helper<br/>todo_decision_metadata.py]
     Workspace --> Capital[Σ Capital]
     Workspace --> WSDB[(workspace.db)]
+    OverseerAlert[⊕ governed overseer alert bridge<br/>voice_alert_authorized + bounded timeout]
+    AlertAuthorization{voice_alert_authorized}
+    ManifestAlertCapability[👁 governed_voice_alerts.py<br/>validated asynchronous enqueue]
+    TTSQueue[(tts_queue<br/>decision_id deduplication)]
+    LocalPlayback[👁 injected/local Windows playback]
+    TextFallback[Failure-open text result<br/>caller workflow preserved]
+    Workspace --> OverseerAlert
+    OverseerAlert --> AlertAuthorization
+    AlertAuthorization -->|authorized| ManifestAlertCapability
+    AlertAuthorization -->|unauthorized| TextFallback
+    OverseerAlert -.->|"asynchronous bridge; bounded result"| ManifestAlertCapability
+    ManifestAlertCapability ==> TTSQueue
+    TTSQueue -.->|durable output then playback| LocalPlayback
+    OverseerAlert -->|timeout or queue failure| TextFallback
     Workspace -.-> Services[workspace-derived-services]
     Workspace -.-> Backup[workspace-derived-backup-and-coordination]
     Life --> LifeDB[(infinitelife.db)]
@@ -36,13 +50,15 @@ graph LR
     SufficiencyGate --> ExecutionDenied
     class Workspace,Services,Backup ws
     class DecisionContract ws
+    class OverseerAlert ws
     class ManifestValidator orch
+    class ManifestAlertCapability,LocalPlayback orch
     class Life,Music,Quantum,Manifest,Capital orch
     class LifeWeightTrend,QuantumValidator quantum
-    class AggregateHandoff,SufficiencyGate,ExecutionDenied state
+    class AlertAuthorization,TextFallback,AggregateHandoff,SufficiencyGate,ExecutionDenied state
     class GitHub,Mermaid,HumanizerSource ext
     class SkillSyncConfig,SkillSyncScript,LocalSkillCatalog ws
-    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB db
+    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8

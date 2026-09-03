@@ -31,6 +31,15 @@ graph TB
         Stale[stale lifecycle record]
         Claimed[claimed replacement lease]
     end
+    subgraph VoiceAlertBoundary["⊕ governed overseer blocking-decision alert boundary"]
+        AlertBridge[governed_voice_alerts.py bridge<br/>bounded timeout + fail-open result]
+        AlertAuthorization{voice_alert_authorized}
+        AsyncEnqueue[/asynchronous enqueue request<br/>decision_id + validated text/]
+        ManifestCapability[👁 governed alert capability<br/>no provider call in caller]
+        TTSQueue[(tts_queue<br/>decision_id + partial unique deduplication index)]
+        Playback[👁 injected playback<br/>local Windows associated player]
+        TextFallback[text result fallback<br/>workflow result preserved]
+    end
     Schema -->|authoritative fields, categories, scales, thresholds| Validator
     Schema -.->|synchronized consumer contract| ManifestValidator
     Validator -->|validates and records| Current
@@ -56,11 +65,20 @@ graph TB
     Stale --> TakeoverGate
     TakeoverGate -->|policy gate passes| Claimed
     Claimed -->|new lease resumes lifecycle| Runtime
+    Runtime --> AlertBridge
+    AlertBridge --> AlertAuthorization
+    AlertAuthorization -->|authorized| AsyncEnqueue
+    AlertAuthorization -->|not authorized| TextFallback
+    AsyncEnqueue -.-> ManifestCapability
+    ManifestCapability ==> TTSQueue
+    TTSQueue -.->|durable output before playback| Playback
+    AlertBridge -->|timeout or queue failure| TextFallback
+    Playback -->|playback failure| TextFallback
 
-    class Schema,Validator,Guidance,Runtime,FRLedger ws
-    class ManifestValidator manifest
-    class Current,History,ManifestCurrent,ManifestHistory db
-    class NoMutation state
+    class Schema,Validator,Guidance,Runtime,FRLedger,AlertBridge,AsyncEnqueue ws
+    class ManifestValidator,ManifestCapability,Playback manifest
+    class Current,History,ManifestCurrent,ManifestHistory,TTSQueue db
+    class AlertAuthorization,TextFallback,NoMutation state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
