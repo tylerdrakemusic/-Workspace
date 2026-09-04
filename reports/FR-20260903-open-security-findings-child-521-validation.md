@@ -25,7 +25,7 @@ the per-child validation disposition.
 The designated parent worktree is
 `F:\⊕Workspace\.worktrees\fix-FR-20260903-open-security-findings` on
 `fix/FR-20260903-open-security-findings`, at head
-`a1448c1b4d00ad68ddc28bae63c19472e404371c`. The six child worktrees are on
+`4a2ce84fb34427474b36744e0598554eebfbb635`. The six child worktrees are on
 separate repository branches, each based on that repository's own `main`:
 
 | TODO | Child branch head | Child base | Current validation |
