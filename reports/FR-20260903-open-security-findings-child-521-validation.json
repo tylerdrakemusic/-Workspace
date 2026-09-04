@@ -1,0 +1,78 @@
+{
+  "artifact_type": "parent-join-evidence",
+  "artifact_version": 2,
+  "fr_id": "FR-20260903-open-security-findings-all-repositories",
+  "todo_id": "521",
+  "project": "⊕Workspace",
+  "evaluated_at": "2026-09-04T15:45:00Z",
+  "redaction": {
+    "applied": true,
+    "excluded": ["database contents", "credentials", "tokens", "health data", "financial data", "log contents"]
+  },
+  "central_finding_mutation": false,
+  "child_state": "blocked",
+  "findings": [
+    {"vuln_id": "61f40e7b898736aa", "disposition": "false_positive", "evidence": "SQLCipher PRAGMA key construction uses an environment-derived value; no user-controlled identifier or predicate is interpolated."},
+    {"vuln_id": "27a7e8b46f6a08b6", "disposition": "false_positive", "evidence": "The ALTER TABLE column name is a module constant, not external input."},
+    {"vuln_id": "289ea33e609b5a82", "disposition": "false_positive", "evidence": "The SQLCipher test fixture uses an isolated runtime-generated test key."},
+    {"vuln_id": "e3ec8bbeffdac930", "disposition": "false_positive", "evidence": "The restore-validation fixture repeats the isolated runtime-generated test-key operation."},
+    {"vuln_id": "527253498b5b8615", "disposition": "false_positive", "evidence": "The OAuth values are explicitly fake test fixtures."},
+    {"vuln_id": "ec411ecdd431e6df", "disposition": "false_positive", "evidence": "The API-key values are deterministic placeholders in a local test."},
+    {"vuln_id": "3a0fe1b55ffb14fb", "disposition": "false_positive", "evidence": "The token value is a deterministic lifecycle-test input."},
+    {"vuln_id": "78c30593b76dd5dc", "disposition": "false_positive", "evidence": "The token value is a deterministic idempotency-test input."},
+    {"vuln_id": "4f02f277527c02a4", "disposition": "false_positive", "evidence": "The value is synthetic input for a telemetry secret-rejection test."},
+    {"vuln_id": "5b8259dea4d41729", "disposition": "false_positive", "evidence": "The value is synthetic input for a telemetry allowlist test."},
+    {"vuln_id": "baed228ad8a155c1", "disposition": "false_positive", "evidence": "The match is documentation/test text, not subprocess execution."},
+    {"vuln_id": "1f5191e7caedb97f", "disposition": "false_positive", "evidence": "The match is a regression assertion, not shell execution."},
+    {"vuln_id": "cfe1bb624987949c", "disposition": "false_positive", "evidence": "The match is an explanatory regression-test message."},
+    {"vuln_id": "ec6370c8c9728e97", "disposition": "false_positive", "evidence": "The match is an explanatory regression-test message."},
+    {"vuln_id": "b4e172ab6f4fcdb8", "disposition": "false_positive", "evidence": "The match is an explanatory regression-test message."},
+    {"vuln_id": "5836f32fa4152598", "disposition": "false_positive", "evidence": "The match describes required usedforsecurity=False behavior in a test assertion."}
+  ],
+  "scope_decisions": [
+    {
+      "item": "TODO 497 dashboard-correctness prerequisite",
+      "required_for_this_fr": false,
+      "decision": "removed_from_local_join_blockers",
+      "basis": "The canonical FR parent-join contract requires TODOs 517 through 522 only; the FR dependency list is empty and no TODO 497 dependency is declared. The manifest TODO was not changed."
+    }
+  ],
+  "child_validations": [
+    {"todo_id": "517", "project": "∞Life", "artifact": "F:\\∞Life\\.worktrees\\fix-FR-20260903-open-security-findings\\proof\\security\\FR-20260903-todo-517-child-validation.md", "validation": "pass_scoped", "central_finding_mutation": false, "join_fields": {"state": null, "integrated_branch": null, "child_base": null}},
+    {"todo_id": "518", "project": "❤Music", "artifact": "F:\\❤Music\\.worktrees\\fix-FR-20260903-open-security-findings\\reports\\security\\FR-20260903-open-security-findings-child-518.md", "validation": "pass_scoped_with_tooling_limitation", "central_finding_mutation": false, "join_fields": {"state": null, "integrated_branch": null, "child_base": null}},
+    {"todo_id": "519", "project": "⟨ψ⟩Quantum", "artifact": "F:\\⟨ψ⟩Quantum\\.worktrees\\fix-FR-20260903-open-security-findings\\proof\\FR-20260903-open-security-findings-quantum-child-validation.md", "validation": "pass_scope_no_open_findings_with_tooling_limitation", "central_finding_mutation": false, "join_fields": {"state": null, "integrated_branch": null, "child_base": null}},
+    {"todo_id": "520", "project": "👁AI-Manifest", "artifact": "F:\\👁AI-Manifest\\.worktrees\\fix-FR-20260903-open-security-findings\\reports\\FR-20260903-ai-manifest-security-finding-reconciliation.md", "validation": "pass_scoped_with_tooling_limitation", "central_finding_mutation": false, "join_fields": {"state": null, "integrated_branch": null, "child_base": null}},
+    {"todo_id": "521", "project": "⊕Workspace", "artifact": "F:\\⊕Workspace\\.worktrees\\fix-FR-20260903-open-security-findings\\reports\\FR-20260903-open-security-findings-child-521-validation.json", "validation": "pass_focused_reconciliation_test", "central_finding_mutation": false, "join_fields": {"state": null, "integrated_branch": null, "child_base": null}},
+    {"todo_id": "522", "project": "ΣCapital", "artifact": "F:\\ΣCapital\\.worktrees\\fix-FR-20260903-open-security-findings\\reports\\FR-20260903-sigmacapital-security-finding-reconciliation.md", "validation": "pass_scoped_with_existing_scan_limit", "central_finding_mutation": false, "join_fields": {"state": null, "integrated_branch": null, "child_base": null}}
+  ],
+  "join": {
+    "evaluator": "parent_join_gates.evaluate_parent_join",
+    "parent_branch": null,
+    "parent_head": null,
+    "required_todos": ["517", "518", "519", "520", "521", "522"],
+    "required_children": ["517", "518", "519", "520", "521", "522"],
+    "complete": false,
+    "blockers": [
+      "517: manifest terminal state exactly completed is not evidenced in the child artifact",
+      "517: integration into the current parent branch is not evidenced",
+      "517: child base and current parent head are not evidenced",
+      "518: manifest terminal state exactly completed is not evidenced in the child artifact",
+      "518: integration into the current parent branch is not evidenced",
+      "518: child base and current parent head are not evidenced",
+      "519: manifest terminal state exactly completed is not evidenced in the child artifact",
+      "519: integration into the current parent branch is not evidenced",
+      "519: child base and current parent head are not evidenced",
+      "520: manifest terminal state exactly completed is not evidenced in the child artifact",
+      "520: integration into the current parent branch is not evidenced",
+      "520: child base and current parent head are not evidenced",
+      "521: manifest terminal state exactly completed is not evidenced",
+      "521: integration into the current parent branch is not evidenced",
+      "521: child base and current parent head are not evidenced",
+      "522: manifest terminal state exactly completed is not evidenced in the child artifact",
+      "522: integration into the current parent branch is not evidenced",
+      "522: child base and current parent head are not evidenced"
+    ],
+    "join_input_status": "evidence_reviewed_but_not_admissible",
+    "parent_join_pass_marker": "not_recorded"
+  }
+}
