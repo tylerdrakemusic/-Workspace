@@ -718,12 +718,12 @@ def render_html(frs: list[dict], perf_runs: dict | None = None) -> str:
   {flash_script}
   <div id="flash-slot"></div>
 
+  {_cycle_chart_html(perf_runs) if perf_runs is not None else ''}
+
   <div class="section-title">Active <span class="count">{len(active)}</span></div>
   <div class="grid">
     {active_html}
   </div>
-
-  {_cycle_chart_html(perf_runs) if perf_runs is not None else ''}
 
   <details class="archive">
     <summary>Archived / Signed off <span class="count">{len(archived)}</span></summary>

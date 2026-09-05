@@ -143,3 +143,23 @@ def test_render_html_uses_interpolated_median_for_even_samples():
 
     assert "(measured.length - 1) / 2" not in html
     assert "measured.length / 2" in html
+
+
+def test_render_html_places_cycle_panel_above_active_requests():
+    html = dashboard.render_html(
+        [{
+            "state": "OPEN",
+            "fr_id": "FR-1",
+            "title": "Active request",
+            "projects": "⊕Workspace",
+            "branch": "",
+            "prs": "",
+            "opened": "",
+            "updated": "",
+            "summary": "",
+            "relpath": ".github/FR_LEDGERS/FR-1.md",
+        }],
+        perf_runs={"rows": [], "counts": {}},
+    )
+
+    assert html.index('id="cycle-title"') < html.index('>Active <span class="count">')
