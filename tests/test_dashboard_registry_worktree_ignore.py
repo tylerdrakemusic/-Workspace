@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import importlib.util
+import shutil
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -101,14 +103,38 @@ def test_build_manifest_ignores_worktree_clone(tmp_path: Path) -> None:
     assert manifest["dashboards"][0]["id"] == "fr-board"
 
 
-def test_worktree_context_discovers_canonical_projects_without_root_patch() -> None:
-    test_path = Path(__file__).resolve()
-    worktree_container = next(parent for parent in test_path.parents if parent.name == ".worktrees")
-    expected_workspace_root = worktree_container.parent
+def test_worktree_context_discovers_canonical_projects_without_root_patch(
+    tmp_path: Path,
+) -> None:
+    expected_workspace_root = tmp_path / "host" / "⊕Workspace"
+    worktree_root = tmp_path / "linked-worktree"
+    source_root = worktree_root / "tools"
+    expected_workspace_root.mkdir(parents=True)
+    (expected_workspace_root / ".git" / "worktrees" / "feature").mkdir(parents=True)
+    source_root.mkdir(parents=True)
 
-    projects = dr.discover_projects()
-    manifest = dr.build_manifest()
+    for project_name in dr.CANONICAL_PROJECT_ROOTS:
+        project_root = expected_workspace_root.parent / project_name
+        project_root.mkdir(exist_ok=True)
+        (project_root / "AGENT_STARTUP.md").write_text("startup\n", encoding="utf-8")
 
-    assert dr.WORKSPACE_ROOT == expected_workspace_root
-    assert {project.name for project in projects} == dr.CANONICAL_PROJECT_ROOTS
+    shutil.copy2(Path(dr.__file__), source_root / "dashboard_registry.py")
+    (worktree_root / ".git").write_text(
+        "gitdir: ../host/⊕Workspace/.git/worktrees/feature\n",
+        encoding="utf-8",
+    )
+
+    spec = importlib.util.spec_from_file_location(
+        "dashboard_registry_fake_worktree",
+        source_root / "dashboard_registry.py",
+    )
+    assert spec is not None and spec.loader is not None
+    fake_dr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fake_dr)
+
+    projects = fake_dr.discover_projects()
+    manifest = fake_dr.build_manifest()
+
+    assert fake_dr.WORKSPACE_ROOT == expected_workspace_root
+    assert {project.name for project in projects} == fake_dr.CANONICAL_PROJECT_ROOTS
     assert manifest["workspace_root"] == str(expected_workspace_root)
