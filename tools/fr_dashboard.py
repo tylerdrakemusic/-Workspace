@@ -25,10 +25,12 @@ from __future__ import annotations
 
 import argparse
 import html as html_mod
+import json
 import re
 import sys
 import urllib.parse
 from datetime import datetime, timezone
+from math import ceil
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -47,6 +49,134 @@ ACTIVE_STATES = {
 }
 # Terminal states — collapse into "Archived" bucket.
 ARCHIVED_STATES = {"SIGNED_OFF", "ARCHIVED", "CLOSED"}
+
+_PERF_NAME_RE = re.compile(r"^fr-cycle-(FR-[A-Za-z0-9][A-Za-z0-9-]*)$", re.IGNORECASE)
+
+
+def _row_value(row, key: str):
+    if hasattr(row, "keys") and key in row.keys():
+        return row[key]
+    if hasattr(row, "get"):
+        return row.get(key)
+    return None
+
+
+def adapt_perf_run(row: dict) -> dict | None:
+    """Adapt one perf run into an immutable FR cycle measurement or marker."""
+    name = str(_row_value(row, "name") or "")
+    match = _PERF_NAME_RE.match(name.strip())
+    if not match:
+        return None
+    started_at = float(_row_value(row, "started_at") or 0)
+    ended_raw = _row_value(row, "ended_at")
+    ended_at = float(ended_raw) if ended_raw is not None else None
+    duration = ended_at - started_at if ended_at is not None else None
+    valid = duration is not None and duration > 0 and started_at > 0
+    return {
+        "fr_id": match.group(1),
+        "run_id": str(_row_value(row, "run_id")),
+        "project": str(_row_value(row, "project") or "⊕Workspace"),
+        "started_at": started_at,
+        "ended_at": ended_at,
+        "duration_seconds": duration if valid else None,
+        "kind": "measurement" if valid else "active" if ended_at is None else "invalid",
+        "status": str(_row_value(row, "status") or "unknown"),
+        "data_quality": "valid" if valid else "invalid-duration" if ended_at is not None else "active",
+    }
+
+
+def canonicalize_perf_runs(rows: list[dict | None]) -> dict:
+  """Reconcile duplicate immutable perf rows into one row per FR."""
+  groups: dict[str, list[dict]] = {}
+  counts = {"active": 0, "invalid": 0, "legacy": 0, "duplicates": 0, "measurements": 0}
+  for row in rows:
+    if row is None:
+      continue
+    groups.setdefault(row["fr_id"], []).append(row)
+    if row.get("data_quality") == "invalid-duration":
+      counts["invalid"] += 1
+    if row.get("status", "").lower() == "legacy":
+      counts["legacy"] += 1
+
+  result = []
+  for fr_id, group in sorted(groups.items()):
+    group.sort(key=lambda row: (row["started_at"], row["run_id"]))
+    base = dict(group[0])
+    valid_ends = [
+      row["ended_at"] for row in group
+      if row.get("ended_at") is not None
+      and row["ended_at"] > row["started_at"]
+      and row["started_at"] > 0
+    ]
+    base["ended_at"] = max(valid_ends) if valid_ends else None
+    base["duration_seconds"] = (
+      base["ended_at"] - base["started_at"] if base["ended_at"] is not None else None
+    )
+    if base["duration_seconds"] is not None and base["duration_seconds"] > 0:
+      base["kind"] = "measurement"
+      base["data_quality"] = "valid"
+      counts["measurements"] += 1
+    elif any(row.get("ended_at") is None for row in group):
+      base["kind"] = "active"
+      base["data_quality"] = "active"
+      counts["active"] += 1
+    else:
+      base["kind"] = "invalid"
+      base["data_quality"] = "invalid-duration"
+    base["duplicate_count"] = len(group) - 1
+    counts["duplicates"] += base["duplicate_count"]
+    base["provenance_run_ids"] = [row["run_id"] for row in group]
+    base["provenance_statuses"] = [row.get("status", "unknown") for row in group]
+    result.append(base)
+  return {"rows": result, "counts": counts}
+
+
+def filter_cycle_rows(rows: list[dict], project: str | None = None) -> list[dict]:
+  """Filter chart rows by project while retaining active markers."""
+  if not project or project == "all":
+    return list(rows)
+  return [row for row in rows if row.get("project") == project]
+
+
+def cycle_summary(rows: list[dict]) -> dict:
+  durations = sorted(
+    row["duration_seconds"] for row in rows
+    if row.get("kind") == "measurement" and row.get("duration_seconds") is not None
+  )
+  if not durations:
+    return {"sample": 0, "median_seconds": None, "p75_seconds": None}
+  median = durations[len(durations) // 2] if len(durations) % 2 else (
+    durations[len(durations) // 2 - 1] + durations[len(durations) // 2]
+  ) / 2
+  p75 = durations[max(0, ceil(len(durations) * 0.75) - 1)]
+  return {"sample": len(durations), "median_seconds": median, "p75_seconds": p75}
+
+
+def collect_perf_runs(frs: list[dict], now: float | None = None) -> dict:
+  """Read the immutable perf history and return the last 90 days of cycles."""
+  src_path = str(PROJECT_ROOT / "src")
+  if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+  from utils.init_db import get_connection, use_worktree_aware_db_path
+
+  use_worktree_aware_db_path(PROJECT_ROOT)
+  conn = get_connection()
+  try:
+    raw = conn.execute(
+      "SELECT run_id, name, agent, started_at, ended_at, status, detail "
+      "FROM perf_runs WHERE name LIKE 'fr-cycle-%' ORDER BY started_at"
+    ).fetchall()
+  finally:
+    conn.close()
+  projects = {fr["fr_id"]: fr.get("projects") or "⊕Workspace" for fr in frs}
+  adapted = []
+  for row in raw:
+    item = adapt_perf_run(row)
+    if item is not None:
+      item["project"] = projects.get(item["fr_id"], item["project"])
+      adapted.append(item)
+  cutoff = (now if now is not None else datetime.now(timezone.utc).timestamp()) - 90 * 86400
+  return canonicalize_perf_runs([row for row in adapted if row["started_at"] >= cutoff])
 
 
 # ── Parsing ──────────────────────────────────────────────────────────────
@@ -452,10 +582,86 @@ details.archive[open] > summary::before { transform: rotate(90deg); }
   background: var(--surface); padding: 0.1rem 0.35rem;
   border-radius: 3px; color: #a5f3fc;
 }
+@media (max-width: 900px) {
+  body { padding: 1rem; }
+  .grid { grid-template-columns: 1fr; }
+  .cycle-chart { overflow-x: auto; }
+}
+.cycle-panel {
+  margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);
+}
+.cycle-toolbar { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.cycle-toolbar select {
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 4px; padding: 0.3rem 0.5rem; font: inherit; font-size: 0.72rem;
+}
+.cycle-summary { display: flex; gap: 1rem; flex-wrap: wrap; color: var(--muted); font-size: 0.72rem; margin: 0.7rem 0; }
+.cycle-summary strong { color: var(--text); }
+.cycle-chart { min-height: 4rem; }
+.cycle-row { display: grid; grid-template-columns: 12rem minmax(8rem, 1fr) 7rem; gap: 0.6rem; align-items: center; font-size: 0.7rem; padding: 0.22rem 0; }
+.cycle-bar { height: 0.6rem; background: var(--accent); border-radius: 3px; min-width: 2px; }
+.cycle-active { color: var(--warn); font-style: italic; }
+.cycle-disclosure { color: var(--muted); font-size: 0.68rem; margin-top: 0.6rem; }
 """
 
 
-def render_html(frs: list[dict]) -> str:
+def _format_seconds(seconds: float | None) -> str:
+    return "active" if seconds is None else _humanize_duration(seconds)
+
+
+def _cycle_chart_html(perf_runs: dict) -> str:
+    rows = perf_runs.get("rows", [])
+    counts = perf_runs.get("counts", {})
+    projects = sorted({row.get("project", "⊕Workspace") for row in rows})
+    payload = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+    disclosures = (
+        f"{counts.get('active', 0)} active · {counts.get('invalid', 0)} invalid-duration · "
+        f"{counts.get('duplicates', 0)} duplicate · {counts.get('legacy', 0)} legacy"
+    )
+    options = "".join(f'<option value="{_esc(project)}">{_esc(project)}</option>' for project in projects)
+    return f"""
+  <section class="cycle-panel" aria-labelledby="cycle-title">
+    <div class="section-title" id="cycle-title">Cycle time, last 90 days</div>
+    <div class="cycle-toolbar">
+      <label for="project-filter">Project</label>
+      <select id="project-filter" class="project-filter"><option value="all">All projects</option>{options}</select>
+    </div>
+    <div class="cycle-summary" id="cycle-summary"></div>
+    <div class="cycle-chart" id="cycle-chart" aria-live="polite"></div>
+    <div class="cycle-disclosure">{_esc(disclosures)} · completed positive durations are measurements; active cycles are aging markers.</div>
+    <script id="cycle-data" type="application/json">{payload}</script>
+    <script>
+    (() => {{
+      const data = JSON.parse(document.getElementById('cycle-data').textContent);
+      const filter = document.getElementById('project-filter');
+      const chart = document.getElementById('cycle-chart');
+      const summary = document.getElementById('cycle-summary');
+      const human = seconds => seconds < 3600 ? Math.round(seconds / 60) + 'm' : Math.round(seconds / 3600 * 10) / 10 + 'h';
+      const draw = () => {{
+        const rows = data.filter(row => filter.value === 'all' || row.project === filter.value);
+        const measured = rows.filter(row => row.kind === 'measurement').map(row => row.duration_seconds).sort((a, b) => a - b);
+        const median = measured.length ? (measured.length % 2
+          ? measured[Math.floor(measured.length / 2)]
+          : (measured[measured.length / 2 - 1] + measured[measured.length / 2]) / 2) : null;
+        const p75 = measured.length ? measured[Math.ceil(measured.length * .75) - 1] : null;
+        summary.innerHTML = '<span>sample <strong>' + measured.length + '</strong></span><span>median <strong>' + (median === null ? 'n/a' : human(median)) + '</strong></span><span>p75 <strong>' + (p75 === null ? 'n/a' : human(p75)) + '</strong></span>';
+        const max = Math.max(1, ...measured);
+        const escapeHtml = value => String(value).replace(/[&<>\"']/g, character => ({{
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }})[character]);
+        chart.innerHTML = rows.map(row => row.kind === 'active'
+          ? '<div class="cycle-row cycle-active"><span>' + escapeHtml(row.fr_id) + '</span><span>active aging marker</span><span>' + escapeHtml(row.project) + '</span></div>'
+          : row.kind === 'invalid'
+          ? '<div class="cycle-row cycle-invalid"><span>' + escapeHtml(row.fr_id) + '</span><span>invalid duration</span><span>' + escapeHtml(row.project) + '</span></div>'
+          : '<div class="cycle-row"><span>' + escapeHtml(row.fr_id) + '</span><span class="cycle-bar" style="width:' + Math.max(2, row.duration_seconds / max * 100) + '%"></span><span>' + human(row.duration_seconds) + '</span></div>').join('') || '<div class="empty">No cycle data in the last 90 days.</div>';
+      }};
+      filter.addEventListener('change', draw); draw();
+    }})();
+    </script>
+  </section>"""
+
+
+def render_html(frs: list[dict], perf_runs: dict | None = None) -> str:
     active = [f for f in frs if f["state"] in ACTIVE_STATES]
     archived = [f for f in frs if f["state"] in ARCHIVED_STATES]
 
@@ -512,6 +718,8 @@ def render_html(frs: list[dict]) -> str:
   {flash_script}
   <div id="flash-slot"></div>
 
+  {_cycle_chart_html(perf_runs) if perf_runs is not None else ''}
+
   <div class="section-title">Active <span class="count">{len(active)}</span></div>
   <div class="grid">
     {active_html}
@@ -559,7 +767,8 @@ def main() -> None:
         print(json.dumps(dumpable, indent=2, ensure_ascii=False))
         return
 
-    html_content = render_html(frs)
+    perf_runs = collect_perf_runs(frs)
+    html_content = render_html(frs, perf_runs=perf_runs)
     OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUT_FILE.write_text(html_content, encoding="utf-8")
     print(f"FR board written to {OUT_FILE}  ({len(frs)} FRs)")

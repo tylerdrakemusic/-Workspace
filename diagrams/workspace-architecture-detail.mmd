@@ -2,83 +2,22 @@
 %% is_derived_view=false
 %% Traceability.derived_views: diagrams/workspace-derived-decision-metadata-implementation.mmd
 graph TB
-    subgraph Workspace["⊕ Workspace decision-metadata boundary"]
-        Schema[contracts/todo_decision_metadata.v1.json<br/>Workspace canonical schema]
-        Validator[src/utils/todo_decision_metadata.py<br/>validator + evidence thresholds]
-        Guidance[src/utils/priority_guidance.py<br/>advisory only]
-        Runtime[todo operational runtime<br/>decision metadata producer]
-        Current[(todos.decision_metadata<br/>current assessment JSON)]
-        History[(todo_decision_metadata_history<br/>append-only assessment history)]
-        FRLedger[(FR ledger<br/>parent and child coordination)]
+    subgraph Workspace["⊕ Workspace Feature Request Board boundary"]
+        FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board + cycle-time chart<br/>parse_ledger + collect_all; active/archive grouping]
+        FRRegistry[.github/FEATURE_REQUESTS.md<br/>FR registry]
+        FRLedgerDir[.github/FR_LEDGERS/FR-*.md<br/>canonical FR ledgers + audit links]
+        FRDashboardHTML[reports/fr_dashboard.html<br/>generated HTML artifact]
+        FRServer[src/utils/fr_server.py<br/>refresh + serve boundary + GET /]
     end
-    subgraph Consumer["👁 AI-Manifest consumer boundary"]
-        ManifestValidator[todo_decision_contract.py<br/>loads synchronized schema]
-        ManifestCurrent[(TODOS.decision_metadata<br/>consumer current view)]
-        ManifestHistory[(TODO_DECISION_METADATA_HISTORY<br/>consumer assessment history)]
-    end
-    subgraph PriorityBoundary["Priority boundary"]
-        Priority[Existing priority / score]
-        Advisory[Advisory priority guidance]
-        NoMutation{Validator and guidance<br/>do not mutate priority}
-    end
-    subgraph HandoffBoundary["⊕ Workspace agent handoff boundary"]
-        HandoffRuntime[OperationalRuntime<br/>handoff/result API owner]
-        HandoffStore[HandoffStore<br/>durable metadata only]
-        Envelope[/HandoffEnvelope<br/>versioned + immutable/]
-        EnvelopeDigest[/SHA-256 payload_digest<br/>canonical context/]
-        Result[/HandoffResult<br/>inbound/outbound digest/]
-        TakeoverGate{takeover_enabled<br/>and explicit approval}
-        Stale[stale lifecycle record]
-        Claimed[claimed replacement lease]
-    end
-    subgraph VoiceAlertBoundary["⊕ governed overseer blocking-decision repository voice boundary"]
-        AlertBridge[governed_repository_voice.py bridge<br/>bounded timeout + fail-open result]
-        AlertAuthorization{repository_voice_authorized}
-        AsyncEnqueue[/asynchronous enqueue request<br/>decision_id + validated text/]
-        ManifestCapability[👁 governed alert capability<br/>no provider call in caller]
-        TTSQueue[(tts_queue<br/>decision_id + partial unique deduplication index)]
-        Playback[👁 injected playback<br/>native Windows winmm/MCI background playback<br/>no associated player or visible application launch]
-        TextFallback[text result fallback<br/>workflow result preserved]
-    end
-    Schema -->|authoritative fields, categories, scales, thresholds| Validator
-    Schema -.->|synchronized consumer contract| ManifestValidator
-    Validator -->|validates and records| Current
-    Validator ==> History
-    Runtime -->|supplies assessment input| Validator
-    Runtime -->|coordinates lifecycle| FRLedger
-    Validator --> NoMutation
-    Guidance --> Advisory
-    Advisory --> NoMutation
-    Priority --> NoMutation
-    NoMutation -->|preserved| Priority
-    ManifestValidator -->|validates consumer payload| ManifestCurrent
-    ManifestValidator ==> ManifestHistory
-    Current -.->|shared current contract shape| ManifestCurrent
-    History -.->|shared append-only assessment shape| ManifestHistory
-    Runtime --> HandoffRuntime
-    HandoffRuntime --> HandoffStore
-    HandoffStore ==> Envelope
-    Envelope ==> EnvelopeDigest
-    HandoffStore ==> Result
-    Result -.->|directional exchange; raw result excluded| HandoffRuntime
-    Runtime -->|recover expired lease| Stale
-    Stale --> TakeoverGate
-    TakeoverGate -->|policy gate passes| Claimed
-    Claimed -->|new lease resumes lifecycle| Runtime
-    Runtime --> AlertBridge
-    AlertBridge --> AlertAuthorization
-    AlertAuthorization -->|authorized| AsyncEnqueue
-    AlertAuthorization -->|not authorized| TextFallback
-    AsyncEnqueue -.-> ManifestCapability
-    ManifestCapability ==> TTSQueue
-    TTSQueue -.->|durable output before playback| Playback
-    AlertBridge -->|timeout or queue failure| TextFallback
-    Playback -->|playback failure| TextFallback
+    FRRegistry -->|loads| FRDashboard
+    FRLedgerDir -->|loads| FRDashboard
+    FRDashboard ==>|generates| FRDashboardHTML
+    FRServer -->|refreshes| FRDashboardHTML
+    FRServer -->|serves at /| FRDashboardHTML
 
-    class Schema,Validator,Guidance,Runtime,FRLedger,AlertBridge,AsyncEnqueue ws
-    class ManifestValidator,ManifestCapability,Playback manifest
-    class Current,History,ManifestCurrent,ManifestHistory,TTSQueue db
-    class AlertAuthorization,TextFallback,NoMutation state
+    class FRDashboard,FRServer ws
+    class FRRegistry,FRLedgerDir db
+    class FRDashboardHTML ws
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

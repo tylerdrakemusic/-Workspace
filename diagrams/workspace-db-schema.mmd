@@ -4,11 +4,11 @@ erDiagram
     PERF_RUNS ||--o{ PERF_STEPS : has
     PERF_RUNS {
         text run_id PK
-        text task
+        text name
         text agent
         text status
-        real start_ts
-        real end_ts
+        real started_at
+        real ended_at
         text detail
     }
     PERF_STEPS {

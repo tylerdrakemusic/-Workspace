@@ -4,6 +4,9 @@ graph TB
         Portal[reports/portal.html<br/>Unified Dashboard Portal]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
+        FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard]
+        WorkspaceDB[(workspace.db<br/>perf_runs)]
+        FRDashboardHTML[reports/fr_dashboard.html<br/>generated HTML output]
         TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
         AlertBridge[governed overseer repository voice bridge<br/>authorization + bounded timeout]
@@ -35,6 +38,8 @@ graph TB
         CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
     end
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
+    FRDashboard -->|"reads workspace.db / perf_runs"| WorkspaceDB
+    FRDashboard ==>|"generates"| FRDashboardHTML
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
@@ -64,6 +69,8 @@ graph TB
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
     class DecisionMetadata,AlertBridge,AlertFallback ws
+    class FRDashboard,FRDashboardHTML ws
+    class WorkspaceDB db
     class AlertCapability,LocalPlayback manifest
     class TTSQueue db
 
