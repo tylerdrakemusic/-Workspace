@@ -18,12 +18,41 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Derive workspace root dynamically: this file is tools/dashboard_registry.py
-# inside one of the project repos; its parent.parent.parent is the root that
-# contains all sibling project directories.
-WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent
+def _resolve_workspace_root() -> Path:
+    """Resolve the canonical workspace root from a checkout or linked worktree."""
+    checkout_root = Path(__file__).resolve().parent.parent
+    git_path = checkout_root / ".git"
+    if not git_path.is_file():
+        return checkout_root
 
-# Known project roots — discovered dynamically via AGENT_STARTUP.md presence
+    try:
+        contents = git_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return checkout_root
+    if not contents.startswith("gitdir:"):
+        return checkout_root
+
+    gitdir = Path(contents.split(":", 1)[1].strip())
+    if not gitdir.is_absolute():
+        gitdir = checkout_root / gitdir
+    gitdir = gitdir.resolve()
+    if gitdir.parent.name == "worktrees" and gitdir.parent.parent.name == ".git":
+        return gitdir.parent.parent.parent
+    return checkout_root
+
+
+WORKSPACE_ROOT = _resolve_workspace_root()
+
+# Canonical live project roots. Snapshot and temporary roots may also contain
+# AGENT_STARTUP.md, but must not contribute dashboards to the portal.
+CANONICAL_PROJECT_ROOTS = frozenset({
+    "∞Life",
+    "❤Music",
+    "⟨ψ⟩Quantum",
+    "👁AI-Manifest",
+    "⊕Workspace",
+    "ΣCapital",
+})
 REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
 VALID_TYPES = {"static_html", "living_html", "flask_app", "console", "inline_html"}
 
@@ -46,8 +75,11 @@ def _is_git_worktree_root(project_root: Path) -> bool:
 def discover_projects() -> list[Path]:
     """Find all project directories containing AGENT_STARTUP.md."""
     projects = []
-    for child in sorted(WORKSPACE_ROOT.iterdir()):
+    discovery_root = WORKSPACE_ROOT.parent if WORKSPACE_ROOT.name == "⊕Workspace" else WORKSPACE_ROOT
+    for child in sorted(discovery_root.iterdir()):
         if not child.is_dir():
+            continue
+        if child.name not in CANONICAL_PROJECT_ROOTS:
             continue
         if _is_git_worktree_root(child):
             continue
