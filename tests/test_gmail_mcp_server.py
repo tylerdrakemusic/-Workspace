@@ -104,6 +104,38 @@ def test_capability_health_reports_expired_credentials_as_reauthentication_requi
     assert health["reauthentication_required"] is True
 
 
+def test_capability_health_refreshes_expired_access_token(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from utils import gmail_mcp_server
+
+    class RefreshableCredentials:
+        expired = True
+
+        def refresh(self, request):
+            self.expired = False
+
+    credentials = RefreshableCredentials()
+    monkeypatch.setenv("GMAIL_SERVICE_TOKEN", "opaque-runtime-value")
+    monkeypatch.setattr(gmail_mcp_server, "_load_credentials", lambda: credentials)
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "build_service",
+        lambda loaded_credentials: SimpleNamespace(
+            users=lambda: SimpleNamespace(
+                getProfile=lambda **kwargs: SimpleNamespace(
+                    execute=lambda: {"emailAddress": "service@example.com"}
+                )
+            )
+        ),
+    )
+
+    health = gmail_mcp_server.capability_health()
+
+    assert health["state"] == "available"
+    assert health["reauthentication_required"] is False
+
+
 @pytest.mark.parametrize(
     ("status", "expected_state", "reauthentication_required"),
     [

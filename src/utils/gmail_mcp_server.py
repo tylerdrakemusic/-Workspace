@@ -87,11 +87,23 @@ def capability_health() -> dict[str, Any]:
         )
 
     if getattr(credentials, "expired", False) is True:
-        return _health(
-            "expired_credentials",
-            "Gmail credentials are expired; human re-authentication is required.",
-            reauthentication_required=True,
-        )
+        refresh = getattr(credentials, "refresh", None)
+        if refresh is None:
+            return _health(
+                "expired_credentials",
+                "Gmail credentials are expired; human re-authentication is required.",
+                reauthentication_required=True,
+            )
+        try:
+            from google.auth.transport.requests import Request
+
+            refresh(Request())
+        except Exception:  # noqa: BLE001 - classify refresh failures safely
+            return _health(
+                "expired_credentials",
+                "Gmail credentials are expired; human re-authentication is required.",
+                reauthentication_required=True,
+            )
 
     try:
         service = build_service(credentials)
