@@ -10,6 +10,11 @@ graph TB
         Current[(todos.decision_metadata<br/>current assessment JSON)]
         History[(todo_decision_metadata_history<br/>append-only assessment history)]
         FRLedger[(FR ledger<br/>parent and child coordination)]
+        FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board + cycle-time chart]
+        DBHelper[src/utils/init_db.py<br/>get_connection + worktree DB path]
+        WorkspaceDB[(workspace.db<br/>perf_runs: name, started_at, ended_at)]
+        FRDashboardHTML[reports/fr_dashboard.html<br/>generated HTML artifact]
+        FRServer[src/utils/fr_server.py<br/>refresh + serve boundary]
     end
     subgraph Consumer["👁 AI-Manifest consumer boundary"]
         ManifestValidator[todo_decision_contract.py<br/>loads synchronized schema]
@@ -46,6 +51,11 @@ graph TB
     Validator ==> History
     Runtime -->|supplies assessment input| Validator
     Runtime -->|coordinates lifecycle| FRLedger
+    FRDashboard --> DBHelper
+    DBHelper -->|reads| WorkspaceDB
+    FRDashboard ==>|generates| FRDashboardHTML
+    FRServer -->|refreshes| FRDashboardHTML
+    FRServer -->|serves at /| FRDashboardHTML
     Validator --> NoMutation
     Guidance --> Advisory
     Advisory --> NoMutation
@@ -75,9 +85,10 @@ graph TB
     AlertBridge -->|timeout or queue failure| TextFallback
     Playback -->|playback failure| TextFallback
 
-    class Schema,Validator,Guidance,Runtime,FRLedger,AlertBridge,AsyncEnqueue ws
+    class Schema,Validator,Guidance,Runtime,FRLedger,FRDashboard,DBHelper,FRServer,AlertBridge,AsyncEnqueue ws
     class ManifestValidator,ManifestCapability,Playback manifest
-    class Current,History,ManifestCurrent,ManifestHistory,TTSQueue db
+    class Current,History,ManifestCurrent,ManifestHistory,WorkspaceDB,TTSQueue db
+    class FRDashboardHTML ws
     class AlertAuthorization,TextFallback,NoMutation state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
