@@ -2,7 +2,7 @@
 %% is_derived_view=false
 %% Traceability.derived_views: diagrams/workspace-derived-decision-metadata-implementation.mmd
 graph TB
-    subgraph Workspace["⊕ Workspace decision-metadata boundary"]
+    subgraph Workspace["⊕ Workspace Feature Request Board boundary"]
         FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board + cycle-time chart<br/>parse_ledger + collect_all; active/archive grouping]
         FRRegistry[.github/FEATURE_REQUESTS.md<br/>FR registry]
         FRLedgerDir[.github/FR_LEDGERS/FR-*.md<br/>canonical FR ledgers + audit links]
