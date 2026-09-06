@@ -13,6 +13,7 @@ graph TB
         AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
         BackupContract[Provider-neutral local<br/>database backup contract]
+        BoundedLogging[bounded_logging.py<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
     end
     subgraph Life["∞ Life"]
         LifeDB[(infinitelife.db<br/>SQLCipher)]
@@ -36,6 +37,9 @@ graph TB
     subgraph Capital["Σ Capital"]
         CapitalDB[(sigmacapital.db<br/>SQLCipher)]
         CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
+        CapitalLoggingAdapter[utils/shared_logging.py<br/>Capital adapter + default log path]
+        CapitalLoggingConsumers[Capital logging consumers<br/>watchlist · stale-OCO · reconciliation]
+        CapitalLoggingBootstrap[pytest/direct-script bootstrap<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path]
     end
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
     FRDashboard -->|"reads workspace.db / perf_runs"| WorkspaceDB
@@ -59,6 +63,10 @@ graph TB
     Music --> MusicDB
     Quantum --> QDB
     Capital --> CapitalDB
+    CapitalLoggingConsumers --> CapitalLoggingAdapter
+    CapitalLoggingAdapter --> BoundedLogging
+    CapitalLoggingBootstrap -.-> BoundedLogging
+    CapitalLoggingAdapter -.->|"fail-open observability; workflow and safety unchanged"| CapitalLoggingConsumers
     LifeDB -.-> BackupContract
     MusicDB -.-> BackupContract
     QDB -.-> BackupContract
@@ -69,9 +77,11 @@ graph TB
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
     class DecisionMetadata,AlertBridge,AlertFallback ws
+    class BoundedLogging ws
     class FRDashboard,FRDashboardHTML ws
     class WorkspaceDB db
     class AlertCapability,LocalPlayback manifest
+    class CapitalLoggingAdapter,CapitalLoggingConsumers,CapitalLoggingBootstrap orch
     class TTSQueue db
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

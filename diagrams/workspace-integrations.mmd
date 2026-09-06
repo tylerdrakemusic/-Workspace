@@ -15,6 +15,11 @@ graph LR
     Workspace --> DecisionContract[Workspace decision metadata contract<br/>canonical fields + 1-10 scale + evidence rules]
     DecisionContract --> ManifestValidator[👁 consumer validator/helper<br/>todo_decision_metadata.py]
     Workspace --> Capital[Σ Capital]
+    Workspace --> BoundedLogging[bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
+    CapitalConsumers[Σ Capital shared logging consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalAdapter[Σ Capital shared_logging.py<br/>adapter + default log path]
+    CapitalAdapter --> BoundedLogging
+    CapitalBootstrap[Σ Capital pytest/direct-script bootstrap<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path] -.-> BoundedLogging
+    CapitalAdapter -.->|"fail-open observability; workflow and safety unchanged"| CapitalConsumers
     Workspace --> WSDB[(workspace.db)]
     OverseerAlert[⊕ governed repository voice bridge<br/>repository_voice_authorized + bounded timeout]
     AlertAuthorization{repository_voice_authorized}
@@ -50,10 +55,12 @@ graph LR
     SufficiencyGate --> ExecutionDenied
     class Workspace,Services,Backup ws
     class DecisionContract ws
+    class BoundedLogging ws
     class OverseerAlert ws
     class ManifestValidator orch
     class ManifestAlertCapability,LocalPlayback orch
     class Life,Music,Quantum,Manifest,Capital orch
+    class CapitalAdapter,CapitalConsumers,CapitalBootstrap orch
     class LifeWeightTrend,QuantumValidator quantum
     class AlertAuthorization,TextFallback,AggregateHandoff,SufficiencyGate,ExecutionDenied state
     class GitHub,Mermaid,HumanizerSource ext
