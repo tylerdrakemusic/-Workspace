@@ -62,6 +62,19 @@
       "split_required": false,
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
+        "derived_views": [
+          "diagrams/workspace-derived-repository-voice.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-derived-repository-voice.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-integrations.mmd",
         "derived_views": []
       }
     },
@@ -117,7 +130,9 @@
       "split_required": false,
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
-        "derived_views": []
+        "derived_views": [
+          "diagrams/workspace-derived-repository-voice.mmd"
+        ]
       }
     },
     {

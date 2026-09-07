@@ -3,8 +3,8 @@ description: "Reviewer agent — LIGHT tier (Gemini 3 Flash, Google, 0.33x). Use
 model: gemini-3-flash
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Reviewer Agent — Light Tier
 

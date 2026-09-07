@@ -2,8 +2,8 @@
 name: ⊕workspace-gen-qee
 description: "Quantum Entropy Engine — workspace-wide password and key generation agent. Invokes gen_qee.py to produce cryptographically strong passwords and DB keys using quantum-assisted randomness. Output is console-only: never stored, logged, or persisted. Also audits and syncs Windows System environment variables (presence and scope only — values never exposed). Use for: DB encryption keys, API secret bootstrapping, password generation, salt generation, env var health checks."
 ---
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
-<!-- inherits: f:\.github\instructions\db-api-keys.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\db-api-keys.instructions.md -->
 
 # ⊕ Workspace — Gen QEE Agent (Quantum Entropy Engine)
 

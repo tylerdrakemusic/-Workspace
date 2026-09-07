@@ -88,6 +88,7 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
         "diagrams/workspace-architecture.mmd",
         "diagrams/workspace-db-schema.mmd",
         "diagrams/workspace-derived-backup-and-coordination.mmd",
+        "diagrams/workspace-derived-repository-voice.mmd",
         "diagrams/workspace-derived-decision-metadata-implementation.mmd",
         "diagrams/workspace-derived-services.mmd",
         "diagrams/workspace-derived-gmail-attachments.mmd",

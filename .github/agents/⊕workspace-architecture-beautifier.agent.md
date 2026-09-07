@@ -2,8 +2,8 @@
 description: "Use to update or rewrite Mermaid (.mmd) diagrams in f:\\⊕Workspace\\diagrams\\ when the architecture-reviewer flags STALE or MISSING diagrams. Applies consistent styling, layout, color, and node-naming conventions across all workspace diagrams. Can update an existing .mmd in place or create a new one from a topic + textual description."
 user-invocable: true
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Architecture Beautifier Agent
 

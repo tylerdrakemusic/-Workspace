@@ -3,9 +3,9 @@ description: "QA agent — LIGHT tier (GPT-5.4 mini, OpenAI, 0.33x). Use for sim
 model: gpt-5.4-mini
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
-<!-- inherits: f:\.github\instructions\playwright-server-preflight.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\playwright-server-preflight.instructions.md -->
 
 # ⊕ Workspace QA Agent — Light Tier
 
