@@ -8,7 +8,6 @@ graph TB
         WorkspaceDB[(workspace.db<br/>perf_runs)]
         TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
-        AlertBridge[governed overseer repository voice bridge<br/>authorization + bounded timeout]
         AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
         BackupContract[Provider-neutral local<br/>database backup contract]
@@ -29,8 +28,8 @@ graph TB
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
         ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
-        AlertCapability[governed repository voice capability<br/>asynchronous TTS enqueue]
-        TTSQueue[(tts_queue<br/>decision_id deduplication)]
+        AlertCapability[RepositoryVoiceInjection<br/>governed repository voice capability · explicit authorization · stable decision ID · bounded timeout]
+        TTSQueue[(tts_queue<br/>durable queue · stable decision ID deduplication)]
         LocalPlayback[injected/local Windows playback]
     end
     subgraph Capital["Σ Capital"]
@@ -43,9 +42,11 @@ graph TB
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
-    TodoRuntime --> AlertBridge
-    AlertBridge -->|repository_voice_authorized gate| AlertCapability
-    AlertBridge -->|timeout or queue failure| AlertFallback
+    TodoRuntime -->|Overseer entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
+    TodoRuntime -->|CI entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
+    AlertCapability -->|stable decision ID| TTSQueue
+    AlertCapability -->|bounded timeout| AlertFallback
+    AlertCapability -->|timeout or queue failure| AlertFallback
     AlertCapability -.->|async enqueue| TTSQueue
     TTSQueue -.->|durable output| LocalPlayback
     TodoRuntime -->|bounded execution lifecycle| FRBoard
@@ -69,7 +70,7 @@ graph TB
     BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
-    class DecisionMetadata,AlertBridge,AlertFallback ws
+    class DecisionMetadata,AlertCapability,AlertFallback ws
     class BoundedLogging ws
     class FRDashboard ws
     class WorkspaceDB db
