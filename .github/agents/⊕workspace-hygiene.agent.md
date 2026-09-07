@@ -2,8 +2,8 @@
 name: ⊕workspace-hygiene
 description: "Unified workspace hygiene agent. Cleans all 6 projects (∞Life, ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace, ΣCapital), audits and self-repairs all agent files, sweeps stray F:\ drive-root clutter, enforces self-regeneration protocol, and updates itself after each run. Run weekly or on-demand."
 ---
-<!-- inherits: f:\.github\instructions\hygiene-base.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\hygiene-base.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Hygiene Agent
 
@@ -73,13 +73,13 @@ Worktrees live at `f:\⊕Workspace\.worktrees/{branch-slug}/`. Run:
 
 ## Phase 2 — Agent Infrastructure Hygiene
 
-**2a. Agent file audit** (every `f:\.github\agents\*.agent.md`):
+**2a. Agent file audit** (every `f:\⊕Workspace\.github\agents\*.agent.md`):
 - Missing `description` → add one-liner based on agent body
 - Missing `<!-- inherits: ...agent-self-regen.instructions.md -->` → add it
 - Old path references (`executedcode`) → update to `f:\`
 - Orphaned agents (not referenced anywhere) → flag
 
-**2b. Instruction file audit** (`f:\.github\instructions\*.instructions.md`):
+**2b. Instruction file audit** (`f:\⊕Workspace\.github\instructions\*.instructions.md`):
 - `applyTo` pattern matches no existing file → flag dead pattern
 - Broken `<!-- inherits -->` links → fix
 - Old path references → update

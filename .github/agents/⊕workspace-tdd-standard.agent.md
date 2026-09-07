@@ -3,8 +3,8 @@ description: "TDD agent — STANDARD tier (Claude Sonnet 4.6, Anthropic, 1x). Us
 model: claude-sonnet-4-6
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace TDD Agent — Standard Tier
 
