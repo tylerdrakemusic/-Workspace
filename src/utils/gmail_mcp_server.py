@@ -196,6 +196,7 @@ def download_attachment(
     message_id: str,
     attachment_id: str,
     *,
+    filename: str | None = None,
     operator_approved: StrictBool = False,
 ) -> dict[str, Any]:
     """Download an attachment under the governed size and path policy."""
@@ -203,7 +204,10 @@ def download_attachment(
     if unavailable:
         return unavailable
     path = _client().download_attachment(
-        message_id, attachment_id, operator_approved=operator_approved
+        message_id,
+        attachment_id,
+        filename=filename,
+        operator_approved=operator_approved,
     )
     return {"ok": True, "path": str(path)}
 

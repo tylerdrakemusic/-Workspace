@@ -197,19 +197,26 @@ class GmailServiceClient:
         attachment_id: str,
         root: Path | str = _DEFAULT_ATTACHMENT_ROOT,
         *,
+        filename: Optional[str] = None,
         operator_approved: bool = False,
     ) -> Path:
         """Download one read-authorized attachment with atomic containment."""
         self._policy.authorize(Action.ATTACHMENTS)
         destination_root = self._attachment_root(root)
+        attachments = self.list_attachments(msg_id)
         metadata = next(
-            (
-                item
-                for item in self.list_attachments(msg_id)
-                if item["attachment_id"] == attachment_id
-            ),
+            (item for item in attachments if item["attachment_id"] == attachment_id),
             None,
         )
+        fallback_filename = filename or attachment_id
+        if metadata is None and fallback_filename:
+            filename_matches = [
+                item
+                for item in attachments
+                if item["filename"] == fallback_filename
+            ]
+            if len(filename_matches) == 1:
+                metadata = filename_matches[0]
         if metadata is None:
             raise ValueError("Attachment was not found in the requested message")
         declared_size = int(metadata["size"])
@@ -219,7 +226,7 @@ class GmailServiceClient:
         response = (
             self._messages()
             .attachments()
-            .get(userId="me", messageId=msg_id, id=attachment_id)
+            .get(userId="me", messageId=msg_id, id=metadata["attachment_id"])
             .execute()
         )
         encoded = response.get("data", "")

@@ -106,6 +106,55 @@ def test_download_attachment_writes_inside_governed_root_atomically(
     assert destination.resolve().is_relative_to(canonical_attachment_root.resolve())
 
 
+def test_download_attachment_accepts_attachment_id_rotated_between_metadata_reads(
+    canonical_attachment_root: Path,
+):
+    client, service = _mock_client()
+    message = service.users.return_value.messages.return_value
+    message.get.return_value.execute.side_effect = [
+        {
+            "id": "message-1",
+            "payload": {
+                "parts": [
+                    {
+                        "filename": "rotating-id.pdf",
+                        "mimeType": "application/pdf",
+                        "body": {"attachmentId": "attachment-listed", "size": 5},
+                    }
+                ]
+            },
+        },
+        {
+            "id": "message-1",
+            "payload": {
+                "parts": [
+                    {
+                        "filename": "rotating-id.pdf",
+                        "mimeType": "application/pdf",
+                        "body": {"attachmentId": "attachment-refreshed", "size": 5},
+                    }
+                ]
+            },
+        },
+    ]
+    message.attachments.return_value.get.return_value.execute.return_value = {
+        "data": base64.urlsafe_b64encode(b"hello").decode()
+    }
+
+    listed = client.list_attachments("message-1")
+    destination = client.download_attachment(
+        "message-1",
+        listed[0]["attachment_id"],
+        canonical_attachment_root,
+        filename="rotating-id.pdf",
+    )
+
+    assert destination.read_bytes() == b"hello"
+    message.attachments.return_value.get.assert_called_once_with(
+        userId="me", messageId="message-1", id="attachment-refreshed"
+    )
+
+
 def test_download_attachment_default_root_is_repository_canonical_across_cwds(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
