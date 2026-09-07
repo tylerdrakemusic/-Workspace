@@ -1,4 +1,6 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Agent inventory contract: every .github/agents/*.agent.md stem is represented below.
+%% Agent stems: ⊕workspace-architecture-beautifier, ⊕workspace-architecture-reviewer, ⊕workspace-bench-analyzer, ⊕workspace-ci, ⊕workspace-dashboards, ⊕workspace-discovery, ⊕workspace-doer, ⊕workspace-gen-qee, ⊕workspace-hygiene, ⊕workspace-intake, ⊕workspace-overseer, ⊕workspace-protector, ⊕workspace-qa-heavy, ⊕workspace-qa-light, ⊕workspace-qa, ⊕workspace-reviewer-heavy, ⊕workspace-reviewer-light, ⊕workspace-reviewer, ⊕workspace-security, ⊕workspace-tdd-heavy, ⊕workspace-tdd-light, ⊕workspace-tdd-standard
 graph LR
     Tyler([Tyler]) --> Overseer
 
@@ -97,6 +99,7 @@ graph LR
     TDDLight --> TDDStd
     TDDStd --> TDDHeavy
     ArchRev -.->|STALE → delegates| ArchBeaut
+    ArchBeaut --> Reviewer
     QA --> QALight & QAHeavy
     Reviewer --> ReviewerLight & ReviewerHeavy
 

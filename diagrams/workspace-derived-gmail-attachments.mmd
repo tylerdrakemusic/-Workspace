@@ -1,0 +1,34 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-integrations.mmd
+graph LR
+    GmailService{{Gmail service boundary}}
+    GmailMCP[gmail_mcp_server.py<br/>governed MCP]
+    GmailPolicy[ATTACHMENTS policy]
+    ListAttachments[/list_attachments MCP tool/]
+    DownloadAttachment[/download_attachment MCP tool/]
+    AttachmentReadAuth{ATTACHMENTS<br/>read authorization}
+    AttachmentSizeGate{Within size limit?}
+    OperatorApproval{Operator approval}
+    AttachmentWrite[tmp/gmail-attachments<br/>atomic write + replace]
+    AttachmentRetention[/30-day cleanup/]
+    GmailMCP --> ListAttachments
+    GmailMCP --> DownloadAttachment
+    ListAttachments --> AttachmentReadAuth
+    DownloadAttachment --> AttachmentReadAuth
+    AttachmentReadAuth -->|authorized read-only scope| GmailService
+    GmailService --> GmailMCP
+    DownloadAttachment --> AttachmentSizeGate
+    GmailPolicy --> AttachmentReadAuth
+    GmailPolicy --> AttachmentSizeGate
+    AttachmentSizeGate -->|within limit| AttachmentWrite
+    AttachmentSizeGate -->|oversized| OperatorApproval
+    OperatorApproval -->|approved| AttachmentWrite
+    AttachmentWrite ==> AttachmentRetention
+    AttachmentRetention --> AttachmentWrite
+    class GmailMCP,GmailPolicy,ListAttachments,DownloadAttachment,AttachmentWrite,AttachmentRetention ws
+    class AttachmentReadAuth,AttachmentSizeGate,OperatorApproval state
+    class GmailService ext
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc

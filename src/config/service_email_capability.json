@@ -7,14 +7,24 @@
   "identity_env": "GMAIL_SERVICE_ADDRESS",
   "credential_env": "GMAIL_SERVICE_TOKEN",
   "import_path": "integrations.gmail",
-  "actions": ["read", "search", "send", "signup"],
+  "actions": ["read", "search", "attachments", "send", "signup"],
   "action_scopes": {
     "read": "https://www.googleapis.com/auth/gmail.readonly",
     "search": "https://www.googleapis.com/auth/gmail.readonly",
+    "attachments": "https://www.googleapis.com/auth/gmail.readonly",
     "send": "https://www.googleapis.com/auth/gmail.send",
     "signup": "https://www.googleapis.com/auth/gmail.send"
   },
   "raw_retention_days": 30,
+  "attachment_download": {
+    "metadata_action": "attachments",
+    "default_root": "tmp/gmail-attachments",
+    "default_max_bytes": 26214400,
+    "operator_approval_for_oversized": true,
+    "cleanup_retention_days": 30,
+    "atomic_writes": true,
+    "path_containment": "resolved-root-without-symlinks"
+  },
   "outbound_model": "operator-gated draft + explicit approval",
   "outbound_default": "disabled by default (allow_outbound=false); even when enabled, delivery requires an explicit operator_approved=True argument",
   "outbound_api": {

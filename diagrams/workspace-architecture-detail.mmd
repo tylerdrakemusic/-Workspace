@@ -15,9 +15,42 @@ graph TB
     FRServer -->|refreshes| FRDashboardHTML
     FRServer -->|serves at /| FRDashboardHTML
 
+    subgraph GmailAttachments["⊕ Governed Gmail attachment capability"]
+        GmailMCP[gmail_mcp_server.py<br/>stdio MCP boundary]
+        GmailClient[gmail/client.py<br/>GmailServiceClient]
+        GmailPolicy[gmail/policy.py<br/>ServiceEmailPolicy]
+        GmailService{{Gmail service boundary}}
+        ListAttachments[/list_attachments/]
+        DownloadAttachment[/download_attachment/]
+        ReadAuthorization{ATTACHMENTS<br/>read authorization}
+        SizeGate{Attachment exceeds<br/>configured max?}
+        OperatorApproval{Explicit operator<br/>approval required}
+        AtomicWrite[tmp/gmail-attachments<br/>temp file + fsync + replace]
+        RetentionCleanup[/30-day retention cleanup/]
+        GmailMCP -->|list_attachments| ListAttachments
+        GmailMCP -->|download_attachment| DownloadAttachment
+        GmailMCP --> GmailClient
+        GmailClient --> GmailPolicy
+        ListAttachments --> ReadAuthorization
+        DownloadAttachment --> ReadAuthorization
+        ReadAuthorization -->|authorized read-only scope| GmailClient
+        GmailClient --> GmailService
+        DownloadAttachment --> SizeGate
+        GmailPolicy --> ReadAuthorization
+        GmailPolicy --> SizeGate
+        SizeGate -->|within limit| AtomicWrite
+        SizeGate -->|oversized| OperatorApproval
+        OperatorApproval -->|operator_approved=True| AtomicWrite
+        AtomicWrite ==> RetentionCleanup
+        RetentionCleanup --> AtomicWrite
+    end
+
     class FRDashboard,FRServer ws
     class FRRegistry,FRLedgerDir db
     class FRDashboardHTML ws
+    class GmailMCP,GmailClient,GmailPolicy,ListAttachments,DownloadAttachment,AtomicWrite,RetentionCleanup ws
+    class ReadAuthorization,SizeGate,OperatorApproval state
+    class GmailService ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

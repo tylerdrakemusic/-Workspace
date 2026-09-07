@@ -72,7 +72,57 @@ def test_capability_discovery_exposes_governed_actions():
         "create_draft",
         "send_draft",
         "connectivity_test",
+        "list_attachments",
+        "download_attachment",
     ]
+
+
+def test_list_attachments_mcp_operation_is_read_authorized(monkeypatch: pytest.MonkeyPatch):
+    from utils import gmail_mcp_server
+
+    class FakeClient:
+        def list_attachments(self, message_id: str):
+            assert message_id == "m1"
+            return [{"message_id": "m1", "attachment_id": "a1"}]
+
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "capability_health",
+        lambda: {"available": True, "state": "available"},
+    )
+    monkeypatch.setattr(gmail_mcp_server, "_client", lambda: FakeClient())
+
+    assert gmail_mcp_server.list_attachments("m1") == {
+        "ok": True,
+        "attachments": [{"message_id": "m1", "attachment_id": "a1"}],
+    }
+
+
+def test_download_attachment_mcp_forwards_exact_operator_approval(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from utils import gmail_mcp_server
+
+    approvals: list[object] = []
+
+    class FakeClient:
+        def download_attachment(self, message_id, attachment_id, *, operator_approved):
+            approvals.append(operator_approved)
+            return Path("tmp/gmail-attachments/report.pdf")
+
+    monkeypatch.setattr(
+        gmail_mcp_server,
+        "capability_health",
+        lambda: {"available": True, "state": "available"},
+    )
+    monkeypatch.setattr(gmail_mcp_server, "_client", lambda: FakeClient())
+
+    result = gmail_mcp_server.download_attachment(
+        "m1", "a1", operator_approved=True
+    )
+
+    assert result == {"ok": True, "path": str(Path("tmp") / "gmail-attachments" / "report.pdf")}
+    assert approvals == [True]
 
 
 def test_capability_health_reports_malformed_credentials_without_exception_details():
