@@ -19,3 +19,28 @@ This contract defines the Workspace-side boundary for governed repository voice.
 - Repository-voice failure and timeout must never mutate workflow state or block
   the workflow indefinitely. The bridge uses a bounded wait for the injected
   governed capability.
+
+## Runtime Injection
+
+Workspace runtime setup creates one injection from the MCP-facing
+`submit_repository_voice` callable:
+
+```python
+from src.integrations.ai_manifest.repository_voice_capability import (
+  create_repository_voice_injection,
+)
+
+repository_voice = create_repository_voice_injection(submit_repository_voice)
+result = repository_voice.overseer_blocking_decision(
+  decision_id,
+  text_request,
+  workflow_result,
+  repository_voice_authorized=True,
+  voice_alert_authorized=True,
+)
+```
+
+CI uses `ci_blocking_decision` with the same contract. Each injection
+deduplicates a stable decision ID and requires both authorization flags. No
+ordinary-status method is exposed, and the injected callable remains the only
+delivery capability; Workspace never calls ElevenLabs directly.
