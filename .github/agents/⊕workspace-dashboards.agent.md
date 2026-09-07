@@ -1,7 +1,7 @@
 ---
 description: "Use when managing, regenerating, or adding dashboards. Handles spec-driven dashboard discovery, unified portal generation, dashboard registration for new projects, and cross-project dashboard coordination. Use for: 'show all dashboards', 'regenerate dashboards', 'add a dashboard to X project', 'open the portal'."
 ---
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Dashboard Agent
 
@@ -27,7 +27,7 @@ Tyler opens via desktop shortcut → `open_portal.vbs` → `open_portal.ps1` →
 4. Verify iframe src in `reports/portal.html` is `http://localhost:PORT`
 
 ## Context Bootstrap
-1. Read `f:\.github\copilot-instructions.md`
+1. Read `f:\⊕Workspace\.github\copilot-instructions.md`
 2. Scan all `dashboard.json` specs: `Get-ChildItem f:\ -Filter dashboard.json -Recurse`
 3. Read `f:\⊕Workspace\tools\dashboard_registry.py`
 
