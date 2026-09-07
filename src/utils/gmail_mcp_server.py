@@ -42,6 +42,8 @@ def capability_discovery() -> dict[str, Any]:
                 "create_draft",
                 "send_draft",
                 "connectivity_test",
+                "list_attachments",
+                "download_attachment",
             ],
             "outbound_requires_operator_approved_true": True,
             "health_tool": "capability_health",
@@ -178,6 +180,32 @@ def get_message(message_id: str) -> dict[str, Any]:
     if unavailable:
         return unavailable
     return {"ok": True, "message": _client().get_message(message_id)}
+
+
+@mcp.tool()
+def list_attachments(message_id: str) -> dict[str, Any]:
+    """List governed attachment metadata without downloading contents."""
+    unavailable = _unavailable()
+    if unavailable:
+        return unavailable
+    return {"ok": True, "attachments": _client().list_attachments(message_id)}
+
+
+@mcp.tool()
+def download_attachment(
+    message_id: str,
+    attachment_id: str,
+    *,
+    operator_approved: StrictBool = False,
+) -> dict[str, Any]:
+    """Download an attachment under the governed size and path policy."""
+    unavailable = _unavailable()
+    if unavailable:
+        return unavailable
+    path = _client().download_attachment(
+        message_id, attachment_id, operator_approved=operator_approved
+    )
+    return {"ok": True, "path": str(path)}
 
 
 @mcp.tool()

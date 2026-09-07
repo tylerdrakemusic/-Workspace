@@ -4,6 +4,7 @@
   "allow_outbound": false,
   "allow_autonomous_signups": true,
   "raw_retention_days": 30,
+  "attachment_max_bytes": 26214400,
   "disabled_actions": [],
   "sensitive_patterns": [
     "\\brouting number\\b",

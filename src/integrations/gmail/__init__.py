@@ -24,7 +24,13 @@ from pathlib import Path
 
 from .client import GmailServiceClient, build_service
 from .draft import EmailDraft
-from .policy import ALL_SCOPES, RAW_RETENTION_DAYS, Action, ServiceEmailPolicy
+from .policy import (
+    ALL_SCOPES,
+    DEFAULT_ATTACHMENT_MAX_BYTES,
+    RAW_RETENTION_DAYS,
+    Action,
+    ServiceEmailPolicy,
+)
 
 _CAPABILITY_PATH = (
     Path(__file__).resolve().parents[2] / "config" / "service_email_capability.json"
@@ -37,6 +43,7 @@ __all__ = [
     "Action",
     "ALL_SCOPES",
     "RAW_RETENTION_DAYS",
+    "DEFAULT_ATTACHMENT_MAX_BYTES",
     "build_service",
     "describe_capability",
 ]

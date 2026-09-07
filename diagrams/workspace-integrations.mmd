@@ -14,6 +14,31 @@ graph LR
     DecisionContract --> ManifestValidator[👁 consumer validator/helper<br/>todo_decision_metadata.py]
     Workspace --> Capital[Σ Capital]
     Workspace --> BoundedLogging[bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
+    GmailService{{Gmail service boundary}}
+    GmailMCP[gmail_mcp_server.py<br/>governed MCP]
+    GmailPolicy[ATTACHMENTS policy]
+    ListAttachments[/list_attachments MCP tool/]
+    DownloadAttachment[/download_attachment MCP tool/]
+    AttachmentReadAuth{ATTACHMENTS<br/>read authorization}
+    AttachmentSizeGate{Within size limit?}
+    OperatorApproval{Operator approval}
+    AttachmentWrite[tmp/gmail-attachments<br/>atomic write + replace]
+    AttachmentRetention[/30-day cleanup/]
+    Workspace --> GmailMCP
+    GmailMCP --> ListAttachments
+    GmailMCP --> DownloadAttachment
+    ListAttachments --> AttachmentReadAuth
+    DownloadAttachment --> AttachmentReadAuth
+    AttachmentReadAuth -->|authorized read-only scope| GmailService
+    GmailService --> GmailMCP
+    DownloadAttachment --> AttachmentSizeGate
+    GmailPolicy --> AttachmentReadAuth
+    GmailPolicy --> AttachmentSizeGate
+    AttachmentSizeGate -->|within limit| AttachmentWrite
+    AttachmentSizeGate -->|oversized| OperatorApproval
+    OperatorApproval -->|approved| AttachmentWrite
+    AttachmentWrite ==> AttachmentRetention
+    AttachmentRetention --> AttachmentWrite
     CapitalConsumers[Σ Capital shared logging consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalAdapter[Σ Capital shared_logging.py<br/>adapter + default log path]
     CapitalAdapter --> BoundedLogging
     CapitalBootstrap[Σ Capital pytest/direct-script bootstrap<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path] -.-> BoundedLogging
@@ -55,13 +80,14 @@ graph LR
     class DecisionContract ws
     class BoundedLogging ws
     class OverseerAlert ws
+    class GmailMCP,GmailPolicy,ListAttachments,DownloadAttachment,AttachmentWrite,AttachmentRetention ws
     class ManifestValidator orch
     class ManifestAlertCapability,LocalPlayback orch
     class Life,Music,Quantum,Manifest,Capital orch
     class CapitalAdapter,CapitalConsumers,CapitalBootstrap orch
     class LifeWeightTrend,QuantumValidator quantum
-    class AlertAuthorization,TextFallback,AggregateHandoff,SufficiencyGate,ExecutionDenied state
-    class GitHub,Mermaid,HumanizerSource ext
+    class AlertAuthorization,TextFallback,AggregateHandoff,SufficiencyGate,ExecutionDenied,AttachmentReadAuth,AttachmentSizeGate,OperatorApproval state
+    class GitHub,Mermaid,HumanizerSource,GmailService ext
     class SkillSyncConfig,SkillSyncScript,LocalSkillCatalog ws
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

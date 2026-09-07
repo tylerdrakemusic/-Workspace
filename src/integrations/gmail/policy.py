@@ -29,6 +29,7 @@ class Action(str, Enum):
 
     READ = "read"
     SEARCH = "search"
+    ATTACHMENTS = "attachments"
     SEND = "send"
     SIGNUP = "signup"
 
@@ -37,6 +38,7 @@ class Action(str, Enum):
 _ACTION_SCOPES: dict[Action, str] = {
     Action.READ: _READONLY_SCOPE,
     Action.SEARCH: _READONLY_SCOPE,
+    Action.ATTACHMENTS: _READONLY_SCOPE,
     Action.SEND: _SEND_SCOPE,
     Action.SIGNUP: _SEND_SCOPE,
 }
@@ -45,6 +47,7 @@ _ACTION_SCOPES: dict[Action, str] = {
 ALL_SCOPES: tuple[str, ...] = (_READONLY_SCOPE, _SEND_SCOPE)
 
 RAW_RETENTION_DAYS = 30
+DEFAULT_ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024
 
 _CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "service_email_policy.json"
 
@@ -80,6 +83,7 @@ class ServiceEmailPolicy:
     allow_outbound: bool = False
     allow_autonomous_signups: bool = True
     raw_retention_days: int = RAW_RETENTION_DAYS
+    attachment_max_bytes: int = DEFAULT_ATTACHMENT_MAX_BYTES
     disabled_actions: frozenset[Action] = frozenset()
     sensitive_patterns: tuple[str, ...] = _DEFAULT_SENSITIVE_PATTERNS
 
@@ -104,6 +108,9 @@ class ServiceEmailPolicy:
             allow_outbound=bool(data.get("allow_outbound", False)),
             allow_autonomous_signups=bool(data.get("allow_autonomous_signups", True)),
             raw_retention_days=int(data.get("raw_retention_days", RAW_RETENTION_DAYS)),
+            attachment_max_bytes=int(
+                data.get("attachment_max_bytes", DEFAULT_ATTACHMENT_MAX_BYTES)
+            ),
             disabled_actions=disabled,
             sensitive_patterns=patterns,
         )
@@ -188,3 +195,17 @@ class ServiceEmailPolicy:
 
     def is_expired(self, message_ts: datetime, now: datetime | None = None) -> bool:
         return message_ts < self.retention_cutoff(now)
+
+    def guard_attachment_download(
+        self, size: int, *, operator_approved: bool = False
+    ) -> None:
+        """Permit normal downloads and gate only oversized overrides."""
+        if size < 0:
+            raise ValueError("Attachment size cannot be negative")
+        if size <= self.attachment_max_bytes:
+            return
+        if operator_approved is not True:
+            raise PermissionError(
+                "Oversized attachment download requires explicit "
+                "operator_approved=True"
+            )
