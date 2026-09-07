@@ -46,7 +46,9 @@ stateDiagram-v2
     PARENT_JOIN_EVALUATION --> IN_PROGRESS: PARENT_JOIN:PASS blocked
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
-    ARCHITECTURE_REVIEW --> ARCHITECTURE_REVIEW: STALE/MISSING → beautifier → re-verify
+    state "Diagram remediation" as DIAGRAM_REMEDIATION
+    ARCHITECTURE_REVIEW --> DIAGRAM_REMEDIATION: STALE/MISSING → reject
+    DIAGRAM_REMEDIATION --> ARCHITECTURE_REVIEW: beautifier updates → re-verify
     ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES
     REVIEW_REQUESTED --> AUTO_REVIEWED: ⊕workspace-reviewer
     AUTO_REVIEWED --> TYLER_APPROVED: Tyler approves PR
@@ -71,9 +73,21 @@ stateDiagram-v2
         PARENT_JOIN:PASS only with fresh valid evidence.
     end note
 
-    AUTO_REVIEWED --> IN_PROGRESS: changes requested
+    state "Bounded-fix eligibility boundary" as BOUNDED_FIX_ELIGIBILITY
 
-    class MCP_FIRST,LOCAL_FALLBACK,TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN state
+    AUTO_REVIEWED --> IN_PROGRESS: changes requested
+    IN_PROGRESS --> CHANGES_REQUESTED: rejected implementation / review feedback
+    CHANGES_REQUESTED --> BOUNDED_FIX_ELIGIBILITY: bounded-fix candidate
+    BOUNDED_FIX_ELIGIBILITY --> REVIEW_REQUESTED: eligible bounded-fix; bypass only QA + architecture
+    BOUNDED_FIX_ELIGIBILITY --> IN_PROGRESS: any check fails → reject bypass; recycled-light rejoin
+    CHANGES_REQUESTED --> IN_PROGRESS: sticky recycled-light TDD
+    IN_PROGRESS --> FUNCTIONAL_QA: recycled-light QA
+    FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: recycled-light QA PASS
+    ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: recycled-light architecture PASS
+    REVIEW_REQUESTED --> AUTO_REVIEWED: recycled-light automated review
+    AUTO_REVIEWED --> IN_PROGRESS: changes requested; recycle again
+
+    class MCP_FIRST,LOCAL_FALLBACK,TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN,DIAGRAM_REMEDIATION,BOUNDED_FIX_ELIGIBILITY state
 
 classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
 classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff

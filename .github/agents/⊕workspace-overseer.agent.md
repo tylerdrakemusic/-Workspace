@@ -64,6 +64,26 @@ $tier = (C:\G\python.exe f:\⊕Workspace\src\utils\complexity_router.py --files 
 
 Record the assessed tier: `fr_cli.py record-event <FR-ID> ⊕workspace-overseer "note" "COMPLEXITY_ASSESSED: <tier>"`
 
+When an FR is recycled from `CHANGES_REQUESTED`, call
+`complexity_router.select_routing_path` with the prior tier and current state.
+The returned `recycled-light` decision is sticky: route the next TDD, QA,
+architecture-review, and automated-review decisions to their light agents,
+including every repeated recycling cycle:
+`⊕workspace-tdd-light`, `⊕workspace-qa-light`,
+`⊕workspace-architecture-reviewer-light`, and `⊕workspace-reviewer-light`.
+Record the returned `format_routing_event` summary with
+`fr_cli.py record-event`; it must include `ROUTING_PATH`, `TIER`, and
+supporting evidence.
+
+For a localized defect, the router may select `bounded-fix` only when its
+evidence proves `<=2 changed files`, one project, no schema/dependency/agent/
+integration/authentication/secret/security changes, a localized defect,
+focused tests pass, and no cross-module or user-facing contract change.
+This path may bypass full QA and architecture review, but preserves approval,
+merge, soak, and signoff gates. Architectural, security-sensitive,
+multi-project, contract-changing, or otherwise ineligible work is rejected
+from the bypass and follows normal light recycling gates.
+
 ## Feature Request Flow
 Full state machine in `feature-request-flow.instructions.md`. Tyler's gateways: **open FR → approve scope → approve merge → post-soak signoff**. Agent-to-agent between gates.
 
