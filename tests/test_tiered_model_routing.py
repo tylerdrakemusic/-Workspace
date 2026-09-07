@@ -184,3 +184,171 @@ def test_complexity_router_standard_boundary() -> None:
     assert cr.assess_tier(files_changed=3, has_new_schema=False,
                           has_new_agents=False, project_count=1,
                           is_security_sensitive=False) == "standard"
+
+
+def test_recycled_changes_requested_routing_is_light_even_after_repeated_recycling() -> None:
+    import importlib, sys
+    sys.path.insert(0, str(SRC_UTILS))
+    cr = importlib.import_module("complexity_router")
+    importlib.reload(cr)
+
+    first = cr.select_routing_path(initial_tier="heavy", current_state="CHANGES_REQUESTED")
+    repeated = cr.select_routing_path(initial_tier=first.tier, current_state="CHANGES_REQUESTED")
+
+    assert first.tier == "light"
+    assert first.path == "recycled-light"
+    assert repeated.tier == "light"
+    assert repeated.path == "recycled-light"
+
+
+def test_eligible_bounded_fix_bypasses_only_qa_and_architecture_review() -> None:
+    import importlib, sys
+    sys.path.insert(0, str(SRC_UTILS))
+    cr = importlib.import_module("complexity_router")
+    importlib.reload(cr)
+
+    evidence = cr.BoundedFixEvidence(
+        files_changed=2,
+        project_count=1,
+        has_schema_change=False,
+        has_dependency_change=False,
+        has_agent_change=False,
+        has_integration_change=False,
+        has_authentication_change=False,
+        has_secret_change=False,
+        has_security_change=False,
+        defect_classification="localized",
+        focused_tests_passed=True,
+        cross_module_change=False,
+        contract_changed=False,
+    )
+    decision = cr.select_routing_path(
+        initial_tier="standard",
+        current_state="CHANGES_REQUESTED",
+        bounded_fix=evidence,
+    )
+
+    assert decision.path == "bounded-fix"
+    assert decision.tier == "light"
+    assert decision.bypasses == ("FUNCTIONAL_QA", "ARCHITECTURE_REVIEW")
+    assert decision.preserved_gates == ("approval", "merge", "soak", "signoff")
+
+
+@pytest.mark.parametrize("current_state", ["IN_PROGRESS", "OPEN"])
+def test_bounded_fix_requires_changes_requested_state(current_state: str) -> None:
+    import importlib, sys
+    sys.path.insert(0, str(SRC_UTILS))
+    cr = importlib.import_module("complexity_router")
+    importlib.reload(cr)
+
+    evidence = cr.BoundedFixEvidence(
+        files_changed=2,
+        project_count=1,
+        has_schema_change=False,
+        has_dependency_change=False,
+        has_agent_change=False,
+        has_integration_change=False,
+        has_authentication_change=False,
+        has_secret_change=False,
+        has_security_change=False,
+        defect_classification="localized",
+        focused_tests_passed=True,
+        cross_module_change=False,
+        contract_changed=False,
+    )
+
+    decision = cr.select_routing_path(
+        initial_tier="standard",
+        current_state=current_state,
+        bounded_fix=evidence,
+    )
+
+    assert decision.path == "normal"
+    assert decision.tier == "standard"
+    assert decision.bypasses == ()
+    assert decision.rejection_reason == "bounded-fix requires CHANGES_REQUESTED state"
+
+
+def test_bounded_fix_rejects_architectural_or_security_sensitive_work() -> None:
+    import importlib, sys
+    sys.path.insert(0, str(SRC_UTILS))
+    cr = importlib.import_module("complexity_router")
+    importlib.reload(cr)
+
+    evidence = cr.BoundedFixEvidence(
+        files_changed=1,
+        project_count=1,
+        has_schema_change=False,
+        has_dependency_change=False,
+        has_agent_change=False,
+        has_integration_change=False,
+        has_authentication_change=True,
+        has_secret_change=False,
+        has_security_change=False,
+        defect_classification="localized",
+        focused_tests_passed=True,
+        cross_module_change=False,
+        contract_changed=False,
+    )
+    decision = cr.select_routing_path(
+        initial_tier="heavy",
+        current_state="CHANGES_REQUESTED",
+        bounded_fix=evidence,
+    )
+
+    assert decision.path == "recycled-light"
+    assert decision.bypasses == ()
+    assert "authentication" in decision.rejection_reason
+
+
+def test_routing_decision_produces_fr_history_evidence() -> None:
+    import importlib, sys
+    sys.path.insert(0, str(SRC_UTILS))
+    cr = importlib.import_module("complexity_router")
+    importlib.reload(cr)
+
+    decision = cr.select_routing_path(initial_tier="heavy", current_state="CHANGES_REQUESTED")
+
+    summary = cr.format_routing_event(decision)
+
+    assert "ROUTING_PATH: recycled-light" in summary
+    assert "TIER: light" in summary
+    assert "EVIDENCE:" in summary
+
+
+def test_recycled_routing_contract_names_all_light_gate_agents() -> None:
+    flow = _read(INSTRUCTIONS_DIR / "feature-request-flow.instructions.md")
+    overseer = _read(AGENTS_DIR / "⊕workspace-overseer.agent.md")
+
+    for agent in (
+        "⊕workspace-tdd-light",
+        "⊕workspace-qa-light",
+        "⊕workspace-architecture-reviewer-light",
+        "⊕workspace-reviewer-light",
+    ):
+        assert agent in flow
+        assert agent in overseer
+    assert "repeated recycling" in flow.lower()
+    assert "ROUTING_PATH" in flow
+
+
+def test_light_architecture_reviewer_preserves_standard_hard_gates() -> None:
+    path = AGENTS_DIR / "⊕workspace-architecture-reviewer-light.agent.md"
+    assert path.exists()
+    text = _read(path)
+    assert "model: claude-haiku-4-5" in text
+    assert "STALE" in text and "MISSING" in text
+    assert "do not modify any `.mmd` file" in text.lower()
+    assert "hard gates" in text.lower()
+
+
+def test_bounded_fix_contract_is_fail_closed_and_preserves_final_gates() -> None:
+    flow = _read(INSTRUCTIONS_DIR / "feature-request-flow.instructions.md")
+
+    assert re.search(r"<=2\s+changed files", flow)
+    assert "focused tests pass" in flow
+    assert "bypass full QA and architecture review" in flow
+    for gate in ("approval", "merge", "soak", "signoff"):
+        assert gate in flow.lower()
+    for excluded in ("architectural", "security-sensitive", "multi-project", "contract-changing"):
+        assert excluded in flow.lower()
