@@ -11,6 +11,7 @@
   "action_scopes": {
     "read": "https://www.googleapis.com/auth/gmail.readonly",
     "search": "https://www.googleapis.com/auth/gmail.readonly",
+    "attachments": "https://www.googleapis.com/auth/gmail.readonly",
     "send": "https://www.googleapis.com/auth/gmail.send",
     "signup": "https://www.googleapis.com/auth/gmail.send"
   },

@@ -41,7 +41,8 @@ from .policy import ALL_SCOPES, Action, ServiceEmailPolicy
 
 _SERVICE_ADDRESS_ENV = "GMAIL_SERVICE_ADDRESS"
 _TOKEN_ENV = "GMAIL_SERVICE_TOKEN"  # nosec B105 - env var name, not a secret value
-_DEFAULT_ATTACHMENT_ROOT = Path("tmp") / "gmail-attachments"
+_CANONICAL_ATTACHMENT_ROOT = Path(__file__).resolve().parents[3] / "tmp" / "gmail-attachments"
+_DEFAULT_ATTACHMENT_ROOT = _CANONICAL_ATTACHMENT_ROOT
 _INVALID_FILENAME_CHARS = re.compile(r'[<>:"|?*\x00-\x1f]')
 
 
@@ -163,14 +164,20 @@ class GmailServiceClient:
 
     @staticmethod
     def _attachment_root(root: Path | str) -> Path:
+        canonical = _CANONICAL_ATTACHMENT_ROOT.resolve()
         requested = Path(root)
-        absolute = requested.absolute()
+        absolute = requested if requested.is_absolute() else Path.cwd() / requested
         for index in range(1, len(absolute.parts) + 1):
             component = Path(*absolute.parts[:index])
             if component.exists() and component.is_symlink():
                 raise ValueError("Attachment download root must not contain a symlink")
-        requested.mkdir(parents=True, exist_ok=True)
-        resolved = requested.resolve()
+        resolved = absolute.resolve()
+        if not resolved.is_relative_to(canonical):
+            raise ValueError(
+                "Attachment download root must remain contained under the "
+                "canonical workspace tmp/gmail-attachments directory"
+            )
+        resolved.mkdir(parents=True, exist_ok=True)
         return resolved
 
     @staticmethod

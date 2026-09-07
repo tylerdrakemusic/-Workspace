@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -36,6 +37,14 @@ def _mock_client():
     return client, service
 
 
+@pytest.fixture
+def canonical_attachment_root(tmp_path: Path):
+    root = Path(__file__).resolve().parents[1] / "tmp" / "gmail-attachments" / tmp_path.name
+    root.mkdir(parents=True, exist_ok=True)
+    yield root
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_list_attachments_returns_governed_metadata_without_payload_data():
     client, service = _mock_client()
     message = service.users.return_value.messages.return_value
@@ -67,7 +76,9 @@ def test_list_attachments_returns_governed_metadata_without_payload_data():
     assert "data" not in attachments[0]
 
 
-def test_download_attachment_writes_inside_governed_root_atomically(tmp_path: Path):
+def test_download_attachment_writes_inside_governed_root_atomically(
+    canonical_attachment_root: Path,
+):
     client, service = _mock_client()
     message = service.users.return_value.messages.return_value
     message.get.return_value.execute.return_value = {
@@ -86,15 +97,65 @@ def test_download_attachment_writes_inside_governed_root_atomically(tmp_path: Pa
         "data": base64.urlsafe_b64encode(b"hello").decode()
     }
 
-    destination = client.download_attachment("message-1", "attachment-1", tmp_path)
+    destination = client.download_attachment(
+        "message-1", "attachment-1", canonical_attachment_root
+    )
 
-    assert destination == tmp_path / "report.pdf"
+    assert destination == canonical_attachment_root / "report.pdf"
     assert destination.read_bytes() == b"hello"
-    assert destination.resolve().is_relative_to(tmp_path.resolve())
+    assert destination.resolve().is_relative_to(canonical_attachment_root.resolve())
+
+
+def test_download_attachment_default_root_is_repository_canonical_across_cwds(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    client, service = _mock_client()
+    message = service.users.return_value.messages.return_value
+    message.get.return_value.execute.return_value = {
+        "id": "message-1",
+        "payload": {
+            "parts": [
+                {
+                    "filename": "cwd-independent.pdf",
+                    "mimeType": "application/pdf",
+                    "body": {"attachmentId": "attachment-1", "size": 5},
+                }
+            ]
+        },
+    }
+    message.attachments.return_value.get.return_value.execute.return_value = {
+        "data": base64.urlsafe_b64encode(b"hello").decode()
+    }
+    canonical_root = Path(__file__).resolve().parents[1] / "tmp" / "gmail-attachments"
+    canonical_destination = canonical_root / "cwd-independent.pdf"
+    monkeypatch.chdir(tmp_path)
+
+    try:
+        destination = client.download_attachment("message-1", "attachment-1")
+
+        assert destination == canonical_destination
+        assert destination.resolve().is_relative_to(canonical_root.resolve())
+        assert destination.read_bytes() == b"hello"
+    finally:
+        canonical_destination.unlink(missing_ok=True)
+        (tmp_path / "tmp" / "gmail-attachments" / "cwd-independent.pdf").unlink(
+            missing_ok=True
+        )
+
+
+def test_download_attachment_rejects_root_outside_repository_canonical_directory(
+    tmp_path: Path,
+):
+    client, service = _mock_client()
+
+    with pytest.raises(ValueError, match="canonical"):
+        client.download_attachment("message-1", "attachment-1", tmp_path)
+
+    service.users.return_value.messages.return_value.get.assert_not_called()
 
 
 def test_download_attachment_rejects_oversized_encoded_payload_before_decode(
-    tmp_path: Path,
+    canonical_attachment_root: Path,
 ):
     client, service = _mock_client()
     message = service.users.return_value.messages.return_value
@@ -117,13 +178,15 @@ def test_download_attachment_rejects_oversized_encoded_payload_before_decode(
 
     with patch("integrations.gmail.client.base64.urlsafe_b64decode") as decoder:
         with pytest.raises(ValueError, match="payload exceeds"):
-            client.download_attachment("message-1", "attachment-1", tmp_path)
+            client.download_attachment(
+                "message-1", "attachment-1", canonical_attachment_root
+            )
 
     decoder.assert_not_called()
 
 
 def test_download_attachment_rejects_decoded_payload_above_declared_size(
-    tmp_path: Path,
+    canonical_attachment_root: Path,
 ):
     client, service = _mock_client()
     message = service.users.return_value.messages.return_value
@@ -144,11 +207,13 @@ def test_download_attachment_rejects_decoded_payload_above_declared_size(
     }
 
     with pytest.raises(PermissionError, match="operator_approved=True"):
-        client.download_attachment("message-1", "attachment-1", tmp_path)
+        client.download_attachment(
+            "message-1", "attachment-1", canonical_attachment_root
+        )
 
 
 def test_download_attachment_requires_approval_for_decoded_size_override(
-    tmp_path: Path,
+    canonical_attachment_root: Path,
 ):
     client, service = _mock_client()
     message = service.users.return_value.messages.return_value
@@ -169,14 +234,14 @@ def test_download_attachment_requires_approval_for_decoded_size_override(
     }
 
     destination = client.download_attachment(
-        "message-1", "attachment-1", tmp_path, operator_approved=True
+        "message-1", "attachment-1", canonical_attachment_root, operator_approved=True
     )
 
     assert destination.read_bytes() == b"12345"
 
 
 def test_download_attachment_requires_exact_operator_approval_for_oversized_override(
-    tmp_path: Path,
+    canonical_attachment_root: Path,
 ):
     client, service = _mock_client()
     message = service.users.return_value.messages.return_value
@@ -195,7 +260,7 @@ def test_download_attachment_requires_exact_operator_approval_for_oversized_over
 
     with pytest.raises(PermissionError, match="operator_approved=True"):
         client.download_attachment(
-            "message-1", "attachment-1", tmp_path, operator_approved=False
+            "message-1", "attachment-1", canonical_attachment_root, operator_approved=False
         )
     service.users.return_value.messages.return_value.get.assert_called_once()
     service.users.return_value.messages.return_value.attachments.return_value.get.assert_not_called()
@@ -216,17 +281,17 @@ def test_download_attachment_rejects_symlinked_destination_root(tmp_path: Path):
     service.users.return_value.messages.return_value.get.assert_not_called()
 
 
-def test_cleanup_attachment_downloads_is_idempotent(tmp_path: Path):
+def test_cleanup_attachment_downloads_is_idempotent(canonical_attachment_root: Path):
     client, _ = _mock_client()
-    old_file = tmp_path / "old.txt"
-    fresh_file = tmp_path / "fresh.txt"
+    old_file = canonical_attachment_root / "old.txt"
+    fresh_file = canonical_attachment_root / "fresh.txt"
     old_file.write_text("old", encoding="utf-8")
     fresh_file.write_text("fresh", encoding="utf-8")
     old_time = (datetime.now(timezone.utc) - timedelta(days=31)).timestamp()
     os.utime(old_file, (old_time, old_time))
 
-    assert client.cleanup_attachment_downloads(tmp_path) == 1
-    assert client.cleanup_attachment_downloads(tmp_path) == 0
+    assert client.cleanup_attachment_downloads(canonical_attachment_root) == 1
+    assert client.cleanup_attachment_downloads(canonical_attachment_root) == 0
     assert not old_file.exists()
     assert fresh_file.exists()
 
@@ -239,5 +304,6 @@ def test_attachment_policy_and_capability_are_discoverable():
 
     assert policy.attachment_max_bytes == 25 * 1024 * 1024
     assert "attachments" in capability["actions"]
+    assert capability["action_scopes"]["attachments"].endswith("gmail.readonly")
     assert capability["attachment_download"]["default_max_bytes"] == 25 * 1024 * 1024
     assert capability["attachment_download"]["operator_approval_for_oversized"] is True
