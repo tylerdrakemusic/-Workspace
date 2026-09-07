@@ -128,6 +128,22 @@ def test_workspace_agent_topology_represents_every_agent_file():
     assert not missing, f"Agent topology is missing: {missing}"
 
 
+def test_workspace_agent_topology_publishes_machine_readable_agent_inventory():
+    topology = (Path(__file__).resolve().parents[1] / "diagrams" / "workspace-agent-topology.mmd").read_text(
+        encoding="utf-8"
+    )
+    inventory_match = re.search(r"^%% Agent stems: (.+)$", topology, re.MULTILINE)
+    assert inventory_match, "Topology must publish its exact agent-stem inventory"
+
+    declared = set(inventory_match.group(1).split(", "))
+    actual = {
+        path.name.removesuffix(".agent.md")
+        for path in AGENTS_DIR.glob("*.agent.md")
+    }
+
+    assert declared == actual
+
+
 def test_workspace_agent_topology_preserves_required_routing_edges():
     topology = (Path(__file__).resolve().parents[1] / "diagrams" / "workspace-agent-topology.mmd").read_text(
         encoding="utf-8"
