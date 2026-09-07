@@ -1,4 +1,5 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Agent inventory contract: every .github/agents/*.agent.md stem is represented below.
 graph LR
     Tyler([Tyler]) --> Overseer
 
@@ -97,6 +98,7 @@ graph LR
     TDDLight --> TDDStd
     TDDStd --> TDDHeavy
     ArchRev -.->|STALE → delegates| ArchBeaut
+    ArchBeaut --> Reviewer
     QA --> QALight & QAHeavy
     Reviewer --> ReviewerLight & ReviewerHeavy
 

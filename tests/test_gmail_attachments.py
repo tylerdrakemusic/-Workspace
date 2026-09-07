@@ -93,6 +93,88 @@ def test_download_attachment_writes_inside_governed_root_atomically(tmp_path: Pa
     assert destination.resolve().is_relative_to(tmp_path.resolve())
 
 
+def test_download_attachment_rejects_oversized_encoded_payload_before_decode(
+    tmp_path: Path,
+):
+    client, service = _mock_client()
+    message = service.users.return_value.messages.return_value
+    message.get.return_value.execute.return_value = {
+        "id": "message-1",
+        "payload": {
+            "parts": [
+                {
+                    "filename": "payload.bin",
+                    "mimeType": "application/octet-stream",
+                    "body": {"attachmentId": "attachment-1", "size": 1},
+                }
+            ]
+        },
+    }
+    encoded = base64.urlsafe_b64encode(b"x" * (32 * 1024 * 1024 + 1)).decode()
+    message.attachments.return_value.get.return_value.execute.return_value = {
+        "data": encoded
+    }
+
+    with patch("integrations.gmail.client.base64.urlsafe_b64decode") as decoder:
+        with pytest.raises(ValueError, match="payload exceeds"):
+            client.download_attachment("message-1", "attachment-1", tmp_path)
+
+    decoder.assert_not_called()
+
+
+def test_download_attachment_rejects_decoded_payload_above_declared_size(
+    tmp_path: Path,
+):
+    client, service = _mock_client()
+    message = service.users.return_value.messages.return_value
+    message.get.return_value.execute.return_value = {
+        "id": "message-1",
+        "payload": {
+            "parts": [
+                {
+                    "filename": "payload.bin",
+                    "mimeType": "application/octet-stream",
+                    "body": {"attachmentId": "attachment-1", "size": 4},
+                }
+            ]
+        },
+    }
+    message.attachments.return_value.get.return_value.execute.return_value = {
+        "data": base64.urlsafe_b64encode(b"12345").decode()
+    }
+
+    with pytest.raises(PermissionError, match="operator_approved=True"):
+        client.download_attachment("message-1", "attachment-1", tmp_path)
+
+
+def test_download_attachment_requires_approval_for_decoded_size_override(
+    tmp_path: Path,
+):
+    client, service = _mock_client()
+    message = service.users.return_value.messages.return_value
+    message.get.return_value.execute.return_value = {
+        "id": "message-1",
+        "payload": {
+            "parts": [
+                {
+                    "filename": "payload.bin",
+                    "mimeType": "application/octet-stream",
+                    "body": {"attachmentId": "attachment-1", "size": 4},
+                }
+            ]
+        },
+    }
+    message.attachments.return_value.get.return_value.execute.return_value = {
+        "data": base64.urlsafe_b64encode(b"12345").decode()
+    }
+
+    destination = client.download_attachment(
+        "message-1", "attachment-1", tmp_path, operator_approved=True
+    )
+
+    assert destination.read_bytes() == b"12345"
+
+
 def test_download_attachment_requires_exact_operator_approval_for_oversized_override(
     tmp_path: Path,
 ):
@@ -116,6 +198,7 @@ def test_download_attachment_requires_exact_operator_approval_for_oversized_over
             "message-1", "attachment-1", tmp_path, operator_approved=False
         )
     service.users.return_value.messages.return_value.get.assert_called_once()
+    service.users.return_value.messages.return_value.attachments.return_value.get.assert_not_called()
 
 
 def test_download_attachment_rejects_symlinked_destination_root(tmp_path: Path):

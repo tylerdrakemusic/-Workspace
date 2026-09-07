@@ -114,6 +114,45 @@ def test_workspace_integrations_diagram_exists():
         "workspace-integrations.mmd missing house-style classDef block"
 
 
+def test_workspace_agent_topology_represents_every_agent_file():
+    topology = (Path(__file__).resolve().parents[1] / "diagrams" / "workspace-agent-topology.mmd").read_text(
+        encoding="utf-8"
+    )
+    agent_names = {
+        path.name.removesuffix(".agent.md")
+        for path in AGENTS_DIR.glob("*.agent.md")
+    }
+
+    missing = sorted(name for name in agent_names if name not in topology)
+
+    assert not missing, f"Agent topology is missing: {missing}"
+
+
+def test_workspace_agent_topology_preserves_required_routing_edges():
+    topology = (Path(__file__).resolve().parents[1] / "diagrams" / "workspace-agent-topology.mmd").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Overseer --> Intake & CI & Reviewer & Doer & Security" in topology
+    assert "Overseer --> TDDLight & TDDStd & TDDHeavy" in topology
+    assert "QA --> QALight & QAHeavy" in topology
+    assert "Reviewer --> ReviewerLight & ReviewerHeavy" in topology
+    assert "ArchRev -.->|STALE → delegates| ArchBeaut" in topology
+    assert "ArchBeaut --> Reviewer" in topology
+
+
+def test_workspace_integrations_parent_stays_within_overview_budget():
+    diagrams_dir = Path(__file__).resolve().parents[1] / "diagrams"
+    parent = (diagrams_dir / "workspace-integrations.mmd").read_text(encoding="utf-8")
+    node_ids = set(
+        re.findall(r"(?<![A-Za-z0-9_])([A-Za-z][A-Za-z0-9_]*)\s*(?:\[|\(\{|\{)", parent)
+    )
+
+    assert len(node_ids) <= 40
+    assert "Workspace --> GmailAttachments" in parent
+    assert "workspace-derived-gmail-attachments.mmd" in parent
+
+
 def test_reviewer_has_architecture_gate():
     """⊕workspace-reviewer.agent.md must include the architecture-diagrams check
     introduced by FR-20260425-architecture-review-agents."""

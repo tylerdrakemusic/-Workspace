@@ -213,13 +213,26 @@ class GmailServiceClient:
             .get(userId="me", messageId=msg_id, id=attachment_id)
             .execute()
         )
+        encoded = response.get("data", "")
+        predecode_limit = min(
+            self._policy.attachment_hard_max_bytes,
+            self._policy.attachment_hard_max_bytes
+            if operator_approved is True
+            else max(declared_size, self._policy.attachment_max_bytes),
+        )
+        if (len(encoded) * 3) // 4 > predecode_limit:
+            raise ValueError("Gmail attachment payload exceeds the hard size limit")
         try:
-            encoded = response.get("data", "")
             content = base64.urlsafe_b64decode(
                 (encoded + "=" * (-len(encoded) % 4)).encode()
             )
         except Exception as exc:
             raise ValueError("Gmail attachment payload is invalid") from exc
+        if len(content) > declared_size and operator_approved is not True:
+            raise PermissionError(
+                "Attachment payload exceeds its declared size; explicit "
+                "operator_approved=True is required"
+            )
         self._policy.guard_attachment_download(
             len(content), operator_approved=operator_approved
         )

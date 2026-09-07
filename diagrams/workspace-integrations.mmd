@@ -1,101 +1,41 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% is_derived_view=false
-%% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd
+%% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd, diagrams/workspace-derived-gmail-attachments.mmd
 graph LR
     Workspace[⊕ Workspace] --> GitHub[GitHub]
-    GitHub --> SkillSyncPipeline[GitHub Humanizer source + pinned skill sync]
-    SkillSyncPipeline ==> LocalSkillCatalog[local skill catalog / agent manifest]
-    Workspace -->|"repository-local manifests -> generated aggregate registry"| Mermaid[mermaid renderer]
+    Workspace --> Mermaid[mermaid renderer]
     Workspace --> Life[∞ Life]
     Workspace --> Music[❤ Music]
     Workspace --> Quantum[⟨ψ⟩ Quantum]
     Workspace --> Manifest[👁 AI-Manifest]
-    Workspace --> DecisionContract[Workspace decision metadata contract<br/>canonical fields + 1-10 scale + evidence rules]
-    DecisionContract --> ManifestValidator[👁 consumer validator/helper<br/>todo_decision_metadata.py]
     Workspace --> Capital[Σ Capital]
-    Workspace --> BoundedLogging[bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
-    GmailService{{Gmail service boundary}}
-    GmailMCP[gmail_mcp_server.py<br/>governed MCP]
-    GmailPolicy[ATTACHMENTS policy]
-    ListAttachments[/list_attachments MCP tool/]
-    DownloadAttachment[/download_attachment MCP tool/]
-    AttachmentReadAuth{ATTACHMENTS<br/>read authorization}
-    AttachmentSizeGate{Within size limit?}
-    OperatorApproval{Operator approval}
-    AttachmentWrite[tmp/gmail-attachments<br/>atomic write + replace]
-    AttachmentRetention[/30-day cleanup/]
-    Workspace --> GmailMCP
-    GmailMCP --> ListAttachments
-    GmailMCP --> DownloadAttachment
-    ListAttachments --> AttachmentReadAuth
-    DownloadAttachment --> AttachmentReadAuth
-    AttachmentReadAuth -->|authorized read-only scope| GmailService
-    GmailService --> GmailMCP
-    DownloadAttachment --> AttachmentSizeGate
-    GmailPolicy --> AttachmentReadAuth
-    GmailPolicy --> AttachmentSizeGate
-    AttachmentSizeGate -->|within limit| AttachmentWrite
-    AttachmentSizeGate -->|oversized| OperatorApproval
-    OperatorApproval -->|approved| AttachmentWrite
-    AttachmentWrite ==> AttachmentRetention
-    AttachmentRetention --> AttachmentWrite
-    CapitalConsumers[Σ Capital shared logging consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalAdapter[Σ Capital shared_logging.py<br/>adapter + default log path]
-    CapitalAdapter --> BoundedLogging
-    CapitalBootstrap[Σ Capital pytest/direct-script bootstrap<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path] -.-> BoundedLogging
-    CapitalAdapter -.->|"fail-open observability; workflow and safety unchanged"| CapitalConsumers
     Workspace --> WSDB[(workspace.db)]
-    OverseerAlert[⊕ governed repository voice bridge<br/>repository_voice_authorized + bounded timeout]
-    AlertAuthorization{repository_voice_authorized}
-    ManifestAlertCapability[👁 governed_repository_voice.py<br/>validated asynchronous enqueue]
-    TTSQueue[(tts_queue<br/>decision_id deduplication)]
-    LocalPlayback[👁 injected/local Windows playback]
-    TextFallback[Failure-open text result<br/>caller workflow preserved]
-    Workspace --> OverseerAlert
-    OverseerAlert --> AlertAuthorization
-    AlertAuthorization -->|authorized| ManifestAlertCapability
-    AlertAuthorization -->|unauthorized| TextFallback
-    OverseerAlert -.->|"asynchronous bridge; bounded result"| ManifestAlertCapability
-    ManifestAlertCapability ==> TTSQueue
-    TTSQueue -.->|durable output then playback| LocalPlayback
-    OverseerAlert -->|timeout or queue failure| TextFallback
-    Workspace -.-> Services[workspace-derived-services]
-    Workspace -.-> Backup[workspace-derived-backup-and-coordination]
+    Workspace --> BoundedLogging[bounded_logging.py<br/>provider-neutral structured events]
+    Workspace --> GmailAttachments[workspace-derived-gmail-attachments]
+    Workspace --> OverseerAlert[⊕ governed repository voice bridge]
+    OverseerAlert ==> ManifestAlertCapability[👁 governed_repository.py]
+    ManifestAlertCapability ==> TTSQueue[(tts_queue)]
+    TTSQueue -.-> LocalPlayback[👁 injected/local Windows playback]
     Life --> LifeDB[(infinitelife.db)]
     Music --> MusicDB[(heartmusic.db)]
     Quantum --> QDB[(quantumpsi.db)]
     Manifest --> ManifestDB[(manifest_todos.db)]
-    ManifestValidator --> ManifestDB
     Capital --> CapitalDB[(sigmacapital.db)]
-    LifeWeightTrend[∞ Life aggregate weight-trend producer]
-    AggregateHandoff[Aggregate-only Life-to-Quantum handoff<br/>no rows, raw data, identifiers,<br/>features, labels, predictions, or nutrition]
-    QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
-    SufficiencyGate{Sufficiency gate}
-    ExecutionDenied[Real-data execution denied]
-    Life --> LifeWeightTrend
-    LifeWeightTrend ==> AggregateHandoff
-    AggregateHandoff ==> QuantumValidator
-    QuantumValidator --> SufficiencyGate
-    SufficiencyGate --> ExecutionDenied
-    class Workspace,Services,Backup ws
-    class DecisionContract ws
-    class BoundedLogging ws
-    class OverseerAlert ws
-    class GmailMCP,GmailPolicy,ListAttachments,DownloadAttachment,AttachmentWrite,AttachmentRetention ws
-    class ManifestValidator orch
-    class ManifestAlertCapability,LocalPlayback orch
+    Life --> AggregateHandoff[Aggregate-only Life-to-Quantum handoff]
+    AggregateHandoff ==> QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
+    QuantumValidator --> SufficiencyGate{Sufficiency gate}
+    SufficiencyGate --> ExecutionDenied[Real-data execution denied]
+    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert ws
     class Life,Music,Quantum,Manifest,Capital orch
-    class CapitalAdapter,CapitalConsumers,CapitalBootstrap orch
-    class LifeWeightTrend,QuantumValidator quantum
-    class AlertAuthorization,TextFallback,AggregateHandoff,SufficiencyGate,ExecutionDenied,AttachmentReadAuth,AttachmentSizeGate,OperatorApproval state
-    class GitHub,Mermaid,HumanizerSource,GmailService ext
-    class SkillSyncConfig,SkillSyncScript,LocalSkillCatalog ws
+    class ManifestAlertCapability,LocalPlayback orch
+    class AggregateHandoff,SufficiencyGate,ExecutionDenied state
+    class GitHub,Mermaid ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
-classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0

@@ -5,6 +5,7 @@
   "allow_autonomous_signups": true,
   "raw_retention_days": 30,
   "attachment_max_bytes": 26214400,
+  "attachment_hard_max_bytes": 33554432,
   "disabled_actions": [],
   "sensitive_patterns": [
     "\\brouting number\\b",

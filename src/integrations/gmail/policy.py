@@ -48,6 +48,7 @@ ALL_SCOPES: tuple[str, ...] = (_READONLY_SCOPE, _SEND_SCOPE)
 
 RAW_RETENTION_DAYS = 30
 DEFAULT_ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024
+DEFAULT_ATTACHMENT_HARD_MAX_BYTES = 32 * 1024 * 1024
 
 _CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "service_email_policy.json"
 
@@ -84,6 +85,7 @@ class ServiceEmailPolicy:
     allow_autonomous_signups: bool = True
     raw_retention_days: int = RAW_RETENTION_DAYS
     attachment_max_bytes: int = DEFAULT_ATTACHMENT_MAX_BYTES
+    attachment_hard_max_bytes: int = DEFAULT_ATTACHMENT_HARD_MAX_BYTES
     disabled_actions: frozenset[Action] = frozenset()
     sensitive_patterns: tuple[str, ...] = _DEFAULT_SENSITIVE_PATTERNS
 
@@ -110,6 +112,9 @@ class ServiceEmailPolicy:
             raw_retention_days=int(data.get("raw_retention_days", RAW_RETENTION_DAYS)),
             attachment_max_bytes=int(
                 data.get("attachment_max_bytes", DEFAULT_ATTACHMENT_MAX_BYTES)
+            ),
+            attachment_hard_max_bytes=int(
+                data.get("attachment_hard_max_bytes", DEFAULT_ATTACHMENT_HARD_MAX_BYTES)
             ),
             disabled_actions=disabled,
             sensitive_patterns=patterns,
@@ -202,6 +207,8 @@ class ServiceEmailPolicy:
         """Permit normal downloads and gate only oversized overrides."""
         if size < 0:
             raise ValueError("Attachment size cannot be negative")
+        if size > self.attachment_hard_max_bytes:
+            raise ValueError("Attachment payload exceeds the hard size limit")
         if size <= self.attachment_max_bytes:
             return
         if operator_approved is not True:

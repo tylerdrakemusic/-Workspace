@@ -27,6 +27,7 @@ from .draft import EmailDraft
 from .policy import (
     ALL_SCOPES,
     DEFAULT_ATTACHMENT_MAX_BYTES,
+    DEFAULT_ATTACHMENT_HARD_MAX_BYTES,
     RAW_RETENTION_DAYS,
     Action,
     ServiceEmailPolicy,
@@ -44,6 +45,7 @@ __all__ = [
     "ALL_SCOPES",
     "RAW_RETENTION_DAYS",
     "DEFAULT_ATTACHMENT_MAX_BYTES",
+    "DEFAULT_ATTACHMENT_HARD_MAX_BYTES",
     "build_service",
     "describe_capability",
 ]
