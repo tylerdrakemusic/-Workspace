@@ -121,7 +121,7 @@ def test_download_attachment_mcp_forwards_exact_operator_approval(
         "m1", "a1", operator_approved=True
     )
 
-    assert result == {"ok": True, "path": "tmp\\gmail-attachments\\report.pdf"}
+    assert result == {"ok": True, "path": str(Path("tmp") / "gmail-attachments" / "report.pdf")}
     assert approvals == [True]
 
 

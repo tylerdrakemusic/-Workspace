@@ -170,7 +170,9 @@ class GmailServiceClient:
         for index in range(1, len(absolute.parts) + 1):
             component = Path(*absolute.parts[:index])
             if component.exists() and component.is_symlink():
-                raise ValueError("Attachment download root must not contain a symlink")
+                raise ValueError(
+                    "Attachment download root failed containment: symlinks are not allowed"
+                )
         resolved = absolute.resolve()
         if not resolved.is_relative_to(canonical):
             raise ValueError(
