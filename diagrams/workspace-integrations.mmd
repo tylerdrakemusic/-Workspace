@@ -3,7 +3,7 @@
 %% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd, diagrams/workspace-derived-gmail-attachments.mmd
 graph LR
     Workspace[⊕ Workspace] --> GitHub[GitHub]
-    Workspace --> Mermaid[mermaid renderer]
+    Workspace --> Mermaid[mermaid renderer<br/>repository-local manifests -> generated aggregate registry]
     Workspace --> Life[∞ Life]
     Workspace --> Music[❤ Music]
     Workspace --> Quantum[⟨ψ⟩ Quantum]
