@@ -203,12 +203,12 @@ def download_attachment(
     unavailable = _unavailable()
     if unavailable:
         return unavailable
-    path = _client().download_attachment(
-        message_id,
-        attachment_id,
-        filename=filename,
-        operator_approved=operator_approved,
-    )
+    download_args: dict[str, Any] = {
+        "operator_approved": operator_approved,
+    }
+    if filename is not None:
+        download_args["filename"] = filename
+    path = _client().download_attachment(message_id, attachment_id, **download_args)
     return {"ok": True, "path": str(path)}
 
 
