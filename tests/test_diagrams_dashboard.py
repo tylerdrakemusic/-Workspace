@@ -55,6 +55,12 @@ def test_discover_diagrams_finds_mmd(diagrams_workspace):
     assert all(p.suffix == ".mmd" for p in found)
 
 
+def test_discover_diagrams_uses_overridden_local_directory(diagrams_workspace):
+    fixture_source = _write_mmd(diagrams_workspace, "workspace-fixture")
+
+    assert dd.discover_diagrams() == [fixture_source]
+
+
 def test_render_all_success(diagrams_workspace):
     _write_mmd(diagrams_workspace, "workspace-architecture")
     _write_mmd(diagrams_workspace, "music-tech-stack")
