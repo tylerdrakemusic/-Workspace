@@ -23,7 +23,7 @@ that contain `AGENT_STARTUP.md`: `∞Life`, `❤Music`, `⟨ψ⟩Quantum`,
 
 - `src/utils/workspace_discovery.py` - project, agent, routing, and alignment discovery.
 - `src/utils/init_db.py` - SQLCipher connection for `src/data/workspace.db`.
-- `src/utils/agent_perf.py` and `src/utils/perf_cli.py` - governed orchestration timing.
+- `src/utils/perf_cli.py` and `src/utils/record_overseer_perf.py` - governed orchestration timing.
 - `src/utils/fr_cli.py` - feature-request state, event, and artifact ledger.
 - `src/utils/proof_cli.py` - proof recording and verification.
 - `src/utils/complexity_router.py` - QA/reviewer tier selection.
@@ -33,6 +33,19 @@ that contain `AGENT_STARTUP.md`: `∞Life`, `❤Music`, `⟨ψ⟩Quantum`,
   `GMAIL_SERVICE_TOKEN`, and outbound delivery requires explicit operator approval.
 - `tests/` - workspace utility tests. Use temporary or in-memory fixtures and
   never modify production databases.
+
+## Verified Operational Locations
+
+- MCP status lookup: `src/utils/mcp_status.py`; server definitions: `MCP_REGISTRY.md`.
+- Agent and instruction registration: `.github/copilot-instructions.md` and
+  `.github/agents/`.
+- Agent integrity and security tooling: `.github/!!☾⛧security/`, including
+  `agent-manifest.json`, `scan_vulnerabilities.py`, and `!SECURITY.md`.
+- Portal configuration and launchers: `tools/portal_servers.json`,
+  `tools/launch_portal.ps1`, and `open_portal.ps1`.
+- Complexity routing: `src/utils/complexity_router.py`; operational monitoring:
+  `tools/agent_ops_monitor.py`.
+- Workspace topology reference: `diagrams/workspace-agent-topology.mmd`.
 
 The shared workspace database is `src/data/workspace.db`, encrypted with
 `WORKSPACE_DB_KEY`. The FR ledger and manifest-todo registry are separate
@@ -57,9 +70,12 @@ from a workspace documentation task.
 ## Repository and Security Rules
 
 `REPO_VISIBILITY.md` and `src/config/repo_visibility.json` are authoritative
-for public/private boundaries and push guards. Never expose health data from
-`∞Life` or financial data from `ΣCapital` in public repositories. Agent
-integrity and prompt-injection checks use the live manifest at
+for public/private boundaries and push guards. Before a commit or push, apply
+the target repository's guard: never track databases, health records, genomic
+data, financial holdings, statements, picks, secrets, logs, or temporary files
+from the private projects. Public repositories must contain no credentials and
+must not reference private health or financial data. Agent integrity and
+prompt-injection checks use the live manifest at
 `.github/!!☾⛧security/agent-manifest.json`; the security agent owns that audit.
 
 Use UTF-8 for paths and content. Keep documentation ASCII where practical,
