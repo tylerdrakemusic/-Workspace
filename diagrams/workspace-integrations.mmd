@@ -16,7 +16,10 @@ graph LR
     Workspace --> OverseerAlert[⊕ governed repository voice bridge]
     OverseerAlert ==> ManifestAlertCapability[👁 governed_repository.py]
     ManifestAlertCapability ==> TTSQueue[(tts_queue)]
-    TTSQueue -.-> LocalPlayback[👁 injected/local Windows playback]
+    TTSQueue -.->|asynchronous queue worker output| LocalPlayback[👁 injected/local Windows playback]
+    Manifest --> PlayAudioMCP[👁 play_audio_file MCP registration]
+    PlayAudioMCP -->|guarded filename, size, duration| DirectPlayback[👁 Windows MCI: play &lt;alias&gt; wait]
+    DirectPlayback -->|finally alias cleanup| PlaybackResult[structured playback result]
     Life --> LifeDB[(infinitelife.db)]
     Music --> MusicDB[(heartmusic.db)]
     Quantum --> QDB[(quantumpsi.db)]
@@ -30,7 +33,7 @@ graph LR
     SufficiencyGate --> ExecutionDenied[Real-data execution denied]
     class Workspace,GmailAttachments,BoundedLogging,OverseerAlert ws
     class Life,Music,Quantum,Manifest,Capital orch
-    class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback orch
+    class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult orch
     class AggregateHandoff,SufficiencyGate,ExecutionDenied state
     class GitHub,Mermaid ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,TodoExecutionLifecycle,CapitalDB,TTSQueue db
