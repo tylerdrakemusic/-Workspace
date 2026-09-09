@@ -21,6 +21,8 @@ graph LR
     Music --> MusicDB[(heartmusic.db)]
     Quantum --> QDB[(quantumpsi.db)]
     Manifest --> ManifestDB[(manifest_todos.db)]
+    Manifest --> ManifestBriefPortal[Executive Audio Brief Portal<br/>read-only TODO lifecycle projection]
+    ManifestBriefPortal -.->|read-only state projection| TodoExecutionLifecycle[(todo_execution_lifecycle<br/>⊕ canonical execution state)]
     Capital --> CapitalDB[(sigmacapital.db)]
     Life --> AggregateHandoff[Aggregate-only Life-to-Quantum handoff]
     AggregateHandoff ==> QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
@@ -28,10 +30,10 @@ graph LR
     SufficiencyGate --> ExecutionDenied[Real-data execution denied]
     class Workspace,GmailAttachments,BoundedLogging,OverseerAlert ws
     class Life,Music,Quantum,Manifest,Capital orch
-    class ManifestAlertCapability,LocalPlayback orch
+    class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback orch
     class AggregateHandoff,SufficiencyGate,ExecutionDenied state
     class GitHub,Mermaid ext
-    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
+    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,TodoExecutionLifecycle,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
