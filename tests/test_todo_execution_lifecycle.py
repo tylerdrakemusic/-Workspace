@@ -18,6 +18,44 @@ def make_lifecycle() -> ExecutionLifecycle:
     return ExecutionLifecycle(connection)
 
 
+class TrackingConnection(sqlite3.Connection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commit_calls = 0
+        self.executescript_calls = 0
+
+    def commit(self) -> None:
+        self.commit_calls += 1
+        super().commit()
+
+    def executescript(self, script: str):
+        self.executescript_calls += 1
+        return super().executescript(script)
+
+
+def test_read_only_reads_existing_record_without_schema_or_commit() -> None:
+    source = make_lifecycle()
+    expected = claim(source)
+    connection = sqlite3.connect(":memory:", factory=TrackingConnection)
+    source.connection.backup(connection)
+
+    read_only = ExecutionLifecycle.read_only(connection)
+
+    assert read_only.get("todo-1") == expected
+    assert connection.executescript_calls == 0
+    assert connection.commit_calls == 0
+
+
+def test_normal_construction_still_creates_schema_and_mutates() -> None:
+    connection = sqlite3.connect(":memory:")
+    lifecycle = ExecutionLifecycle(connection)
+
+    assert connection.execute(
+        "SELECT name FROM sqlite_master WHERE name = 'todo_execution_lifecycle'"
+    ).fetchone() is not None
+    assert claim(lifecycle).state == "claimed"
+
+
 def test_active_claim_is_unique_but_repeated_delivery_is_idempotent() -> None:
     lifecycle = make_lifecycle()
 

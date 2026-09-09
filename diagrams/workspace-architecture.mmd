@@ -6,7 +6,7 @@ graph TB
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
         FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard]
         WorkspaceDB[(workspace.db<br/>perf_runs)]
-        TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
+        TodoRuntime[TODO operational runtime<br/>todo_execution_lifecycle contract/database<br/>durable claims, leases, retries]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
         AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
@@ -26,7 +26,7 @@ graph TB
         QApp[Shor · QRNG<br/>IBM Quantum]
     end
     subgraph Manifest["👁 AI-Manifest"]
-        MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
+        MAPI[Executive Audio Brief Portal<br/>ElevenLabs · OpenAI<br/>Voice & Briefs]
         ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
         AlertCapability[RepositoryVoiceInjection<br/>governed repository voice capability · explicit authorization · stable decision ID · bounded timeout]
         TTSQueue[(tts_queue<br/>durable queue · stable decision ID deduplication)]
@@ -41,6 +41,7 @@ graph TB
     FRDashboard -->|"reads workspace.db / perf_runs"| WorkspaceDB
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime
+    MAPI -.->|read-only state projection| TodoRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
     TodoRuntime -->|Overseer entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
     TodoRuntime -->|CI entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
@@ -74,7 +75,7 @@ graph TB
     class BoundedLogging ws
     class FRDashboard ws
     class WorkspaceDB db
-    class AlertCapability,LocalPlayback manifest
+    class MAPI,AlertCapability,LocalPlayback manifest
     class CapitalLogging orch
     class TTSQueue db
 
