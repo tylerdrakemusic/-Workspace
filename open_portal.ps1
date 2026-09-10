@@ -160,25 +160,6 @@ if ($studioReady) {
     Write-Host "✘ Studio Panel failed to start on :$StudioPort — check $StudioLogFile.err" -ForegroundColor Red
 }
 
-# ── 6c. Start TJD Radio server (port 8100) ───────────────────────────────────
-$RadioScript = "f:\⊕Workspace\tools\start_tjd_radio.ps1"
-$RadioPort   = 8100
-Write-Host "▶ Restarting TJD Radio server on :$RadioPort ..." -ForegroundColor Cyan
-Get-NetTCPConnection -LocalPort $RadioPort -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
-    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
-}
-Start-Sleep -Milliseconds 400
-Start-Process -FilePath "powershell.exe" `
-    -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", "`"$RadioScript`"" `
-    -WindowStyle Hidden
-Start-Sleep -Milliseconds 1500
-$checkRadio = Get-NetTCPConnection -LocalPort $RadioPort -State Listen -ErrorAction SilentlyContinue
-if ($checkRadio) {
-    Write-Host "✔ TJD Radio server started" -ForegroundColor Green
-} else {
-    Write-Host "⚠ TJD Radio server may still be starting (check port $RadioPort)" -ForegroundColor Yellow
-}
-
 # ── 7. Serve Portal via HTTP (required for live iframe panels) ───────────────
 # Browsers block http:// iframes in file:// pages (mixed content policy).
 # Serving via HTTP on :8080 lets all live panels load correctly.
