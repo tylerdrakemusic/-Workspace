@@ -84,18 +84,28 @@
       "server_label": "Trade Approval Gate",
       "type": "flask",
       "cmd": [
-        "C:\\G\\python.exe",
-        "src/utils/trade_gate.py"
+        "powershell.exe",
+        "-NoProfile",
+        "-WindowStyle",
+        "Hidden",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "f:\\⊕Workspace\\tools\\start_trade_gate.ps1",
+        "-ProjectRoot",
+        "f:\\ΣCapital",
+        "-Port",
+        "7475"
       ],
       "env": {
         "PYTHONUTF8": "1",
-        "PYTHONPATH": "f:\\ΣCapital\\src"
+        "PYTHONIOENCODING": "utf-8"
       },
       "cwd": "f:\\ΣCapital",
       "port": 7475,
       "health_url": "http://127.0.0.1:7475/health",
       "health_timeout_s": 10,
-      "notes": "Port is hardcoded in trade_gate.py (app.run(port=7475)); no --port CLI flag. Requires SIGMACAPITAL_DB_KEY and Schwab OAuth env vars already present at the Windows system level."
+      "notes": "Uses the authoritative launcher. For worktree MCP validation, keep this command shape and replace -ProjectRoot with the worktree path and -Port with an isolated port. Requires SIGMACAPITAL_DB_KEY and Schwab OAuth env vars already present at the Windows system level."
     }
   }
 }
