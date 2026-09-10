@@ -62,8 +62,11 @@ if ($remaining) {
 }
 
 $projectRoot = $ProjectRoot
+$projectRoot = [IO.Path]::GetFullPath($projectRoot).TrimEnd('\')
+Set-Location -LiteralPath $projectRoot
 $env:PYTHONUTF8        = "1"
 $env:PYTHONIOENCODING  = "utf-8"
+$env:PYTHONPATH        = Join-Path $projectRoot "src"
 $env:TRADE_GATE_PORT = [string]$Port
 $env:TRADE_GATE_PROCESS_OWNER = "trade-gate-launcher"
 $env:TRADE_GATE_SOURCE_ENTRYPOINT = "src/utils/trade_gate.py"

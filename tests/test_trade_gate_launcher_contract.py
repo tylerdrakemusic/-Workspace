@@ -42,6 +42,15 @@ def test_trade_gate_launcher_requires_exact_normalized_source_entrypoint_match()
     assert "src\\utils\\trade_gate.py*" not in launcher
 
 
+def test_trade_gate_launcher_runs_selected_worktree_with_selected_python_path() -> None:
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "Set-Location -LiteralPath $projectRoot" in launcher
+    assert 'Join-Path $projectRoot "src"' in launcher
+    assert "$env:PYTHONPATH" in launcher
+    assert "TRADE_GATE_PORT" in launcher
+
+
 def test_portal_registers_the_same_authoritative_launcher() -> None:
     config = json.loads(PORTAL_SERVERS.read_text(encoding="utf-8-sig"))
     trade_gate = next((item for item in config["servers"] if item["port"] == 7475), None)
