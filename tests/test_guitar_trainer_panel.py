@@ -82,7 +82,6 @@ _KNOWN_PORTS: dict[str, int] = {
     "infinitelife_http": 9999,
     "fr_ledger":         7474,
     "music_dashboard":   5050,
-    "tjd_radio":         8100,
     "guitar_trainer":    5055,
 }
 
