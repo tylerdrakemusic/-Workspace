@@ -49,7 +49,14 @@ foreach ($listener in $listeners) {
 	Write-Host "Stopped stale Trade Gate PID $($listener.OwningProcess) on port $Port."
 }
 
-$remaining = Get-TradeGateListeners
+$remaining = @()
+for ($attempt = 0; $attempt -lt 5; $attempt++) {
+	$remaining = Get-TradeGateListeners
+	if (-not $remaining) {
+		break
+	}
+	Start-Sleep -Milliseconds 200
+}
 if ($remaining) {
 	throw "Port $Port is still occupied after stale Trade Gate cleanup."
 }
