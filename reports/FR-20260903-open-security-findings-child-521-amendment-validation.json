@@ -1,0 +1,33 @@
+{
+  "artifact_type": "child-finding-amendment-evidence",
+  "artifact_version": 1,
+  "fr_id": "FR-20260903-open-security-findings-all-repositories",
+  "todo_id": "521",
+  "project": "⊕Workspace",
+  "evaluated_at": "2026-09-10",
+  "scope": "tests/test_todo_execution_lifecycle.py",
+  "remediation_commit": "c609ff78225b56b046c87c2c8c5bf4bf7251ed94",
+  "proof_scope": "Per-finding reconciliation for the two amended Workspace findings; this artifact contains no secret values or central vulnerability-row data.",
+  "central_finding_mutation": false,
+  "finding_dispositions": [
+    {
+      "vuln_id": "4b8e1381c78baba1",
+      "disposition": "remediated",
+      "evidence": "The reported token-shaped value was a deterministic lifecycle-test lease fixture, not a credential. It was replaced with the explicit non-secret fixture value prefix fixture-lease- and covered by test_lifecycle_fixtures_do_not_use_secret_shaped_lease_values."
+    },
+    {
+      "vuln_id": "4617ce61ae4623e7",
+      "disposition": "remediated",
+      "evidence": "The reported token-shaped value was a deterministic idempotency/lease-test fixture, not a credential. It was replaced with the explicit non-secret fixture value prefix fixture-lease- and the invalid-token case with invalid-lease."
+    }
+  ],
+  "validation": {
+    "command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 C:\\G\\python.exe -m pytest tests/test_security_finding_reconciliation.py tests/test_todo_execution_lifecycle.py -q",
+    "result": "16 passed",
+    "fixture_scan": "No token- or wrong-token literals remain in tests/test_todo_execution_lifecycle.py"
+  },
+  "redaction": {
+    "applied": true,
+    "excluded": ["credentials", "tokens", "database contents", "log contents"]
+  }
+}
