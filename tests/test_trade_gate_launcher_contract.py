@@ -20,6 +20,8 @@ def test_trade_gate_launcher_owns_source_port_and_stale_process_cleanup() -> Non
     assert "Stop-Process" in launcher
     assert "src\\utils\\trade_gate.py" in launcher
     assert "Get-NetTCPConnection -LocalPort $Port -State Listen" in launcher
+    assert "for ($attempt = 0; $attempt -lt 5; $attempt++)" in launcher
+    assert "Start-Sleep -Milliseconds 200" in launcher
 
 
 def test_trade_gate_launcher_fails_closed_on_listener_inspection_errors() -> None:
