@@ -1,6 +1,6 @@
 """API endpoint health monitor for ⊕Workspace.
 
-Pings ElevenLabs, Ollama, and HuggingFace at portal-generation time.
+Pings ElevenLabs, HuggingFace, and Perplexity at portal-generation time.
 Results are written to the api_health table in workspace.db.
 
 Usage (called from dashboard_portal.py at generation time)::
@@ -32,13 +32,6 @@ _ENDPOINTS: list[dict[str, Any]] = [
         "url": "https://api.elevenlabs.io/v1/user",
         "auth_header": lambda: {"xi-api-key": os.environ.get("ELEVENLABS_API_KEY", "")},
         "timeout": 8.0,
-    },
-    {
-        "name": "ollama",
-        "label": "Ollama",
-        "url": "http://localhost:11434/api/tags",
-        "auth_header": lambda: {},
-        "timeout": 4.0,
     },
     {
         "name": "huggingface",
