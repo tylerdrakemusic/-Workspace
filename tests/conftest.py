@@ -11,6 +11,7 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "utils"))
 
 PORTAL_HTML = PROJECT_ROOT / "reports" / "portal.html"

@@ -402,4 +402,23 @@ Any single heavy signal → **heavy**. All light conditions met → **light**. O
 4. On `FUNCTIONAL_QA`, overseer routes to `⊕workspace-qa[-light|-heavy]`
 5. On `REVIEW_REQUESTED`, overseer routes to `⊕workspace-reviewer[-light|-heavy]`
 
+### Recycled FRs and bounded fixes
+
+When an FR enters `CHANGES_REQUESTED`, the next TDD, QA, architecture-review,
+and automated-review routing decision uses light tier, regardless of the
+initial assessment. This remains true for repeated recycling. Route those
+decisions to `⊕workspace-tdd-light`, `⊕workspace-qa-light`,
+`⊕workspace-architecture-reviewer-light`, and `⊕workspace-reviewer-light`.
+Record the selected path and supporting evidence in FR history using
+`fr_cli.py record-event`, with a summary containing `ROUTING_PATH` and `TIER`.
+
+A `bounded-fix` path is permitted only when all evidence is true: `<=2
+changed files`, one project, no schema/dependency/agent/integration/
+authentication/secret/security changes, localized defect classification,
+focused tests pass, and no cross-module or user-facing contract change. It
+may bypass full QA and architecture review, but must preserve approval, merge,
+soak, and signoff gates. Architectural, security-sensitive, multi-project,
+contract-changing, or otherwise ineligible work must be rejected from the
+bypass and continue through normal light-tier recycling gates.
+
 **Default tier when signals are unavailable:** `standard`.

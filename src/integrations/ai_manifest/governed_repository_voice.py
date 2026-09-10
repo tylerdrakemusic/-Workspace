@@ -45,11 +45,14 @@ def enqueue_blocking_decision_repository_voice(
     timeout_seconds: float = DEFAULT_REPOSITORY_VOICE_TIMEOUT_SECONDS,
 ) -> GovernedRepositoryVoiceResult[WorkflowResult]:
     """Best-effort enqueue one authorized repository-voice message."""
-    authorized = (
-        repository_voice_authorized
-        if repository_voice_authorized is not None
-        else voice_alert_authorized
-    )
+    if repository_voice_authorized is not None and voice_alert_authorized is not None:
+        authorized = repository_voice_authorized and voice_alert_authorized
+    else:
+        authorized = (
+            repository_voice_authorized
+            if repository_voice_authorized is not None
+            else voice_alert_authorized
+        )
     if not blocking_decision or not authorized:
         return GovernedRepositoryVoiceResult(decision_id, workflow_result, "skipped")
     if not decision_id.strip() or not text.strip() or len(text) > MAX_REPOSITORY_VOICE_TEXT_LENGTH:
@@ -73,12 +76,23 @@ def enqueue_blocking_decision_repository_voice(
         return GovernedRepositoryVoiceResult(decision_id, workflow_result, "timeout")
     if failure:
         return GovernedRepositoryVoiceResult(decision_id, workflow_result, "failed")
-    if submission and getattr(submission[0], "accepted", True) is False:
+    response = submission[0] if submission else None
+    accepted = (
+        response.get("accepted", True)
+        if isinstance(response, dict)
+        else getattr(response, "accepted", True)
+    )
+    if response is not None and accepted is False:
+        error = (
+            response.get("error")
+            if isinstance(response, dict)
+            else getattr(response, "error", None)
+        )
         return GovernedRepositoryVoiceResult(
             decision_id,
             workflow_result,
             "failed",
-            getattr(submission[0], "error", None),
+            error,
         )
     return GovernedRepositoryVoiceResult(decision_id, workflow_result, "queued")
 

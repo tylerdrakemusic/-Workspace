@@ -51,6 +51,8 @@ def discover_diagrams() -> list[Path]:
     if (candidate / "⊕Workspace").is_dir():
       workspace_root = candidate
       break
+  if DIAGRAMS_DIR != PROJECT_ROOT / "diagrams":
+    return sorted(DIAGRAMS_DIR.glob("*.mmd"))
   return list(discover_diagram_sources(workspace_root, DIAGRAMS_DIR))
 
 

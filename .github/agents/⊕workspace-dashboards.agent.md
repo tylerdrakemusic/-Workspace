@@ -1,7 +1,7 @@
 ---
 description: "Use when managing, regenerating, or adding dashboards. Handles spec-driven dashboard discovery, unified portal generation, dashboard registration for new projects, and cross-project dashboard coordination. Use for: 'show all dashboards', 'regenerate dashboards', 'add a dashboard to X project', 'open the portal'."
 ---
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Dashboard Agent
 
@@ -13,11 +13,11 @@ dashboard.json (per project) → dashboard_registry.py → dashboard_portal.py �
 ```
 
 ## Portal Launch Path
-Tyler opens via desktop shortcut → `open_portal.vbs` → `open_portal.ps1` → `launch_portal.ps1` → `file:///f:/⊕Workspace/reports/portal.html` in Brave.
+The staged desktop shortcut invokes `tools/launch_portal.ps1`, which starts the registered dashboard servers and opens the generated `file:///f:/⊕Workspace/reports/portal.html` shell in Brave. Individual `flask_app` dashboards render from their registered `http://localhost:PORT` services.
 
-**Critical rules (file:// context):**
+**Critical rules (portal context):**
 - Dashboards with POST endpoints or auto-refresh **must** use `flask_app` type with `http://localhost:PORT` — NOT `static_html`
-- Every `flask_app` dashboard needs a matching entry in `tools/portal_servers.json` (auto-started by `launch_portal.ps1`)
+- Every `flask_app` dashboard needs a matching entry in `tools/portal_servers.json` (auto-started by `tools/launch_portal.ps1`)
 - `reports/portal.html` is gitignored — regenerates on each portal launch
 
 **When regenerating after spec changes:**
@@ -27,7 +27,7 @@ Tyler opens via desktop shortcut → `open_portal.vbs` → `open_portal.ps1` →
 4. Verify iframe src in `reports/portal.html` is `http://localhost:PORT`
 
 ## Context Bootstrap
-1. Read `f:\.github\copilot-instructions.md`
+1. Read `f:\⊕Workspace\.github\copilot-instructions.md`
 2. Scan all `dashboard.json` specs: `Get-ChildItem f:\ -Filter dashboard.json -Recurse`
 3. Read `f:\⊕Workspace\tools\dashboard_registry.py`
 

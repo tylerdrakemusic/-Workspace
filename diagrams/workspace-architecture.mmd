@@ -4,12 +4,14 @@ graph TB
         Portal[reports/portal.html<br/>Unified Dashboard Portal]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
-        TodoRuntime[TODO operational runtime<br/>durable claims, leases, retries]
+        FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard]
+        WorkspaceDB[(workspace.db<br/>perf_runs)]
+        TodoRuntime[TODO operational runtime<br/>todo_execution_lifecycle contract/database<br/>durable claims, leases, retries]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
-        AlertBridge[governed overseer repository voice bridge<br/>authorization + bounded timeout]
         AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
         BackupContract[Provider-neutral local<br/>database backup contract]
+        BoundedLogging[bounded_logging.py<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
     end
     subgraph Life["∞ Life"]
         LifeDB[(infinitelife.db<br/>SQLCipher)]
@@ -24,23 +26,28 @@ graph TB
         QApp[Shor · QRNG<br/>IBM Quantum]
     end
     subgraph Manifest["👁 AI-Manifest"]
-        MAPI[ElevenLabs · OpenAI<br/>Voice & Briefs]
+        MAPI[Executive Audio Brief Portal<br/>ElevenLabs · OpenAI<br/>Voice & Briefs]
         ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
-        AlertCapability[governed repository voice capability<br/>asynchronous TTS enqueue]
-        TTSQueue[(tts_queue<br/>decision_id deduplication)]
+        AlertCapability[RepositoryVoiceInjection<br/>governed repository voice capability · explicit authorization · stable decision ID · bounded timeout]
+        TTSQueue[(tts_queue<br/>durable queue · stable decision ID deduplication)]
         LocalPlayback[injected/local Windows playback]
     end
     subgraph Capital["Σ Capital"]
         CapitalDB[(sigmacapital.db<br/>SQLCipher)]
         CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
+        CapitalLogging[Σ Capital shared logging boundary<br/>adapter + consumers + bootstrap]
     end
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
+    FRDashboard -->|"reads workspace.db / perf_runs"| WorkspaceDB
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime
+    MAPI -.->|read-only state projection| TodoRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
-    TodoRuntime --> AlertBridge
-    AlertBridge -->|repository_voice_authorized gate| AlertCapability
-    AlertBridge -->|timeout or queue failure| AlertFallback
+    TodoRuntime -->|Overseer entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
+    TodoRuntime -->|CI entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
+    AlertCapability -->|stable decision ID| TTSQueue
+    AlertCapability -->|bounded timeout| AlertFallback
+    AlertCapability -->|timeout or queue failure| AlertFallback
     AlertCapability -.->|async enqueue| TTSQueue
     TTSQueue -.->|durable output| LocalPlayback
     TodoRuntime -->|bounded execution lifecycle| FRBoard
@@ -54,6 +61,7 @@ graph TB
     Music --> MusicDB
     Quantum --> QDB
     Capital --> CapitalDB
+    CapitalLogging --> BoundedLogging
     LifeDB -.-> BackupContract
     MusicDB -.-> BackupContract
     QDB -.-> BackupContract
@@ -63,8 +71,12 @@ graph TB
     BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
     class Workspace workspace
     class Life,Music,Quantum,Manifest,Capital project
-    class DecisionMetadata,AlertBridge,AlertFallback ws
-    class AlertCapability,LocalPlayback manifest
+    class DecisionMetadata,AlertCapability,AlertFallback ws
+    class BoundedLogging ws
+    class FRDashboard ws
+    class WorkspaceDB db
+    class MAPI,AlertCapability,LocalPlayback manifest
+    class CapitalLogging orch
     class TTSQueue db
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

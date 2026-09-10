@@ -2,7 +2,7 @@
 description: "Use to discover epic/story-level TODO opportunities across all workspace projects, present approval-gated candidates, and write approved items to manifest_todos.db. Items are auto-classified as AI (automatable) or TYLER (requires human judgment) based on their content."
 user-invocable: true
 ---
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Discovery Agent
 
@@ -57,16 +57,6 @@ LLM prompt used).
 Write a JSON array to a temp path, one object per candidate:
 ```json
 [
-  {
-    "project": "music",
-    "text": "Ship public launch plan for TJD radio with audience-growth instrumentation",
-    "priority": 7,
-    "rationale": "why this matters now",
-    "implementation_hints": "suggested first steps / relevant files",
-    "context_snapshot": "key facts that led to this suggestion",
-    "estimated_effort": "M",
-    "dependencies": ""
-  }
 ]
 ```
 `priority` is optional — omit it only if you want the script's deterministic

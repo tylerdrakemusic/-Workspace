@@ -3,9 +3,9 @@ description: "QA agent — HEAVY tier (GPT-5.5, OpenAI, 7.5x). Use for complex F
 model: gpt-5.5
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
-<!-- inherits: f:\.github\instructions\playwright-server-preflight.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\playwright-server-preflight.instructions.md -->
 
 # ⊕ Workspace QA Agent — Heavy Tier
 

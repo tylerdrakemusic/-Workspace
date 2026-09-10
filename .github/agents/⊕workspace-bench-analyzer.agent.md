@@ -1,7 +1,7 @@
 ---
 description: "Use when analyzing benchmark data, spotting performance trends, investigating discrepancies between runs, comparing quantum hardware vs simulator results, or reviewing agent wall-clock regressions. Offers to regenerate the unified dashboard and asks clarifying questions before deep-diving."
 ---
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Benchmark Analyzer Agent
 

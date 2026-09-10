@@ -30,14 +30,20 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
+import tempfile
 from datetime import datetime, timezone
 from typing import Optional
+from pathlib import Path
 
 from .draft import EmailDraft
 from .policy import ALL_SCOPES, Action, ServiceEmailPolicy
 
 _SERVICE_ADDRESS_ENV = "GMAIL_SERVICE_ADDRESS"
 _TOKEN_ENV = "GMAIL_SERVICE_TOKEN"  # nosec B105 - env var name, not a secret value
+_CANONICAL_ATTACHMENT_ROOT = Path(__file__).resolve().parents[3] / "tmp" / "gmail-attachments"
+_DEFAULT_ATTACHMENT_ROOT = _CANONICAL_ATTACHMENT_ROOT
+_INVALID_FILENAME_CHARS = re.compile(r'[<>:"|?*\x00-\x1f]')
 
 
 def build_service(credentials):
@@ -129,6 +135,157 @@ class GmailServiceClient:
         for stub in resp.get("messages", []) or []:
             results.append(self.get_message(stub["id"], action=Action.READ))
         return results
+
+    def list_attachments(self, msg_id: str) -> list[dict]:
+        """List attachment metadata without returning attachment contents."""
+        self._policy.authorize(Action.ATTACHMENTS)
+        raw = self._messages().get(userId="me", id=msg_id, format="full").execute()
+        results: list[dict] = []
+
+        def visit(part: dict) -> None:
+            body = part.get("body", {}) or {}
+            attachment_id = body.get("attachmentId")
+            filename = part.get("filename", "") or ""
+            if attachment_id and filename:
+                results.append(
+                    {
+                        "message_id": msg_id,
+                        "attachment_id": attachment_id,
+                        "filename": filename,
+                        "mime_type": part.get("mimeType", "application/octet-stream"),
+                        "size": int(body.get("size", 0) or 0),
+                    }
+                )
+            for child in part.get("parts", []) or []:
+                visit(child)
+
+        visit(raw.get("payload", {}) or {})
+        return results
+
+    @staticmethod
+    def _attachment_root(root: Path | str) -> Path:
+        canonical = _CANONICAL_ATTACHMENT_ROOT.resolve()
+        requested = Path(root)
+        absolute = requested if requested.is_absolute() else Path.cwd() / requested
+        for index in range(1, len(absolute.parts) + 1):
+            component = Path(*absolute.parts[:index])
+            if component.exists() and component.is_symlink():
+                raise ValueError(
+                    "Attachment download root failed containment: symlinks are not allowed"
+                )
+        resolved = absolute.resolve()
+        if not resolved.is_relative_to(canonical):
+            raise ValueError(
+                "Attachment download root must remain contained under the "
+                "canonical workspace tmp/gmail-attachments directory"
+            )
+        resolved.mkdir(parents=True, exist_ok=True)
+        return resolved
+
+    @staticmethod
+    def _safe_attachment_name(filename: str) -> str:
+        normalized = filename.replace("\\", "/")
+        name = Path(normalized).name
+        name = _INVALID_FILENAME_CHARS.sub("_", name).strip(" .")
+        if not name or name in {".", ".."}:
+            raise ValueError("Attachment filename is empty or unsafe")
+        return name
+
+    def download_attachment(
+        self,
+        msg_id: str,
+        attachment_id: str,
+        root: Path | str = _DEFAULT_ATTACHMENT_ROOT,
+        *,
+        filename: Optional[str] = None,
+        operator_approved: bool = False,
+    ) -> Path:
+        """Download one read-authorized attachment with atomic containment."""
+        self._policy.authorize(Action.ATTACHMENTS)
+        destination_root = self._attachment_root(root)
+        attachments = self.list_attachments(msg_id)
+        metadata = next(
+            (item for item in attachments if item["attachment_id"] == attachment_id),
+            None,
+        )
+        fallback_filename = filename or attachment_id
+        if metadata is None and fallback_filename:
+            filename_matches = [
+                item
+                for item in attachments
+                if item["filename"] == fallback_filename
+            ]
+            if len(filename_matches) == 1:
+                metadata = filename_matches[0]
+        if metadata is None:
+            raise ValueError("Attachment was not found in the requested message")
+        declared_size = int(metadata["size"])
+        self._policy.guard_attachment_download(
+            declared_size, operator_approved=operator_approved
+        )
+        response = (
+            self._messages()
+            .attachments()
+            .get(userId="me", messageId=msg_id, id=metadata["attachment_id"])
+            .execute()
+        )
+        encoded = response.get("data", "")
+        predecode_limit = min(
+            self._policy.attachment_hard_max_bytes,
+            self._policy.attachment_hard_max_bytes
+            if operator_approved is True
+            else max(declared_size, self._policy.attachment_max_bytes),
+        )
+        if (len(encoded) * 3) // 4 > predecode_limit:
+            raise ValueError("Gmail attachment payload exceeds the hard size limit")
+        try:
+            content = base64.urlsafe_b64decode(
+                (encoded + "=" * (-len(encoded) % 4)).encode()
+            )
+        except Exception as exc:
+            raise ValueError("Gmail attachment payload is invalid") from exc
+        if len(content) > declared_size and operator_approved is not True:
+            raise PermissionError(
+                "Attachment payload exceeds its declared size; explicit "
+                "operator_approved=True is required"
+            )
+        self._policy.guard_attachment_download(
+            len(content), operator_approved=operator_approved
+        )
+        filename = self._safe_attachment_name(metadata["filename"])
+        destination = destination_root / filename
+        if destination.exists() and destination.is_symlink():
+            raise ValueError("Attachment destination must not be a symlink")
+        if not destination.resolve().is_relative_to(destination_root):
+            raise ValueError("Attachment path failed containment check")
+        with tempfile.NamedTemporaryFile(dir=destination_root, delete=False) as temp_file:
+            temporary = Path(temp_file.name)
+            temp_file.write(content)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+        try:
+            os.replace(temporary, destination)
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise
+        return destination
+
+    def cleanup_attachment_downloads(
+        self, root: Path | str = _DEFAULT_ATTACHMENT_ROOT, *, now: Optional[datetime] = None
+    ) -> int:
+        """Delete downloaded files older than the policy retention window."""
+        self._policy.authorize(Action.ATTACHMENTS)
+        destination_root = self._attachment_root(root)
+        cutoff = self._policy.retention_cutoff(now)
+        deleted = 0
+        for path in destination_root.iterdir():
+            if not path.is_file() or path.is_symlink():
+                continue
+            modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+            if modified < cutoff:
+                path.unlink()
+                deleted += 1
+        return deleted
 
     # ------------------------------------------------------------------
     # Outbound (staged draft + explicit operator approval)

@@ -3,9 +3,9 @@ description: "QA agent — STANDARD tier (GPT-5.3-Codex, OpenAI, 1x). Use when v
 model: gpt-5.3-codex
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
-<!-- inherits: f:\.github\instructions\playwright-server-preflight.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\playwright-server-preflight.instructions.md -->
 
 # ⊕ Workspace QA Agent
 
@@ -113,7 +113,7 @@ git -C <project-root> diff main...HEAD --name-only | Select-String "\.html$|/out
 If matched: run `pytest -m playwright` with `$env:PLAYWRIGHT_ENABLED="1"` and record a `test_pass` proof artifact.
 If not matched: mark Playwright as **N/A** in the QA report.
 
-**`ui-baseline` diff** — if the FR has a `screenshot` artifact with label `ui-baseline*` (stored by intake), invoke the `ui-baseline-capture` skill diff hook (`f:\.github\skills\ui-baseline-capture\SKILL.md` § 2). Capture the after-state and include the before/after comparison block in the QA report. Missing baseline → note and skip, not a QA failure.
+**`ui-baseline` diff** — if the FR has a `screenshot` artifact with label `ui-baseline*` (stored by intake), invoke the `ui-baseline-capture` skill diff hook (`f:\⊕Workspace\.github\skills\ui-baseline-capture\SKILL.md` § 2). Capture the after-state and include the before/after comparison block in the QA report. Missing baseline → note and skip, not a QA failure.
 
 ## Pass / Fail Decision
 
@@ -175,7 +175,7 @@ C:\G\python.exe f:\⊕Workspace\src\utils\perf_cli.py report <run_id>
 ```
 
 Self-regen checklist (end of every run):
-1. Verify `f:\.github\instructions\feature-request-flow.instructions.md` still exists and contains `FUNCTIONAL_QA` state
+1. Verify `f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md` still exists and contains `FUNCTIONAL_QA` state
 2. Verify `proof_cli.py` and `fr_cli.py` exist at `f:\⊕Workspace\src\utils\`
 3. Verify `⊕workspace-architecture-reviewer.agent.md` exists (next-stage delegate)
 4. Report: `Self-regen: X paths checked (Y updated), Z agent refs checked (W updated)`

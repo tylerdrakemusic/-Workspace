@@ -112,10 +112,10 @@ def test_measure_source_uses_todo_302_utf8_contract() -> None:
 
     metrics = measure_source(path)
 
-    assert metrics.utf8_characters == 2725
-    assert metrics.utf8_bytes == 2730
-    assert metrics.nodes == 22
-    assert metrics.edges == 25
+    assert metrics.utf8_characters == 3327
+    assert metrics.utf8_bytes == 3339
+    assert metrics.nodes == 26
+    assert metrics.edges == 29
     assert metrics.fallback_risk == "medium"
 
 

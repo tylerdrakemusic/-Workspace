@@ -8,6 +8,7 @@ Covers:
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -53,6 +54,12 @@ def test_discover_diagrams_finds_mmd(diagrams_workspace):
     found = dd.discover_diagrams()
     assert len(found) == 2
     assert all(p.suffix == ".mmd" for p in found)
+
+
+def test_discover_diagrams_uses_overridden_local_directory(diagrams_workspace):
+    fixture_source = _write_mmd(diagrams_workspace, "workspace-fixture")
+
+    assert dd.discover_diagrams() == [fixture_source]
 
 
 def test_render_all_success(diagrams_workspace):
@@ -214,7 +221,11 @@ def test_ci_gallery_contract_covers_every_canonical_mermaid_source() -> None:
     html_str = dd.build_index(results)
     findings = validate_gallery(results, [source.stem for source in sources], html_str)
 
-    assert len(sources) == 11
+    manifest = json.loads(
+        (dd.DIAGRAMS_DIR / "diagram-manifest.json").read_text(encoding="utf-8")
+    )
+    canonical_source_count = len(manifest["diagrams"])
+    assert len(list(dd.DIAGRAMS_DIR.glob("*.mmd"))) == canonical_source_count
     assert not [finding for finding in findings if finding.code != "gallery_interaction_contract"]
     assert html_str.count('class="card"') == len(sources)
 

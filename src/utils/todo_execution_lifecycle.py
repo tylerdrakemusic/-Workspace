@@ -51,6 +51,14 @@ class ExecutionLifecycle:
         self.connection.row_factory = sqlite3.Row
         self._create_schema()
 
+    @classmethod
+    def read_only(cls, connection: sqlite3.Connection) -> "ExecutionLifecycle":
+        """Wrap an existing lifecycle connection without schema or transaction writes."""
+        lifecycle = cls.__new__(cls)
+        lifecycle.connection = connection
+        lifecycle.connection.row_factory = sqlite3.Row
+        return lifecycle
+
     def _create_schema(self) -> None:
         self.connection.executescript(
             """

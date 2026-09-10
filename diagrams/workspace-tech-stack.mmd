@@ -12,6 +12,10 @@ graph LR
     Python --> Safety[safety<br/>security scan]
     Python --> PipAudit[pip-audit<br/>requirements.txt<br/>strict installed-environment audit]
     Python --> Radon[radon<br/>complexity scan]
+    Python --> BoundedLogging[⊕ Workspace bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
+    CapitalLoggingConsumers[Σ Capital consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalLoggingAdapter[Σ Capital utils.shared_logging adapter<br/>Capital default log path]
+    CapitalLoggingAdapter --> BoundedLogging
+    CapitalLoggingBootstrap[Σ Capital pytest/direct scripts<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path] -.-> BoundedLogging
     Python --> TestRunner[/tools/run_tests.py<br/>serial local/debug fallback · CI --parallel/]
     TestRunner --> Pytest
     TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=true<br/>excludes: playwright, live]
@@ -26,6 +30,8 @@ graph LR
     SkillSyncConfig --> SkillSyncScript[sync-skills.ps1]
     SkillSyncScript ==> LocalSkillCatalog[local skill catalog / agent manifest]
     class Python,Node,PowerShell lang
+    class BoundedLogging ws
+    class CapitalLoggingAdapter,CapitalLoggingConsumers,CapitalLoggingBootstrap tool
     class SQLCipher,Pytest,TestRunner,TestPolicy,Xdist,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,PipAudit,Radon,SkillSyncConfig,SkillSyncScript,LocalSkillCatalog tool
     class ParallelEvidence state
     class HumanizerSource ext

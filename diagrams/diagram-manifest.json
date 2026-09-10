@@ -38,6 +38,7 @@
           "diagrams/workspace-architecture-detail.mmd",
           "diagrams/workspace-derived-backup-and-coordination.mmd",
           "diagrams/workspace-derived-services.mmd",
+          "diagrams/workspace-derived-gmail-attachments.mmd",
           "diagrams/workspace-integrations.mmd"
         ]
       }
@@ -61,6 +62,19 @@
       "split_required": false,
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
+        "derived_views": [
+          "diagrams/workspace-derived-repository-voice.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-derived-repository-voice.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-integrations.mmd",
         "derived_views": []
       }
     },
@@ -87,6 +101,17 @@
       }
     },
     {
+      "path": "diagrams/workspace-derived-gmail-attachments.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-integrations.mmd",
+        "derived_views": []
+      }
+    },
+    {
       "path": "diagrams/workspace-fr-flow.mmd",
       "kind": "workflow",
       "renderer_risk": "low",
@@ -105,7 +130,9 @@
       "split_required": false,
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
-        "derived_views": []
+        "derived_views": [
+          "diagrams/workspace-derived-repository-voice.mmd"
+        ]
       }
     },
     {

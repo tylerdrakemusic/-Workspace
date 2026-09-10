@@ -3,8 +3,8 @@ description: "TDD agent — HEAVY tier (Claude Opus 4.8, Anthropic, 15x). Use fo
 model: claude-opus-4-8
 user-invocable: false
 ---
-<!-- inherits: f:\.github\instructions\feature-request-flow.instructions.md -->
-<!-- inherits: f:\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace TDD Agent — Heavy Tier
 
