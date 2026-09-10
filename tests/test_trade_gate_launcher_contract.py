@@ -22,6 +22,24 @@ def test_trade_gate_launcher_owns_source_port_and_stale_process_cleanup() -> Non
     assert "Get-NetTCPConnection -LocalPort $Port -State Listen" in launcher
 
 
+def test_trade_gate_launcher_fails_closed_on_listener_inspection_errors() -> None:
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue" not in launcher
+    assert "-ErrorAction Stop" in launcher
+    assert "catch" in launcher
+    assert "${Port}:" in launcher
+
+
+def test_trade_gate_launcher_requires_exact_normalized_source_entrypoint_match() -> None:
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "GetFullPath" in launcher
+    assert "ToLowerInvariant" in launcher
+    assert "-notlike \"*$sourceEntrypoint*\"" not in launcher
+    assert "src\\utils\\trade_gate.py*" not in launcher
+
+
 def test_portal_registers_the_same_authoritative_launcher() -> None:
     config = json.loads(PORTAL_SERVERS.read_text(encoding="utf-8-sig"))
     trade_gate = next(item for item in config["servers"] if item["port"] == 7475)
