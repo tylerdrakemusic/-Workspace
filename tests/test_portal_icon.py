@@ -138,7 +138,6 @@ def test_regen_script_importable() -> None:
 
 _MUSIC_SERVERS = {
     "Music Dashboard": 5050,
-    "TJD Radio":       8100,
     "Guitar Trainer":  5055,
 }
 
@@ -149,7 +148,6 @@ _ALL_SERVERS = {
 
 _MUSIC_SCRIPTS = {
     5050: r"f:\❤Music\src\analysis\music_dashboard.py",
-    8100: r"f:\❤Music\src\radio\tjd_radio.py",
     5055: r"f:\❤Music\src\training\musician_training_ui.py",
 }
 

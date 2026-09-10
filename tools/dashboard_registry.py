@@ -55,6 +55,7 @@ CANONICAL_PROJECT_ROOTS = frozenset({
 })
 REQUIRED_SPEC_FIELDS = {"id", "title", "type", "category"}
 VALID_TYPES = {"static_html", "living_html", "flask_app", "console", "inline_html"}
+RETIRED_DASHBOARD_IDS = frozenset({"tjd-radio"})
 
 
 def _is_git_worktree_root(project_root: Path) -> bool:
@@ -98,6 +99,11 @@ def load_spec(project_root: Path) -> dict[str, Any] | None:
     except (json.JSONDecodeError, UnicodeDecodeError) as e:
         print(f"  [WARN] Invalid JSON in {spec_path}: {e}", file=sys.stderr)
         return None
+    spec["dashboards"] = [
+        dashboard
+        for dashboard in spec.get("dashboards", [])
+        if dashboard.get("id") not in RETIRED_DASHBOARD_IDS
+    ]
     return spec
 
 
