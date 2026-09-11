@@ -15,6 +15,9 @@ function Get-TradeGateListeners {
 		return @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop)
 	}
 	catch {
+		if ($_.Exception.Message -like '*No matching MSFT_NetTCPConnection objects found*') {
+			return @()
+		}
 		throw "Unable to inspect Trade Gate port ${Port}: $($_.Exception.Message)"
 	}
 }

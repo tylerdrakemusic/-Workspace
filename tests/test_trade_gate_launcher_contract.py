@@ -33,6 +33,13 @@ def test_trade_gate_launcher_fails_closed_on_listener_inspection_errors() -> Non
     assert "${Port}:" in launcher
 
 
+def test_trade_gate_launcher_treats_missing_listener_query_results_as_empty() -> None:
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+
+    assert "No matching MSFT_NetTCPConnection objects found" in launcher
+    assert "return @()" in launcher
+
+
 def test_trade_gate_launcher_requires_exact_normalized_source_entrypoint_match() -> None:
     launcher = LAUNCHER.read_text(encoding="utf-8")
 
