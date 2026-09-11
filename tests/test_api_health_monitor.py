@@ -83,11 +83,11 @@ def test_ping_returns_down_on_4xx():
 
 def test_ping_never_raises_on_exception():
     ep = {
-        "name": "ollama",
-        "label": "Ollama",
-        "url": "http://localhost:11434/api/tags",
+        "name": "huggingface",
+        "label": "HuggingFace",
+        "url": "https://huggingface.co/api/whoami-v2",
         "auth_header": lambda: {},
-        "timeout": 4.0,
+        "timeout": 8.0,
     }
     with patch.object(ahm.httpx, "get", side_effect=ConnectionRefusedError("refused")):
         result = ahm._ping(ep)  # must not raise
@@ -111,9 +111,9 @@ def test_run_pings_writes_three_rows():
     with patch.object(ahm.httpx, "get", return_value=_mock_response(200)), \
          patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         results = ahm.run_pings(conn)
-    assert len(results) == 4  # elevenlabs, ollama, huggingface, perplexity
+    assert len(results) == 3  # elevenlabs, huggingface, perplexity
     db_rows = conn.execute("SELECT COUNT(*) FROM api_health").fetchone()[0]
-    assert db_rows == 4
+    assert db_rows == 3
 
 
 def test_run_pings_endpoint_names():
@@ -122,7 +122,7 @@ def test_run_pings_endpoint_names():
          patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         results = ahm.run_pings(conn)
     names = [r["name"] for r in results]
-    assert names == ["elevenlabs", "ollama", "huggingface", "perplexity"]
+    assert names == ["elevenlabs", "huggingface", "perplexity"]
 
 
 def test_run_pings_prunes_to_30_rows():
@@ -152,13 +152,13 @@ def test_get_latest_per_endpoint_canonical_order():
          patch.object(ahm.httpx, "post", return_value=_mock_response(200)):
         ahm.run_pings(conn)
     rows = ahm.get_latest_per_endpoint(conn)
-    assert [r["name"] for r in rows] == ["elevenlabs", "ollama", "huggingface", "perplexity"]
+    assert [r["name"] for r in rows] == ["elevenlabs", "huggingface", "perplexity"]
 
 
 def test_get_latest_per_endpoint_unknown_when_empty():
     conn = _mem_db()
     rows = ahm.get_latest_per_endpoint(conn)
-    assert len(rows) == 4  # elevenlabs, ollama, huggingface, perplexity
+    assert len(rows) == 3  # elevenlabs, huggingface, perplexity
     assert all(r["status"] == "unknown" for r in rows)
 
 

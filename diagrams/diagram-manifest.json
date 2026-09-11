@@ -38,7 +38,6 @@
           "diagrams/workspace-architecture-detail.mmd",
           "diagrams/workspace-derived-backup-and-coordination.mmd",
           "diagrams/workspace-derived-services.mmd",
-          "diagrams/workspace-derived-gmail-attachments.mmd",
           "diagrams/workspace-integrations.mmd"
         ]
       }
@@ -131,7 +130,8 @@
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
         "derived_views": [
-          "diagrams/workspace-derived-repository-voice.mmd"
+          "diagrams/workspace-derived-repository-voice.mmd",
+          "diagrams/workspace-derived-gmail-attachments.mmd"
         ]
       }
     },
