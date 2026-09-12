@@ -42,6 +42,7 @@ IDENTIFIER_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 TODO_ID_PATTERN = re.compile(r"^[0-9]+$")
 EXCLUDED_DIRECTORY_NAMES = {
     ".git",
+    ".github",
     ".venv",
     "venv",
     ".worktrees",
