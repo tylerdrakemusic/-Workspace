@@ -158,3 +158,50 @@ def test_mocked_renderer_preserves_http_fallback_for_normal_source(tmp_path: Pat
     client = MermaidClient(mmdc_path=None, prefer="http")
     with patch("integrations.mermaid.client.urllib.request.urlopen", return_value=fake_resp):
         assert client.render(source) == fake_svg
+
+
+def test_format_findings_reports_clean_summary_when_empty() -> None:
+    from utils.mermaid_transport_guard import format_findings
+
+    report = format_findings(())
+
+    assert "no violations" in report.lower()
+    # A clean report is a single, noise-free line.
+    assert report.strip() == report
+    assert "\n" not in report.strip()
+
+
+def test_format_findings_lists_full_diagnostics_per_violation() -> None:
+    from utils.mermaid_transport_guard import format_findings
+
+    findings = (
+        TransportFinding(
+            repository="capital",
+            path="diagrams/capital-architecture.mmd",
+            measured_bytes=15000,
+            limit_bytes=14336,
+            remediation="Split capital-architecture.mmd into bounded derived views.",
+        ),
+    )
+
+    report = format_findings(findings)
+
+    assert "capital" in report
+    assert "diagrams/capital-architecture.mmd" in report
+    assert "15000" in report
+    assert "14336" in report
+    assert "Split capital-architecture.mmd" in report
+
+
+def test_full_six_project_workspace_is_clean_and_covers_every_repository(tmp_path: Path) -> None:
+    from utils.mermaid_transport_guard import discover_measured_sources, format_findings
+
+    workspace_root = _federated_workspace(tmp_path, oversized_repo=None)
+
+    measured = discover_measured_sources(workspace_root)
+    assert {repository for repository, _, _ in measured} == set(REPOSITORIES)
+    assert len({repository for repository, _, _ in measured}) == 6
+
+    findings = federated_transport_findings(workspace_root)
+    assert findings == ()
+    assert "no violations" in format_findings(findings).lower()

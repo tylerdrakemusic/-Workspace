@@ -75,3 +75,24 @@ def findings_by_repository(
     for finding in findings:
         grouped.setdefault(finding.repository, []).append(finding)
     return {repository: tuple(items) for repository, items in grouped.items()}
+
+
+def format_findings(findings: tuple[TransportFinding, ...]) -> str:
+    """Render clean, deterministic diagnostics for CI logs and review evidence.
+
+    A compliant run yields a single noise-free summary line. Each violation lists
+    its owning repository, source path, measured/limit request-target bytes, and
+    the split remediation guidance.
+    """
+    if not findings:
+        return "Mermaid transport guard: no violations across all discovered sources."
+    header = (
+        f"Mermaid transport guard: {len(findings)} source(s) exceed the "
+        f"{findings[0].limit_bytes}-byte request-target boundary."
+    )
+    lines = [
+        f"  [{finding.repository}] {finding.path} — "
+        f"{finding.measured_bytes}/{finding.limit_bytes} bytes — {finding.remediation}"
+        for finding in findings
+    ]
+    return "\n".join([header, *lines])

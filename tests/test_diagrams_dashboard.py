@@ -91,6 +91,43 @@ def test_render_all_handles_errors(diagrams_workspace):
     assert "backend down" in results["workspace-broken"]["fallback_error"]
 
 
+def test_render_all_fallback_svg_is_labeled_for_runtime_failure(diagrams_workspace):
+    """A runtime renderer failure produces a labeled fallback SVG card, not a crash."""
+    _write_mmd(diagrams_workspace, "workspace-broken")
+    fake_client = MagicMock()
+    fake_client.render.side_effect = MermaidRenderError("mmdc exit=1")
+
+    results = dd.render_all(client=fake_client)
+
+    svg = results["workspace-broken"]["path"].read_text(encoding="utf-8")
+    assert dd.FALLBACK_MARKER in svg
+    assert "Fallback Preview:" in svg
+    assert "mmdc exit=1" in svg
+
+
+def test_render_all_transport_error_yields_labeled_fallback(diagrams_workspace):
+    """A transport-boundary breach at runtime is a MermaidRenderError subclass, so
+    the dashboard still emits the labeled fallback SVG rather than propagating."""
+    from integrations.mermaid import MermaidTransportError
+
+    _write_mmd(diagrams_workspace, "workspace-oversized")
+    fake_client = MagicMock()
+    fake_client.render.side_effect = MermaidTransportError(
+        "encoded request-target 15000 bytes over the 14336-byte transport boundary",
+        measured_bytes=15000,
+        limit_bytes=14336,
+    )
+
+    results = dd.render_all(client=fake_client)
+
+    entry = results["workspace-oversized"]
+    assert entry["status"] == "fallback"
+    svg = entry["path"].read_text(encoding="utf-8")
+    assert dd.FALLBACK_MARKER in svg
+    assert "Fallback Preview:" in svg
+    assert "transport boundary" in svg
+
+
 def test_main_no_render_no_open_rebuilds_index_from_existing_svgs(diagrams_workspace, monkeypatch):
     _write_mmd(diagrams_workspace, "workspace-existing")
     _write_mmd(diagrams_workspace, "workspace-missing")
