@@ -163,3 +163,39 @@ def test_invalid_event_identity_and_retry_are_rejected():
             retry_count=2,
             retry_limit=1,
         )
+
+
+@pytest.mark.parametrize("outcome", ["replayed", "rejected"])
+def test_replay_outcomes_are_allowed_and_default_emitter_returns_event_id(outcome: str) -> None:
+    from utils.bounded_logging import StructuredEvent, make_event_emitter
+
+    event = StructuredEvent.create(
+        event_name="scheduler.dead_letter_replay",
+        component="scheduler_health",
+        correlation_id="operator-replay",
+        actor="operator",
+        source="sigmacapital",
+        stage="operator_boundary",
+        outcome=outcome,
+        fields={"policy": "safe_off_schedule", "reason": "validated"},
+    )
+    assert event.outcome == outcome
+
+    class RecordingSink:
+        def write(self, received: StructuredEvent) -> bool:
+            assert received.outcome == outcome
+            return True
+
+    emitter = make_event_emitter(
+        RecordingSink(),
+        component="scheduler_health",
+        correlation_id="operator-replay",
+        actor="operator",
+        source="sigmacapital",
+    )
+    assert emitter(
+        "scheduler.dead_letter_replay",
+        stage="operator_boundary",
+        outcome=outcome,
+        fields={"policy": "safe_off_schedule", "reason": "validated"},
+    )

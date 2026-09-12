@@ -22,10 +22,13 @@ _SENSITIVE_NAMES = {
 }
 _ALLOWED_FIELD_NAMES = {
     "attempt", "eligible_pair_count", "exception_type", "execution_mode",
-    "intent_type", "outcome", "queued_count", "reason", "sequence", "status",
+    "intent_type", "outcome", "policy", "queued_count", "reason", "sequence", "status",
 }
 _SEVERITIES = {"debug", "info", "warning", "error", "critical"}
-_OUTCOMES = {"started", "succeeded", "failed", "blocked", "retried", "shed", "healthy", "unhealthy"}
+_OUTCOMES = {
+    "started", "succeeded", "failed", "blocked", "retried", "shed", "healthy", "unhealthy",
+    "replayed", "rejected",
+}
 
 
 @contextmanager
@@ -72,14 +75,17 @@ def make_event_emitter(
     correlation_id: str,
     actor: str,
     source: str,
-) -> Callable[..., str]:
+    return_persistence: bool = False,
+) -> Callable[..., str | bool]:
     """Create an adapter that builds events and writes them to ``sink``."""
-    def emit(event_name: str, **kwargs: Any) -> str:
+    def emit(event_name: str, **kwargs: Any) -> str | bool:
         event = StructuredEvent.create(
             event_name=event_name, component=component, correlation_id=correlation_id,
             actor=actor, source=source, **kwargs,
         )
-        sink.write(event)
+        persisted = sink.write(event)
+        if return_persistence:
+            return bool(persisted)
         return event.event_id
 
     return emit
