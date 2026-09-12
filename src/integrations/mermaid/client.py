@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import base64
+import json
 import shutil
 import subprocess  # nosec B404
 import tempfile
@@ -27,6 +28,18 @@ class MermaidRenderError(RuntimeError):
     """Raised when neither the local CLI nor the HTTP fallback can render."""
 
 
+class MermaidTransportError(MermaidRenderError):
+    """Raised before network access when the encoded request-target exceeds the
+    documented transport boundary. Subclasses ``MermaidRenderError`` so existing
+    callers that catch render failures keep working.
+    """
+
+    def __init__(self, message: str, *, measured_bytes: int, limit_bytes: int) -> None:
+        super().__init__(message)
+        self.measured_bytes = measured_bytes
+        self.limit_bytes = limit_bytes
+
+
 class MermaidClient:
     """Render mermaid diagrams to SVG.
 
@@ -38,6 +51,18 @@ class MermaidClient:
     HTTP_BASE = "https://mermaid.ink"
     CLI_TIMEOUT_SEC = 30
     HTTP_TIMEOUT_SEC = 30
+
+    # Provider evidence: Node.js default --max-http-header-size (bytes). mermaid.ink
+    # is a Node service and documents raising this flag for large diagrams; it does
+    # NOT publish a numeric URI cap. This ceiling bounds the HTTP request line
+    # (which carries the request-target) plus request headers.
+    NODE_MAX_HTTP_HEADER_BYTES = 16384
+    # Local policy: reserve headroom under the Node ceiling for the request-line
+    # tokens (method, HTTP version) and standard request headers (Host, User-Agent,
+    # Accept-Encoding, Connection). Chosen conservatively; not a provider value.
+    REQUEST_HEADER_HEADROOM_BYTES = 2048
+    # Local policy: maximum encoded request-target length enforced before network.
+    MAX_REQUEST_TARGET_BYTES = NODE_MAX_HTTP_HEADER_BYTES - REQUEST_HEADER_HEADROOM_BYTES
 
     def __init__(
         self,
@@ -58,6 +83,7 @@ class MermaidClient:
 
         order = ["cli", "http"] if self.prefer == "cli" else ["http", "cli"]
         errors: list[str] = []
+        transport_error: MermaidTransportError | None = None
 
         for backend in order:
             try:
@@ -68,9 +94,16 @@ class MermaidClient:
                     return self._render_cli(source, fmt)
                 else:
                     return self._render_http(source, fmt)
+            except MermaidTransportError as exc:
+                # Deterministic boundary breach: remember the typed diagnostic but
+                # keep trying other backends (e.g. local CLI can still render).
+                transport_error = exc
+                errors.append(f"{backend}: {exc}")
             except Exception as exc:  # noqa: BLE001 — surface all backend errors
                 errors.append(f"{backend}: {exc}")
 
+        if transport_error is not None:
+            raise transport_error
         raise MermaidRenderError("All mermaid backends failed: " + " | ".join(errors))
 
     def cli_available(self) -> bool:
@@ -104,9 +137,10 @@ class MermaidClient:
             return out_path.read_bytes()
 
     def _render_http(self, source: str, fmt: str) -> bytes:
-        encoded = urllib.parse.quote(self._encode_source(source), safe="")
-        path = "svg" if fmt == "svg" else "img"
-        url = f"{self.http_base}/{path}/{encoded}"
+        request_target = self._request_target(source, fmt)
+        # Preflight: reject an oversized request-target before any network access.
+        self._check_transport_boundary(request_target)
+        url = f"{self.http_base}{request_target}"
         req = urllib.request.Request(url, headers={"User-Agent": "workspace-mermaid/1.0"})
         # Retry transient 5xx / connection errors with linear backoff
         # (mermaid.ink rate-limits under burst).
@@ -128,17 +162,47 @@ class MermaidClient:
             raise MermaidRenderError("Retry loop exited without capturing an error")
         raise last_exc
 
+    # ── transport boundary ───────────────────────────────────────
+
+    def _request_target(self, source: str, fmt: str) -> str:
+        """Return the exact HTTP request-target (`/svg/pako:…` or `/img/pako:…`)."""
+        path = "svg" if fmt == "svg" else "img"
+        return f"/{path}/{self._encode_source(source)}"
+
+    def measure_request_target_bytes(self, source: str, fmt: str = "svg") -> int:
+        """Measure the encoded request-target length (UTF-8 bytes) sent to the host."""
+        return len(self._request_target(source, fmt).encode("utf-8"))
+
+    def _check_transport_boundary(self, request_target: str) -> None:
+        measured = len(request_target.encode("utf-8"))
+        if measured > self.MAX_REQUEST_TARGET_BYTES:
+            raise MermaidTransportError(
+                f"Encoded mermaid request-target is {measured} bytes, over the "
+                f"{self.MAX_REQUEST_TARGET_BYTES}-byte transport boundary; split the "
+                f"diagram into bounded derived views before rendering over HTTP.",
+                measured_bytes=measured,
+                limit_bytes=self.MAX_REQUEST_TARGET_BYTES,
+            )
+
     # ── helpers ──────────────────────────────────────────────────
 
     @staticmethod
     def _encode_source(source: str) -> str:
-        """mermaid.ink accepts a plain base64 of the diagram source.
+        """Compressed pako transport, matching mermaid.ink / the mermaid live editor.
 
-        The pako-prefixed variant requires a JSON-wrapped payload + raw
-        deflate; we use the simpler base64 endpoint for reliability.
-        Reference: https://mermaid.ink
+        JSON-wrap the source, zlib-compress (a zlib stream that mermaid.ink's
+        ``pako.inflate`` decodes), then base64url without padding, prefixed with
+        ``pako:``. This compresses the request-target so large diagrams stay well
+        under the transport boundary.
+        Reference: https://mermaid.ink (pako endpoint)
         """
-        return base64.b64encode(source.encode("utf-8")).decode("ascii")
+        payload = json.dumps(
+            {"code": source, "mermaid": {"theme": "default"}},
+            separators=(",", ":"),
+        )
+        compressed = zlib.compress(payload.encode("utf-8"), 9)
+        encoded = base64.urlsafe_b64encode(compressed).decode("ascii").rstrip("=")
+        return f"pako:{encoded}"
 
     @staticmethod
     def _discover_mmdc() -> str | None:
