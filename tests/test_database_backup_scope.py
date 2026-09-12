@@ -194,9 +194,11 @@ def test_validate_manifest_rejects_unhashable_database_classification() -> None:
 def test_discover_databases_excludes_transient_directories(tmp_path) -> None:
     (tmp_path / "src" / "data").mkdir(parents=True)
     (tmp_path / ".venv").mkdir()
+    (tmp_path / ".github" / "FR_LEDGERS").mkdir(parents=True)
     (tmp_path / "output").mkdir()
     (tmp_path / "src" / "data" / "canonical.sqlite3").touch()
     (tmp_path / ".venv" / "ignored.db").touch()
+    (tmp_path / ".github" / "FR_LEDGERS" / "generated.db").touch()
     (tmp_path / "output" / "generated.db").touch()
     (tmp_path / "backups").mkdir()
     (tmp_path / "backups" / "existing.db").touch()
