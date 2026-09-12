@@ -105,6 +105,23 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
     }
 
 
+def test_workspace_repository_voice_uses_workspace_integrations_as_canonical_parent() -> None:
+    project_root = Path(__file__).resolve().parent.parent
+    manifest = json.loads((project_root / "diagrams" / "diagram-manifest.json").read_text(encoding="utf-8"))
+    lineage_by_path = {
+        diagram["path"]: diagram["lineage"]
+        for diagram in manifest["diagrams"]
+    }
+
+    repository_voice = lineage_by_path["diagrams/workspace-derived-repository-voice.mmd"]
+    integrations = lineage_by_path["diagrams/workspace-integrations.mmd"]
+    backup_and_coordination = lineage_by_path["diagrams/workspace-derived-backup-and-coordination.mmd"]
+
+    assert repository_voice["parent"] == "diagrams/workspace-integrations.mmd"
+    assert "diagrams/workspace-derived-repository-voice.mmd" in integrations["derived_views"]
+    assert "diagrams/workspace-derived-repository-voice.mmd" not in backup_and_coordination["derived_views"]
+
+
 def test_manifest_contract_does_not_measure_utf8_bytes_or_characters(tmp_path: Path) -> None:
     root = tmp_path / "music"
     _write_manifest(root, "music")
