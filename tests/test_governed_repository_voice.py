@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from threading import Event
 
 from src.integrations.ai_manifest.governed_repository_voice import (
@@ -168,3 +169,27 @@ def test_legacy_voice_alert_api_remains_compatible() -> None:
     )
 
     assert result.alert_status == "queued"
+
+
+def test_agent_contract_routes_blocking_voice_through_governed_streaming() -> None:
+    repository_root = Path(__file__).parents[1]
+    voice_contract = (
+        repository_root / ".github" / "instructions" / "repository-voice.instructions.md"
+    ).read_text(encoding="utf-8")
+    new_fr_prompt = (
+        repository_root / ".github" / "prompts" / "new-fr.prompt.md"
+    ).read_text(encoding="utf-8")
+    contract = f"{voice_contract}\n{new_fr_prompt}"
+
+    assert contract.index("start_streaming_tts") < contract.index("streaming_tts_status")
+    assert "cancel_streaming_tts" in contract
+    assert "injected" in contract
+    assert "diagnostic" in contract
+    assert "fail open" in contract
+    assert "ordinary status narration" in contract.lower()
+    assert "durable" in contract
+    assert "fallback" in contract
+    assert "Do not call ElevenLabs directly" in contract
+    assert "audio artifacts" in contract
+    assert "submit_repository_voice" not in contract
+    assert "enqueue_blocking_decision_repository_voice" not in contract

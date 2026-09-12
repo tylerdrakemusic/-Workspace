@@ -17,6 +17,22 @@ mode: ⊕workspace-overseer
 - Prefer existing MCP work and do not invent temporary queries or ad hoc code.
 - Use `file_search`, `grep_search`, `read_file`, and only run terminal commands when needed.
 
+## Blocking Approval Voice
+
+When this flow reaches a blocking approval that genuinely requires Tyler's
+input, keep the normal text request authoritative and use voice only as a
+governed diagnostic channel. The injected AI-Manifest MCP capability must call
+`start_streaming_tts`, poll `streaming_tts_status` to a bounded deadline, and
+call `cancel_streaming_tts` for timeout, cancellation, or interrupted cleanup
+when a session exists.
+
+This capability is injected and governed. Do not call ElevenLabs directly,
+create audio artifacts, make arbitrary MCP/SQL calls, or use the durable
+repository-voice queue as a fallback for this approval path. Provider,
+streaming, audio, and cleanup errors are fail-open: continue the text
+workflow, preserve its state, and treat voice results as diagnostic only.
+Ordinary status narration is unauthorized and out of scope.
+
 <!-- ⊕workspace-intake instructions:
      1. Read the title (and any notes) above.
      2. Inspect the codebase to infer as many fields as possible: type, affected
