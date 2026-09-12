@@ -84,6 +84,9 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
     assert manifest["repository"] == "workspace"
     assert {diagram["path"] for diagram in manifest["diagrams"]} == {
         "diagrams/workspace-agent-topology.mmd",
+        "diagrams/workspace-agent-topology-workspace-tier.mmd",
+        "diagrams/workspace-agent-topology-projects.mmd",
+        "diagrams/workspace-agent-topology-instructions.mmd",
         "diagrams/workspace-architecture-detail.mmd",
         "diagrams/workspace-architecture.mmd",
         "diagrams/workspace-db-schema.mmd",
@@ -93,10 +96,30 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
         "diagrams/workspace-derived-services.mmd",
         "diagrams/workspace-derived-gmail-attachments.mmd",
         "diagrams/workspace-fr-flow.mmd",
+        "diagrams/workspace-fr-flow-todo-coordination.mmd",
+        "diagrams/workspace-fr-flow-review-and-recycle.mmd",
         "diagrams/workspace-integrations.mmd",
         "diagrams/workspace-scheduler-architecture.mmd",
+        "diagrams/workspace-scheduler-architecture-jobs.mmd",
         "diagrams/workspace-tech-stack.mmd",
     }
+
+
+def test_workspace_repository_voice_uses_workspace_integrations_as_canonical_parent() -> None:
+    project_root = Path(__file__).resolve().parent.parent
+    manifest = json.loads((project_root / "diagrams" / "diagram-manifest.json").read_text(encoding="utf-8"))
+    lineage_by_path = {
+        diagram["path"]: diagram["lineage"]
+        for diagram in manifest["diagrams"]
+    }
+
+    repository_voice = lineage_by_path["diagrams/workspace-derived-repository-voice.mmd"]
+    integrations = lineage_by_path["diagrams/workspace-integrations.mmd"]
+    backup_and_coordination = lineage_by_path["diagrams/workspace-derived-backup-and-coordination.mmd"]
+
+    assert repository_voice["parent"] == "diagrams/workspace-integrations.mmd"
+    assert "diagrams/workspace-derived-repository-voice.mmd" in integrations["derived_views"]
+    assert "diagrams/workspace-derived-repository-voice.mmd" not in backup_and_coordination["derived_views"]
 
 
 def test_manifest_contract_does_not_measure_utf8_bytes_or_characters(tmp_path: Path) -> None:

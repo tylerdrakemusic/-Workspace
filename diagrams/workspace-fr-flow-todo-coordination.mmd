@@ -1,0 +1,34 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Derived view of workspace-fr-flow.mmd: bounded TODO operational runtime and the
+%% FR implementation anchor's child TODO coordination substates.
+stateDiagram-v2
+    IN_PROGRESS --> TODO_RUNTIME: operational TODO execution
+    state "Bounded TODO operational runtime" as TODO_RUNTIME {
+        [*] --> TODO_DISPATCH
+        TODO_DISPATCH --> TODO_CLAIM: policy defaults 8 per FR / 16 global
+        TODO_CLAIM --> TODO_LEASE: durable claim / lease / retry
+        TODO_LEASE --> TODO_OUTCOME: allowlisted in-memory outcomes
+        TODO_OUTCOME --> [*]
+    }
+    TODO_RUNTIME --> IN_PROGRESS: required children, artifacts, current parent head validated
+
+    IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
+    state "FR implementation anchor · child TODO coordination" as FR_COORDINATION {
+        [*] --> TODO_ADMISSION
+        TODO_ADMISSION --> CHILD_ASSIGNED: FR match + executable TODO
+        CHILD_ASSIGNED --> CLAIM_VALIDATED: claim/lifecycle validation boundary
+        CLAIM_VALIDATED --> CHILD_WORK: isolated child branch + worktree
+        CHILD_WORK --> SERIALIZED_INTEGRATION: child ready for integration
+        SERIALIZED_INTEGRATION --> STALE_REBASE: child is stale
+        STALE_REBASE --> SERIALIZED_INTEGRATION: rebase passes
+        STALE_REBASE --> CONFLICT_HANDOFF: rebase conflict
+        SERIALIZED_INTEGRATION --> CONFLICT_HANDOFF: integration conflict
+        CONFLICT_HANDOFF --> CHILD_WORK: preserve source + sibling work
+        SERIALIZED_INTEGRATION --> CHILD_RETURN: integrate into FR feature branch
+        CHILD_RETURN --> [*]: return to FR lifecycle; no gate bypass
+    }
+    FR_COORDINATION --> IN_PROGRESS: child handoff complete
+
+    class TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN state
+
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff

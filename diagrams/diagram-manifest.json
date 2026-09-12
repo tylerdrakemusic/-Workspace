@@ -10,6 +10,43 @@
       "split_required": false,
       "lineage": {
         "parent": null,
+        "derived_views": [
+          "diagrams/workspace-agent-topology-workspace-tier.mmd",
+          "diagrams/workspace-agent-topology-projects.mmd",
+          "diagrams/workspace-agent-topology-instructions.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-agent-topology-workspace-tier.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-agent-topology.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-agent-topology-projects.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-agent-topology.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-agent-topology-instructions.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-agent-topology.mmd",
         "derived_views": []
       }
     },
@@ -61,9 +98,7 @@
       "split_required": false,
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
-        "derived_views": [
-          "diagrams/workspace-derived-repository-voice.mmd"
-        ]
+        "derived_views": []
       }
     },
     {
@@ -118,6 +153,31 @@
       "split_required": false,
       "lineage": {
         "parent": null,
+        "derived_views": [
+          "diagrams/workspace-fr-flow-todo-coordination.mmd",
+          "diagrams/workspace-fr-flow-review-and-recycle.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-fr-flow-todo-coordination.mmd",
+      "kind": "workflow",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-fr-flow.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-fr-flow-review-and-recycle.mmd",
+      "kind": "workflow",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-fr-flow.mmd",
         "derived_views": []
       }
     },
@@ -143,6 +203,19 @@
       "split_required": false,
       "lineage": {
         "parent": null,
+        "derived_views": [
+          "diagrams/workspace-scheduler-architecture-jobs.mmd"
+        ]
+      }
+    },
+    {
+      "path": "diagrams/workspace-scheduler-architecture-jobs.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-scheduler-architecture.mmd",
         "derived_views": []
       }
     },

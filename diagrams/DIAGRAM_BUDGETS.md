@@ -20,6 +20,25 @@ fallback risk is non-compliant. URL risk covers renderer transport limits and
 encoding hazards; fallback risk covers unsupported Mermaid directives,
 non-UTF-8 labels, and unavailable renderer backends.
 
+## Manifest Kind to Category
+
+The federation manifest records a diagram `kind`; the validator keys off the
+categories above. `diagram_budgets.category_for_kind` is the deterministic
+bridge. Orientation kinds share the overview budget; implementation-level kinds
+use the wider detail budget; the remaining kinds name their category directly.
+
+| Manifest `kind` | Category |
+|---|---|
+| `architecture` | overview |
+| `agent-topology` | overview |
+| `architecture-detail` | detail |
+| `database-schema` | database-schema |
+| `technology-stack` | technology-stack |
+| `workflow` | workflow |
+
+An unknown `kind` raises rather than defaulting silently, so every new manifest
+kind must be mapped before it validates.
+
 ## Category Rules
 
 - **overview**: one project or cross-project orientation; keep the main path

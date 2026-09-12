@@ -1,0 +1,67 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Derived view of workspace-agent-topology.mmd: ⊕ Workspace agent tier and its internal routing.
+graph LR
+    Tyler([Tyler]) --> Overseer
+
+    subgraph WS["⊕ Workspace Agents"]
+        Overseer(["⊕workspace-overseer"])
+        Intake(["⊕workspace-intake"])
+        CI(["⊕workspace-ci"])
+        Reviewer(["⊕workspace-reviewer"])
+        Doer(["⊕workspace-doer"])
+        Security(["⊕workspace-security"])
+        Hygiene(["⊕workspace-hygiene"])
+        ArchRev(["⊕workspace-architecture-reviewer"])
+        ArchRevLight(["⊕workspace-architecture-reviewer-light"])
+        ArchBeaut(["⊕workspace-architecture-beautifier"])
+        GenQEE(["⊕workspace-gen-qee"])
+        Discovery(["⊕workspace-discovery"])
+        Dashboards(["⊕workspace-dashboards"])
+        BenchAnalyzer(["⊕workspace-bench-analyzer"])
+        Protector(["⊕workspace-protector"])
+        QA(["⊕workspace-qa"])
+        subgraph TDD_TIER["TDD Tier Variants"]
+            TDDLight(["⊕workspace-tdd-light"])
+            TDDStd(["⊕workspace-tdd-standard"])
+            TDDHeavy(["⊕workspace-tdd-heavy"])
+        end
+        subgraph QA_TIER["QA Tier Variants"]
+            QALight(["⊕workspace-qa-light"])
+            QAHeavy(["⊕workspace-qa-heavy"])
+        end
+        subgraph REV_TIER["Reviewer Tier Variants"]
+            ReviewerLight(["⊕workspace-reviewer-light"])
+            ReviewerHeavy(["⊕workspace-reviewer-heavy"])
+        end
+    end
+
+    %% ── Overseer routing ──
+    Overseer --> Intake & CI & Reviewer & Doer & Security
+    Overseer --> Hygiene & ArchRev & ArchBeaut & GenQEE & Discovery
+    Overseer --> ArchRevLight
+    Overseer --> Dashboards & BenchAnalyzer & Protector & QA
+    Overseer --> TDDLight & TDDStd & TDDHeavy
+    Intake --> CI & Security
+    CI --> TDDStd & QA & Reviewer
+    Security --> Hygiene
+    QA --> Reviewer & ArchRev
+    Dashboards --> Discovery
+    Discovery --> Doer
+    BenchAnalyzer --> Protector
+    Protector --> Reviewer
+    TDDLight --> TDDStd
+    TDDStd --> TDDHeavy
+    ArchRev -.->|STALE → delegates| ArchBeaut
+    ArchRev --> ArchRevLight
+    ArchBeaut --> Reviewer
+    QA --> QALight & QAHeavy
+    Reviewer --> ReviewerLight & ReviewerHeavy
+
+    %% ── Class assignments ──
+    class Overseer,Intake,CI,Reviewer,Doer,Security,Hygiene,ArchRev,ArchRevLight,ArchBeaut ws
+    class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
+    class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
+    class Tyler tyler
+
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff

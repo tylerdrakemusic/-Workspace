@@ -184,3 +184,28 @@ def test_scheduler_reference_declares_statuses_and_excludes_runtime_scheduler_sc
     assert "in-process" in inventory
     assert "live monitoring" in inventory
     assert "schedule editing" in inventory
+
+
+def test_scheduler_architecture_federates_coverage_across_derived_sibling_views(tmp_path: Path) -> None:
+    inventory = tmp_path / "inventory.md"
+    inventory.write_text(
+        """| Project | Task Name | Task Path | Trigger / Cadence | Action / Command | Owner | Status | Evidence | Last Observed Result | Operational Findings |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | Demo | DemoTask | \\Demo\\DemoTask | manual | `tools/run_task.py` | owner | documented | proof.md | none | none |
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "proof.md").write_text("fixture evidence\n", encoding="utf-8")
+    # The overview parent intentionally omits the job/command detail...
+    parent = tmp_path / "workspace-scheduler-architecture.mmd"
+    parent.write_text("graph LR\n    Demo[Demo]\n", encoding="utf-8")
+    # ...which lives in a derived sibling view the validator must federate.
+    jobs = tmp_path / "workspace-scheduler-architecture-jobs.mmd"
+    jobs.write_text(
+        "graph LR\n    Demo --> DemoTask\n    DemoTask --> \\Demo\\DemoTask\n    DemoTask --> run_task.py\n",
+        encoding="utf-8",
+    )
+
+    findings = validate_scheduler_architecture(inventory, parent, {"Demo": tmp_path})
+
+    assert findings == ()

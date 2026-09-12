@@ -145,9 +145,13 @@ def test_workspace_agent_topology_publishes_machine_readable_agent_inventory():
 
 
 def test_workspace_agent_topology_preserves_required_routing_edges():
-    topology = (Path(__file__).resolve().parents[1] / "diagrams" / "workspace-agent-topology.mmd").read_text(
-        encoding="utf-8"
-    )
+    # The oversized parent was split into bounded derived views; the workspace-tier
+    # routing detail now lives in its derived view (FR-20260912 child 644).
+    topology = (
+        Path(__file__).resolve().parents[1]
+        / "diagrams"
+        / "workspace-agent-topology-workspace-tier.mmd"
+    ).read_text(encoding="utf-8")
 
     assert "Overseer --> Intake & CI & Reviewer & Doer & Security" in topology
     assert "Overseer --> TDDLight & TDDStd & TDDHeavy" in topology

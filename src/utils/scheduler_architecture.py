@@ -123,7 +123,7 @@ def validate_scheduler_architecture(
             if not project_evidence.is_file() and not shared_evidence.is_file():
                 findings.append(Finding("evidence_missing", f"{record.project} evidence does not exist: {record.evidence}"))
 
-    diagram = diagram_path.read_text(encoding="utf-8") if diagram_path.is_file() else ""
+    diagram = _federated_diagram_text(diagram_path)
     diagram_without_spaces = re.sub(r"\s+", "", diagram).casefold()
     for record in records:
         project_token = re.sub(r"\s+", "", record.project).casefold()
@@ -135,6 +135,21 @@ def validate_scheduler_architecture(
         ):
             findings.append(Finding("diagram_coverage", f"diagram does not cover {record.project} and {record.task_name}"))
     return tuple(findings)
+
+
+def _federated_diagram_text(diagram_path: Path) -> str:
+    """Concatenate the diagram with its derived sibling views for coverage.
+
+    Coverage federates the overview parent with every ``{stem}-*.mmd`` derived
+    view in the same directory so job/command detail may live in bounded
+    derived views while the parent stays an orientation overview.
+    """
+    if not diagram_path.is_file():
+        return ""
+    parts = [diagram_path.read_text(encoding="utf-8")]
+    for sibling in sorted(diagram_path.parent.glob(f"{diagram_path.stem}-*.mmd")):
+        parts.append(sibling.read_text(encoding="utf-8"))
+    return "\n".join(parts)
 
 
 def _read_records(inventory_path: Path) -> tuple[InventoryRecord, ...]:

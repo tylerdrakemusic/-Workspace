@@ -50,9 +50,13 @@ the diagram and this inventory.
 
 ## Diagram and Maintenance
 
-The companion view is [../diagrams/workspace-scheduler-architecture.mmd](../diagrams/workspace-scheduler-architecture.mmd).
-The Mermaid view links each inventory record to its project and command node;
-its legend retains the documented, deployed, unverified, and no-entry states.
+The companion view is [../diagrams/workspace-scheduler-architecture.mmd](../diagrams/workspace-scheduler-architecture.mmd),
+an orientation overview whose per-project job and command detail lives in the
+bounded derived view [../diagrams/workspace-scheduler-architecture-jobs.mmd](../diagrams/workspace-scheduler-architecture-jobs.mmd).
+The overview legend retains the documented, deployed, unverified, and no-entry
+states; the derived jobs view links each inventory record to its project and
+command node. Diagram-coverage validation federates the overview with its
+derived views, so every record is covered across the pair.
 Architecture review checks this document, the evidence paths, the diagram
 coverage, and the generated discovery contract in [../diagrams/DIAGRAM_DISCOVERY.md](../diagrams/DIAGRAM_DISCOVERY.md).
 Architecture beautification may change layout or styling, but must preserve
