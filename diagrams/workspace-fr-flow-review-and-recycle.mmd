@@ -1,0 +1,34 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Derived view of workspace-fr-flow.mmd: evidence-backed parent-join gate and the
+%% recycled-light / bounded-fix rework paths.
+stateDiagram-v2
+    IN_PROGRESS --> PARENT_JOIN_EVALUATION: implementation done
+    state "Evidence-backed parent join gate" as PARENT_JOIN_EVALUATION {
+        [*] --> PARENT_JOIN_EVALUATOR
+        PARENT_JOIN_EVALUATOR --> PARENT_JOIN_EVIDENCE: parent_join_gates.evaluate_parent_join
+        PARENT_JOIN_EVIDENCE --> PARENT_JOIN_RECOMPUTE: persist parent-join-evidence
+        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_PASS: recompute against latest evidence
+        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_BLOCKED: missing, stale, or mismatched evidence
+        PARENT_JOIN_PASS --> [*]: accept PARENT_JOIN:PASS
+        PARENT_JOIN_BLOCKED --> [*]: reject PARENT_JOIN:PASS
+    }
+    PARENT_JOIN_EVALUATION --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
+    PARENT_JOIN_EVALUATION --> IN_PROGRESS: PARENT_JOIN:PASS blocked
+
+    state "Bounded-fix eligibility boundary" as BOUNDED_FIX_ELIGIBILITY
+
+    AUTO_REVIEWED --> IN_PROGRESS: changes requested
+    IN_PROGRESS --> CHANGES_REQUESTED: rejected implementation / review feedback
+    CHANGES_REQUESTED --> BOUNDED_FIX_ELIGIBILITY: bounded-fix candidate
+    BOUNDED_FIX_ELIGIBILITY --> REVIEW_REQUESTED: eligible bounded-fix, bypass only QA + architecture
+    BOUNDED_FIX_ELIGIBILITY --> IN_PROGRESS: any check fails, reject bypass, recycled-light rejoin
+    CHANGES_REQUESTED --> IN_PROGRESS: sticky recycled-light TDD
+    IN_PROGRESS --> FUNCTIONAL_QA: recycled-light QA
+    FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: recycled-light QA PASS
+    ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: recycled-light architecture PASS
+    REVIEW_REQUESTED --> AUTO_REVIEWED: recycled-light automated review
+    AUTO_REVIEWED --> IN_PROGRESS: changes requested, recycle again
+
+    class BOUNDED_FIX_ELIGIBILITY state
+
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff

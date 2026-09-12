@@ -1,140 +1,19 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
-%% Agent inventory contract: every .github/agents/*.agent.md stem is represented below.
+%% Agent inventory contract: every .github/agents/*.agent.md stem is represented across this
+%% orientation parent and its derived views (workspace-tier, projects, instructions).
 %% Agent stems: ⊕workspace-architecture-beautifier, ⊕workspace-architecture-reviewer, ⊕workspace-architecture-reviewer-light, ⊕workspace-bench-analyzer, ⊕workspace-ci, ⊕workspace-dashboards, ⊕workspace-discovery, ⊕workspace-doer, ⊕workspace-gen-qee, ⊕workspace-hygiene, ⊕workspace-intake, ⊕workspace-overseer, ⊕workspace-protector, ⊕workspace-qa-heavy, ⊕workspace-qa-light, ⊕workspace-qa, ⊕workspace-reviewer-heavy, ⊕workspace-reviewer-light, ⊕workspace-reviewer, ⊕workspace-security, ⊕workspace-tdd-heavy, ⊕workspace-tdd-light, ⊕workspace-tdd-standard
+%% Derived views: workspace-agent-topology-workspace-tier.mmd, workspace-agent-topology-projects.mmd, workspace-agent-topology-instructions.mmd
 graph LR
-    Tyler([Tyler]) --> Overseer
+    Tyler([Tyler]) --> Overseer(["⊕workspace-overseer"]):::ws
+    Overseer --> WSTier[["⊕ Workspace agent tier<br/>see workspace-tier view"]]:::ws
+    Overseer --> LifeOrch(["∞life-orchestrator"]):::life & MusicOrch(["❤music-orchestrator"]):::music & QuantumOrch(["⟨ψ⟩quantum-orchestrator"]):::quantum & ManifestOrch(["👁ai-manifest-orchestrator"]):::manifest & CapitalOrch(["Σcapital-orchestrator"]):::capital
+    LifeOrch --> Rosters[["Project agent rosters<br/>see projects view"]]:::ws
+    MusicOrch --> Rosters
+    QuantumOrch --> Rosters
+    ManifestOrch --> Rosters
+    CapitalOrch --> Rosters
+    Overseer -.->|inherits| Instr[["Shared + project-base instructions<br/>see instructions view"]]:::instr
 
-    subgraph WS["⊕ Workspace Agents"]
-        Overseer(["⊕workspace-overseer"])
-        Intake(["⊕workspace-intake"])
-        CI(["⊕workspace-ci"])
-        Reviewer(["⊕workspace-reviewer"])
-        Doer(["⊕workspace-doer"])
-        Security(["⊕workspace-security"])
-        Hygiene(["⊕workspace-hygiene"])
-        ArchRev(["⊕workspace-architecture-reviewer"])
-        ArchRevLight(["⊕workspace-architecture-reviewer-light"])
-        ArchBeaut(["⊕workspace-architecture-beautifier"])
-        GenQEE(["⊕workspace-gen-qee"])
-        Discovery(["⊕workspace-discovery"])
-        Dashboards(["⊕workspace-dashboards"])
-        BenchAnalyzer(["⊕workspace-bench-analyzer"])
-        Protector(["⊕workspace-protector"])
-        QA(["⊕workspace-qa"])
-        subgraph TDD_TIER["TDD Tier Variants"]
-            TDDLight(["⊕workspace-tdd-light"])
-            TDDStd(["⊕workspace-tdd-standard"])
-            TDDHeavy(["⊕workspace-tdd-heavy"])
-        end
-        subgraph QA_TIER["QA Tier Variants"]
-            QALight(["⊕workspace-qa-light"])
-            QAHeavy(["⊕workspace-qa-heavy"])
-        end
-        subgraph REV_TIER["Reviewer Tier Variants"]
-            ReviewerLight(["⊕workspace-reviewer-light"])
-            ReviewerHeavy(["⊕workspace-reviewer-heavy"])
-        end
-    end
-
-    subgraph LIFE["∞Life"]
-        LifeOrch(["∞life-orchestrator"])
-        LifeBrainstorm(["∞life-brainstorm"])
-        LifeBudget(["∞life-budget"])
-        LifeDA(["∞life-data-analytics"])
-        LifeResearch(["∞life-research"])
-        LifeRisk(["∞life-risk"])
-    end
-
-    subgraph MUSIC["❤Music"]
-        MusicOrch(["❤music-orchestrator"])
-        MusicCatalog(["❤music-catalog"])
-        MusicPerf(["❤music-performance"])
-        MusicProd(["❤music-production"])
-        MusicSig(["❤music-signatures"])
-        MusicGuitarTech(["❤music-guitar-tech"])
-    end
-
-    subgraph QUANTUM["⟨ψ⟩Quantum"]
-        QuantumOrch(["⟨ψ⟩quantum-orchestrator"])
-        QuantumResearch(["⟨ψ⟩quantum-research"])
-    end
-
-    subgraph MANIFEST["👁AI-Manifest"]
-        ManifestOrch(["👁ai-manifest-orchestrator"])
-    end
-
-    subgraph CAPITAL["ΣCapital"]
-        CapitalOrch(["Σcapital-orchestrator"])
-        CapitalResearch(["Σcapital-research"])
-    end
-
-    subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]
-        FRFlow["feature-request-flow"]
-        HygBase["hygiene-base"]
-        OrcClean["orchestrator-cleanup"]
-        DbKeys["db-api-keys"]
-        PlayPreflight["playwright-server-preflight"]
-    end
-
-    subgraph PINSTR["Project Base Instructions"]
-        LifeBase["∞life-base"]
-        HealthEval["∞life-health-evaluation"]
-        MusicBase["❤music-base"]
-        QuantumBase["⟨ψ⟩quantum-base"]
-    end
-
-    %% ── Overseer routing ──
-    Overseer --> Intake & CI & Reviewer & Doer & Security
-    Overseer --> Hygiene & ArchRev & ArchBeaut & GenQEE & Discovery
-    Overseer --> ArchRevLight
-    Overseer --> Dashboards & BenchAnalyzer & Protector & QA
-    Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch & CapitalOrch
-    Overseer --> TDDLight & TDDStd & TDDHeavy
-    Intake --> CI & Security
-    CI --> TDDStd & QA & Reviewer
-    Security --> Hygiene
-    QA --> Reviewer & ArchRev
-    Dashboards --> Discovery
-    Discovery --> Doer
-    BenchAnalyzer --> Protector
-    Protector --> Reviewer
-    TDDLight --> TDDStd
-    TDDStd --> TDDHeavy
-    ArchRev -.->|STALE → delegates| ArchBeaut
-    ArchRev --> ArchRevLight
-    ArchBeaut --> Reviewer
-    QA --> QALight & QAHeavy
-    Reviewer --> ReviewerLight & ReviewerHeavy
-
-    %% ── Project routing ──
-    LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
-    MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
-    QuantumOrch --> QuantumResearch
-    CapitalOrch --> CapitalResearch
-
-    %% ── Instruction inheritance (dashed) ──
-    FRFlow -.-> Intake & Reviewer & ArchRev & ArchBeaut
-    HygBase -.-> Hygiene
-    OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch & CapitalOrch
-    DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch & CapitalOrch
-    PlayPreflight -.-> QA & QALight & QAHeavy
-
-    LifeBase -.-> LifeOrch & LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
-    HealthEval -.-> LifeRisk
-    MusicBase -.-> MusicOrch & MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
-    QuantumBase -.-> QuantumOrch & QuantumResearch
-
-    %% ── Class assignments ──
-    class Overseer,Intake,CI,Reviewer,Doer,Security,Hygiene,ArchRev,ArchRevLight,ArchBeaut ws
-    class GenQEE,Discovery,Dashboards,BenchAnalyzer,Protector,QA ws
-    class TDDLight,TDDStd,TDDHeavy,QALight,QAHeavy,ReviewerLight,ReviewerHeavy ws
-    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
-    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
-    class QuantumOrch,QuantumResearch quantum
-    class ManifestOrch manifest
-    class CapitalOrch capital
-    class CapitalResearch capital
-    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
     class Tyler tyler
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

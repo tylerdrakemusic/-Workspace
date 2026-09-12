@@ -1,66 +1,16 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Scheduler architecture overview. Per-project job/command detail and audited task
+%% paths live in the derived view; validation federates coverage across both.
+%% Derived views: workspace-scheduler-architecture-jobs.mmd
 graph LR
-    %% Audited task paths are retained as safe metadata; live XML and host paths are excluded.
-    %% \∞Life\InfiniteLife-NightlySync | \∞Life\InfiniteLife_Withings_Token_Watcher
-    %% \⟨ψ⟩Quantum\QuantumCacheDepletionGuard_Daily | \⟨ψ⟩Quantum\QuantumCacheFill_Monthly | \⟨ψ⟩Quantum\ShorsMonthlyBench | \⟨ψ⟩Quantum\VQEMonthlyBench | \⟨ψ⟩Quantum\PolicyComplianceAudit_Daily
-    %% \👁AI-Manifest\AI_Manifest_Priority_Rescore
-    %% \⊕Workspace\⊕Workspace-DatabaseBackup | \⊕Workspace\⊕Workspace-SecurityScan | \⊕Workspace\WorkspaceHygiene | \⊕Workspace\Workspace-PerfRegressionAlerter | \⊕Workspace\ProofHealthVerifier | \⊕Workspace\SkillSyncNightly
-    %% \ΣCapital\PositionRealization | \ΣCapital\ProductionFillReconciliation | \ΣCapital\ReconcileOrders
-    subgraph Life["∞ Life"]
-        LifeProject[∞ Life project]:::life
-        Life1([InfiniteLife-NightlySync\ndeployed]):::deployed --> LifeProject
-        Life1 --> Life1Command[/nightly_master_sync.ps1/]:::life
-        Life2([InfiniteLife_Withings_Token_Watcher\ndeployed]):::deployed --> LifeProject
-        Life2 --> Life2Command[/withings_token_watcher.py/]:::life
-    end
-    subgraph Music["❤ Music"]
-        MusicProject[❤ Music project]:::music
-        MusicScheduler([No verified external job\nno-entry]):::noentry --> MusicProject
-        MusicScheduler --> MusicCommand[/none/]:::music
-    end
-    subgraph Quantum["⟨ψ⟩ Quantum"]
-        QuantumProject[⟨ψ⟩ Quantum project]:::quantum
-        Quantum1([QuantumCacheDepletionGuard_Daily\ndeployed]):::deployed --> QuantumProject
-        Quantum1 --> Quantum1Command[/cache_depletion_guard.py/]:::quantum
-        Quantum2([QuantumCacheFill_Monthly\ndeployed]):::deployed --> QuantumProject
-        Quantum2 --> Quantum2Command[/fill_cache.py/]:::quantum
-        Quantum3([ShorsMonthlyBench\ndeployed]):::deployed --> QuantumProject
-        Quantum3 --> Quantum3Command[/run_shors_monthly.py/]:::quantum
-        Quantum4([VQEMonthlyBench\ndeployed]):::deployed --> QuantumProject
-        Quantum4 --> Quantum4Command[/run_vqe_monthly.py/]:::quantum
-        Quantum5([PolicyComplianceAudit_Daily\ndeployed]):::deployed --> QuantumProject
-        Quantum5 --> Quantum5Command[/policy_compliance_audit.py/]:::quantum
-    end
-    subgraph Manifest["👁 AI-Manifest"]
-        ManifestProject[👁 AI-Manifest project]:::manifest
-        Manifest1([AI_Manifest_Priority_Rescore\ndeployed]):::deployed --> ManifestProject
-        Manifest1 --> Manifest1Command[/priority_rescore.py/]:::manifest
-    end
-    subgraph Workspace["⊕ Workspace"]
-        WorkspaceProject[⊕ Workspace project]:::ws
-        Workspace1([⊕Workspace-DatabaseBackup\ndeployed]):::deployed --> WorkspaceProject
-        Workspace1 --> Workspace1Command[/backup_database.py/]:::ws
-        Workspace2([⊕Workspace-SecurityScan\ndeployed]):::deployed --> WorkspaceProject
-        Workspace2 --> Workspace2Command[/run_security_scan.py/]:::ws
-        Workspace3([WorkspaceHygiene\ndeployed]):::deployed --> WorkspaceProject
-        Workspace3 --> Workspace3Command[/run_hygiene.py/]:::ws
-        Workspace4([Workspace-PerfRegressionAlerter\ndeployed]):::deployed --> WorkspaceProject
-        Workspace4 --> Workspace4Command[/perf_regression_alerter.py/]:::ws
-        Workspace5([ProofHealthVerifier\ndeployed]):::deployed --> WorkspaceProject
-        Workspace5 --> Workspace5Command[/verify_proof_health.py/]:::ws
-        Workspace6([SkillSyncNightly\ndeployed]):::deployed --> WorkspaceProject
-        Workspace6 --> Workspace6Command[/sync_skills.ps1/]:::ws
-    end
-    subgraph Capital["Σ Capital"]
-        CapitalProject[Σ Capital project]:::capital
-        Capital1([PositionRealization\ndeployed]):::deployed --> CapitalProject
-        Capital1 --> Capital1Command[/run_position_realization.py/]:::capital
-        Capital2([ProductionFillReconciliation\ndeployed]):::deployed --> CapitalProject
-        Capital2 --> Capital2Command[/reconcile_production_fills.py/]:::capital
-        Capital3([ReconcileOrders\ndeployed]):::deployed --> CapitalProject
-        Capital3 --> Capital3Command[/reconcile_orders.py/]:::capital
-    end
-    subgraph Legend["Legend"]
+    Life["∞ Life"]:::life --> Jobs[["Scheduled jobs · see jobs view"]]
+    Music["❤ Music"]:::music --> Jobs
+    Quantum["⟨ψ⟩ Quantum"]:::quantum --> Jobs
+    Manifest["👁 AI-Manifest"]:::manifest --> Jobs
+    Workspace["⊕ Workspace"]:::ws --> Jobs
+    Capital["Σ Capital"]:::capital --> Jobs
+
+    subgraph Legend["Legend · job status"]
         Documented([documented]):::documented
         Deployed([deployed]):::deployed
         Unverified([unverified]):::unverified

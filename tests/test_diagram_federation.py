@@ -84,6 +84,9 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
     assert manifest["repository"] == "workspace"
     assert {diagram["path"] for diagram in manifest["diagrams"]} == {
         "diagrams/workspace-agent-topology.mmd",
+        "diagrams/workspace-agent-topology-workspace-tier.mmd",
+        "diagrams/workspace-agent-topology-projects.mmd",
+        "diagrams/workspace-agent-topology-instructions.mmd",
         "diagrams/workspace-architecture-detail.mmd",
         "diagrams/workspace-architecture.mmd",
         "diagrams/workspace-db-schema.mmd",
@@ -93,8 +96,11 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
         "diagrams/workspace-derived-services.mmd",
         "diagrams/workspace-derived-gmail-attachments.mmd",
         "diagrams/workspace-fr-flow.mmd",
+        "diagrams/workspace-fr-flow-todo-coordination.mmd",
+        "diagrams/workspace-fr-flow-review-and-recycle.mmd",
         "diagrams/workspace-integrations.mmd",
         "diagrams/workspace-scheduler-architecture.mmd",
+        "diagrams/workspace-scheduler-architecture-jobs.mmd",
         "diagrams/workspace-tech-stack.mmd",
     }
 

@@ -1,4 +1,8 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% FR lifecycle spine. Composite substates are shown as simple states here and
+%% expanded in the derived views.
+%% Derived views: workspace-fr-flow-todo-coordination.mmd (TODO runtime + FR child coordination),
+%%   workspace-fr-flow-review-and-recycle.mmd (parent-join gate + recycled-light / bounded-fix rework).
 stateDiagram-v2
     [*] --> TRIAGED: Tyler opens FR
     TRIAGED --> BRANCHED: Tyler approves scope
@@ -7,46 +11,21 @@ stateDiagram-v2
     MCP_FIRST --> IN_PROGRESS: governed coordination MCP available
     MCP_FIRST --> LOCAL_FALLBACK: MCP unavailable
     LOCAL_FALLBACK --> IN_PROGRESS: canonical local utilities only
-    state "Bounded TODO operational runtime" as TODO_RUNTIME {
-        [*] --> TODO_DISPATCH
-        TODO_DISPATCH --> TODO_CLAIM: policy defaults 8 per FR / 16 global
-        TODO_CLAIM --> TODO_LEASE: durable claim / lease / retry
-        TODO_LEASE --> TODO_OUTCOME: allowlisted in-memory outcomes
-        TODO_OUTCOME --> [*]
-    }
+
+    state "Bounded TODO operational runtime" as TODO_RUNTIME
+    state "FR implementation anchor · child TODO coordination" as FR_COORDINATION
+    state "Evidence-backed parent join gate" as PARENT_JOIN_EVALUATION
+    state "Diagram remediation" as DIAGRAM_REMEDIATION
+
     IN_PROGRESS --> TODO_RUNTIME: operational TODO execution
     TODO_RUNTIME --> IN_PROGRESS: required children, artifacts, current parent head validated
     IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
-    state "FR implementation anchor · child TODO coordination" as FR_COORDINATION {
-        [*] --> TODO_ADMISSION
-        TODO_ADMISSION --> CHILD_ASSIGNED: FR match + executable TODO
-        CHILD_ASSIGNED --> CLAIM_VALIDATED: claim/lifecycle validation boundary
-        CLAIM_VALIDATED --> CHILD_WORK: isolated child branch + worktree
-        CHILD_WORK --> SERIALIZED_INTEGRATION: child ready for integration
-        SERIALIZED_INTEGRATION --> STALE_REBASE: child is stale
-        STALE_REBASE --> SERIALIZED_INTEGRATION: rebase passes
-        STALE_REBASE --> CONFLICT_HANDOFF: rebase conflict
-        SERIALIZED_INTEGRATION --> CONFLICT_HANDOFF: integration conflict
-        CONFLICT_HANDOFF --> CHILD_WORK: preserve source + sibling work
-        SERIALIZED_INTEGRATION --> CHILD_RETURN: integrate into FR feature branch
-        CHILD_RETURN --> [*]: return to FR lifecycle; no gate bypass
-    }
     FR_COORDINATION --> IN_PROGRESS: child handoff complete
     IN_PROGRESS --> PARENT_JOIN_EVALUATION: implementation done
-    state "Evidence-backed parent join gate" as PARENT_JOIN_EVALUATION {
-        [*] --> PARENT_JOIN_EVALUATOR
-        PARENT_JOIN_EVALUATOR --> PARENT_JOIN_EVIDENCE: parent_join_gates.evaluate_parent_join
-        PARENT_JOIN_EVIDENCE --> PARENT_JOIN_RECOMPUTE: persist parent-join-evidence
-        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_PASS: recompute against latest evidence
-        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_BLOCKED: missing, stale, or mismatched evidence
-        PARENT_JOIN_PASS --> [*]: accept PARENT_JOIN:PASS
-        PARENT_JOIN_BLOCKED --> [*]: reject PARENT_JOIN:PASS
-    }
     PARENT_JOIN_EVALUATION --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
     PARENT_JOIN_EVALUATION --> IN_PROGRESS: PARENT_JOIN:PASS blocked
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
-    state "Diagram remediation" as DIAGRAM_REMEDIATION
     ARCHITECTURE_REVIEW --> DIAGRAM_REMEDIATION: STALE/MISSING → reject
     DIAGRAM_REMEDIATION --> ARCHITECTURE_REVIEW: beautifier updates → re-verify
     ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES
@@ -71,23 +50,11 @@ stateDiagram-v2
         AUTO_REVIEWED remains available while child
         TODO bookkeeping is incomplete. Recompute accepts
         PARENT_JOIN:PASS only with fresh valid evidence.
+        Recycled-light and bounded-fix rework paths are
+        detailed in workspace-fr-flow-review-and-recycle.mmd.
     end note
 
-    state "Bounded-fix eligibility boundary" as BOUNDED_FIX_ELIGIBILITY
-
-    AUTO_REVIEWED --> IN_PROGRESS: changes requested
-    IN_PROGRESS --> CHANGES_REQUESTED: rejected implementation / review feedback
-    CHANGES_REQUESTED --> BOUNDED_FIX_ELIGIBILITY: bounded-fix candidate
-    BOUNDED_FIX_ELIGIBILITY --> REVIEW_REQUESTED: eligible bounded-fix; bypass only QA + architecture
-    BOUNDED_FIX_ELIGIBILITY --> IN_PROGRESS: any check fails → reject bypass; recycled-light rejoin
-    CHANGES_REQUESTED --> IN_PROGRESS: sticky recycled-light TDD
-    IN_PROGRESS --> FUNCTIONAL_QA: recycled-light QA
-    FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: recycled-light QA PASS
-    ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: recycled-light architecture PASS
-    REVIEW_REQUESTED --> AUTO_REVIEWED: recycled-light automated review
-    AUTO_REVIEWED --> IN_PROGRESS: changes requested; recycle again
-
-    class MCP_FIRST,LOCAL_FALLBACK,TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN,DIAGRAM_REMEDIATION,BOUNDED_FIX_ELIGIBILITY state
+    class MCP_FIRST,LOCAL_FALLBACK,DIAGRAM_REMEDIATION state
 
 classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
 classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff

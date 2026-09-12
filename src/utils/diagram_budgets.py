@@ -81,6 +81,27 @@ BUDGETS: dict[DiagramCategory, DiagramBudget] = {
     DiagramCategory.WORKFLOW: DiagramBudget(8000, 12000, 35, 50, split_at_nodes=35, split_at_edges=50),
 }
 
+# Deterministic bridge from a federation manifest ``kind`` to a budget category.
+# Orientation kinds (whole-system or cross-project maps) share the overview
+# budget; implementation-level kinds use the wider detail budget. The remaining
+# kinds name their category directly. See diagrams/DIAGRAM_BUDGETS.md.
+_KIND_TO_CATEGORY: dict[str, DiagramCategory] = {
+    "architecture": DiagramCategory.OVERVIEW,
+    "agent-topology": DiagramCategory.OVERVIEW,
+    "architecture-detail": DiagramCategory.DETAIL,
+    "database-schema": DiagramCategory.DATABASE_SCHEMA,
+    "technology-stack": DiagramCategory.TECHNOLOGY_STACK,
+    "workflow": DiagramCategory.WORKFLOW,
+}
+
+
+def category_for_kind(kind: str) -> DiagramCategory:
+    """Resolve a manifest diagram ``kind`` to its budget category."""
+    try:
+        return _KIND_TO_CATEGORY[kind]
+    except KeyError as exc:
+        raise KeyError(f"unknown diagram kind {kind!r}; add it to _KIND_TO_CATEGORY") from exc
+
 
 def validate_diagram(spec: DiagramSpec) -> ValidationResult:
     """Validate one diagram against its category budget and lineage rules."""

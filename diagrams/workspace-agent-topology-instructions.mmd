@@ -1,0 +1,34 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Derived view of workspace-agent-topology.mmd: shared and project-base instruction inheritance.
+graph LR
+    subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]
+        FRFlow["feature-request-flow"]
+        HygBase["hygiene-base"]
+        OrcClean["orchestrator-cleanup"]
+        DbKeys["db-api-keys"]
+        PlayPreflight["playwright-server-preflight"]
+    end
+
+    subgraph PINSTR["Project Base Instructions"]
+        LifeBase["∞life-base"]
+        HealthEval["∞life-health-evaluation"]
+        MusicBase["❤music-base"]
+        QuantumBase["⟨ψ⟩quantum-base"]
+    end
+
+    %% ── Instruction inheritance (dashed) ──
+    FRFlow -.-> Intake & Reviewer & ArchRev & ArchBeaut
+    HygBase -.-> Hygiene
+    OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch & CapitalOrch
+    DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch & CapitalOrch
+    PlayPreflight -.-> QA & QALight & QAHeavy
+
+    LifeBase -.-> LifeOrch & LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
+    HealthEval -.-> LifeRisk
+    MusicBase -.-> MusicOrch & MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
+    QuantumBase -.-> QuantumOrch & QuantumResearch
+
+    %% ── Class assignments ──
+    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
+
+classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa

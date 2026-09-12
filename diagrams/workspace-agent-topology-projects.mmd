@@ -1,0 +1,59 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Derived view of workspace-agent-topology.mmd: per-project agent rosters and orchestrator routing.
+graph LR
+    Overseer(["⊕workspace-overseer"]):::ws
+
+    subgraph LIFE["∞Life"]
+        LifeOrch(["∞life-orchestrator"])
+        LifeBrainstorm(["∞life-brainstorm"])
+        LifeBudget(["∞life-budget"])
+        LifeDA(["∞life-data-analytics"])
+        LifeResearch(["∞life-research"])
+        LifeRisk(["∞life-risk"])
+    end
+
+    subgraph MUSIC["❤Music"]
+        MusicOrch(["❤music-orchestrator"])
+        MusicCatalog(["❤music-catalog"])
+        MusicPerf(["❤music-performance"])
+        MusicProd(["❤music-production"])
+        MusicSig(["❤music-signatures"])
+        MusicGuitarTech(["❤music-guitar-tech"])
+    end
+
+    subgraph QUANTUM["⟨ψ⟩Quantum"]
+        QuantumOrch(["⟨ψ⟩quantum-orchestrator"])
+        QuantumResearch(["⟨ψ⟩quantum-research"])
+    end
+
+    subgraph MANIFEST["👁AI-Manifest"]
+        ManifestOrch(["👁ai-manifest-orchestrator"])
+    end
+
+    subgraph CAPITAL["ΣCapital"]
+        CapitalOrch(["Σcapital-orchestrator"])
+        CapitalResearch(["Σcapital-research"])
+    end
+
+    %% ── Overseer delegates to project orchestrators ──
+    Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch & CapitalOrch
+
+    %% ── Project routing ──
+    LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
+    MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
+    QuantumOrch --> QuantumResearch
+    CapitalOrch --> CapitalResearch
+
+    %% ── Class assignments ──
+    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
+    class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
+    class QuantumOrch,QuantumResearch quantum
+    class ManifestOrch manifest
+    class CapitalOrch,CapitalResearch capital
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
