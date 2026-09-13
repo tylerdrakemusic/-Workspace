@@ -766,8 +766,32 @@ def test_launch_process_preserves_powershell_wrapper_arguments(tmp_path: Path) -
     assert captured["shell"] is False
 
 
-def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
+def test_generate_portal_shell_overwrites_stale_file_from_current_manifest(
+    tmp_path: Path,
+) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text("stale portal", encoding="utf-8")
+    manifest = {"dashboards": [{"id": "current"}]}
+
+    with (
+        patch("dashboard_portal.build_manifest", return_value=manifest) as build_manifest,
+        patch(
+            "dashboard_portal.render_portal",
+            return_value="<html>current portal</html>",
+        ) as render_portal,
+    ):
+        supervisor_module._generate_portal_shell(portal_path)
+
+    build_manifest.assert_called_once_with()
+    render_portal.assert_called_once_with(manifest)
+    assert portal_path.read_text(encoding="utf-8") == "<html>current portal</html>"
+
+
+def test_resident_binds_and_opens_before_hanging_optional_regeneration() -> None:
     events: list[str] = []
+    optional_started = threading.Event()
+    release_optional = threading.Event()
+    background_threads: list[threading.Thread] = []
 
     class Server:
         server_port = 8790
@@ -775,29 +799,83 @@ def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
         def serve_forever(self) -> None:
             events.append("serve")
 
+    def regenerate_optional() -> None:
+        optional_started.set()
+        assert release_optional.wait(timeout=2)
+        events.append("optional-finished")
+
+    def start_background(target: object) -> threading.Thread:
+        thread = threading.Thread(target=target, daemon=True)
+        background_threads.append(thread)
+        thread.start()
+        return thread
+
     supervisor = SimpleNamespace(
         new_generation=lambda: events.append("generation") or "generation-1",
         restart_all=lambda generation=None: events.append(f"restart:{generation}"),
     )
 
-    supervisor_module.run_resident(
-        supervisor,
-        generate_portal=lambda: events.append("generate"),
-        server_factory=lambda: events.append("server") or Server(),
-        browser_open=lambda url: events.append(f"browser:{url}"),
-        start_background=lambda target: events.append("background") or target(),
-        open_browser=True,
+    try:
+        supervisor_module.run_resident(
+            supervisor,
+            generate_portal=lambda: events.append("generate"),
+            regenerate_optional=regenerate_optional,
+            server_factory=lambda: events.append("bind:8790") or Server(),
+            browser_open=lambda url: events.append(f"browser:{url}"),
+            start_background=start_background,
+            open_browser=True,
+        )
+
+        assert optional_started.wait(timeout=1)
+        assert "optional-finished" not in events
+        assert events.index("generate") < events.index("bind:8790")
+        assert events.index("bind:8790") < events.index(
+            "browser:http://127.0.0.1:8790/portal.html?generation=generation-1"
+        )
+        assert events[-1] == "serve"
+    finally:
+        release_optional.set()
+        for thread in background_threads:
+            thread.join(timeout=2)
+
+
+@pytest.mark.parametrize(
+    ("failure", "expected_diagnostic"),
+    [
+        (subprocess.TimeoutExpired(["generator"], timeout=120), "timed out"),
+        (FileNotFoundError("missing biomarker generator"), "missing biomarker generator"),
+    ],
+)
+def test_optional_regeneration_is_bounded_and_reports_failures(
+    tmp_path: Path,
+    failure: Exception,
+    expected_diagnostic: str,
+) -> None:
+    calls: list[tuple[list[str], int]] = []
+
+    def run(command: list[str], **kwargs: object) -> object:
+        calls.append((command, int(kwargs["timeout"])))
+        raise failure
+
+    log_path = tmp_path / "optional-regeneration.log"
+    supervisor_module._regenerate_optional_dashboards(
+        run=run,
+        timeout_seconds=120,
+        log_path=log_path,
     )
 
-    assert events == [
-        "generate",
-        "server",
-        "generation",
-        "background",
-        "restart:generation-1",
-        "browser:http://127.0.0.1:8790/portal.html?generation=generation-1",
-        "serve",
+    assert calls == [
+        (
+            [
+                sys.executable,
+                str(WORKSPACE_ROOT / "tools" / "dashboard_portal.py"),
+                "--regen",
+                "--no-open",
+            ],
+            120,
+        )
     ]
+    assert expected_diagnostic in log_path.read_text(encoding="utf-8").casefold()
 
 
 def test_supervisor_uses_reserved_port_8790_everywhere() -> None:
