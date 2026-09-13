@@ -1,11 +1,13 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% Derived views: workspace-architecture-detail.mmd, workspace-derived-backup-and-coordination.mmd,
+%%   workspace-derived-services.mmd, workspace-integrations.mmd
 graph TB
     subgraph Workspace["⊕ Workspace"]
-        Portal[reports/portal.html<br/>Unified Dashboard Portal]
+        Portal[reports/portal.html<br/>synchronous portal shell]
+        Supervisor[portal_supervisor.py<br/>canonical resident supervisor<br/>127.0.0.1:8790]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
-        FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard]
-        WorkspaceDB[(workspace.db<br/>perf_runs)]
+        FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard<br/>workspace.db · perf_runs]
         TodoRuntime[TODO operational runtime<br/>todo_execution_lifecycle contract/database<br/>durable claims, leases, retries]
         DecisionMetadata[Workspace-owned decision metadata contract<br/>validator + advisory priority guidance]
         AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
@@ -14,16 +16,13 @@ graph TB
         BoundedLogging[bounded_logging.py<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
     end
     subgraph Life["∞ Life"]
-        LifeDB[(infinitelife.db<br/>SQLCipher)]
-        LifeApp[Health & Longevity<br/>Tracking]
+        LifeDB[(Health & Longevity Tracking<br/>encrypted SQLCipher data)]
     end
     subgraph Music["❤ Music"]
-        MusicDB[(heartmusic.db<br/>SQLCipher)]
-        MusicApp[Catalog · Setlist<br/>Guitar Trainer]
+        MusicDB[(Catalog · Setlist · Guitar Trainer<br/>heartmusic.db · SQLCipher)]
     end
     subgraph Quantum["⟨ψ⟩ Quantum"]
-        QDB[(quantumpsi.db<br/>SQLCipher)]
-        QApp[Shor · QRNG<br/>IBM Quantum]
+        QDB[(Shor · QRNG · IBM Quantum<br/>quantumpsi.db · SQLCipher)]
     end
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[Executive Audio Brief Portal<br/>ElevenLabs · OpenAI<br/>Voice & Briefs]
@@ -33,12 +32,12 @@ graph TB
         LocalPlayback[injected/local Windows playback]
     end
     subgraph Capital["Σ Capital"]
-        CapitalDB[(sigmacapital.db<br/>SQLCipher)]
-        CapitalApp[Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution]
+        CapitalDB[(Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution<br/>sigmacapital.db · SQLCipher)]
         CapitalLogging[Σ Capital shared logging boundary<br/>adapter + consumers + bootstrap]
     end
+    Supervisor -->|generate · serve no-store · focus browser| Portal
+    Portal -->|GET state · POST restart and retry| Supervisor
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
-    FRDashboard -->|"reads workspace.db / perf_runs"| WorkspaceDB
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime
     MAPI -.->|read-only state projection| TodoRuntime
@@ -69,15 +68,12 @@ graph TB
     ManifestDB -.->|explicit approved canonical mapping| BackupContract
     BackupContract -.->|operator-approved isolated SQLCipher restore| ManifestDB
     BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
-    class Workspace workspace
+    class Workspace ws
     class Life,Music,Quantum,Manifest,Capital project
-    class DecisionMetadata,AlertCapability,AlertFallback ws
-    class BoundedLogging ws
-    class FRDashboard ws
-    class WorkspaceDB db
-    class MAPI,AlertCapability,LocalPlayback manifest
-    class CapitalLogging orch
+    class Supervisor,DecisionMetadata,AlertCapability,AlertFallback,BoundedLogging,FRDashboard ws
     class TTSQueue db
+    class MAPI,LocalPlayback manifest
+    class CapitalLogging orch
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
@@ -85,6 +81,8 @@ classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef project  fill:#1a2730,stroke:#6a8fa4,color:#d8e8f0
