@@ -209,6 +209,15 @@ class TestApiEndpoints:
         data = self._get("/api/frs")
         assert "stale" in data
 
+    def test_cache_busted_root_serves_feature_request_board(self) -> None:
+        url = f"http://127.0.0.1:{self._port}/?generation=probe"
+        with urllib.request.urlopen(url, timeout=5) as response:
+            html = response.read().decode("utf-8")
+
+        assert "<title>⊕ Feature Request Board</title>" in html
+        assert 'class="fr-card"' in html
+        assert "Directory listing for" not in html
+
     def test_signoff_missing_fr_id_returns_400(self) -> None:
         status, body = self._post("/signoff", {})
         assert status == 400
