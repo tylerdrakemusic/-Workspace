@@ -32,6 +32,8 @@ PORTAL_PATH = PROJECT_ROOT / "reports" / "portal.html"
 LOG_ROOT = PROJECT_ROOT / "logs" / "portal_supervisor"
 SUPERVISOR_HOST = "127.0.0.1"
 SUPERVISOR_PORT = 8790
+OPTIONAL_REGEN_TIMEOUT_SECONDS = 180
+OPTIONAL_REGEN_LOG_PATH = LOG_ROOT / "optional-regeneration.log"
 
 
 class ConfigurationError(ValueError):
@@ -234,13 +236,67 @@ def _start_resident_process(no_open: bool) -> None:
     )
 
 
-def _generate_portal() -> None:
-    subprocess.run(  # nosec B603 - fixed local executable and script
-        [sys.executable, str(PROJECT_ROOT / "tools" / "dashboard_portal.py"), "--regen", "--no-open"],
-        cwd=str(PROJECT_ROOT),
-        check=True,
-        shell=False,
+def _generate_portal_shell(portal_path: Path = PORTAL_PATH) -> None:
+    import dashboard_portal
+
+    manifest = dashboard_portal.build_manifest()
+    portal_path.parent.mkdir(parents=True, exist_ok=True)
+    portal_path.write_text(
+        dashboard_portal.render_portal(manifest),
+        encoding="utf-8",
     )
+
+
+def _regenerate_optional_dashboards(
+    *,
+    run: Callable[..., object] = subprocess.run,
+    timeout_seconds: int = OPTIONAL_REGEN_TIMEOUT_SECONDS,
+    log_path: Path = OPTIONAL_REGEN_LOG_PATH,
+) -> None:
+    command = [
+        sys.executable,
+        str(PROJECT_ROOT / "tools" / "dashboard_portal.py"),
+        "--regen",
+        "--no-open",
+    ]
+    try:
+        result = run(  # nosec B603 - fixed local executable and script
+            command,
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout_seconds,
+            check=False,
+            shell=False,
+        )
+        returncode = int(getattr(result, "returncode", 0))
+        output = "\n".join(
+            str(value or "")
+            for value in (getattr(result, "stdout", ""), getattr(result, "stderr", ""))
+        )
+        diagnostic_lines = [
+            line.strip()
+            for line in output.splitlines()
+            if re.search(r"error|timeout|missing|not found", line, re.IGNORECASE)
+        ]
+        if returncode:
+            detail = diagnostic_lines[-1] if diagnostic_lines else f"exit {returncode}"
+            message = f"optional dashboard regeneration failed: {detail}"
+        elif diagnostic_lines:
+            message = f"optional dashboard regeneration completed: {diagnostic_lines[-1]}"
+        else:
+            message = "optional dashboard regeneration completed"
+    except subprocess.TimeoutExpired:
+        message = f"optional dashboard regeneration timed out after {timeout_seconds}s"
+    except OSError as exc:
+        detail = str(exc).strip() or type(exc).__name__
+        message = f"optional dashboard regeneration failed: {detail}"
+
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as log_file:
+        log_file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {message[:240]}\n")
 
 
 def _inject_generation_cache_busting(
@@ -379,6 +435,7 @@ def run_resident(
     supervisor: "PortalSupervisor",
     *,
     generate_portal: Callable[[], object],
+    regenerate_optional: Callable[[], object],
     server_factory: Callable[[], ThreadingHTTPServer],
     browser_open: Callable[[str], object],
     start_background: Callable[[Callable[[], object]], object],
@@ -389,6 +446,7 @@ def run_resident(
     server = server_factory()
     generation = supervisor.new_generation()
     start_background(lambda: supervisor.restart_all(generation))
+    start_background(regenerate_optional)
     if open_browser:
         browser_open(
             f"http://127.0.0.1:{server.server_port}/portal.html?generation={generation}"
@@ -721,7 +779,8 @@ def main() -> None:
     browser = lambda url: webbrowser.open(url, new=0, autoraise=True)
     run_resident(
         supervisor,
-        generate_portal=_generate_portal,
+        generate_portal=_generate_portal_shell,
+        regenerate_optional=_regenerate_optional_dashboards,
         server_factory=lambda: create_http_server(
             (SUPERVISOR_HOST, SUPERVISOR_PORT), supervisor, PORTAL_PATH, browser
         ),
