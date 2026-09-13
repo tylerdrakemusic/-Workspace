@@ -1,7 +1,7 @@
 ﻿# Registers the portal:// custom URL protocol as a thin supervisor shim.
 # Run once. Works without admin (registers in HKCU).
 
-$supervisorPath = "f:\⊕Workspace\tools\portal_supervisor.py"
+$supervisorPath = Join-Path $PSScriptRoot "portal_supervisor.py"
 $stagingDir = Join-Path $env:LOCALAPPDATA "WorkspacePortal"
 $stagedPs1 = Join-Path $stagingDir "portal_protocol_launch.ps1"
 $stagedVbs = Join-Path $stagingDir "portal_protocol_launch.vbs"
@@ -34,6 +34,11 @@ WshShell.Run "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass 
 # Keep launch indirection in ASCII-safe paths for shell/protocol stability.
 Write-PortalShim -PowerShellPath $stagedPs1 -VbsPath $stagedVbs -NoOpen
 Write-PortalShim -PowerShellPath $desktopPs1 -VbsPath $desktopVbs
+$desktopVbsText = @"
+Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run """C:\G\python.exe"" ""$supervisorPath""", 0, False
+"@
+[System.IO.File]::WriteAllText($desktopVbs, $desktopVbsText, [System.Text.Encoding]::Unicode)
 
 $cmd = "wscript.exe `"$stagedVbs`""
 $regBase = "HKCU:\Software\Classes\portal"

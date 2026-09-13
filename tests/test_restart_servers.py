@@ -24,6 +24,7 @@ SUPERVISOR_SCRIPT = WORKSPACE_ROOT / "tools" / "portal_supervisor.py"
 sys.path.insert(0, str(WORKSPACE_ROOT / "tools"))
 
 import portal_supervisor as supervisor_module
+import dashboard_portal
 from portal_supervisor import ConfigurationError, PortalSupervisor, load_config
 
 
@@ -417,6 +418,34 @@ def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
     ]
 
 
+def test_living_html_regeneration_does_not_wait_for_serve_mode() -> None:
+    manifest = {
+        "dashboards": [
+            {
+                "id": "band-mgmt",
+                "title": "Band Management",
+                "type": "living_html",
+                "cli": "C:\\G\\python.exe src/band_mgmt/generate_band_mgmt_panel.py --serve",
+                "project": "Music",
+                "project_root": r"F:\Music",
+            }
+        ]
+    }
+    commands: list[list[str]] = []
+
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        commands.append(command)
+        if "--serve" in command:
+            raise subprocess.TimeoutExpired(command, timeout=120)
+        return SimpleNamespace(returncode=0, stdout="generated", stderr="")
+
+    with patch("dashboard_portal.subprocess.run", side_effect=run):
+        results = dashboard_portal.regenerate_dashboards(manifest)
+
+    assert commands == [[r"C:\G\python.exe", "src/band_mgmt/generate_band_mgmt_panel.py"]]
+    assert results[0]["regen_status"] == "ok"
+
+
 def test_canonical_config_declares_launch_and_http_readiness_for_every_service() -> None:
     config = load_config(PORTAL_CONFIG)
 
@@ -449,6 +478,16 @@ def test_protocol_registration_stages_only_thin_supervisor_shims() -> None:
     assert ".backup-" in text
     assert "portal_servers.json" not in text
     assert "Get-NetTCPConnection" not in text
+
+
+def test_protocol_registration_stages_desktop_vbs_as_direct_supervisor_shim() -> None:
+    text = REGISTER_PROTOCOL.read_text(encoding="utf-8")
+
+    assert '$supervisorPath = Join-Path $PSScriptRoot "portal_supervisor.py"' in text
+    assert 'WshShell.Run """C:\\G\\python.exe"" ""$supervisorPath""", 0, False' in text
+    assert "WriteAllText($desktopVbs, $desktopVbsText, [System.Text.Encoding]::Unicode)" in text
+    assert "restart_servers.ps1" not in text
+    assert "launch_portal.ps1" not in text
 
 
 def test_legacy_restart_script_is_a_thin_supervisor_shim() -> None:

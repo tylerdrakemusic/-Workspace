@@ -414,7 +414,7 @@ def _esc(val) -> str:
 
 
 def regenerate_dashboards(manifest: dict) -> list[dict]:
-    """Run CLI generators for all static_html dashboards. Returns results."""
+    """Run one-shot CLI generators for static and living HTML dashboards."""
     results = []
     for dash in manifest["dashboards"]:
         if dash["type"] not in ("static_html", "living_html"):
@@ -430,6 +430,8 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
             # Split cli string into a list so shell=False is safe  # nosec B603
             # Use posix=False on Windows-style paths so backslashes are not eaten as escapes.
             cli_args = shlex.split(cli, posix=False) if isinstance(cli, str) else list(cli)
+            if dash["type"] == "living_html":
+                cli_args = [arg for arg in cli_args if arg != "--serve"]
             proc = subprocess.run(  # nosec B603,B607
                 cli_args, shell=False, cwd=cwd, capture_output=True, text=True, timeout=120,
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
