@@ -1202,7 +1202,7 @@ def render_portal(manifest: dict) -> str:
       }});
     }}
     function managedFrameUrl(frame, generation) {{
-      const url = new URL(frame.dataset.baseUrl, window.location.href);
+      const url = new URL(frame.dataset.baseUrl || frame.getAttribute('src'), window.location.href);
       if (frame.dataset.cacheBust !== 'false') url.searchParams.set('generation', generation);
       return url.toString();
     }}
@@ -1210,6 +1210,7 @@ def render_portal(manifest: dict) -> str:
       restartGeneration = generation;
       document.querySelectorAll('iframe[src]:not([data-cache-bust="false"])').forEach(frame => {{
         frame.dataset.pendingGeneration = generation;
+        frame.src = managedFrameUrl(frame, generation);
       }});
     }}
     function reconcileManagedFrame(service, state, generation) {{
