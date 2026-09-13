@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import hmac
 import json
 import re
+import secrets
 import shlex
 import shutil
 import subprocess  # nosec B404 - fixed executable names and shell=False
@@ -184,8 +186,14 @@ def _supervisor_active() -> bool:
 
 
 def _post_supervisor(path: str) -> None:
+    with urlopen(
+        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}/api/state", timeout=2
+    ) as response:
+        csrf_token = str(json.load(response)["csrf_token"])
     request = Request(
-        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}{path}", method="POST"
+        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}{path}",
+        method="POST",
+        headers={"X-Supervisor-CSRF": csrf_token},
     )
     with urlopen(request, timeout=2):
         return
@@ -217,11 +225,28 @@ def _generate_portal() -> None:
     )
 
 
-def _inject_generation_cache_busting(portal_html: str, generation: str) -> str:
+def _inject_generation_cache_busting(
+    portal_html: str, generation: str, csrf_token: str = ""
+) -> str:
     generation_json = json.dumps(generation)
+    csrf_token_json = json.dumps(csrf_token)
     cache_busting = f"""<script>
 (() => {{
   const generation = {generation_json};
+    let csrfToken = {csrf_token_json};
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, init = {{}}) => {{
+        const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
+        if ((init.method || 'GET').toUpperCase() === 'POST' && url.origin === window.location.origin) {{
+            const headers = new Headers(init.headers || {{}});
+            headers.set('X-Supervisor-CSRF', csrfToken);
+            init = {{...init, headers}};
+        }}
+        const response = await originalFetch(input, init);
+        const rotatedToken = response.headers.get('X-Supervisor-CSRF');
+        if (url.origin === window.location.origin && rotatedToken) csrfToken = rotatedToken;
+        return response;
+    }};
   document.querySelectorAll('iframe[src]').forEach((frame) => {{
     const url = new URL(frame.src, window.location.href);
     url.searchParams.set('generation', generation);
@@ -259,24 +284,31 @@ def create_http_server(
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-Supervisor-CSRF", supervisor.csrf_token)
             self.end_headers()
             self.wfile.write(body)
+
+        def _mutation_authorized(self) -> bool:
+            expected_host = f"{self.server.server_address[0]}:{self.server.server_port}"
+            if self.headers.get("Host") != expected_host:
+                return False
+            origin = self.headers.get("Origin")
+            if origin is not None and origin != f"http://{expected_host}":
+                return False
+            supplied_token = self.headers.get("X-Supervisor-CSRF", "")
+            return hmac.compare_digest(supplied_token, supervisor.csrf_token)
 
         def do_GET(self) -> None:
             path = urlparse(self.path).path
             if path == "/api/state":
-                self._json_response(
-                    200,
-                    {
-                        "generation": supervisor.current_generation,
-                        "services": supervisor.state,
-                    },
-                )
+                self._json_response(200, supervisor.snapshot(include_token=True))
                 return
             if path in ("/", "/portal.html"):
                 portal_html = portal_path.read_text(encoding="utf-8")
                 body = _inject_generation_cache_busting(
-                    portal_html, supervisor.current_generation or "starting"
+                    portal_html,
+                    supervisor.current_generation or "starting",
+                    supervisor.csrf_token,
                 ).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -288,11 +320,14 @@ def create_http_server(
 
         def do_POST(self) -> None:
             path = urlparse(self.path).path
+            if not self._mutation_authorized():
+                self._json_response(403, {"error": "forbidden"})
+                return
             if path == "/api/restart-all":
-                generation = supervisor.new_generation()
-                threading.Thread(
-                    target=supervisor.restart_all, args=(generation,), daemon=True
-                ).start()
+                generation = supervisor.start_restart_all()
+                if generation is None:
+                    self._json_response(409, {"error": "operation in progress"})
+                    return
                 self._json_response(
                     202, {"status": "restarting", "generation": generation}
                 )
@@ -307,7 +342,14 @@ def create_http_server(
             match = re.fullmatch(r"/api/services/([^/]+)/retry", path)
             if match:
                 name = unquote(match.group(1))
-                threading.Thread(target=supervisor.retry_service, args=(name,), daemon=True).start()
+                try:
+                    started = supervisor.start_retry_service(name)
+                except KeyError:
+                    self._json_response(404, {"error": "service not found"})
+                    return
+                if not started:
+                    self._json_response(409, {"error": "operation in progress"})
+                    return
                 self._json_response(202, {"status": "retrying", "service": name})
                 return
             self._json_response(404, {"error": "not found"})
@@ -358,24 +400,93 @@ class PortalSupervisor:
         self.state: dict[str, dict[str, object]] = {}
         self.current_generation: str | None = None
         self.generation_history: list[Path] = []
+        self.csrf_token = secrets.token_urlsafe(32)
+        self._operation_lock = threading.Lock()
+        self._state_lock = threading.RLock()
+
+    @property
+    def operation_active(self) -> bool:
+        """Report whether a restart or retry operation currently owns the supervisor."""
+        return self._operation_lock.locked()
+
+    def snapshot(self, *, include_token: bool = False) -> dict[str, object]:
+        """Return a consistent copy of the current generation and service state."""
+        with self._state_lock:
+            snapshot: dict[str, object] = {
+                "generation": self.current_generation,
+                "services": {
+                    name: dict(service_state)
+                    for name, service_state in self.state.items()
+                },
+            }
+            if include_token:
+                snapshot["csrf_token"] = self.csrf_token
+            return snapshot
+
+    def _start_operation(self, target: Callable[[], None]) -> bool:
+        if not self._operation_lock.acquire(blocking=False):
+            return False
+
+        def run() -> None:
+            try:
+                target()
+            finally:
+                self._operation_lock.release()
+
+        try:
+            threading.Thread(target=run, daemon=True).start()
+        except Exception:
+            self._operation_lock.release()
+            raise
+        return True
+
+    def start_restart_all(self) -> str | None:
+        """Start Restart All unless another mutation operation is active."""
+        if not self._operation_lock.acquire(blocking=False):
+            return None
+        try:
+            generation = self.new_generation()
+
+            def run() -> None:
+                try:
+                    self._restart_all(generation)
+                finally:
+                    self._operation_lock.release()
+
+            threading.Thread(target=run, daemon=True).start()
+        except Exception:
+            self._operation_lock.release()
+            raise
+        return generation
+
+    def start_retry_service(self, name: str) -> bool:
+        """Start one service retry unless another mutation operation is active."""
+        service = self._service_named(name)
+        return self._start_operation(lambda: self._retry_service(service))
 
     def new_generation(self) -> str:
         """Allocate and retain a new launch generation before warmup starts."""
         generation = uuid4().hex
-        self.current_generation = generation
         generation_logs = self.log_root / generation
         generation_logs.mkdir(parents=True, exist_ok=True)
-        self.generation_history.append(generation_logs)
+        with self._state_lock:
+            self.current_generation = generation
+            self.csrf_token = secrets.token_urlsafe(32)
+            self.generation_history.append(generation_logs)
         return generation
 
     def restart_all(self, generation: str | None = None) -> str:
         """Start a new launch generation for all enabled services."""
-        generation = generation or self.new_generation()
-        self.current_generation = generation
+        with self._operation_lock:
+            return self._restart_all(generation or self.new_generation())
+
+    def _restart_all(self, generation: str) -> str:
         generation_logs = self.log_root / generation
         generation_logs.mkdir(parents=True, exist_ok=True)
-        if generation_logs not in self.generation_history:
-            self.generation_history.append(generation_logs)
+        with self._state_lock:
+            self.current_generation = generation
+            if generation_logs not in self.generation_history:
+                self.generation_history.append(generation_logs)
         services = [service for service in self.config.get("servers", []) if service.get("enabled", False)]
         for service in services:
             self.reclaim_port(int(service["port"]))
@@ -399,8 +510,10 @@ class PortalSupervisor:
 
     def retry_service(self, name: str) -> None:
         """Retry one service without replacing the active launch generation."""
-        if self.current_generation is None:
-            raise RuntimeError("no active launch generation")
+        with self._operation_lock:
+            self._retry_service(self._service_named(name))
+
+    def _service_named(self, name: str) -> dict[str, object]:
         service = next(
             (
                 item
@@ -411,28 +524,37 @@ class PortalSupervisor:
         )
         if service is None:
             raise KeyError(name)
-        prior_attempts = int(self.state.get(name, {}).get("attempt", 0))
+        return service
+
+    def _retry_service(self, service: dict[str, object]) -> None:
+        name = str(service["name"])
+        with self._state_lock:
+            if self.current_generation is None:
+                raise RuntimeError("no active launch generation")
+            generation = self.current_generation
+            prior_attempts = int(self.state.get(name, {}).get("attempt", 0))
         self._launch_service(
             service,
-            self.current_generation,
-            self.log_root / self.current_generation,
+            generation,
+            self.log_root / generation,
             max_attempts=1,
             prior_attempts=prior_attempts,
         )
 
     def _retain_latest_generations(self) -> None:
-        tracked = {path.resolve() for path in self.generation_history}
-        existing = [
-            path
-            for path in self.log_root.iterdir()
-            if path.is_dir()
-            and re.fullmatch(r"[0-9a-f]{32}", path.name)
-            and path.resolve() not in tracked
-        ]
-        generations = existing + self.generation_history
-        for expired in generations[:-10]:
-            shutil.rmtree(expired)
-        self.generation_history = [path for path in generations[-10:] if path.exists()]
+        with self._state_lock:
+            tracked = {path.resolve() for path in self.generation_history}
+            existing = [
+                path
+                for path in self.log_root.iterdir()
+                if path.is_dir()
+                and re.fullmatch(r"[0-9a-f]{32}", path.name)
+                and path.resolve() not in tracked
+            ]
+            generations = existing + self.generation_history
+            for expired in generations[:-10]:
+                shutil.rmtree(expired)
+            self.generation_history = [path for path in generations[-10:] if path.exists()]
 
     def _launch_service(
         self,
@@ -458,23 +580,25 @@ class PortalSupervisor:
                 generation_logs / f"{port}.stderr.log",
             )
             started_at = self.now()
-            self.state[name] = {
-                "pid": process.pid,
-                "command": command,
-                "working_directory": working_directory,
-                "started_at": started_at,
-                "launch_generation": generation,
-                "readiness": "starting",
-                "attempt": prior_attempts + attempt,
-                "error": None,
-            }
+            with self._state_lock:
+                self.state[name] = {
+                    "pid": process.pid,
+                    "command": command,
+                    "working_directory": working_directory,
+                    "started_at": started_at,
+                    "launch_generation": generation,
+                    "readiness": "starting",
+                    "attempt": prior_attempts + attempt,
+                    "error": None,
+                }
             ready, error = self.check_readiness(
                 str(service["readiness_url"]),
                 tuple(int(status) for status in service["accepted_statuses"]),
                 30,
             )
-            self.state[name]["readiness"] = "ready" if ready else "failed"
-            self.state[name]["error"] = error
+            with self._state_lock:
+                self.state[name]["readiness"] = "ready" if ready else "failed"
+                self.state[name]["error"] = error
             if ready:
                 return
 
