@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import http.client
+import os
 import subprocess
 import sys
 import threading
@@ -166,6 +167,57 @@ def test_restart_all_retains_only_latest_ten_unique_generations(tmp_path: Path) 
 
     assert len(set(generations)) == 12
     assert {path.name for path in tmp_path.iterdir()} == set(generations[-10:])
+
+
+def test_restart_cleanup_retains_latest_ten_by_mtime_tie_break_and_current_generation(
+    tmp_path: Path,
+) -> None:
+    existing_names = [f"{index:032x}" for index in range(12)]
+    creation_order = [7, 0, 11, 2, 9, 1, 5, 10, 3, 8, 4, 6]
+    for index in creation_order:
+        path = tmp_path / existing_names[index]
+        path.mkdir()
+        mtime = 100.0 if index < 4 else 200.0 + index
+        os.utime(path, (mtime, mtime))
+
+    current_name = "f" * 32
+
+    def launch(*_args: object) -> SimpleNamespace:
+        current_path = tmp_path / current_name
+        os.utime(current_path, (1.0, 1.0))
+        return SimpleNamespace(pid=4450)
+
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path,
+        reclaim_port=lambda _port: None,
+        launch_process=launch,
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+
+    original_iterdir = Path.iterdir
+
+    def shuffled_iterdir(path: Path) -> object:
+        if path == tmp_path:
+            return iter(
+                [tmp_path / existing_names[index] for index in creation_order]
+                + [tmp_path / current_name]
+            )
+        return original_iterdir(path)
+
+    with (
+        patch("portal_supervisor.uuid4", return_value=SimpleNamespace(hex=current_name)),
+        patch.object(Path, "iterdir", new=shuffled_iterdir),
+    ):
+        generation = supervisor.restart_all()
+
+    expected = set(existing_names[3:] + [current_name])
+    assert generation == current_name
+    assert {path.name for path in tmp_path.iterdir()} == expected
+    assert [path.name for path in supervisor.generation_history] == existing_names[
+        3:
+    ] + [current_name]
 
 
 def test_manual_retry_restarts_only_named_service_in_current_generation(tmp_path: Path) -> None:
@@ -457,15 +509,22 @@ def test_restart_all_and_retry_contention_returns_conflict_without_stale_state(
 
 def test_reclaim_port_force_terminates_every_listener_pid() -> None:
     commands: list[list[str]] = []
+    netstat_calls = 0
 
     def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        nonlocal netstat_calls
         commands.append(command)
         if command[0] == "netstat":
+            netstat_calls += 1
             return SimpleNamespace(
                 returncode=0,
                 stdout=(
-                    "  TCP    127.0.0.1:5101    0.0.0.0:0    LISTENING    1234\n"
-                    "  TCP    [::]:5101         [::]:0       LISTENING    5678\n"
+                    (
+                        "  TCP    127.0.0.1:5101    0.0.0.0:0    LISTENING    1234\n"
+                        "  TCP    [::]:5101         [::]:0       LISTENING    5678\n"
+                    )
+                    if netstat_calls == 1
+                    else ""
                 ),
                 stderr="",
             )
@@ -476,6 +535,80 @@ def test_reclaim_port_force_terminates_every_listener_pid() -> None:
     assert killed == [1234, 5678]
     assert ["taskkill", "/PID", "1234", "/F", "/T"] in commands
     assert ["taskkill", "/PID", "5678", "/F", "/T"] in commands
+
+
+def test_reclaim_port_reports_taskkill_failure() -> None:
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        if command[0] == "netstat":
+            return SimpleNamespace(
+                returncode=0,
+                stdout="  TCP    127.0.0.1:5101    0.0.0.0:0    LISTENING    1234\n",
+                stderr="",
+            )
+        return SimpleNamespace(returncode=5, stdout="", stderr="Access denied")
+
+    with pytest.raises(
+        RuntimeError,
+        match=r"port 5101 reclaim failed: taskkill PID 1234: Access denied",
+    ):
+        supervisor_module.reclaim_port(5101, run=run)
+
+
+def test_reclaim_port_reports_listener_that_remains_after_taskkill() -> None:
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        if command[0] == "netstat":
+            return SimpleNamespace(
+                returncode=0,
+                stdout="  TCP    127.0.0.1:5101    0.0.0.0:0    LISTENING    1234\n",
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    with pytest.raises(
+        RuntimeError,
+        match=r"port 5101 reclaim failed: listener remains \(PID 1234\)",
+    ):
+        supervisor_module.reclaim_port(5101, run=run)
+
+
+def test_failed_reclaim_does_not_launch_or_adopt_stale_listener(tmp_path: Path) -> None:
+    launched: list[str] = []
+    readiness_checks: list[str] = []
+
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        if command[0] == "netstat":
+            return SimpleNamespace(
+                returncode=0,
+                stdout="  TCP    127.0.0.1:5101    0.0.0.0:0    LISTENING    1234\n",
+                stderr="",
+            )
+        return SimpleNamespace(returncode=5, stdout="", stderr="Access denied")
+
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path,
+        reclaim_port=lambda port: supervisor_module.reclaim_port(port, run=run),
+        launch_process=lambda command, *_args: launched.append(command),
+        check_readiness=lambda url, *_args: readiness_checks.append(url) or (True, None),
+        now=lambda: 1000.0,
+    )
+
+    generation = supervisor.restart_all()
+
+    error = "port 5101 reclaim failed: taskkill PID 1234: Access denied"
+    assert launched == []
+    assert readiness_checks == []
+    assert supervisor.state["Alpha"] == {
+        "pid": None,
+        "command": "server-5101.exe --serve",
+        "working_directory": r"C:\services\5101",
+        "started_at": None,
+        "launch_generation": generation,
+        "readiness": "failed",
+        "attempt": 1,
+        "error": error,
+    }
+    assert len(error) <= 160
 
 
 def test_http_readiness_waits_for_a_configured_accepted_status() -> None:
