@@ -15,3 +15,4 @@ Shared utilities and governed coordination for Tyler's multi-project workspace.
 ## Documentation
 
 - [Workspace database backup scope](docs/database-backup-scope.md) — disaster-recovery inventory policy and report-generation contract.
+- [Portal supervisor architecture](docs/portal-supervisor-architecture.md) — resident process ownership, localhost control contract, service recovery, and launcher boundaries.
