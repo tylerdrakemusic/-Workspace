@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import json
 import re
 import shutil
@@ -12,6 +13,7 @@ import threading
 import time
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
+from ctypes import wintypes
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
@@ -31,6 +33,33 @@ SUPERVISOR_PORT = 8790
 
 class ConfigurationError(ValueError):
     """Raised when the supervisor configuration is incomplete or invalid."""
+
+
+def _windows_command_argv(command: str) -> list[str]:
+    argument_count = ctypes.c_int()
+    command_line_to_argv = ctypes.windll.shell32.CommandLineToArgvW
+    command_line_to_argv.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_int)]
+    command_line_to_argv.restype = ctypes.POINTER(wintypes.LPWSTR)
+    arguments = command_line_to_argv(command, ctypes.byref(argument_count))
+    if not arguments:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        return [arguments[index] for index in range(argument_count.value)]
+    finally:
+        local_free = ctypes.windll.kernel32.LocalFree
+        local_free.argtypes = [wintypes.HLOCAL]
+        local_free.restype = wintypes.HLOCAL
+        local_free(arguments)
+
+
+def _launch_argv(command: str, working_directory: str) -> list[str]:
+    arguments = _windows_command_argv(command)
+    executable = Path(arguments[0]).name.casefold()
+    if executable in {"powershell.exe", "pwsh.exe"} and any(
+        argument.casefold() == "-file" for argument in arguments[1:]
+    ):
+        arguments.extend(["-ProjectRoot", working_directory])
+    return arguments
 
 
 def reclaim_port(
@@ -112,7 +141,7 @@ def launch_process(
     )
     with stdout_path.open("ab") as stdout_file, stderr_path.open("ab") as stderr_file:
         return popen(  # nosec B603 - command is workspace-owned configuration
-            command,
+            _launch_argv(command, working_directory),
             cwd=working_directory,
             stdout=stdout_file,
             stderr=stderr_file,
