@@ -309,8 +309,136 @@ def test_generated_portal_uses_authoritative_supervisor_state_and_restart_action
     assert "fetch('/api/restart-all', {method: 'POST'})" in launch_body
     assert "invokePortalLaunch" not in launch_body
     assert "btn.disabled = true" in launch_body
+    assert launch_body.index("quiesceManagedFrames()") < launch_body.index("fetch('/api/restart-all'")
     assert "setTimeout" in launch_body
-    assert "btn.disabled = false" in launch_body
+
+
+@pytest.mark.parametrize("viewport", [{"width": 1280, "height": 800}, {"width": 390, "height": 844}])
+def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(
+    viewport: dict[str, int],
+) -> None:
+    from playwright.sync_api import Route, sync_playwright
+
+    servers = [_service("Alpha", 5101), _service("Executive", 8200)]
+    servers[1]["iframe_cache_bust"] = False
+    manifest = {
+        "dashboards": [
+            {
+                "id": "alpha",
+                "title": "Alpha",
+                "type": "flask_app",
+                "url": "http://localhost:5101/base?view=main",
+                "project": "workspace",
+                "category": "test",
+                "icon": "A",
+                "priority": 1,
+            },
+            {
+                "id": "executive",
+                "title": "Executive",
+                "type": "flask_app",
+                "url": "http://127.0.0.1:8200/",
+                "project": "ai-manifest",
+                "category": "test",
+                "icon": "E",
+                "priority": 2,
+            },
+        ],
+        "projects": [],
+    }
+    with (
+        patch("dashboard_portal._load_servers", return_value=servers),
+        patch("dashboard_portal._render_health_card", return_value=""),
+        patch("dashboard_portal._render_api_health_widget", return_value=""),
+    ):
+        portal = dashboard_portal.render_portal(manifest)
+
+    state = {
+        "generation": "generation-1",
+        "services": {
+            "Alpha": {"readiness": "ready", "attempt": 1, "launch_generation": "generation-1", "error": None},
+            "Executive": {"readiness": "ready", "attempt": 1, "launch_generation": "generation-1", "error": None},
+        },
+    }
+    frame_requests: list[str] = []
+    failed_requests: list[str] = []
+    console_errors: list[str] = []
+
+    def route_request(route: Route) -> None:
+        url = route.request.url
+        if url == "http://127.0.0.1:7331/portal.html":
+            route.fulfill(status=200, content_type="text/html", body=portal)
+        elif url == "http://127.0.0.1:7331/api/state":
+            route.fulfill(status=200, content_type="application/json", body=json.dumps(state))
+        elif url == "http://127.0.0.1:7331/api/restart-all":
+            route.fulfill(status=202, content_type="application/json", body='{"generation":"generation-2"}')
+        elif url == "http://127.0.0.1:7331/api/services/Executive/retry":
+            route.fulfill(status=202, content_type="application/json", body='{"status":"retrying"}')
+        elif url.startswith(("http://localhost:5101/", "http://127.0.0.1:8200/")):
+            frame_requests.append(url)
+            route.fulfill(status=200, content_type="text/html", body="<html><body>ready</body></html>")
+        else:
+            route.fulfill(status=204)
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(viewport=viewport)
+        page.route("**/*", route_request)
+        page.on("requestfailed", lambda request: failed_requests.append(request.url))
+        page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+        page.goto("http://127.0.0.1:7331/portal.html")
+        page.wait_for_function(
+            "() => [...document.querySelectorAll('iframe[data-service]')].every(frame => frame.src)"
+        )
+
+        page.evaluate(
+            """() => {
+                const originalFetch = window.fetch;
+                window.fetch = (input, init) => {
+                    const url = typeof input === 'string' ? input : input.url;
+                    if (url === '/api/restart-all') {
+                        window.restartFrameSources = [...document.querySelectorAll('iframe[data-service]')]
+                            .map(frame => frame.getAttribute('src'));
+                    }
+                    return originalFetch(input, init);
+                };
+            }"""
+        )
+        frame_requests.clear()
+        state["generation"] = "generation-2"
+        for service_state in state["services"].values():
+            service_state.update(readiness="starting", launch_generation="generation-2")
+
+        page.click("#launch-btn")
+        page.wait_for_function("() => Array.isArray(window.restartFrameSources)")
+
+        assert page.evaluate("window.restartFrameSources") == [None, None]
+        assert page.locator('.dash-pane[data-frame-state="restarting"]').count() == 2
+        page.evaluate("pollServers()")
+        assert frame_requests == []
+
+        state["services"]["Alpha"]["readiness"] = "ready"
+        state["services"]["Executive"].update(readiness="failed", error="status 503")
+        page.evaluate("pollServers()")
+        page.wait_for_function("() => document.querySelector('iframe[data-service=\"Alpha\"]').src.includes('generation-2')")
+
+        alpha = page.locator('iframe[data-service="Alpha"]')
+        executive = page.locator('iframe[data-service="Executive"]')
+        assert alpha.get_attribute("src") == "http://localhost:5101/base?view=main&generation=generation-2"
+        assert executive.get_attribute("src") is None
+        assert page.locator('.server-retry[data-service="Executive"]').is_visible()
+        failed_interval_requests = list(frame_requests)
+        page.evaluate("pollServers()")
+        assert frame_requests == failed_interval_requests
+
+        state["services"]["Executive"].update(readiness="ready", error=None)
+        page.evaluate("retryService('Executive')")
+        page.wait_for_function("() => document.querySelector('iframe[data-service=\"Executive\"]').src.endsWith(':8200/')")
+
+        assert executive.get_attribute("src") == "http://127.0.0.1:8200/"
+        assert failed_requests == []
+        assert console_errors == []
+        browser.close()
 
 
 def test_supervisor_serves_no_store_shell_without_duplicate_controls_and_with_cache_busting(tmp_path: Path) -> None:
