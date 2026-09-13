@@ -398,10 +398,10 @@ def test_service_start_time_is_recorded_before_readiness_wait(tmp_path: Path) ->
     assert events == ["started_at", "readiness"]
 
 
-def test_launch_process_preserves_command_cwd_and_redirects_both_streams(tmp_path: Path) -> None:
+def test_launch_process_preserves_sigma_path_in_structured_argv(tmp_path: Path) -> None:
     captured: dict[str, object] = {}
 
-    def popen(command: str, **kwargs: object) -> SimpleNamespace:
+    def popen(command: list[str], **kwargs: object) -> SimpleNamespace:
         captured["command"] = command
         captured.update(kwargs)
         return SimpleNamespace(pid=4700)
@@ -409,19 +409,56 @@ def test_launch_process_preserves_command_cwd_and_redirects_both_streams(tmp_pat
     stdout_path = tmp_path / "5101.stdout.log"
     stderr_path = tmp_path / "5101.stderr.log"
     process = supervisor_module.launch_process(
-        "server.exe --flag exact",
-        r"C:\services\alpha",
+        'C:\\G\\python.exe "f:\\ΣCapital\\src\\trade_gate.py" --serve',
+        r"f:\ΣCapital",
         stdout_path,
         stderr_path,
         popen=popen,
     )
 
     assert process.pid == 4700
-    assert captured["command"] == "server.exe --flag exact"
-    assert captured["cwd"] == r"C:\services\alpha"
+    assert captured["command"] == [
+        r"C:\G\python.exe",
+        r"f:\ΣCapital\src\trade_gate.py",
+        "--serve",
+    ]
+    assert captured["cwd"] == r"f:\ΣCapital"
     assert captured["shell"] is False
     assert Path(captured["stdout"].name) == stdout_path
     assert Path(captured["stderr"].name) == stderr_path
+
+
+def test_launch_process_preserves_powershell_wrapper_arguments(tmp_path: Path) -> None:
+    captured: dict[str, object] = {}
+
+    def popen(command: list[str], **kwargs: object) -> SimpleNamespace:
+        captured["command"] = command
+        captured.update(kwargs)
+        return SimpleNamespace(pid=4701)
+
+    supervisor_module.launch_process(
+        "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass "
+        r"-File f:\⊕Workspace\tools\start_trade_gate.ps1",
+        r"f:\ΣCapital",
+        tmp_path / "7475.stdout.log",
+        tmp_path / "7475.stderr.log",
+        popen=popen,
+    )
+
+    assert captured["command"] == [
+        "powershell.exe",
+        "-NoProfile",
+        "-WindowStyle",
+        "Hidden",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        r"f:\⊕Workspace\tools\start_trade_gate.ps1",
+        "-ProjectRoot",
+        r"f:\ΣCapital",
+    ]
+    assert captured["cwd"] == r"f:\ΣCapital"
+    assert captured["shell"] is False
 
 
 def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
