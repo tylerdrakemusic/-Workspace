@@ -25,6 +25,7 @@ import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Brave registration
 _BRAVE_PATHS = [
@@ -414,7 +415,7 @@ def _esc(val) -> str:
 
 
 def regenerate_dashboards(manifest: dict) -> list[dict]:
-    """Run CLI generators for all static_html dashboards. Returns results."""
+    """Run one-shot CLI generators for static and living HTML dashboards."""
     results = []
     for dash in manifest["dashboards"]:
         if dash["type"] not in ("static_html", "living_html"):
@@ -430,6 +431,8 @@ def regenerate_dashboards(manifest: dict) -> list[dict]:
             # Split cli string into a list so shell=False is safe  # nosec B603
             # Use posix=False on Windows-style paths so backslashes are not eaten as escapes.
             cli_args = shlex.split(cli, posix=False) if isinstance(cli, str) else list(cli)
+            if dash["type"] == "living_html":
+                cli_args = [arg for arg in cli_args if arg != "--serve"]
             proc = subprocess.run(  # nosec B603,B607
                 cli_args, shell=False, cwd=cwd, capture_output=True, text=True, timeout=120,
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
@@ -599,19 +602,48 @@ def _inline_html_content(inline_id: str) -> str:
     return _INLINE_CONTENT.get(inline_id, '<div class="placeholder">No inline content registered.</div>')
 
 
-def _mirror_static_report(source: Path, dash_id: str, idx: int) -> str:
+def _mirror_static_report(
+    source: Path,
+    dash_id: str,
+    idx: int,
+    *,
+    disable_relative_api_health: bool = False,
+) -> str:
   """Mirror external static dashboards into reports/ for HTTP-safe iframe embeds."""
   slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", dash_id or f"dash-{idx}").strip("-")
   if not slug:
     slug = f"dash-{idx}"
   target = PORTAL_OUT.parent / f"portal_{slug}.html"
-  if source.resolve() != target.resolve():
+  if disable_relative_api_health:
+    content = source.read_text(encoding="utf-8").replace(
+      "fetch('/api/health', {cache: 'no-store'})",
+      "Promise.reject(new Error('API health unavailable in static portal embed'))",
+    )
+    target.write_text(content, encoding="utf-8")
+  elif source.resolve() != target.resolve():
     shutil.copy2(source, target)
   return target.name
 
 
-def _content_frames(manifest: dict) -> str:
+def _iframe_source(url: str, servers: list[dict]) -> str:
+  """Render a live iframe source according to its owning service capability."""
+  parsed = urlparse(url)
+  service = next((server for server in servers if server.get("port") == parsed.port), None)
+  if not service:
+    return f'src="{_esc(url)}"'
+  cache_bust = not (service and service.get("iframe_cache_bust") is False)
+  attribute = "src" if cache_bust else "data-src"
+  capability = str(cache_bust).lower()
+  return (
+    f'data-service="{_esc(str(service.get("name", "")))}" '
+    f'data-base-url="{_esc(url)}" data-cache-bust="{capability}" '
+    f'{attribute}="{_esc(url)}"'
+  )
+
+
+def _content_frames(manifest: dict, servers: list[dict] | None = None) -> str:
   """Generate content panes — iframes for static/flask, info cards for console."""
+  servers = _load_servers() if servers is None else servers
   panes = []
   for i, dash in enumerate(manifest["dashboards"]):
     display = "block" if i == 0 else "none"
@@ -621,13 +653,23 @@ def _content_frames(manifest: dict) -> str:
       if serve_url:
         panes.append(
           f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<iframe src="{_esc(serve_url)}" frameborder="0" allow="autoplay"></iframe></div>'
+          f'<iframe {_iframe_source(serve_url, servers)} frameborder="0" allow="autoplay"></iframe></div>'
         )
       else:
         out = dash.get("output_abs", "")
         if out and Path(out).exists():
           out_path = Path(out)
-          if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
+          if dash["type"] == "living_html":
+            try:
+              iframe_src = _mirror_static_report(
+                out_path,
+                str(dash.get("id", "")),
+                i,
+                disable_relative_api_health=True,
+              )
+            except Exception:
+              iframe_src = out_path.as_uri()
+          elif out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
             iframe_src = out_path.name
           else:
             try:
@@ -648,7 +690,7 @@ def _content_frames(manifest: dict) -> str:
       url = dash.get("url", "http://localhost:5050")
       panes.append(
         f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-        f'<iframe src="{_esc(url)}" frameborder="0" allow="autoplay"></iframe></div>'
+        f'<iframe {_iframe_source(url, servers)} frameborder="0" allow="autoplay"></iframe></div>'
       )
     elif dash["type"] == "inline_html":
       inline_id = dash.get("inline_id", "")
@@ -698,10 +740,14 @@ def _render_server_sidebar(servers: list[dict]) -> str:
         port = s['port']
         name = _esc(s['name'])
         rows += (
-            f'<div class="server-row">'
+        f'<div class="server-row" data-service="{name}">'
             f'<span class="server-dot" id="{dot_id}"></span>'
             f'<span class="server-name">{name} :{port}</span>'
-            f'<button class="server-launch" onclick="openServer({port})" title="Open">&nearr;</button>'
+        f'<button class="server-launch server-retry" data-service="{name}" '
+        f'onclick="retryService(this.dataset.service)" aria-label="Retry {name}" '
+        f'title="Retry {name}" hidden>&#8635;</button>'
+        f'<button class="server-launch" onclick="openServer({port})" '
+        f'aria-label="Open {name}" title="Open {name}">&nearr;</button>'
             f'</div>\n      '
         )
     return (
@@ -709,7 +755,7 @@ def _render_server_sidebar(servers: list[dict]) -> str:
         + rows
         + '<div style="margin-top:.2rem">'
         '<button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" '
-        'onclick="launchServers()">&#9889; Start all servers</button>'
+        'onclick="launchServers()">&#8635; Restart All</button>'
         '</div>\n    </div>'
     )
 
@@ -721,14 +767,15 @@ def render_portal(manifest: dict) -> str:
     import urllib.parse
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nav = _nav_items(manifest)
-    frames = _content_frames(manifest)
-    stats = _stats_bar(manifest)
     servers = _load_servers()
+    frames = _content_frames(manifest, servers=servers)
+    stats = _stats_bar(manifest)
     server_js_list = _json.dumps([{"port": s["port"], "name": s["name"]} for s in servers])
     server_sidebar = _render_server_sidebar(servers)
     health_snapshot = collect_portal_health(manifest)
     health_card = _render_health_card(health_snapshot)
     api_health_widget = _render_api_health_widget(_collect_api_health())
+    api_health_markup = f"    {api_health_widget}\n" if api_health_widget else ""
 
     # Load icon config for favicon + sigil tooltip
     _icon_config_path = Path(__file__).parent.parent / "src" / "data" / "portal_icon_config.json"
@@ -933,8 +980,10 @@ def render_portal(manifest: dict) -> str:
   .server-row {{
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.4rem;
     font-size: 0.7rem;
+    min-width: 0;
   }}
   .server-dot {{
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
@@ -942,13 +991,15 @@ def render_portal(manifest: dict) -> str:
   }}
   .server-dot.up {{ background: var(--success); }}
   .server-dot.down {{ background: #ef4444; }}
-  .server-name {{ flex: 1; color: var(--muted); }}
+  .server-name {{ flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
   .server-launch {{
     background: none; border: 1px solid var(--border); border-radius: 4px;
     color: var(--muted); font-size: 0.62rem; padding: 0.1rem 0.35rem;
     cursor: pointer; transition: all .15s;
+    flex-shrink: 0;
   }}
   .server-launch:hover {{ border-color: var(--accent); color: var(--accent); }}
+  .server-launch:disabled {{ cursor: wait; opacity: 0.55; }}
 
   /* Footer */
   .sidebar-footer {{
@@ -974,6 +1025,18 @@ def render_portal(manifest: dict) -> str:
     height: 100%;
     border: none;
     background: var(--bg);
+  }}
+  .dash-pane[data-frame-state="restarting"]::after,
+  .dash-pane[data-frame-state="failed"]::after {{
+    content: attr(data-frame-message);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 1rem;
   }}
 
   /* Placeholder */
@@ -1068,8 +1131,7 @@ def render_portal(manifest: dict) -> str:
     <div class="sidebar-header">
       <h1><span class="sigil"{_prompt_attr}>⊕</span> Dashboard Portal</h1>
     </div>
-    {api_health_widget}
-    {health_card}
+{api_health_markup}    {health_card}
     {stats}
     <div class="nav-section">
       {nav}
@@ -1107,99 +1169,137 @@ def render_portal(manifest: dict) -> str:
       }} catch {{}}
     }})();
 
+    window.addEventListener('DOMContentLoaded', () => {{
+      document.querySelectorAll('iframe[data-src]').forEach((frame) => {{
+        frame.src = frame.dataset.src;
+      }});
+    }});
+
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
-    function invokePortalLaunch() {{
-      const a = document.createElement('a');
-      a.href = 'portal://launch';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+    let restartGeneration = null;
+    function managedFrames(serviceName) {{
+      return Array.from(document.querySelectorAll('iframe[data-service]')).filter(
+        frame => !serviceName || frame.dataset.service === serviceName
+      );
     }}
-    function launchServers() {{
+    function setFrameState(frame, state, message) {{
+      const pane = frame.closest('.dash-pane');
+      if (!pane) return;
+      if (state) {{
+        pane.dataset.frameState = state;
+        pane.dataset.frameMessage = message;
+      }} else {{
+        delete pane.dataset.frameState;
+        delete pane.dataset.frameMessage;
+      }}
+    }}
+    function quiesceManagedFrames(serviceName, state = 'restarting') {{
+      managedFrames(serviceName).forEach(frame => {{
+        frame.removeAttribute('src');
+        delete frame.dataset.loadedGeneration;
+        const label = state === 'failed' ? 'Service unavailable' : 'Restarting service...';
+        setFrameState(frame, state, label);
+      }});
+    }}
+    function managedFrameUrl(frame, generation) {{
+      const url = new URL(frame.dataset.baseUrl || frame.getAttribute('src'), window.location.href);
+      if (frame.dataset.cacheBust !== 'false') url.searchParams.set('generation', generation);
+      return url.toString();
+    }}
+    function applyGeneration(generation) {{
+      restartGeneration = generation;
+      document.querySelectorAll('iframe[src]:not([data-cache-bust="false"])').forEach(frame => {{
+        frame.dataset.pendingGeneration = generation;
+        frame.src = managedFrameUrl(frame, generation);
+      }});
+    }}
+    function reconcileManagedFrame(service, state, generation) {{
+      const frame = managedFrames(service.name)[0];
+      if (!frame || !state) return;
+      const ready = state.readiness === 'ready' && state.launch_generation === generation;
+      if (!ready) {{
+        const frameState = state.readiness === 'failed' ? 'failed' : 'restarting';
+        quiesceManagedFrames(service.name, frameState);
+        return;
+      }}
+      const target = managedFrameUrl(frame, generation);
+      if (frame.getAttribute('src') !== target) {{
+        frame.src = target;
+      }}
+      frame.dataset.loadedGeneration = generation;
+      delete frame.dataset.pendingGeneration;
+      setFrameState(frame, '', '');
+    }}
+    async function launchServers() {{
       const btn = document.getElementById('launch-btn');
-      if (btn) {{ btn.textContent = 'Launching…'; btn.disabled = true; }}
-      // Use a hidden anchor click to invoke portal:// without navigating away
-      invokePortalLaunch();
-      // Re-poll for server status after 4s and 9s
-      setTimeout(() => {{ pollServers(); }}, 4000);
+      if (btn) {{ btn.textContent = 'Restarting...'; btn.disabled = true; }}
+      quiesceManagedFrames();
+      try {{
+        const response = await fetch('/api/restart-all', {{method: 'POST'}});
+        if (!response.ok) throw new Error(`restart failed (${{response.status}})`);
+        const payload = await response.json();
+        applyGeneration(payload.generation);
+        await pollServers();
+      }} catch (error) {{
+        if (btn) btn.title = String(error);
+        await pollServers();
+      }}
       setTimeout(() => {{
-        if (btn) {{ btn.textContent = '\u25b6 Start all servers'; btn.disabled = false; btn.style.animation = ''; }}
         pollServers();
-      }}, 9000);
+      }}, 1000);
     }}
     const SERVERS = {server_js_list};
-    async function probe(url, timeoutMs) {{
+    async function retryService(name) {{
+      const retry = document.querySelector(`.server-retry[data-service="${{CSS.escape(name)}}"]`);
+      if (retry) retry.disabled = true;
+      quiesceManagedFrames(name);
       try {{
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), timeoutMs);
-        await fetch(url, {{ mode: 'no-cors', cache: 'no-store', signal: ctrl.signal }});
-        clearTimeout(tid);
-        return true;
-      }} catch {{
-        return false;
+        const response = await fetch('/api/services/' + encodeURIComponent(name) + '/retry', {{method: 'POST'}});
+        if (!response.ok) throw new Error(`retry failed (${{response.status}})`);
+        await pollServers();
+      }} finally {{
+        setTimeout(() => {{ if (retry) retry.disabled = false; pollServers(); }}, 1000);
       }}
     }}
-    async function checkServer(port, dotId) {{
-      const dot = document.getElementById(dotId);
-      if (!dot) return;
-      const probeUrls = [
-        'http://127.0.0.1:' + port + '/health',
-        'http://localhost:' + port + '/health',
-        'http://127.0.0.1:' + port + '/',
-        'http://localhost:' + port + '/',
-      ];
-      let up = false;
-      for (const url of probeUrls) {{
-        if (await probe(url, 3000)) {{
-          up = true;
-          break;
+    async function pollServers() {{
+      try {{
+        const response = await fetch('/api/state', {{cache: 'no-store'}});
+        if (!response.ok) throw new Error(`state failed (${{response.status}})`);
+        const payload = await response.json();
+        const generation = payload.generation;
+        let operationComplete = Boolean(restartGeneration);
+        SERVERS.forEach(service => {{
+          const state = payload.services[service.name];
+          const dot = document.getElementById('dot-' + service.port);
+          const row = document.querySelector(`.server-row[data-service="${{CSS.escape(service.name)}}"]`);
+          const retry = row ? row.querySelector('.server-retry') : null;
+          if (!state || !dot || !row || !retry) return;
+          dot.classList.toggle('up', state.readiness === 'ready');
+          dot.classList.toggle('down', state.readiness === 'failed');
+          retry.hidden = state.readiness !== 'failed';
+          const diagnostic = `${{service.name}}: ${{state.readiness}} (attempt ${{state.attempt}})`;
+          row.title = state.error || diagnostic;
+          row.setAttribute('aria-label', state.error ? `${{diagnostic}}. ${{state.error}}` : diagnostic);
+          reconcileManagedFrame(service, state, generation);
+          if (restartGeneration && (
+            state.launch_generation !== restartGeneration ||
+            !['ready', 'failed'].includes(state.readiness)
+          )) operationComplete = false;
+        }});
+        if (operationComplete) {{
+          restartGeneration = null;
+          const btn = document.getElementById('launch-btn');
+          if (btn) {{ btn.textContent = '\u21bb Restart All'; btn.disabled = false; }}
         }}
-      }}
-      if (up) {{
-        dot.classList.add('up');
-        dot.classList.remove('down');
-      }} else {{
-        dot.classList.add('down');
-        dot.classList.remove('up');
+      }} catch (error) {{
+        const block = document.getElementById('server-status-block');
+        if (block) block.title = `Supervisor unavailable: ${{error}}`;
       }}
     }}
-    function pollServers() {{ SERVERS.forEach(s => checkServer(s.port, 'dot-' + s.port)); }}
     async function autoLaunch() {{
       const block = document.getElementById('server-status-block');
       if (block) block.style.display = 'block';
-      // If opened directly as file:// (double-click), auto-launch once per tab-open.
-      // launch_portal.ps1 now regenerates mirrors each invocation.
-      if (window.location.protocol === 'file:') {{
-        try {{
-          const key = 'portal_autolaunch_once';
-          if (!sessionStorage.getItem(key)) {{
-            sessionStorage.setItem(key, '1');
-            invokePortalLaunch();
-            setTimeout(() => {{ pollServers(); }}, 4000);
-            setTimeout(() => {{ pollServers(); }}, 9000);
-            setTimeout(() => {{ pollServers(); }}, 15000);
-          }}
-        }} catch {{
-          invokePortalLaunch();
-        }}
-        return;
-      }}
-      let anyUp = false;
-      for (const s of SERVERS) {{
-        if (await probe('http://127.0.0.1:' + s.port + '/', 2000) || await probe('http://localhost:' + s.port + '/', 2000)) {{
-          anyUp = true;
-          break;
-        }}
-      }}
-      // Under http:// hosting, browser gesture restrictions usually require button click.
-      if (!anyUp) {{
-        const btn = document.getElementById('launch-btn');
-        if (btn) {{
-          btn.textContent = '\u25b6 Start all servers';
-          btn.style.animation = 'livingPulse 1.5s ease-in-out infinite';
-        }}
-      }}
+      await pollServers();
     }}
     pollServers();
     setInterval(pollServers, 5000);

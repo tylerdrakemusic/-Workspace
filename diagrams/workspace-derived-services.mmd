@@ -1,24 +1,90 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% is_derived_view=true
-%% Traceability.parent: diagrams/workspace-integrations.mmd
+%% Traceability.parent: diagrams/workspace-architecture.mmd
 graph LR
-    Workspace[⊕ Workspace] --> OpenAI[OpenAI]
+    subgraph Control["⊕ Resident portal control plane"]
+        Shims[PowerShell · VBS · portal protocol<br/>thin compatibility shims]
+        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>operation lock · optional regen after bind]
+        Portal[portal.html<br/>synchronous shell · no-store<br/>quiesce then active-generation readiness reload]
+        Config[portal_servers.json<br/>command · cwd · port · enabled<br/>Trade Gate /health readiness<br/>Executive exact root · cache bust disabled]
+        RuntimeState[(lock-synchronized snapshots<br/>PID · command · cwd · started time<br/>generation · readiness · attempt · error)]
+        Logs[(generation-scoped stdout/stderr<br/>deterministic latest ten<br/>current generation preserved)]
+    end
+    subgraph Lifecycle["Configured service lifecycle"]
+        Reclaim[fail-closed configured-port reclamation<br/>inspect · terminate · verify absent]
+        Pool[three-worker startup pool]
+        Launch[exact configured command<br/>shell=false]
+        Readiness[HTTP readiness<br/>30-second attempt deadline]
+        AutoRetry[one automatic retry]
+        ManualRetry[manual per-service retry<br/>active generation · overlap returns 409]
+    end
+    subgraph Projects["Local portal services"]
+        Life[∞ Life services]
+        Music[❤ Music services]
+        Quantum[⟨ψ⟩ Quantum services]
+        Manifest[👁 AI-Manifest services]
+        Capital[Σ Capital services]
+        WorkspaceServices[⊕ Workspace services]
+    end
+    subgraph External["External services"]
+        OpenAI[OpenAI]
+        FlyIO[Fly.io]
+        IBMQ[IBM Quantum]
+        HF[Hugging Face]
+        Pollinations[Pollinations.AI]
+        ElevenLabs[ElevenLabs]
+        Perplexity[Perplexity.ai]
+        Schwab[Charles Schwab API]
+        GDrive[Google Drive]
+        Gmail[Gmail service]
+    end
+
+    Shims -->|all launch and restart paths dispatch only| Supervisor
+    Config ==> Supervisor
+    Supervisor -->|GET portal · applyGeneration refreshes loaded compatible frames| Portal
+    Portal -->|GET synchronized state| Supervisor
+    Portal -->|POST with loopback Host + matching Origin + rotating CSRF| Supervisor
+    Portal -->|POST retry under shared operation lock| ManualRetry
+    Supervisor -->|focus browser on current generation| Portal
+    Supervisor ==> RuntimeState
+    Supervisor ==> Logs
+    Supervisor --> Reclaim --> Pool --> Launch --> Readiness
+    Readiness -->|first attempt failed| AutoRetry --> Reclaim
+    Readiness -->|ready or second failure| RuntimeState
+    ManualRetry --> Reclaim
+    Launch --> Life & Music & Quantum & Manifest & Capital & WorkspaceServices
+
+    WorkspaceServices --> OpenAI
     Life -->|llm research| OpenAI
     Music -->|CI-deployed cloud host: guitartrainer.fly.dev| FlyIO
     Quantum -->|qiskit jobs| IBMQ
-    Workspace --> HF[Hugging Face]
-    Workspace --> Pollinations[Pollinations.AI]
-    Workspace --> ElevenLabs[ElevenLabs]
-    Workspace --> Perplexity[Perplexity.ai]
-    Workspace --> Schwab[Charles Schwab API]
-    Workspace --> GDrive[Google Drive]
-    Workspace --> Gmail[Gmail service]
-    Quantum[⟨ψ⟩ Quantum] -.->|QRNG entropy| Workspace
-    Capital[Σ Capital] -.->|research and audit events| Workspace
-    Manifest[👁 AI-Manifest] -.->|briefs and roadmap| Workspace
-    class Workspace ws
-    class Quantum,Capital,Manifest orch
+    WorkspaceServices --> HF
+    WorkspaceServices --> Pollinations
+    WorkspaceServices --> ElevenLabs
+    WorkspaceServices --> Perplexity
+    WorkspaceServices --> Schwab
+    WorkspaceServices --> GDrive
+    WorkspaceServices --> Gmail
+    Quantum -.->|QRNG entropy| WorkspaceServices
+    Capital -.->|research and audit events| WorkspaceServices
+    Manifest -.->|briefs and roadmap| WorkspaceServices
+
+    class Shims,Supervisor,Portal,Config,Reclaim,Pool,Launch,Readiness,AutoRetry,ManualRetry,WorkspaceServices ws
+    class RuntimeState,Logs db
+    class Life life
+    class Music music
+    class Quantum quantum
+    class Manifest manifest
+    class Capital orch
     class OpenAI,HF,Pollinations,ElevenLabs,Perplexity,Schwab,GDrive,Gmail ext
-classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
-classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
-classDef ext fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc

@@ -8,32 +8,32 @@ graph LR
     Python --> GoogleAPI[google-api-python-client<br/>google-auth-httplib2<br/>google-auth-oauthlib]
     Python --> Httpx[httpx<br/>API health checks]
     Python --> Pillow[Pillow<br/>image integrations]
-    Python --> Bandit[bandit<br/>security scan]
-    Python --> Safety[safety<br/>security scan]
-    Python --> PipAudit[pip-audit<br/>requirements.txt<br/>strict installed-environment audit]
+    Python --> SecurityTools[bandit · safety · pip-audit<br/>security and dependency scans]
     Python --> Radon[radon<br/>complexity scan]
     Python --> BoundedLogging[⊕ Workspace bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
+    Python --> Supervisor[portal_supervisor.py<br/>127.0.0.1:8790 owner · regen after bind<br/>Host+Origin+rotating CSRF · locks→409 · shell=false]
+    Supervisor --> ServiceConfig[portal_servers.json<br/>Trade Gate /health · Executive query-free root<br/>cache-bust]
+    Supervisor --> WindowsProcess[netstat/taskkill fail closed<br/>latest 10 keep current · applyGeneration UI reload]
+    ThinShims[PowerShell/VBS · desktop/protocol/restart<br/>dispatch only] --> Supervisor
+    PowerShell[PowerShell 7] --> ThinShims
+    WindowsScript[Windows Script Host] --> ThinShims
     CapitalLoggingConsumers[Σ Capital consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalLoggingAdapter[Σ Capital utils.shared_logging adapter<br/>Capital default log path]
     CapitalLoggingAdapter --> BoundedLogging
     CapitalLoggingBootstrap[Σ Capital pytest/direct scripts<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path] -.-> BoundedLogging
-    Python --> TestRunner[/tools/run_tests.py<br/>serial local/debug fallback · CI --parallel/]
+    Python --> TestRunner[/tools/run_tests.py<br/>serial local/debug fallback · CI --parallel<br/>parallel policy excludes playwright and live/]
     TestRunner --> Pytest
-    TestRunner -.-> TestPolicy[tools/parallel_test_policy.json<br/>parallel_ci=true<br/>excludes: playwright, live]
     Pytest --> Xdist[pytest-xdist<br/>CI workers via --parallel]
-    TestRunner -.-> ParallelEvidence[Local parallel evidence<br/>∞Life + ❤Music only]
     Node[Node.js] --> Mmdc[mermaid-cli<br/>mmdc]
-    PowerShell[PowerShell 7] --> LaunchScripts[open_portal.ps1<br/>start_*.ps1]
     GitHub[GitHub Actions] --> CI_Tests[test workflow]
-    CI_Tests --> PipAudit --> Pytest
+    CI_Tests --> SecurityTools --> Pytest
     CI_Tests -->|"python tools/run_tests.py --parallel"| TestRunner
     HumanizerSource[GitHub Humanizer source<br/>blader/humanizer] --> SkillSyncConfig[skill-sync-config.json<br/>pinned commit]
     SkillSyncConfig --> SkillSyncScript[sync-skills.ps1]
     SkillSyncScript ==> LocalSkillCatalog[local skill catalog / agent manifest]
-    class Python,Node,PowerShell lang
-    class BoundedLogging ws
+    class Python,Node,PowerShell,WindowsScript lang
+    class Supervisor,BoundedLogging ws
     class CapitalLoggingAdapter,CapitalLoggingConsumers,CapitalLoggingBootstrap tool
-    class SQLCipher,Pytest,TestRunner,TestPolicy,Xdist,Flask,Playwright,Dotenv,Mmdc,LaunchScripts,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,Bandit,Safety,PipAudit,Radon,SkillSyncConfig,SkillSyncScript,LocalSkillCatalog tool
-    class ParallelEvidence state
+    class SQLCipher,Pytest,TestRunner,Xdist,Flask,Playwright,Dotenv,Mmdc,ThinShims,ServiceConfig,WindowsProcess,GitHub,CI_Tests,GoogleAPI,Httpx,Pillow,SecurityTools,Radon,SkillSyncConfig,SkillSyncScript,LocalSkillCatalog tool
     class HumanizerSource ext
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
@@ -42,6 +42,9 @@ classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef lang     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef tool     fill:#1a1a1a,stroke:#888888,color:#cccccc

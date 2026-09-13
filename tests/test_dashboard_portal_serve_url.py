@@ -8,6 +8,7 @@ Verifies:
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -19,6 +20,7 @@ LIFE_ROOT = WORKSPACE_ROOT.parent / "\u221eLife"
 sys.path.insert(0, str(WORKSPACE_ROOT / "tools"))
 
 import dashboard_portal as dp  # noqa: E402
+import portal_supervisor as supervisor  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +148,101 @@ def test_living_html_serve_url_has_no_live_header() -> None:
     assert "open-btn" not in html, "living_html pane still emits open-btn"
     assert "live-dash" not in html, "living_html pane still emits live-dash wrapper"
     assert 'src="http://localhost:8300/"' in html, "serve_url must still be used as iframe src"
+
+
+def test_executive_iframe_opt_out_preserves_raw_root_path() -> None:
+    """Executive must keep its configured root URL because query-bearing root requests return 404."""
+    manifest = _make_flask_manifest("executive-audio-brief", "http://127.0.0.1:8200/")
+    servers = dp._load_servers()
+
+    frames = dp._content_frames(manifest, servers=servers)
+    served = supervisor._inject_generation_cache_busting(
+        f"<html><body>{frames}</body></html>", "generation-1"
+    )
+
+    assert 'data-cache-bust="false"' in served
+    assert 'data-src="http://127.0.0.1:8200/"' in served
+    assert ' src="http://127.0.0.1:8200/' not in served
+    assert "http://127.0.0.1:8200/?generation=" not in served
+
+
+def test_compatible_iframe_keeps_generation_cache_busting() -> None:
+    """Services without an opt-out must remain eligible for generation cache busting."""
+    manifest = _make_flask_manifest("fr-board", "http://localhost:7474/")
+    servers = [{"port": 7474}]
+
+    frames = dp._content_frames(manifest, servers=servers)
+    served = supervisor._inject_generation_cache_busting(
+        f"<html><body>{frames}</body></html>", "generation-1"
+    )
+
+    assert 'data-cache-bust="true"' in served
+    assert 'src="http://localhost:7474/"' in served
+    assert "url.searchParams.set('generation', generation)" in served
+
+
+def test_restart_all_generation_refresh_targets_only_compatible_iframes() -> None:
+    """Repeated Restart All refreshes must preserve cache-bust opt-outs after hydration."""
+    source = Path(dp.__file__).read_text(encoding="utf-8")
+
+    assert "iframe[src]:not([data-cache-bust=\"false\"])" in source
+    assert "document.querySelectorAll('iframe[src]').forEach(frame" not in source
+
+
+@pytest.mark.playwright
+def test_repeated_generation_refresh_preserves_executive_root_url() -> None:
+    """The rendered client keeps Executive exact while compatible iframe generations advance."""
+    from playwright.sync_api import sync_playwright
+
+    portal_path = WORKSPACE_ROOT / "reports" / "portal.html"
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+        try:
+            portal_html = portal_path.read_text(encoding="utf-8")
+            served = supervisor._inject_generation_cache_busting(
+                portal_html, "generation-initial"
+            )
+            served = served.replace("<head>", f'<head><base href="{portal_path.as_uri()}">', 1)
+            page.set_content(served, wait_until="domcontentloaded")
+            executive = page.locator('iframe[data-cache-bust="false"]')
+            compatible = page.locator('#pane-9 iframe')
+            executive_root = executive.get_attribute("data-src")
+
+            assert executive.get_attribute("src") == executive_root
+            assert "generation=generation-initial" in (
+                compatible.get_attribute("src") or ""
+            )
+            for generation in ("generation-1", "generation-2"):
+                page.evaluate("generation => applyGeneration(generation)", generation)
+                assert executive.get_attribute("src") == executive_root
+                assert f"generation={generation}" in (compatible.get_attribute("src") or "")
+        finally:
+            browser.close()
+
+
+def test_static_living_html_mirror_disables_ownerless_relative_health_poll(tmp_path: Path) -> None:
+    """A portal-hosted living dashboard must not probe the supervisor's relative /api/health."""
+    source = tmp_path / "agent_ops_dashboard.html"
+    source.write_text(
+        "<html><script>fetch('/api/health', {cache: 'no-store'});</script></html>",
+        encoding="utf-8",
+    )
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    manifest = _make_manifest(serve_url=None)
+    manifest["dashboards"][0].update({
+        "id": "agent-ops",
+        "output_abs": str(source),
+    })
+
+    with patch.object(dp, "PORTAL_OUT", reports / "portal.html"):
+        frames = dp._content_frames(manifest, servers=[])
+
+    mirror_name = re.search(r'<iframe src="([^"]+)"', frames)
+    assert mirror_name is not None
+    mirror = (reports / mirror_name.group(1)).read_text(encoding="utf-8")
+    assert "fetch('/api/health'" not in mirror
 
 
 # ---------------------------------------------------------------------------
