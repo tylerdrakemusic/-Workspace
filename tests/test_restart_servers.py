@@ -398,6 +398,32 @@ def test_service_start_time_is_recorded_before_readiness_wait(tmp_path: Path) ->
     assert events == ["started_at", "readiness"]
 
 
+def test_launch_process_parses_windows_command_without_windows_ctypes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, object] = {}
+
+    def popen(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        captured["command"] = command
+        return SimpleNamespace(pid=4699)
+
+    monkeypatch.delattr(supervisor_module.ctypes, "windll", raising=False)
+
+    supervisor_module.launch_process(
+        'C:\\G\\python.exe "f:\\ΣCapital\\src\\trade gate.py" --serve',
+        r"f:\ΣCapital",
+        tmp_path / "5101.stdout.log",
+        tmp_path / "5101.stderr.log",
+        popen=popen,
+    )
+
+    assert captured["command"] == [
+        r"C:\G\python.exe",
+        r"f:\ΣCapital\src\trade gate.py",
+        "--serve",
+    ]
+
+
 def test_launch_process_preserves_sigma_path_in_structured_argv(tmp_path: Path) -> None:
     captured: dict[str, object] = {}
 
