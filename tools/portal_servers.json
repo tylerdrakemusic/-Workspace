@@ -17,8 +17,8 @@
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_guitar_trainer.ps1",
                         "working_directory":  "f:\\❤Music",
-                        "readiness_url":  "http://127.0.0.1:5055/",
-                        "accepted_statuses":  [200, 302],
+                        "readiness_url":  "http://127.0.0.1:5055/health",
+                        "accepted_statuses":  [200],
                         "enabled":  true
                     },
                     {
@@ -37,8 +37,8 @@
                         "project":  "👁AI-Manifest",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_executive_brief.ps1",
                         "working_directory":  "f:\\👁AI-Manifest",
-                        "readiness_url":  "http://127.0.0.1:8200/",
-                        "accepted_statuses":  [200, 302],
+                        "readiness_url":  "http://127.0.0.1:8200/health",
+                        "accepted_statuses":  [200],
                         "enabled":  true
                     },
                     {
@@ -57,8 +57,8 @@
                         "project":  "∞Life",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_reauth_server.ps1",
                         "working_directory":  "f:\\∞Life",
-                        "readiness_url":  "http://127.0.0.1:8766/",
-                        "accepted_statuses":  [200, 302, 401, 403],
+                        "readiness_url":  "http://127.0.0.1:8766/health",
+                        "accepted_statuses":  [200],
                         "enabled":  true
                     },
                     {

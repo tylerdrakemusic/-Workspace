@@ -130,11 +130,21 @@ def test_supervisor_config_starts_guitar_trainer(servers_json: dict) -> None:
     assert entry["working_directory"] == "f:\\❤Music"
 
 
-def test_supervisor_config_checks_guitar_trainer_http_readiness(servers_json: dict) -> None:
-    """Guitar Trainer readiness must use its configured HTTP endpoint."""
-    entry = next(s for s in servers_json["servers"] if s["name"] == "Guitar Trainer")
-    assert entry["readiness_url"] == "http://127.0.0.1:5055/"
-    assert 200 in entry["accepted_statuses"]
+@pytest.mark.parametrize(
+    ("service_name", "port"),
+    [
+        ("Executive", 8200),
+        ("∞Life Re-auth Server", 8766),
+        ("Guitar Trainer", 5055),
+    ],
+)
+def test_supervisor_config_uses_health_readiness_contract(
+    servers_json: dict, service_name: str, port: int
+) -> None:
+    """Services with unreliable root routes must use their health endpoints."""
+    entry = next(s for s in servers_json["servers"] if s["name"] == service_name)
+    assert entry["readiness_url"] == f"http://127.0.0.1:{port}/health"
+    assert entry["accepted_statuses"] == [200]
 
 
 def test_manual_launcher_delegates_guitar_trainer_ownership(open_portal_text: str) -> None:
