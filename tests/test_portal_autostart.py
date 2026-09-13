@@ -12,6 +12,7 @@ Covers:
 from __future__ import annotations
 
 import re
+import os
 import sys
 from pathlib import Path
 
@@ -60,33 +61,23 @@ def test_launch_portal_has_noopen_param(launch_portal_text: str) -> None:
 
 
 def test_launch_portal_skips_browser_when_noopen(launch_portal_text: str) -> None:
-    """`launch_portal.ps1` must guard the browser-open block behind -not $NoOpen."""
-    assert "-not $NoOpen" in launch_portal_text, (
-        "launch_portal.ps1 does not gate browser open behind '-not $NoOpen'"
+    """`launch_portal.ps1` must forward no-open behavior to the supervisor."""
+    assert 'if ($NoOpen) { $arguments += "--no-open" }' in launch_portal_text, (
+        "launch_portal.ps1 does not forward --no-open to the supervisor"
     )
 
 
-def test_launch_portal_waits_for_trade_approval_gate(launch_portal_text: str) -> None:
-    """`launch_portal.ps1` must wait for port 7475 before opening the portal."""
-    assert "Wait-PortListening -Port 7475" in launch_portal_text, (
-        "launch_portal.ps1 must wait for Trade Approval Gate port 7475 before opening the portal"
-    )
-    assert "[Trade Approval Gate] :7475" in launch_portal_text, (
-        "launch_portal.ps1 should log Trade Approval Gate readiness when waiting for port 7475"
-    )
+def test_launch_portal_delegates_readiness_to_supervisor(launch_portal_text: str) -> None:
+    """The thin launcher must not own service readiness or port checks."""
+    assert "portal_supervisor.py" in launch_portal_text
+    assert "Wait-PortListening" not in launch_portal_text
+    assert "Get-NetTCPConnection" not in launch_portal_text
 
 
-def test_launch_portal_noopen_before_browser_open(launch_portal_text: str) -> None:
-    """The -NoOpen guard must wrap the Start-Process / Brave open call."""
-    noopen_idx   = launch_portal_text.find("-not $NoOpen")
-    brave_idx    = launch_portal_text.find("$BRAVE $portalUri")
-    start_idx    = launch_portal_text.find("Start-Process $portalUri")
-    browser_idx  = max(brave_idx, start_idx)
-    assert noopen_idx != -1,   "-not $NoOpen not found in launch_portal.ps1"
-    assert browser_idx != -1,  "browser-open call not found in launch_portal.ps1"
-    assert noopen_idx < browser_idx, (
-        "NoOpen guard must appear before the browser-open call"
-    )
+def test_launch_portal_contains_no_browser_implementation(launch_portal_text: str) -> None:
+    """Browser focus/open behavior belongs exclusively to the supervisor."""
+    assert "$BRAVE" not in launch_portal_text
+    assert "Start-Process" not in launch_portal_text
 
 
 # ---------------------------------------------------------------------------
@@ -94,16 +85,16 @@ def test_launch_portal_noopen_before_browser_open(launch_portal_text: str) -> No
 # ---------------------------------------------------------------------------
 
 def test_register_protocol_includes_noopen_flag(register_protocol_text: str) -> None:
-    """`register_portal_protocol.ps1` must bake -NoOpen into the handler command."""
-    assert "-NoOpen" in register_protocol_text, (
-        "register_portal_protocol.ps1 does not pass -NoOpen to the handler"
+    """`register_portal_protocol.ps1` must bake --no-open into the staged command."""
+    assert "--no-open" in register_protocol_text, (
+        "register_portal_protocol.ps1 does not pass --no-open to the supervisor"
     )
 
 
 def test_register_protocol_handler_command_structure(register_protocol_text: str) -> None:
-    """Handler command must include powershell.exe, launch_portal.ps1, and -NoOpen."""
-    assert "launch_portal.ps1" in register_protocol_text
-    assert "-NoOpen" in register_protocol_text
+    """Handler must stage PowerShell/VBS shims that invoke the supervisor."""
+    assert "portal_supervisor.py" in register_protocol_text
+    assert "--no-open" in register_protocol_text
     assert "powershell.exe" in register_protocol_text.lower()
 
 
@@ -112,6 +103,10 @@ def test_register_protocol_handler_command_structure(register_protocol_text: str
 # ---------------------------------------------------------------------------
 
 windows_only = pytest.mark.skipif(sys.platform != "win32", reason="Windows registry not available on this platform")
+operator_proof_only = pytest.mark.skipif(
+    os.environ.get("PORTAL_SUPERVISOR_OPERATOR_PROOF") != "1",
+    reason="set PORTAL_SUPERVISOR_OPERATOR_PROOF=1 after staging the reversible operator artifact",
+)
 
 
 def _resolve_staged_indirection(registry_command: str) -> str:
@@ -137,6 +132,7 @@ def _resolve_staged_indirection(registry_command: str) -> str:
 
 
 @windows_only
+@operator_proof_only
 def test_registry_portal_protocol_registered() -> None:
     """HKCU portal:// protocol handler must exist in the registry."""
     import winreg
@@ -155,8 +151,9 @@ def test_registry_portal_protocol_registered() -> None:
 
 
 @windows_only
+@operator_proof_only
 def test_registry_handler_includes_noopen() -> None:
-    """Registered portal:// handler must include -NoOpen, either directly in the
+    """Registered portal:// handler must include --no-open, either directly in the
     registry command or in the staged launcher script it indirects through
     (register_portal_protocol.ps1 wraps the real command in an ASCII-safe
     staged .ps1 invoked via wscript.exe + a .vbs shim, for shell/protocol
@@ -173,14 +170,15 @@ def test_registry_handler_includes_noopen() -> None:
     except FileNotFoundError:
         pytest.fail("portal:// protocol not registered")
     resolved = value + _resolve_staged_indirection(value)
-    assert "-NoOpen" in resolved, (
-        f"Registry handler command (and any staged launcher it delegates to) does not include -NoOpen: {value}"
+    assert "--no-open" in resolved, (
+        f"Registry handler command (and any staged launcher it delegates to) does not include --no-open: {value}"
     )
 
 
 @windows_only
+@operator_proof_only
 def test_registry_handler_points_to_launch_portal() -> None:
-    """Registered handler must reference launch_portal.ps1, either directly or
+    """Registered handler must reference portal_supervisor.py, either directly or
     via the staged .ps1 it indirects through."""
     import winreg
     try:
@@ -193,8 +191,8 @@ def test_registry_handler_points_to_launch_portal() -> None:
     except FileNotFoundError:
         pytest.fail("portal:// protocol not registered")
     resolved = value + _resolve_staged_indirection(value)
-    assert "launch_portal.ps1" in resolved, (
-        f"Registry handler (and any staged launcher it delegates to) does not reference launch_portal.ps1: {value}"
+    assert "portal_supervisor.py" in resolved, (
+        f"Registry handler (and any staged launcher it delegates to) does not reference portal_supervisor.py: {value}"
     )
 
 

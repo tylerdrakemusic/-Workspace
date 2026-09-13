@@ -1,113 +1,474 @@
-"""
-TDD tests for FR-20260531-portal-force-restart.
+from __future__ import annotations
 
-Tests verify:
-1. restart_servers.ps1 exists in tools/
-2. Script content contains required patterns (static analysis)
-3. WorkspacePortal/open_portal.ps1 calls restart_servers.ps1 before launch_portal.ps1
-"""
-import re
-import pytest
+import json
+import subprocess
+import sys
+import threading
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+from urllib.error import HTTPError
+from urllib.request import urlopen
+from urllib.request import Request
 
-WORKTREE = Path(__file__).parent.parent
-TOOLS_DIR = WORKTREE / "tools"
-RESTART_SCRIPT = TOOLS_DIR / "restart_servers.ps1"
-PORTAL_SERVERS_JSON = TOOLS_DIR / "portal_servers.json"
-DESKTOP_OPEN_PORTAL = Path(r"C:\Users\tyler\AppData\Local\WorkspacePortal\open_portal.ps1")
-
-
-class TestRestartServersExists:
-    def test_restart_servers_ps1_exists(self):
-        assert RESTART_SCRIPT.exists(), (
-            f"restart_servers.ps1 not found at {RESTART_SCRIPT}"
-        )
+import pytest
 
 
-class TestRestartServersContent:
-    def setup_method(self):
-        assert RESTART_SCRIPT.exists(), "restart_servers.ps1 must exist for content tests"
-        self.content = RESTART_SCRIPT.read_text(encoding="utf-8")
+WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
+PORTAL_CONFIG = WORKSPACE_ROOT / "tools" / "portal_servers.json"
+LAUNCH_PORTAL = WORKSPACE_ROOT / "tools" / "launch_portal.ps1"
+OPEN_PORTAL = WORKSPACE_ROOT / "open_portal.ps1"
+REGISTER_PROTOCOL = WORKSPACE_ROOT / "tools" / "register_portal_protocol.ps1"
+RESTART_SERVERS = WORKSPACE_ROOT / "tools" / "restart_servers.ps1"
+SUPERVISOR_SCRIPT = WORKSPACE_ROOT / "tools" / "portal_supervisor.py"
+sys.path.insert(0, str(WORKSPACE_ROOT / "tools"))
 
-    def test_reads_portal_servers_json_relative_path(self):
-        """Script must read portal_servers.json via a relative path from $PSScriptRoot."""
-        assert "PSScriptRoot" in self.content, "Must use $PSScriptRoot for relative path"
-        assert "portal_servers.json" in self.content, "Must reference portal_servers.json"
-
-    def test_filters_enabled_servers(self):
-        """Script must filter servers where enabled -eq $true."""
-        assert "enabled" in self.content.lower(), "Must check enabled property"
-
-    def test_uses_get_nettcpconnection(self):
-        """Script must use Get-NetTCPConnection to detect listening ports."""
-        assert "Get-NetTCPConnection" in self.content, (
-            "Must use Get-NetTCPConnection to detect listening ports"
-        )
-
-    def test_uses_stop_process(self):
-        """Script must call Stop-Process to kill the owning PID."""
-        assert "Stop-Process" in self.content, "Must call Stop-Process to kill processes"
-
-    def test_logs_killed_message(self):
-        """Script must log 'killed PID' when a process is stopped."""
-        assert re.search(r"killed\s+PID", self.content, re.IGNORECASE), (
-            "Must log 'killed PID XXXX' when a process is stopped"
-        )
-
-    def test_logs_skipping_message(self):
-        """Script must log 'not running, skipping' when port is free."""
-        assert re.search(r"not running.*skip", self.content, re.IGNORECASE), (
-            "Must log 'not running, skipping' when port is not occupied"
-        )
-
-    def test_has_header_comment(self):
-        """Script must have a header comment explaining its purpose."""
-        # First non-empty line should be a comment
-        lines = [l.strip() for l in self.content.splitlines() if l.strip()]
-        assert lines[0].startswith("#"), "First line must be a comment header"
-
-    def test_no_server_starts(self):
-        """Script must only kill processes — it must not start any servers."""
-        # Should not invoke launch_portal or any start_ scripts
-        assert "launch_portal" not in self.content, (
-            "restart_servers.ps1 must not call launch_portal.ps1"
-        )
-        assert "Start-Process" not in self.content, (
-            "restart_servers.ps1 must not start any processes"
-        )
-
-    def test_error_action_silent_on_stop(self):
-        """Stop-Process must use -ErrorAction SilentlyContinue."""
-        assert re.search(r"Stop-Process.*-ErrorAction\s+SilentlyContinue", self.content, re.IGNORECASE) or \
-               re.search(r"SilentlyContinue.*Stop-Process", self.content, re.IGNORECASE), (
-            "Stop-Process must use -ErrorAction SilentlyContinue"
-        )
+import portal_supervisor as supervisor_module
+from portal_supervisor import ConfigurationError, PortalSupervisor, load_config
 
 
-@pytest.mark.skipif(
-    not DESKTOP_OPEN_PORTAL.exists(),
-    reason="Desktop open_portal.ps1 is machine-specific — skip when not on Tyler's workstation",
-)
-class TestOpenPortalUpdated:
-    def setup_method(self):
-        self.content = DESKTOP_OPEN_PORTAL.read_text(encoding="utf-8")
+def _service(name: str, port: int) -> dict[str, object]:
+    return {
+        "name": name,
+        "port": port,
+        "cmd": f"server-{port}.exe --serve",
+        "working_directory": f"C:\\services\\{port}",
+        "readiness_url": f"http://127.0.0.1:{port}/health",
+        "accepted_statuses": [200, 204],
+        "enabled": True,
+    }
 
-    def test_calls_restart_servers_first(self):
-        """open_portal.ps1 must call restart_servers.ps1."""
-        assert "restart_servers.ps1" in self.content, (
-            "open_portal.ps1 must call restart_servers.ps1"
-        )
 
-    def test_calls_launch_portal(self):
-        """open_portal.ps1 must still call launch_portal.ps1."""
-        assert "launch_portal.ps1" in self.content, (
-            "open_portal.ps1 must still call launch_portal.ps1"
-        )
+def test_enabled_service_requires_complete_launch_and_readiness_contract(tmp_path: Path) -> None:
+    config_path = tmp_path / "portal_servers.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "servers": [
+                    {
+                        "name": "Incomplete",
+                        "port": 5050,
+                        "cmd": "server.exe",
+                        "enabled": True,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    def test_restart_before_launch(self):
-        """restart_servers.ps1 must appear before launch_portal.ps1 in the file."""
-        restart_pos = self.content.find("restart_servers.ps1")
-        launch_pos = self.content.find("launch_portal.ps1")
-        assert restart_pos < launch_pos, (
-            "restart_servers.ps1 must be called before launch_portal.ps1"
-        )
+    with pytest.raises(ConfigurationError, match="working_directory, readiness_url, accepted_statuses"):
+        load_config(config_path)
+
+
+def test_fresh_launch_reclaims_ports_and_records_exact_process_metadata(tmp_path: Path) -> None:
+    reclaimed: list[int] = []
+    launched: list[tuple[str, str, Path, Path]] = []
+
+    def launch(command: str, cwd: str, stdout_path: Path, stderr_path: Path) -> SimpleNamespace:
+        launched.append((command, cwd, stdout_path, stderr_path))
+        return SimpleNamespace(pid=4100 + len(launched))
+
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101), _service("Beta", 5102)]},
+        log_root=tmp_path,
+        reclaim_port=reclaimed.append,
+        launch_process=launch,
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+
+    generation = supervisor.restart_all()
+
+    assert reclaimed == [5101, 5102]
+    assert [(item[0], item[1]) for item in launched] == [
+        ("server-5101.exe --serve", r"C:\services\5101"),
+        ("server-5102.exe --serve", r"C:\services\5102"),
+    ]
+    assert generation
+    assert supervisor.state["Alpha"] == {
+        "pid": 4101,
+        "command": "server-5101.exe --serve",
+        "working_directory": r"C:\services\5101",
+        "started_at": 1000.0,
+        "launch_generation": generation,
+        "readiness": "ready",
+        "attempt": 1,
+        "error": None,
+    }
+
+
+def test_readiness_failure_restarts_once_then_stays_failed(tmp_path: Path) -> None:
+    reclaimed: list[int] = []
+    deadlines: list[int] = []
+    outcomes = iter([(False, "timed out"), (False, "status 503")])
+    launched: list[SimpleNamespace] = []
+
+    def launch(*_args: object) -> SimpleNamespace:
+        process = SimpleNamespace(pid=4200 + len(launched))
+        launched.append(process)
+        return process
+
+    def readiness(_url: str, _statuses: tuple[int, ...], deadline: int) -> tuple[bool, str | None]:
+        deadlines.append(deadline)
+        return next(outcomes)
+
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path,
+        reclaim_port=reclaimed.append,
+        launch_process=launch,
+        check_readiness=readiness,
+        now=lambda: 1000.0,
+    )
+
+    supervisor.restart_all()
+
+    assert len(launched) == 2
+    assert reclaimed == [5101, 5101]
+    assert deadlines == [30, 30]
+    assert supervisor.state["Alpha"]["attempt"] == 2
+    assert supervisor.state["Alpha"]["readiness"] == "failed"
+    assert supervisor.state["Alpha"]["error"] == "status 503"
+
+
+def test_restart_all_uses_exactly_three_startup_workers(tmp_path: Path) -> None:
+    services = [_service(f"Service {port}", port) for port in range(5101, 5106)]
+    supervisor = PortalSupervisor(
+        {"servers": services},
+        log_root=tmp_path,
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4300),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+
+    with patch("portal_supervisor.ThreadPoolExecutor", wraps=__import__("concurrent.futures").futures.ThreadPoolExecutor) as executor:
+        supervisor.restart_all()
+
+    executor.assert_called_once_with(max_workers=3)
+
+
+def test_restart_all_retains_only_latest_ten_unique_generations(tmp_path: Path) -> None:
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path,
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4400),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+
+    generations = [supervisor.restart_all() for _ in range(12)]
+
+    assert len(set(generations)) == 12
+    assert {path.name for path in tmp_path.iterdir()} == set(generations[-10:])
+
+
+def test_manual_retry_restarts_only_named_service_in_current_generation(tmp_path: Path) -> None:
+    reclaimed: list[int] = []
+    launched: list[str] = []
+
+    def launch(command: str, *_args: object) -> SimpleNamespace:
+        launched.append(command)
+        return SimpleNamespace(pid=4500 + len(launched))
+
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101), _service("Beta", 5102)]},
+        log_root=tmp_path,
+        reclaim_port=reclaimed.append,
+        launch_process=launch,
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    generation = supervisor.restart_all()
+    beta_before = dict(supervisor.state["Beta"])
+    reclaimed.clear()
+    launched.clear()
+
+    supervisor.retry_service("Alpha")
+
+    assert reclaimed == [5101]
+    assert launched == ["server-5101.exe --serve"]
+    assert supervisor.state["Alpha"]["attempt"] == 2
+    assert supervisor.state["Alpha"]["launch_generation"] == generation
+    assert supervisor.state["Beta"] == beta_before
+
+
+def test_dispatch_starts_once_then_focuses_existing_supervisor() -> None:
+    active = False
+    starts = 0
+    focuses = 0
+
+    def is_active() -> bool:
+        return active
+
+    def start() -> None:
+        nonlocal active, starts
+        active = True
+        starts += 1
+
+    def focus() -> None:
+        nonlocal focuses
+        focuses += 1
+
+    assert supervisor_module.dispatch_launch(is_active, focus, start) == "started"
+    assert supervisor_module.dispatch_launch(is_active, focus, start) == "focused"
+    assert starts == 1
+    assert focuses == 1
+
+
+def test_supervisor_serves_no_store_shell_with_live_controls_and_cache_busting(tmp_path: Path) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text(
+        '<html><body><iframe src="http://localhost:5101/"></iframe></body></html>',
+        encoding="utf-8",
+    )
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path / "logs",
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4600),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    supervisor.current_generation = "generation-1"
+    supervisor.state["Alpha"] = {
+        "readiness": "failed",
+        "attempt": 2,
+        "error": "status 503",
+    }
+    server = supervisor_module.create_http_server(
+        ("127.0.0.1", 0), supervisor, portal_path, lambda _url: None
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base_url = f"http://127.0.0.1:{server.server_port}"
+        with urlopen(f"{base_url}/portal.html?generation=generation-1") as response:
+            body = response.read().decode("utf-8")
+            assert response.headers["Cache-Control"] == "no-store"
+        assert "Restart All" in body
+        assert "/api/restart-all" in body
+        assert "/api/services/" in body
+        assert "generation-1" in body
+        with urlopen(f"{base_url}/api/state") as response:
+            payload = json.load(response)
+            assert response.headers["Cache-Control"] == "no-store"
+        assert payload["generation"] == "generation-1"
+        assert payload["services"]["Alpha"]["error"] == "status 503"
+        request = Request(f"{base_url}/api/restart-all", method="POST")
+        with urlopen(request) as response:
+            restarted = json.load(response)
+        assert restarted["generation"] != "generation-1"
+        assert supervisor.current_generation == restarted["generation"]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_reclaim_port_force_terminates_every_listener_pid() -> None:
+    commands: list[list[str]] = []
+
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        commands.append(command)
+        if command[0] == "netstat":
+            return SimpleNamespace(
+                returncode=0,
+                stdout=(
+                    "  TCP    127.0.0.1:5101    0.0.0.0:0    LISTENING    1234\n"
+                    "  TCP    [::]:5101         [::]:0       LISTENING    5678\n"
+                ),
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    killed = supervisor_module.reclaim_port(5101, run=run)
+
+    assert killed == [1234, 5678]
+    assert ["taskkill", "/PID", "1234", "/F", "/T"] in commands
+    assert ["taskkill", "/PID", "5678", "/F", "/T"] in commands
+
+
+def test_http_readiness_waits_for_a_configured_accepted_status() -> None:
+    statuses = iter([503, 204])
+    seen_timeouts: list[float] = []
+
+    class Response:
+        def __init__(self, status: int) -> None:
+            self.status = status
+
+        def __enter__(self) -> "Response":
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    def opener(_url: str, *, timeout: float) -> Response:
+        seen_timeouts.append(timeout)
+        return Response(next(statuses))
+
+    ready, error = supervisor_module.check_http_readiness(
+        "http://127.0.0.1:5101/health",
+        (200, 204),
+        30,
+        opener=opener,
+        monotonic=iter([0.0, 0.0, 0.1, 0.1]).__next__,
+        wait=lambda _seconds: None,
+    )
+
+    assert ready is True
+    assert error is None
+    assert len(seen_timeouts) == 2
+    assert all(0 < timeout <= 2 for timeout in seen_timeouts)
+
+
+def test_http_readiness_accepts_configured_http_error_status() -> None:
+    def opener(url: str, **_kwargs: object) -> object:
+        raise HTTPError(url, 401, "Unauthorized", {}, None)
+
+    ready, error = supervisor_module.check_http_readiness(
+        "http://127.0.0.1:8766/",
+        (200, 401),
+        30,
+        opener=opener,
+        monotonic=iter([0.0, 0.0, 0.0, 31.0]).__next__,
+        wait=lambda _seconds: None,
+    )
+
+    assert ready is True
+    assert error is None
+
+
+def test_service_start_time_is_recorded_before_readiness_wait(tmp_path: Path) -> None:
+    events: list[str] = []
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path,
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4650),
+        check_readiness=lambda *_args: events.append("readiness") or (True, None),
+        now=lambda: events.append("started_at") or 1000.0,
+    )
+
+    supervisor.restart_all()
+
+    assert events == ["started_at", "readiness"]
+
+
+def test_launch_process_preserves_command_cwd_and_redirects_both_streams(tmp_path: Path) -> None:
+    captured: dict[str, object] = {}
+
+    def popen(command: str, **kwargs: object) -> SimpleNamespace:
+        captured["command"] = command
+        captured.update(kwargs)
+        return SimpleNamespace(pid=4700)
+
+    stdout_path = tmp_path / "5101.stdout.log"
+    stderr_path = tmp_path / "5101.stderr.log"
+    process = supervisor_module.launch_process(
+        "server.exe --flag exact",
+        r"C:\services\alpha",
+        stdout_path,
+        stderr_path,
+        popen=popen,
+    )
+
+    assert process.pid == 4700
+    assert captured["command"] == "server.exe --flag exact"
+    assert captured["cwd"] == r"C:\services\alpha"
+    assert captured["shell"] is False
+    assert Path(captured["stdout"].name) == stdout_path
+    assert Path(captured["stderr"].name) == stderr_path
+
+
+def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
+    events: list[str] = []
+
+    class Server:
+        server_port = 8080
+
+        def serve_forever(self) -> None:
+            events.append("serve")
+
+    supervisor = SimpleNamespace(
+        new_generation=lambda: events.append("generation") or "generation-1",
+        restart_all=lambda generation=None: events.append(f"restart:{generation}"),
+    )
+
+    supervisor_module.run_resident(
+        supervisor,
+        generate_portal=lambda: events.append("generate"),
+        server_factory=lambda: events.append("server") or Server(),
+        browser_open=lambda url: events.append(f"browser:{url}"),
+        start_background=lambda target: events.append("background") or target(),
+        open_browser=True,
+    )
+
+    assert events == [
+        "generate",
+        "server",
+        "generation",
+        "background",
+        "restart:generation-1",
+        "browser:http://127.0.0.1:8080/portal.html?generation=generation-1",
+        "serve",
+    ]
+
+
+def test_canonical_config_declares_launch_and_http_readiness_for_every_service() -> None:
+    config = load_config(PORTAL_CONFIG)
+
+    for service in config["servers"]:
+        if service["enabled"]:
+            assert service["working_directory"]
+            assert service["readiness_url"].startswith("http://")
+            assert service["accepted_statuses"]
+
+
+@pytest.mark.parametrize("path", [LAUNCH_PORTAL, OPEN_PORTAL])
+def test_powershell_launchers_are_thin_supervisor_shims(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
+
+    assert "portal_supervisor.py" in text
+    assert "portal_servers.json" not in text
+    assert "Get-NetTCPConnection" not in text
+    assert "Stop-Process" not in text
+    assert "start_music_dashboard" not in text
+
+
+def test_protocol_registration_stages_only_thin_supervisor_shims() -> None:
+    text = REGISTER_PROTOCOL.read_text(encoding="utf-8")
+
+    assert "portal_supervisor.py" in text
+    assert "portal_protocol_launch.vbs" in text
+    assert '"open_portal.vbs"' in text
+    assert '"open_portal.ps1"' in text
+    assert "Copy-Item" in text
+    assert ".backup-" in text
+    assert "portal_servers.json" not in text
+    assert "Get-NetTCPConnection" not in text
+
+
+def test_legacy_restart_script_is_a_thin_supervisor_shim() -> None:
+    text = RESTART_SERVERS.read_text(encoding="utf-8")
+
+    assert "portal_supervisor.py" in text
+    assert "--restart-all" in text
+    assert "Get-NetTCPConnection" not in text
+    assert "Stop-Process" not in text
+
+
+def test_supervisor_cli_exposes_resident_and_no_open_modes() -> None:
+    result = subprocess.run(
+        [sys.executable, str(SUPERVISOR_SCRIPT), "--help"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "--serve" in result.stdout
+    assert "--no-open" in result.stdout
