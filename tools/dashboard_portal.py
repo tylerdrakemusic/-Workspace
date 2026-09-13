@@ -25,6 +25,7 @@ import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Brave registration
 _BRAVE_PATHS = [
@@ -601,19 +602,40 @@ def _inline_html_content(inline_id: str) -> str:
     return _INLINE_CONTENT.get(inline_id, '<div class="placeholder">No inline content registered.</div>')
 
 
-def _mirror_static_report(source: Path, dash_id: str, idx: int) -> str:
+def _mirror_static_report(
+    source: Path,
+    dash_id: str,
+    idx: int,
+    *,
+    disable_relative_api_health: bool = False,
+) -> str:
   """Mirror external static dashboards into reports/ for HTTP-safe iframe embeds."""
   slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", dash_id or f"dash-{idx}").strip("-")
   if not slug:
     slug = f"dash-{idx}"
   target = PORTAL_OUT.parent / f"portal_{slug}.html"
-  if source.resolve() != target.resolve():
+  if disable_relative_api_health:
+    content = source.read_text(encoding="utf-8").replace(
+      "fetch('/api/health', {cache: 'no-store'})",
+      "Promise.reject(new Error('API health unavailable in static portal embed'))",
+    )
+    target.write_text(content, encoding="utf-8")
+  elif source.resolve() != target.resolve():
     shutil.copy2(source, target)
   return target.name
 
 
-def _content_frames(manifest: dict) -> str:
+def _iframe_source(url: str, servers: list[dict]) -> str:
+  """Render a live iframe source according to its owning service capability."""
+  parsed = urlparse(url)
+  service = next((server for server in servers if server.get("port") == parsed.port), None)
+  attribute = "data-src" if service and service.get("iframe_cache_bust") is False else "src"
+  return f'{attribute}="{_esc(url)}"'
+
+
+def _content_frames(manifest: dict, servers: list[dict] | None = None) -> str:
   """Generate content panes — iframes for static/flask, info cards for console."""
+  servers = _load_servers() if servers is None else servers
   panes = []
   for i, dash in enumerate(manifest["dashboards"]):
     display = "block" if i == 0 else "none"
@@ -623,13 +645,23 @@ def _content_frames(manifest: dict) -> str:
       if serve_url:
         panes.append(
           f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-          f'<iframe src="{_esc(serve_url)}" frameborder="0" allow="autoplay"></iframe></div>'
+          f'<iframe {_iframe_source(serve_url, servers)} frameborder="0" allow="autoplay"></iframe></div>'
         )
       else:
         out = dash.get("output_abs", "")
         if out and Path(out).exists():
           out_path = Path(out)
-          if out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
+          if dash["type"] == "living_html":
+            try:
+              iframe_src = _mirror_static_report(
+                out_path,
+                str(dash.get("id", "")),
+                i,
+                disable_relative_api_health=True,
+              )
+            except Exception:
+              iframe_src = out_path.as_uri()
+          elif out_path.parent.resolve() == PORTAL_OUT.parent.resolve():
             iframe_src = out_path.name
           else:
             try:
@@ -650,7 +682,7 @@ def _content_frames(manifest: dict) -> str:
       url = dash.get("url", "http://localhost:5050")
       panes.append(
         f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-        f'<iframe src="{_esc(url)}" frameborder="0" allow="autoplay"></iframe></div>'
+        f'<iframe {_iframe_source(url, servers)} frameborder="0" allow="autoplay"></iframe></div>'
       )
     elif dash["type"] == "inline_html":
       inline_id = dash.get("inline_id", "")
@@ -727,9 +759,9 @@ def render_portal(manifest: dict) -> str:
     import urllib.parse
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nav = _nav_items(manifest)
-    frames = _content_frames(manifest)
-    stats = _stats_bar(manifest)
     servers = _load_servers()
+    frames = _content_frames(manifest, servers=servers)
+    stats = _stats_bar(manifest)
     server_js_list = _json.dumps([{"port": s["port"], "name": s["name"]} for s in servers])
     server_sidebar = _render_server_sidebar(servers)
     health_snapshot = collect_portal_health(manifest)
@@ -1116,6 +1148,12 @@ def render_portal(manifest: dict) -> str:
         if (saved !== null) switchDashById(parseInt(saved));
       }} catch {{}}
     }})();
+
+    window.addEventListener('DOMContentLoaded', () => {{
+      document.querySelectorAll('iframe[data-src]').forEach((frame) => {{
+        frame.src = frame.dataset.src;
+      }});
+    }});
 
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
     async function launchServers() {{

@@ -39,6 +39,7 @@
                         "working_directory":  "f:\\👁AI-Manifest",
                         "readiness_url":  "http://127.0.0.1:8200/health",
                         "accepted_statuses":  [200],
+                        "iframe_cache_bust":  false,
                         "enabled":  true
                     },
                     {
