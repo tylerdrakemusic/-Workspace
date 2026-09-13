@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import http.client
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -298,12 +300,156 @@ def test_supervisor_serves_no_store_shell_without_duplicate_controls_and_with_ca
             assert response.headers["Cache-Control"] == "no-store"
         assert payload["generation"] == "generation-1"
         assert payload["services"]["Alpha"]["error"] == "status 503"
-        request = Request(f"{base_url}/api/restart-all", method="POST")
+        assert payload["csrf_token"] == supervisor.csrf_token
+        assert supervisor.csrf_token in body
+        assert "X-Supervisor-CSRF" in body
+        request = Request(
+            f"{base_url}/api/restart-all",
+            method="POST",
+            headers={
+                "Origin": base_url,
+                "X-Supervisor-CSRF": supervisor.csrf_token,
+            },
+        )
         with urlopen(request) as response:
             restarted = json.load(response)
         assert restarted["generation"] != "generation-1"
         assert supervisor.current_generation == restarted["generation"]
     finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_mutation_endpoints_reject_forged_host_hostile_origin_and_invalid_csrf(
+    tmp_path: Path,
+) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text("<html><body></body></html>", encoding="utf-8")
+    supervisor = PortalSupervisor(
+        {"servers": []},
+        log_root=tmp_path / "logs",
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4700),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    server = supervisor_module.create_http_server(
+        ("127.0.0.1", 0), supervisor, portal_path, lambda _url: None
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        port = server.server_port
+        origin = f"http://127.0.0.1:{port}"
+        token = supervisor.csrf_token
+        cases = [
+            ({"Host": "attacker.example", "Origin": origin, "X-Supervisor-CSRF": token}, 403),
+            ({"Origin": "https://attacker.example", "X-Supervisor-CSRF": token}, 403),
+            ({"Origin": origin}, 403),
+            ({"Origin": origin, "X-Supervisor-CSRF": "wrong-token"}, 403),
+        ]
+        for headers, expected_status in cases:
+            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+            connection.request("POST", "/api/restart-all", headers=headers)
+            response = connection.getresponse()
+            assert response.status == expected_status
+            response.read()
+            connection.close()
+
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+        connection.request(
+            "POST",
+            "/api/restart-all",
+            headers={"Origin": origin, "X-Supervisor-CSRF": token},
+        )
+        response = connection.getresponse()
+        assert response.status == 202
+        response.read()
+        assert response.headers["X-Supervisor-CSRF"] == supervisor.csrf_token
+        connection.close()
+        assert supervisor.csrf_token != token
+
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+        connection.request(
+            "POST",
+            "/api/focus",
+            headers={"Origin": origin, "X-Supervisor-CSRF": token},
+        )
+        response = connection.getresponse()
+        assert response.status == 403
+        response.read()
+        connection.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_restart_all_and_retry_contention_returns_conflict_without_stale_state(
+    tmp_path: Path,
+) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text("<html><body></body></html>", encoding="utf-8")
+    readiness_entered = threading.Event()
+    release_readiness = threading.Event()
+    reclaimed: list[int] = []
+    launched: list[int] = []
+
+    def check_readiness(*_args: object) -> tuple[bool, str | None]:
+        readiness_entered.set()
+        assert release_readiness.wait(timeout=2)
+        return True, None
+
+    supervisor = PortalSupervisor(
+        {"servers": [_service("Alpha", 5101)]},
+        log_root=tmp_path / "logs",
+        reclaim_port=reclaimed.append,
+        launch_process=lambda *_args: launched.append(4800) or SimpleNamespace(pid=4800),
+        check_readiness=check_readiness,
+        now=lambda: 1000.0,
+    )
+    server = supervisor_module.create_http_server(
+        ("127.0.0.1", 0), supervisor, portal_path, lambda _url: None
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        port = server.server_port
+        origin = f"http://127.0.0.1:{port}"
+        headers = {"Origin": origin, "X-Supervisor-CSRF": supervisor.csrf_token}
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+        connection.request("POST", "/api/restart-all", headers=headers)
+        restart_response = connection.getresponse()
+        headers["X-Supervisor-CSRF"] = restart_response.headers["X-Supervisor-CSRF"]
+        restart_payload = json.loads(restart_response.read())
+        connection.close()
+        assert restart_response.status == 202
+        assert readiness_entered.wait(timeout=2)
+
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+        connection.request("POST", "/api/services/Alpha/retry", headers=headers)
+        retry_response = connection.getresponse()
+        retry_payload = json.loads(retry_response.read())
+        connection.close()
+        assert retry_response.status == 409
+        assert retry_payload == {"error": "operation in progress"}
+
+        release_readiness.set()
+        deadline = time.monotonic() + 2
+        while supervisor.operation_active and time.monotonic() < deadline:
+            time.sleep(0.01)
+
+        state = supervisor.snapshot()
+        assert supervisor.operation_active is False
+        assert state["generation"] == restart_payload["generation"]
+        assert state["services"]["Alpha"]["launch_generation"] == restart_payload["generation"]
+        assert state["services"]["Alpha"]["readiness"] == "ready"
+        assert reclaimed == [5101]
+        assert launched == [4800]
+        assert len(supervisor.generation_history) == 1
+    finally:
+        release_readiness.set()
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
