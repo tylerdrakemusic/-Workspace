@@ -59,7 +59,7 @@ Write-Host "Rollback backups use suffix: .backup-$timestamp"
 # Operator proof plan (run only after reviewing this reversible staging script):
 # 1. Run this script to stage backups plus the thin launcher files.
 # 2. Invoke C:\Users\tyler\AppData\Local\WorkspacePortal\open_portal.vbs.
-# 3. Verify http://127.0.0.1:8080/api/state returns no-store, one generation,
+# 3. Verify http://127.0.0.1:8790/api/state returns no-store, one generation,
 #    and service PID/command/start/readiness/attempt/error state.
 # 4. Invoke open_portal.vbs again and verify the generation and service PIDs do
 #    not change while the existing portal is focused.

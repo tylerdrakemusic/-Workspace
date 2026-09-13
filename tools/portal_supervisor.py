@@ -26,7 +26,7 @@ CONFIG_PATH = PROJECT_ROOT / "tools" / "portal_servers.json"
 PORTAL_PATH = PROJECT_ROOT / "reports" / "portal.html"
 LOG_ROOT = PROJECT_ROOT / "logs" / "portal_supervisor"
 SUPERVISOR_HOST = "127.0.0.1"
-SUPERVISOR_PORT = 8080
+SUPERVISOR_PORT = 8790
 
 
 class ConfigurationError(ValueError):
@@ -178,22 +178,9 @@ def _generate_portal() -> None:
     )
 
 
-def _inject_supervisor_controls(portal_html: str, generation: str) -> str:
+def _inject_generation_cache_busting(portal_html: str, generation: str) -> str:
     generation_json = json.dumps(generation)
-    controls = f"""
-<style>
-#supervisor-controls {{ position:fixed; right:16px; bottom:16px; z-index:10000; width:300px;
-  background:#14181d; color:#f4f6f8; border:1px solid #39424c; padding:12px; font:13px sans-serif; }}
-#supervisor-controls button {{ cursor:pointer; }}
-#supervisor-services {{ margin-top:8px; max-height:240px; overflow:auto; }}
-.supervisor-service {{ display:grid; grid-template-columns:1fr auto; gap:6px; padding:5px 0; border-top:1px solid #303840; }}
-.supervisor-error {{ grid-column:1/-1; color:#ffb4a9; }}
-</style>
-<aside id="supervisor-controls" aria-label="Server supervisor">
-  <button id="supervisor-restart-all" type="button">Restart All</button>
-  <div id="supervisor-services" aria-live="polite">Loading service states...</div>
-</aside>
-<script>
+    cache_busting = f"""<script>
 (() => {{
   const generation = {generation_json};
   document.querySelectorAll('iframe[src]').forEach((frame) => {{
@@ -201,34 +188,10 @@ def _inject_supervisor_controls(portal_html: str, generation: str) -> str:
     url.searchParams.set('generation', generation);
     frame.src = url.toString();
   }});
-  async function refreshSupervisorState() {{
-    const response = await fetch('/api/state', {{cache: 'no-store'}});
-    const payload = await response.json();
-    const target = document.getElementById('supervisor-services');
-    target.replaceChildren(...Object.entries(payload.services).map(([name, state]) => {{
-      const row = document.createElement('div'); row.className = 'supervisor-service';
-      const label = document.createElement('span');
-      label.textContent = `${{name}}: ${{state.readiness}} (attempt ${{state.attempt}})`;
-      const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Retry';
-      retry.onclick = async () => {{ await fetch('/api/services/' + encodeURIComponent(name) + '/retry', {{method:'POST'}}); }};
-      row.append(label, retry);
-      if (state.error) {{ const error = document.createElement('span'); error.className = 'supervisor-error'; error.textContent = state.error; row.append(error); }}
-      return row;
-    }}));
-  }}
-  document.getElementById('supervisor-restart-all').onclick = async () => {{
-        const response = await fetch('/api/restart-all', {{method:'POST'}});
-        const payload = await response.json();
-        const url = new URL(window.location.href);
-        url.searchParams.set('generation', payload.generation);
-        window.location.replace(url.toString());
-  }};
-  refreshSupervisorState();
-  setInterval(refreshSupervisorState, 1000);
 }})();
 </script>
 """
-    return portal_html.replace("</body>", f"{controls}</body>")
+    return portal_html.replace("</body>", f"{cache_busting}</body>")
 
 
 def create_http_server(
@@ -273,7 +236,7 @@ def create_http_server(
                 return
             if path in ("/", "/portal.html"):
                 portal_html = portal_path.read_text(encoding="utf-8")
-                body = _inject_supervisor_controls(
+                body = _inject_generation_cache_busting(
                     portal_html, supervisor.current_generation or "starting"
                 ).encode("utf-8")
                 self.send_response(200)

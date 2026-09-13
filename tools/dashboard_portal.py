@@ -700,10 +700,14 @@ def _render_server_sidebar(servers: list[dict]) -> str:
         port = s['port']
         name = _esc(s['name'])
         rows += (
-            f'<div class="server-row">'
+        f'<div class="server-row" data-service="{name}">'
             f'<span class="server-dot" id="{dot_id}"></span>'
             f'<span class="server-name">{name} :{port}</span>'
-            f'<button class="server-launch" onclick="openServer({port})" title="Open">&nearr;</button>'
+        f'<button class="server-launch server-retry" data-service="{name}" '
+        f'onclick="retryService(this.dataset.service)" aria-label="Retry {name}" '
+        f'title="Retry {name}" hidden>&#8635;</button>'
+        f'<button class="server-launch" onclick="openServer({port})" '
+        f'aria-label="Open {name}" title="Open {name}">&nearr;</button>'
             f'</div>\n      '
         )
     return (
@@ -711,7 +715,7 @@ def _render_server_sidebar(servers: list[dict]) -> str:
         + rows
         + '<div style="margin-top:.2rem">'
         '<button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" '
-        'onclick="launchServers()">&#9889; Start all servers</button>'
+        'onclick="launchServers()">&#8635; Restart All</button>'
         '</div>\n    </div>'
     )
 
@@ -731,6 +735,7 @@ def render_portal(manifest: dict) -> str:
     health_snapshot = collect_portal_health(manifest)
     health_card = _render_health_card(health_snapshot)
     api_health_widget = _render_api_health_widget(_collect_api_health())
+    api_health_markup = f"    {api_health_widget}\n" if api_health_widget else ""
 
     # Load icon config for favicon + sigil tooltip
     _icon_config_path = Path(__file__).parent.parent / "src" / "data" / "portal_icon_config.json"
@@ -935,8 +940,10 @@ def render_portal(manifest: dict) -> str:
   .server-row {{
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.4rem;
     font-size: 0.7rem;
+    min-width: 0;
   }}
   .server-dot {{
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
@@ -944,13 +951,15 @@ def render_portal(manifest: dict) -> str:
   }}
   .server-dot.up {{ background: var(--success); }}
   .server-dot.down {{ background: #ef4444; }}
-  .server-name {{ flex: 1; color: var(--muted); }}
+  .server-name {{ flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
   .server-launch {{
     background: none; border: 1px solid var(--border); border-radius: 4px;
     color: var(--muted); font-size: 0.62rem; padding: 0.1rem 0.35rem;
     cursor: pointer; transition: all .15s;
+    flex-shrink: 0;
   }}
   .server-launch:hover {{ border-color: var(--accent); color: var(--accent); }}
+  .server-launch:disabled {{ cursor: wait; opacity: 0.55; }}
 
   /* Footer */
   .sidebar-footer {{
@@ -1070,8 +1079,7 @@ def render_portal(manifest: dict) -> str:
     <div class="sidebar-header">
       <h1><span class="sigil"{_prompt_attr}>⊕</span> Dashboard Portal</h1>
     </div>
-    {api_health_widget}
-    {health_card}
+{api_health_markup}    {health_card}
     {stats}
     <div class="nav-section">
       {nav}
@@ -1110,98 +1118,68 @@ def render_portal(manifest: dict) -> str:
     }})();
 
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
-    function invokePortalLaunch() {{
-      const a = document.createElement('a');
-      a.href = 'portal://launch';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }}
-    function launchServers() {{
+    async function launchServers() {{
       const btn = document.getElementById('launch-btn');
-      if (btn) {{ btn.textContent = 'Launching…'; btn.disabled = true; }}
-      // Use a hidden anchor click to invoke portal:// without navigating away
-      invokePortalLaunch();
-      // Re-poll for server status after 4s and 9s
-      setTimeout(() => {{ pollServers(); }}, 4000);
+      if (btn) {{ btn.textContent = 'Restarting...'; btn.disabled = true; }}
+      try {{
+        const response = await fetch('/api/restart-all', {{method: 'POST'}});
+        if (!response.ok) throw new Error(`restart failed (${{response.status}})`);
+        const payload = await response.json();
+        applyGeneration(payload.generation);
+      }} catch (error) {{
+        if (btn) btn.title = String(error);
+      }}
       setTimeout(() => {{
-        if (btn) {{ btn.textContent = '\u25b6 Start all servers'; btn.disabled = false; btn.style.animation = ''; }}
+        if (btn) {{ btn.textContent = '\u21bb Restart All'; btn.disabled = false; }}
         pollServers();
-      }}, 9000);
+      }}, 5000);
     }}
     const SERVERS = {server_js_list};
-    async function probe(url, timeoutMs) {{
+    function applyGeneration(generation) {{
+      if (!generation) return;
+      document.querySelectorAll('iframe[src]').forEach(frame => {{
+        const url = new URL(frame.src, window.location.href);
+        url.searchParams.set('generation', generation);
+        frame.src = url.toString();
+      }});
+    }}
+    async function retryService(name) {{
+      const retry = document.querySelector(`.server-retry[data-service="${{CSS.escape(name)}}"]`);
+      if (retry) retry.disabled = true;
       try {{
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), timeoutMs);
-        await fetch(url, {{ mode: 'no-cors', cache: 'no-store', signal: ctrl.signal }});
-        clearTimeout(tid);
-        return true;
-      }} catch {{
-        return false;
+        const response = await fetch('/api/services/' + encodeURIComponent(name) + '/retry', {{method: 'POST'}});
+        if (!response.ok) throw new Error(`retry failed (${{response.status}})`);
+      }} finally {{
+        setTimeout(() => {{ if (retry) retry.disabled = false; pollServers(); }}, 1000);
       }}
     }}
-    async function checkServer(port, dotId) {{
-      const dot = document.getElementById(dotId);
-      if (!dot) return;
-      const probeUrls = [
-        'http://127.0.0.1:' + port + '/health',
-        'http://localhost:' + port + '/health',
-        'http://127.0.0.1:' + port + '/',
-        'http://localhost:' + port + '/',
-      ];
-      let up = false;
-      for (const url of probeUrls) {{
-        if (await probe(url, 3000)) {{
-          up = true;
-          break;
-        }}
-      }}
-      if (up) {{
-        dot.classList.add('up');
-        dot.classList.remove('down');
-      }} else {{
-        dot.classList.add('down');
-        dot.classList.remove('up');
+    async function pollServers() {{
+      try {{
+        const response = await fetch('/api/state', {{cache: 'no-store'}});
+        if (!response.ok) throw new Error(`state failed (${{response.status}})`);
+        const payload = await response.json();
+        SERVERS.forEach(service => {{
+          const state = payload.services[service.name];
+          const dot = document.getElementById('dot-' + service.port);
+          const row = document.querySelector(`.server-row[data-service="${{CSS.escape(service.name)}}"]`);
+          const retry = row ? row.querySelector('.server-retry') : null;
+          if (!state || !dot || !row || !retry) return;
+          dot.classList.toggle('up', state.readiness === 'ready');
+          dot.classList.toggle('down', state.readiness === 'failed');
+          retry.hidden = state.readiness !== 'failed';
+          const diagnostic = `${{service.name}}: ${{state.readiness}} (attempt ${{state.attempt}})`;
+          row.title = state.error || diagnostic;
+          row.setAttribute('aria-label', state.error ? `${{diagnostic}}. ${{state.error}}` : diagnostic);
+        }});
+      }} catch (error) {{
+        const block = document.getElementById('server-status-block');
+        if (block) block.title = `Supervisor unavailable: ${{error}}`;
       }}
     }}
-    function pollServers() {{ SERVERS.forEach(s => checkServer(s.port, 'dot-' + s.port)); }}
     async function autoLaunch() {{
       const block = document.getElementById('server-status-block');
       if (block) block.style.display = 'block';
-      // If opened directly as file:// (double-click), auto-launch once per tab-open.
-      // launch_portal.ps1 now regenerates mirrors each invocation.
-      if (window.location.protocol === 'file:') {{
-        try {{
-          const key = 'portal_autolaunch_once';
-          if (!sessionStorage.getItem(key)) {{
-            sessionStorage.setItem(key, '1');
-            invokePortalLaunch();
-            setTimeout(() => {{ pollServers(); }}, 4000);
-            setTimeout(() => {{ pollServers(); }}, 9000);
-            setTimeout(() => {{ pollServers(); }}, 15000);
-          }}
-        }} catch {{
-          invokePortalLaunch();
-        }}
-        return;
-      }}
-      let anyUp = false;
-      for (const s of SERVERS) {{
-        if (await probe('http://127.0.0.1:' + s.port + '/', 2000) || await probe('http://localhost:' + s.port + '/', 2000)) {{
-          anyUp = true;
-          break;
-        }}
-      }}
-      // Under http:// hosting, browser gesture restrictions usually require button click.
-      if (!anyUp) {{
-        const btn = document.getElementById('launch-btn');
-        if (btn) {{
-          btn.textContent = '\u25b6 Start all servers';
-          btn.style.animation = 'livingPulse 1.5s ease-in-out infinite';
-        }}
-      }}
+      await pollServers();
     }}
     pollServers();
     setInterval(pollServers, 5000);

@@ -5,9 +5,9 @@ Covers:
   - launch_portal.ps1: has -NoOpen parameter; skips browser open when set
   - register_portal_protocol.ps1: passes -NoOpen to the handler command
   - Windows registry: portal:// handler command includes -NoOpen
-  - portal.html launchServers(): uses hidden anchor click, not window.location
-  - portal.html launchServers(): re-polls twice (4s and 9s) after trigger
-  - portal.html autoLaunch(): fires on window load, checks all 3 servers
+    - portal.html launchServers(): posts Restart All directly to the supervisor
+    - portal.html launchServers(): restores the button and polling after a bounded delay
+    - portal.html autoLaunch(): fires on window load and polls authoritative state
 """
 from __future__ import annotations
 
@@ -197,11 +197,11 @@ def test_registry_handler_points_to_launch_portal() -> None:
 
 
 # ---------------------------------------------------------------------------
-# portal.html — launchServers() uses anchor, not window.location
+# portal.html — launchServers() uses the resident supervisor
 # ---------------------------------------------------------------------------
 
 def test_launch_servers_no_window_location(portal_text: str) -> None:
-    """launchServers() must not use `window.location = 'portal://...'` (navigates away)."""
+    """launchServers() must not navigate away from the resident supervisor shell."""
     # Extract launchServers function body
     fn_match = re.search(
         r"function launchServers\(\)\s*\{(.*?)\n    \}",
@@ -216,12 +216,12 @@ def test_launch_servers_no_window_location(portal_text: str) -> None:
     ]
     non_comment = "\n".join(non_comment_lines)
     assert "window.location" not in non_comment, (
-        "launchServers() still uses window.location in code — replace with hidden anchor click"
+        "launchServers() must not navigate away while requesting Restart All"
     )
 
 
-def test_launch_servers_uses_hidden_anchor(portal_text: str) -> None:
-    """launchServers() must invoke portal:// via a hidden anchor (directly or via helper)."""
+def test_launch_servers_posts_directly_to_supervisor(portal_text: str) -> None:
+    """Restart All must use the resident API instead of the legacy portal protocol."""
     fn_match = re.search(
         r"function launchServers\(\)\s*\{(.*?)\n    \}",
         portal_text,
@@ -229,31 +229,13 @@ def test_launch_servers_uses_hidden_anchor(portal_text: str) -> None:
     )
     assert fn_match, "launchServers() not found in portal.html"
     body = fn_match.group(1)
-    # The anchor creation may be in a helper (invokePortalLaunch) called by launchServers.
-    uses_anchor_directly = "createElement('a')" in body
-    uses_helper = "invokePortalLaunch" in body
-    assert uses_anchor_directly or uses_helper, (
-        "launchServers() must either create an <a> element or call invokePortalLaunch()"
-    )
-    # Either the body or the helper must reference portal://launch.
-    if uses_helper:
-        helper_match = re.search(
-            r"function invokePortalLaunch\(\)\s*\{(.*?)\n    \}",
-            portal_text,
-            re.DOTALL,
-        )
-        assert helper_match, "invokePortalLaunch() not found in portal.html"
-        assert "portal://launch" in helper_match.group(1), (
-            "invokePortalLaunch() does not reference portal://launch"
-        )
-    else:
-        assert "portal://launch" in body, (
-            "launchServers() does not reference portal://launch"
-        )
+    assert "fetch('/api/restart-all', {method: 'POST'})" in body
+    assert "portal://launch" not in body
+    assert "invokePortalLaunch" not in body
 
 
-def test_launch_servers_polls_twice(portal_text: str) -> None:
-    """launchServers() must schedule two pollServers() calls (4s and 9s)."""
+def test_launch_servers_resumes_polling_after_bounded_busy_state(portal_text: str) -> None:
+    """Restart All must restore its button and live polling after a bounded delay."""
     fn_match = re.search(
         r"function launchServers\(\)\s*\{(.*?)\n    \}",
         portal_text,
@@ -261,13 +243,11 @@ def test_launch_servers_polls_twice(portal_text: str) -> None:
     )
     assert fn_match, "launchServers() not found in portal.html"
     body = fn_match.group(1)
-    poll_count = body.count("pollServers()")
-    assert poll_count >= 2, (
-        f"launchServers() only calls pollServers() {poll_count} time(s) — need at least 2"
-    )
-    assert "4000" in body and "9000" in body, (
-        "launchServers() should re-poll at 4000ms and 9000ms"
-    )
+    assert "btn.disabled = true" in body
+    assert "setTimeout" in body
+    assert "5000" in body
+    assert "btn.disabled = false" in body
+    assert "pollServers()" in body
 
 
 # ---------------------------------------------------------------------------
