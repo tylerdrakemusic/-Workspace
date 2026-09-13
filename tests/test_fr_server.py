@@ -9,7 +9,7 @@ import threading
 import time
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -140,7 +140,7 @@ class _MockWatcher:
 
 def _start_test_server(
     port: int, frs: list[dict[str, Any]], stale: bool = False
-) -> threading.Thread:
+) -> tuple[http.server.ThreadingHTTPServer, threading.Thread]:
     import http.server as hs
 
     watcher = _MockWatcher(frs, stale)
@@ -151,12 +151,12 @@ def _start_test_server(
     t.start()
     # Give the server a moment to bind
     time.sleep(0.15)
-    return t
+    return server, t
 
 
 class TestApiEndpoints:
     @pytest.fixture(autouse=True)
-    def _server(self, tmp_path: Path) -> None:
+    def _server(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
         """Spin up a test server on a free port before each test method."""
         self._port = _find_free_port()
         sample_fr: dict[str, Any] = {
@@ -174,7 +174,18 @@ class TestApiEndpoints:
             "is_active": True,
             "state_class": "state-info",
         }
-        _start_test_server(self._port, [sample_fr])
+        reports_dir = tmp_path / "reports"
+        reports_dir.mkdir()
+        monkeypatch.setattr(fr_server, "WORKSPACE_ROOT", tmp_path)
+        monkeypatch.setattr(fr_server, "DASHBOARD_HTML", reports_dir / "fr_dashboard.html")
+        fr_server.regenerate_dashboard([sample_fr])
+        server, thread = _start_test_server(self._port, [sample_fr])
+        try:
+            yield
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
 
     def _get(self, path: str) -> Any:
         url = f"http://127.0.0.1:{self._port}{path}"
