@@ -219,10 +219,51 @@ def test_dispatch_starts_once_then_focuses_existing_supervisor() -> None:
     assert focuses == 1
 
 
-def test_supervisor_serves_no_store_shell_with_live_controls_and_cache_busting(tmp_path: Path) -> None:
+def test_server_sidebar_places_failed_only_retry_before_open() -> None:
+    sidebar = dashboard_portal._render_server_sidebar([_service("Alpha", 5101)])
+
+    retry = (
+        '<button class="server-launch server-retry" data-service="Alpha" '
+        'onclick="retryService(this.dataset.service)" aria-label="Retry Alpha" '
+        'title="Retry Alpha" hidden>'
+    )
+    open_button = (
+        '<button class="server-launch" onclick="openServer(5101)" '
+        'aria-label="Open Alpha" title="Open Alpha">'
+    )
+    assert retry in sidebar
+    assert open_button in sidebar
+    assert sidebar.index(retry) < sidebar.index(open_button)
+    assert 'id="launch-btn"' in sidebar
+    assert "Restart All" in sidebar
+
+
+def test_generated_portal_uses_authoritative_supervisor_state_and_restart_actions() -> None:
+    portal = (WORKSPACE_ROOT / "reports" / "portal.html").read_text(encoding="utf-8")
+
+    assert 'id="supervisor-controls"' not in portal
+    assert "fetch('/api/state', {cache: 'no-store'})" in portal
+    assert "fetch('/api/services/' + encodeURIComponent(name) + '/retry', {method: 'POST'})" in portal
+    assert "retry.hidden = state.readiness !== 'failed'" in portal
+    assert "dot.classList.toggle('up', state.readiness === 'ready')" in portal
+    assert "dot.classList.toggle('down', state.readiness === 'failed')" in portal
+    assert "row.title = state.error ||" in portal
+    assert "async function probe" not in portal
+    assert "async function checkServer" not in portal
+
+    launch_body = portal.split("async function launchServers()", 1)[1].split("\n    }", 1)[0]
+    assert "fetch('/api/restart-all', {method: 'POST'})" in launch_body
+    assert "invokePortalLaunch" not in launch_body
+    assert "btn.disabled = true" in launch_body
+    assert "setTimeout" in launch_body
+    assert "btn.disabled = false" in launch_body
+
+
+def test_supervisor_serves_no_store_shell_without_duplicate_controls_and_with_cache_busting(tmp_path: Path) -> None:
     portal_path = tmp_path / "portal.html"
     portal_path.write_text(
-        '<html><body><iframe src="http://localhost:5101/"></iframe></body></html>',
+        '<html><body><aside id="server-status-block"></aside>'
+        '<iframe src="http://localhost:5101/"></iframe></body></html>',
         encoding="utf-8",
     )
     supervisor = PortalSupervisor(
@@ -249,9 +290,8 @@ def test_supervisor_serves_no_store_shell_with_live_controls_and_cache_busting(t
         with urlopen(f"{base_url}/portal.html?generation=generation-1") as response:
             body = response.read().decode("utf-8")
             assert response.headers["Cache-Control"] == "no-store"
-        assert "Restart All" in body
-        assert "/api/restart-all" in body
-        assert "/api/services/" in body
+        assert 'id="server-status-block"' in body
+        assert 'id="supervisor-controls"' not in body
         assert "generation-1" in body
         with urlopen(f"{base_url}/api/state") as response:
             payload = json.load(response)
@@ -388,7 +428,7 @@ def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
     events: list[str] = []
 
     class Server:
-        server_port = 8080
+        server_port = 8790
 
         def serve_forever(self) -> None:
             events.append("serve")
@@ -413,9 +453,19 @@ def test_resident_generates_shell_before_serving_and_opening_browser() -> None:
         "generation",
         "background",
         "restart:generation-1",
-        "browser:http://127.0.0.1:8080/portal.html?generation=generation-1",
+        "browser:http://127.0.0.1:8790/portal.html?generation=generation-1",
         "serve",
     ]
+
+
+def test_supervisor_uses_reserved_port_8790_everywhere() -> None:
+    supervisor_text = SUPERVISOR_SCRIPT.read_text(encoding="utf-8")
+    protocol_text = REGISTER_PROTOCOL.read_text(encoding="utf-8")
+
+    assert supervisor_module.SUPERVISOR_PORT == 8790
+    assert "8080" not in supervisor_text
+    assert "127.0.0.1:8790/api/state" in protocol_text
+    assert "127.0.0.1:8080" not in protocol_text
 
 
 def test_living_html_regeneration_does_not_wait_for_serve_mode() -> None:
