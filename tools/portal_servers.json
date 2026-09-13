@@ -98,7 +98,7 @@
                         "project":  "ΣCapital",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_trade_gate.ps1",
                         "working_directory":  "f:\\ΣCapital",
-                        "readiness_url":  "http://127.0.0.1:7475/",
+                        "readiness_url":  "http://127.0.0.1:7475/health",
                         "accepted_statuses":  [200, 302],
                         "enabled":  true
                     }
