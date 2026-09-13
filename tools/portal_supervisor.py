@@ -80,27 +80,45 @@ def reclaim_port(
     run: Callable[..., object] = subprocess.run,
 ) -> list[int]:
     """Force-terminate every Windows process listening on the TCP port."""
-    result = run(
-        ["netstat", "-ano", "-p", "tcp"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
     pattern = re.compile(
         rf"^\s*TCP\s+\S+:{port}\s+\S+\s+LISTENING\s+(\d+)\s*$",
         re.IGNORECASE | re.MULTILINE,
     )
-    pids = list(dict.fromkeys(int(pid) for pid in pattern.findall(result.stdout)))
+
+    def listener_pids() -> list[int]:
+        result = run(
+            ["netstat", "-ano", "-p", "tcp"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
+            raise RuntimeError(f"port {port} reclaim failed: netstat: {detail}"[:160])
+        return list(dict.fromkeys(int(pid) for pid in pattern.findall(result.stdout)))
+
+    pids = listener_pids()
     for pid in pids:
-        run(
+        result = run(
             ["taskkill", "/PID", str(pid), "/F", "/T"],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
             check=False,
+        )
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
+            raise RuntimeError(
+                f"port {port} reclaim failed: taskkill PID {pid}: {detail}"[:160]
+            )
+    remaining = listener_pids()
+    if remaining:
+        pid_list = ", ".join(str(pid) for pid in remaining)
+        raise RuntimeError(
+            f"port {port} reclaim failed: listener remains (PID {pid_list})"[:160]
         )
     return pids
 
@@ -403,6 +421,7 @@ class PortalSupervisor:
         self.csrf_token = secrets.token_urlsafe(32)
         self._operation_lock = threading.Lock()
         self._state_lock = threading.RLock()
+        self._retain_latest_generations()
 
     @property
     def operation_active(self) -> bool:
@@ -488,8 +507,14 @@ class PortalSupervisor:
             if generation_logs not in self.generation_history:
                 self.generation_history.append(generation_logs)
         services = [service for service in self.config.get("servers", []) if service.get("enabled", False)]
+        launchable_services = []
         for service in services:
-            self.reclaim_port(int(service["port"]))
+            try:
+                self.reclaim_port(int(service["port"]))
+            except Exception as exc:
+                self._record_reclaim_failure(service, generation, 1, exc)
+            else:
+                launchable_services.append(service)
         with ThreadPoolExecutor(max_workers=3) as executor:
             futures = [
                 executor.submit(
@@ -501,7 +526,7 @@ class PortalSupervisor:
                     port_already_reclaimed=True,
                     prior_attempts=0,
                 )
-                for service in services
+                for service in launchable_services
             ]
             for future in futures:
                 future.result()
@@ -543,18 +568,57 @@ class PortalSupervisor:
 
     def _retain_latest_generations(self) -> None:
         with self._state_lock:
-            tracked = {path.resolve() for path in self.generation_history}
-            existing = [
+            if not self.log_root.exists():
+                return
+            generations = [
                 path
                 for path in self.log_root.iterdir()
                 if path.is_dir()
                 and re.fullmatch(r"[0-9a-f]{32}", path.name)
-                and path.resolve() not in tracked
             ]
-            generations = existing + self.generation_history
-            for expired in generations[:-10]:
+            generations.sort(key=lambda path: (path.stat().st_mtime_ns, path.name))
+            current = next(
+                (
+                    path
+                    for path in generations
+                    if path.name == self.current_generation
+                ),
+                None,
+            )
+            candidates = [path for path in generations if path != current]
+            retained = candidates[-(9 if current is not None else 10) :]
+            if current is not None:
+                retained.append(current)
+            retained_paths = {path.resolve() for path in retained}
+            for expired in generations:
+                if expired.resolve() in retained_paths:
+                    continue
                 shutil.rmtree(expired)
-            self.generation_history = [path for path in generations[-10:] if path.exists()]
+            self.generation_history = [path for path in retained if path.exists()]
+
+    def _record_reclaim_failure(
+        self,
+        service: dict[str, object],
+        generation: str,
+        attempt: int,
+        error: Exception,
+    ) -> None:
+        port = int(service["port"])
+        message = str(error).strip() or type(error).__name__
+        prefix = f"port {port} reclaim failed"
+        if not message.casefold().startswith(prefix.casefold()):
+            message = f"{prefix}: {message}"
+        with self._state_lock:
+            self.state[str(service["name"])] = {
+                "pid": None,
+                "command": str(service["cmd"]),
+                "working_directory": str(service["working_directory"]),
+                "started_at": None,
+                "launch_generation": generation,
+                "readiness": "failed",
+                "attempt": attempt,
+                "error": message[:160],
+            }
 
     def _launch_service(
         self,
@@ -572,7 +636,16 @@ class PortalSupervisor:
         working_directory = str(service["working_directory"])
         for attempt in range(1, max_attempts + 1):
             if attempt > 1 or not port_already_reclaimed:
-                self.reclaim_port(port)
+                try:
+                    self.reclaim_port(port)
+                except Exception as exc:
+                    self._record_reclaim_failure(
+                        service,
+                        generation,
+                        prior_attempts + attempt,
+                        exc,
+                    )
+                    return
             process = self.launch_process(
                 command,
                 working_directory,
