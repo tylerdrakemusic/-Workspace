@@ -6,6 +6,7 @@ import argparse
 import ctypes
 import json
 import re
+import shlex
 import shutil
 import subprocess  # nosec B404 - fixed executable names and shell=False
 import sys
@@ -36,8 +37,17 @@ class ConfigurationError(ValueError):
 
 
 def _windows_command_argv(command: str) -> list[str]:
+    windll = getattr(ctypes, "windll", None)
+    if windll is None:
+        return [
+            argument[1:-1]
+            if len(argument) >= 2 and argument[0] == argument[-1] == '"'
+            else argument
+            for argument in shlex.split(command, posix=False)
+        ]
+
     argument_count = ctypes.c_int()
-    command_line_to_argv = ctypes.windll.shell32.CommandLineToArgvW
+    command_line_to_argv = windll.shell32.CommandLineToArgvW
     command_line_to_argv.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_int)]
     command_line_to_argv.restype = ctypes.POINTER(wintypes.LPWSTR)
     arguments = command_line_to_argv(command, ctypes.byref(argument_count))
@@ -46,7 +56,7 @@ def _windows_command_argv(command: str) -> list[str]:
     try:
         return [arguments[index] for index in range(argument_count.value)]
     finally:
-        local_free = ctypes.windll.kernel32.LocalFree
+        local_free = windll.kernel32.LocalFree
         local_free.argtypes = [wintypes.HLOCAL]
         local_free.restype = wintypes.HLOCAL
         local_free(arguments)
