@@ -33,6 +33,19 @@ pytestmark = pytest.mark.playwright
 class _SupervisorState:
     current_generation = "playwright-test"
     state: dict[str, dict[str, object]] = {}
+    csrf_token = "playwright-test-csrf"
+
+    def snapshot(self, *, include_token: bool = False) -> dict[str, object]:
+        snapshot: dict[str, object] = {
+            "generation": self.current_generation,
+            "services": {
+                name: dict(service_state)
+                for name, service_state in self.state.items()
+            },
+        }
+        if include_token:
+            snapshot["csrf_token"] = self.csrf_token
+        return snapshot
 
 
 class _FrWatcherState:
