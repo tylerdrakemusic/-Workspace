@@ -245,6 +245,51 @@ def test_static_living_html_mirror_disables_ownerless_relative_health_poll(tmp_p
     assert "fetch('/api/health'" not in mirror
 
 
+def test_render_portal_excludes_quantum_randomness_service() -> None:
+    """Portal rendering omits the service while retaining and reindexing other dashboards."""
+    manifest = {
+        "dashboards": [
+            {
+                "id": "quantum-randomness-service",
+                "title": "Quantum Randomness Service",
+                "type": "flask_app",
+                "url": "http://127.0.0.1:8211",
+                "category": "quantum",
+                "project": "Quantum",
+            },
+            {
+                "id": "fr-board",
+                "title": "Feature Requests",
+                "type": "flask_app",
+                "url": "http://localhost:7474",
+                "category": "workflow",
+                "project": "Workspace",
+            },
+        ],
+        "projects": [{"has_spec": True}],
+    }
+
+    with (
+        patch.object(dp, "_load_servers", return_value=[]),
+        patch.object(dp, "_collect_api_health", return_value=[]),
+        patch.object(dp, "collect_portal_health", return_value={
+            "available": False,
+            "reason": "test",
+            "regen_cmd": "test",
+        }),
+    ):
+        rendered = dp.render_portal(manifest)
+
+    assert "Quantum Randomness Service" not in rendered
+    assert "http://127.0.0.1:8211" not in rendered
+    assert "Feature Requests" in rendered
+    assert 'data-idx="0"' in rendered
+    assert 'id="pane-0"' in rendered
+    assert 'src="http://localhost:7474"' in rendered
+    assert '<span class="stat-num">1</span> Dashboards' in rendered
+    assert "&middot; 1 dashboards" in rendered
+
+
 # ---------------------------------------------------------------------------
 # BFX-20260531-dashboard-portal-shell-test
 # regenerate_dashboards must call subprocess.run with shell=False
