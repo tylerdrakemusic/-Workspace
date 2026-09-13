@@ -160,6 +160,7 @@ def test_executive_iframe_opt_out_preserves_raw_root_path() -> None:
         f"<html><body>{frames}</body></html>", "generation-1"
     )
 
+    assert 'data-cache-bust="false"' in served
     assert 'data-src="http://127.0.0.1:8200/"' in served
     assert ' src="http://127.0.0.1:8200/' not in served
     assert "http://127.0.0.1:8200/?generation=" not in served
@@ -175,8 +176,49 @@ def test_compatible_iframe_keeps_generation_cache_busting() -> None:
         f"<html><body>{frames}</body></html>", "generation-1"
     )
 
+    assert 'data-cache-bust="true"' in served
     assert 'src="http://localhost:7474/"' in served
     assert "url.searchParams.set('generation', generation)" in served
+
+
+def test_restart_all_generation_refresh_targets_only_compatible_iframes() -> None:
+    """Repeated Restart All refreshes must preserve cache-bust opt-outs after hydration."""
+    source = Path(dp.__file__).read_text(encoding="utf-8")
+
+    assert "iframe[src]:not([data-cache-bust=\"false\"])" in source
+    assert "document.querySelectorAll('iframe[src]').forEach(frame" not in source
+
+
+@pytest.mark.playwright
+def test_repeated_generation_refresh_preserves_executive_root_url() -> None:
+    """The rendered client keeps Executive exact while compatible iframe generations advance."""
+    from playwright.sync_api import sync_playwright
+
+    portal_path = WORKSPACE_ROOT / "reports" / "portal.html"
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+        try:
+            portal_html = portal_path.read_text(encoding="utf-8")
+            served = supervisor._inject_generation_cache_busting(
+                portal_html, "generation-initial"
+            )
+            served = served.replace("<head>", f'<head><base href="{portal_path.as_uri()}">', 1)
+            page.set_content(served, wait_until="domcontentloaded")
+            executive = page.locator('iframe[data-cache-bust="false"]')
+            compatible = page.locator('#pane-9 iframe')
+            executive_root = executive.get_attribute("data-src")
+
+            assert executive.get_attribute("src") == executive_root
+            assert "generation=generation-initial" in (
+                compatible.get_attribute("src") or ""
+            )
+            for generation in ("generation-1", "generation-2"):
+                page.evaluate("generation => applyGeneration(generation)", generation)
+                assert executive.get_attribute("src") == executive_root
+                assert f"generation={generation}" in (compatible.get_attribute("src") or "")
+        finally:
+            browser.close()
 
 
 def test_static_living_html_mirror_disables_ownerless_relative_health_poll(tmp_path: Path) -> None:
