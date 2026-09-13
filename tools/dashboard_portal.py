@@ -629,8 +629,10 @@ def _iframe_source(url: str, servers: list[dict]) -> str:
   """Render a live iframe source according to its owning service capability."""
   parsed = urlparse(url)
   service = next((server for server in servers if server.get("port") == parsed.port), None)
-  attribute = "data-src" if service and service.get("iframe_cache_bust") is False else "src"
-  return f'{attribute}="{_esc(url)}"'
+  cache_bust = not (service and service.get("iframe_cache_bust") is False)
+  attribute = "src" if cache_bust else "data-src"
+  capability = str(cache_bust).lower()
+  return f'data-cache-bust="{capability}" {attribute}="{_esc(url)}"'
 
 
 def _content_frames(manifest: dict, servers: list[dict] | None = None) -> str:
@@ -1175,7 +1177,7 @@ def render_portal(manifest: dict) -> str:
     const SERVERS = {server_js_list};
     function applyGeneration(generation) {{
       if (!generation) return;
-      document.querySelectorAll('iframe[src]').forEach(frame => {{
+      document.querySelectorAll('iframe[src]:not([data-cache-bust="false"])').forEach(frame => {{
         const url = new URL(frame.src, window.location.href);
         url.searchParams.set('generation', generation);
         frame.src = url.toString();
