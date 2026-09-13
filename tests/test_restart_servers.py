@@ -313,6 +313,7 @@ def test_generated_portal_uses_authoritative_supervisor_state_and_restart_action
     assert "setTimeout" in launch_body
 
 
+@pytest.mark.playwright
 @pytest.mark.parametrize("viewport", [{"width": 1280, "height": 800}, {"width": 390, "height": 844}])
 def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(
     viewport: dict[str, int],

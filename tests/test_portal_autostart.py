@@ -245,9 +245,10 @@ def test_launch_servers_resumes_polling_after_bounded_busy_state(portal_text: st
     body = fn_match.group(1)
     assert "btn.disabled = true" in body
     assert "setTimeout" in body
-    assert "5000" in body
-    assert "btn.disabled = false" in body
+    assert "1000" in body
     assert "pollServers()" in body
+    assert "if (operationComplete)" in portal_text
+    assert "btn.disabled = false" in portal_text
 
 
 # ---------------------------------------------------------------------------
