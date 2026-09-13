@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
@@ -771,18 +772,22 @@ def _make_handler(watcher: "_WatcherThread") -> type:
             self._send_cors_preflight()
 
         def do_GET(self) -> None:  # noqa: N802
-            if self.path == "/api/frs" or self.path.startswith("/api/frs?"):
+            request_path = urlsplit(self.path).path
+            if request_path == "/api/frs":
                 self._send_json({"frs": watcher.frs, "stale": watcher.stale})
-            elif self.path.startswith("/api/ledger/"):
-                fr_id = self.path[len("/api/ledger/"):].split("?")[0].strip()
+            elif request_path.startswith("/api/ledger/"):
+                fr_id = request_path[len("/api/ledger/") :].strip()
                 if not fr_id:
                     self._send_json({"ok": False, "error": "Missing FR ID"}, 400)
                     return
                 events = query_ledger_events(fr_id)
-                self._send_json({"fr_id": fr_id, "events": events}, cors_origin="http://localhost:7474")
-            elif self.path == "/health":
+                self._send_json(
+                    {"fr_id": fr_id, "events": events},
+                    cors_origin="http://localhost:7474",
+                )
+            elif request_path == "/health":
                 self._send_json({"ok": True, "port": self.server.server_address[1]})
-            elif self.path in ("/", "/fr_dashboard.html"):
+            elif request_path in ("/", "/fr_dashboard.html"):
                 self.path = "/fr_dashboard.html"
                 super().do_GET()
             else:

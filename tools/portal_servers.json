@@ -6,6 +6,9 @@
                         "port":  5050,
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_music_dashboard.ps1",
+                        "working_directory":  "f:\\❤Music",
+                        "readiness_url":  "http://127.0.0.1:5050/",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     },
                     {
@@ -13,6 +16,9 @@
                         "port":  5055,
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_guitar_trainer.ps1",
+                        "working_directory":  "f:\\❤Music",
+                        "readiness_url":  "http://127.0.0.1:5055/health",
+                        "accepted_statuses":  [200],
                         "enabled":  true
                     },
                     {
@@ -20,6 +26,9 @@
                         "port":  5065,
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_studio_panel.ps1",
+                        "working_directory":  "f:\\❤Music",
+                        "readiness_url":  "http://127.0.0.1:5065/",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     },
                     {
@@ -27,6 +36,10 @@
                         "port":  8200,
                         "project":  "👁AI-Manifest",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_executive_brief.ps1",
+                        "working_directory":  "f:\\👁AI-Manifest",
+                        "readiness_url":  "http://127.0.0.1:8200/health",
+                        "accepted_statuses":  [200],
+                        "iframe_cache_bust":  false,
                         "enabled":  true
                     },
                     {
@@ -34,6 +47,9 @@
                         "port":  8765,
                         "project":  "❤Music",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_band_mgmt.ps1",
+                        "working_directory":  "f:\\❤Music",
+                        "readiness_url":  "http://127.0.0.1:8765/",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     },
                     {
@@ -41,6 +57,9 @@
                         "port":  8766,
                         "project":  "∞Life",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_reauth_server.ps1",
+                        "working_directory":  "f:\\∞Life",
+                        "readiness_url":  "http://127.0.0.1:8766/health",
+                        "accepted_statuses":  [200],
                         "enabled":  true
                     },
                     {
@@ -48,6 +67,9 @@
                         "port":  7474,
                         "project":  "⊕Workspace",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_fr_board.ps1",
+                        "working_directory":  "f:\\⊕Workspace",
+                        "readiness_url":  "http://127.0.0.1:7474/",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     },
                     {
@@ -55,6 +77,9 @@
                         "port":  8300,
                         "project":  "∞Life",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_biomarker.ps1",
+                        "working_directory":  "f:\\∞Life",
+                        "readiness_url":  "http://127.0.0.1:8300/",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     },
                     {
@@ -62,6 +87,9 @@
                         "port":  8210,
                         "project":  "⟨ψ⟩Quantum",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_quantum_benchmark.ps1",
+                        "working_directory":  "f:\\⟨ψ⟩Quantum",
+                        "readiness_url":  "http://127.0.0.1:8210/",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     },
                     {
@@ -69,6 +97,9 @@
                         "port":  7475,
                         "project":  "ΣCapital",
                         "cmd":  "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File f:\\⊕Workspace\\tools\\start_trade_gate.ps1",
+                        "working_directory":  "f:\\ΣCapital",
+                        "readiness_url":  "http://127.0.0.1:7475/health",
+                        "accepted_statuses":  [200, 302],
                         "enabled":  true
                     }
                 ]

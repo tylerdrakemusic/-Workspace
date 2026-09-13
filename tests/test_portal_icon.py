@@ -218,7 +218,7 @@ def test_portal_html_has_fr_and_brief_servers() -> None:
 
 
 def test_staged_launcher_starts_music_servers() -> None:
-    """The staged open_portal.ps1 launcher must either start services directly or delegate.
+    """The staged open_portal.ps1 launcher must delegate directly to the supervisor.
 
     This is a structural check — we verify launcher wiring without executing servers.
     Skips gracefully if the staged file doesn't exist yet (first run before shortcut creation).
@@ -229,21 +229,18 @@ def test_staged_launcher_starts_music_servers() -> None:
         import pytest
         pytest.skip("Staged launcher not yet created — run create_desktop_shortcut.py first")
     content = staged_ps1.read_text(encoding="utf-8-sig")
-    # Accept either direct-start staged launchers or a thin delegate to the
-    # server-start step (restart_servers.ps1 and/or the root open_portal.ps1).
-    # restart_servers.ps1 reads portal_servers.json (single source of truth for
-    # server start commands) so referencing it is equivalent to starting each
-    # server directly.
-    delegates_to_root_launcher = (
-        ("open_portal.ps1" in content and "f:\\⊕Workspace\\open_portal.ps1" in content)
-        or "restart_servers.ps1" in content
+    assert "portal_supervisor.py" in content, (
+        "Staged open_portal.ps1 must delegate directly to portal_supervisor.py"
     )
-    if not delegates_to_root_launcher:
-        for name, port in _ALL_SERVERS.items():
-            assert str(port) in content, (
-                f"Staged open_portal.ps1 missing start command for {name} (port {port})"
-            )
-        assert "Start-Process" in content, "Staged open_portal.ps1 missing Start-Process call"
+    assert "F:\\⊕Workspace\\" in content, (
+        "Staged open_portal.ps1 must preserve the Unicode Workspace path"
+    )
+    assert "restart_servers.ps1" not in content, (
+        "Staged open_portal.ps1 must not use the retired restart_servers.ps1 chain"
+    )
+    assert "launch_portal.ps1" not in content, (
+        "Staged open_portal.ps1 must not use the retired launch_portal.ps1 chain"
+    )
 
     assert "http://localhost:8200" not in content and "http://127.0.0.1:8200" not in content, (
         "Staged open_portal.ps1 should not auto-open standalone Executive Audio Brief URL (:8200)"

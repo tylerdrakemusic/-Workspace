@@ -119,45 +119,45 @@ def test_servers_json_all_ports_unique(servers_json: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# open_portal.ps1 — Guitar Trainer startup block
+# Supervisor-owned Guitar Trainer startup
 # ---------------------------------------------------------------------------
 
-def test_open_portal_starts_guitar_trainer(open_portal_text: str) -> None:
-    """open_portal.ps1 must reference port 5055 for Guitar Trainer."""
-    assert "5055" in open_portal_text, (
-        "open_portal.ps1 does not reference Guitar Trainer port 5055"
-    )
+def test_supervisor_config_starts_guitar_trainer(servers_json: dict) -> None:
+    """The canonical supervisor config owns the Guitar Trainer launch contract."""
+    entry = next(s for s in servers_json["servers"] if s["name"] == "Guitar Trainer")
+    assert entry["port"] == 5055
+    assert entry["cmd"].endswith("start_guitar_trainer.ps1")
+    assert entry["working_directory"] == "f:\\❤Music"
 
 
-def test_open_portal_uses_start_guitar_trainer_script(open_portal_text: str) -> None:
-    """open_portal.ps1 must invoke start_guitar_trainer.ps1."""
-    assert "start_guitar_trainer.ps1" in open_portal_text, (
-        "open_portal.ps1 does not reference start_guitar_trainer.ps1"
-    )
+@pytest.mark.parametrize(
+    ("service_name", "port"),
+    [
+        ("Executive", 8200),
+        ("∞Life Re-auth Server", 8766),
+        ("Guitar Trainer", 5055),
+    ],
+)
+def test_supervisor_config_uses_health_readiness_contract(
+    servers_json: dict, service_name: str, port: int
+) -> None:
+    """Services with unreliable root routes must use their health endpoints."""
+    entry = next(s for s in servers_json["servers"] if s["name"] == service_name)
+    assert entry["readiness_url"] == f"http://127.0.0.1:{port}/health"
+    assert entry["accepted_statuses"] == [200]
 
 
-def test_open_portal_guitar_trainer_checks_existing_process(open_portal_text: str) -> None:
-    """Guitar Trainer startup must guard with Get-NetTCPConnection (skip-if-running)."""
-    # The block must contain a Get-NetTCPConnection guard for 5055
-    pattern = re.compile(r"Get-NetTCPConnection.*5055", re.DOTALL)
-    assert pattern.search(open_portal_text), (
-        "open_portal.ps1 is missing a Get-NetTCPConnection guard for port 5055"
-    )
+def test_manual_launcher_delegates_guitar_trainer_ownership(open_portal_text: str) -> None:
+    """The manual launcher delegates all service behavior to the supervisor."""
+    assert "portal_supervisor.py" in open_portal_text
+    assert "start_guitar_trainer.ps1" not in open_portal_text
+    assert "Get-NetTCPConnection" not in open_portal_text
 
 
-def test_open_portal_guitar_trainer_before_open(open_portal_text: str) -> None:
-    """Guitar Trainer startup block must appear before the portal is opened."""
-    gt_idx = open_portal_text.find("start_guitar_trainer.ps1")
-    # Portal is now opened via HTTP server (Start-Process $PortalUrl) rather than
-    # the old direct file open (Start-Process $PortalFile). Accept either form.
-    open_idx = open_portal_text.find("Start-Process $PortalUrl")
-    if open_idx == -1:
-        open_idx = open_portal_text.find("Start-Process $PortalFile")
-    assert gt_idx != -1, "start_guitar_trainer.ps1 not found in open_portal.ps1"
-    assert open_idx != -1, "Portal open command not found in open_portal.ps1"
-    assert gt_idx < open_idx, (
-        "Guitar Trainer startup must come before portal is opened"
-    )
+def test_manual_launcher_contains_no_browser_open_implementation(open_portal_text: str) -> None:
+    """The resident supervisor owns browser timing while services warm."""
+    assert "Start-Process" not in open_portal_text
+    assert "portal_supervisor.py" in open_portal_text
 
 
 # ---------------------------------------------------------------------------
@@ -247,28 +247,11 @@ def test_servers_array_contains_guitar_trainer_port(portal_text: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# launch_portal.ps1 — Guitar Trainer readiness wait (BFX-20260530-guitar-trainer-cold-start)
+# launch_portal.ps1 delegates readiness and browser timing
 # ---------------------------------------------------------------------------
 
-def test_launch_portal_waits_for_guitar_trainer_before_open(launch_portal_text: str) -> None:
-    """launch_portal.ps1 must call Wait-PortListening for port 5055 before opening the browser.
-
-    Without this wait, a cold-start desktop launch opens the portal while Flask is
-    still binding, causing the Guitar Trainer iframe to show 'connection refused'.
-    """
-    # Locate the Wait-PortListening call for port 5055
-    wait_pattern = re.compile(r"Wait-PortListening\s+-Port\s+5055", re.IGNORECASE)
-    wait_match = wait_pattern.search(launch_portal_text)
-    assert wait_match, (
-        "launch_portal.ps1 is missing a Wait-PortListening call for port 5055. "
-        "Add it before the portal-open command to prevent cold-start race condition."
-    )
-
-    # The wait must appear BEFORE the portal is opened in the browser
-    open_idx = launch_portal_text.find("$BRAVE $portalUri")
-    if open_idx == -1:
-        open_idx = launch_portal_text.find("Start-Process $portalUri")
-    assert open_idx != -1, "Portal open command not found in launch_portal.ps1"
-    assert wait_match.start() < open_idx, (
-        "Wait-PortListening for port 5055 must appear before the portal-open command"
-    )
+def test_launch_portal_delegates_readiness_and_browser_timing(launch_portal_text: str) -> None:
+    """The compatibility launcher must delegate cold-start handling."""
+    assert "portal_supervisor.py" in launch_portal_text
+    assert "Wait-PortListening" not in launch_portal_text
+    assert "Start-Process" not in launch_portal_text
