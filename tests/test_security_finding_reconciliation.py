@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+import security_dashboard as security_dashboard
 
 
 REPORT = Path(__file__).resolve().parents[1] / "reports" / (
@@ -53,3 +57,33 @@ def test_child_521_join_evidence_is_blocked_until_all_children_are_current() -> 
         "522",
     }
     assert report["join"]["blockers"]
+
+
+def test_a04_ignores_deterministic_lease_fixture_values_but_keeps_real_secret_detection() -> None:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "tests"
+        / "test_todo_execution_lifecycle.py"
+    ).read_text(encoding="utf-8").splitlines()
+
+    lease_fixture_lines = [
+        line
+        for line in source
+        if 'lease_token="fixture-lease-' in line
+    ]
+    a04_pattern = next(
+        pattern
+        for owasp_id, _severity, _description, pattern in security_dashboard.SCAN_PATTERNS
+        if owasp_id == "A04"
+    )
+
+    assert len(lease_fixture_lines) == 9
+    assert all(
+        not a04_pattern.search(line)
+        or security_dashboard._is_false_positive(line)
+        for line in lease_fixture_lines
+    )
+    assert a04_pattern.search('api_token = "live-looking-token-value"')
+    assert not security_dashboard._is_false_positive(
+        'api_token = "live-looking-token-value"'
+    )
