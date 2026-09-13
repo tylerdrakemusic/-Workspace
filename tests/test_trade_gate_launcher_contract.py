@@ -66,3 +66,4 @@ def test_portal_registers_the_same_authoritative_launcher() -> None:
 
     assert trade_gate["project"] == "ΣCapital"
     assert "start_trade_gate.ps1" in trade_gate["cmd"]
+    assert trade_gate["readiness_url"] == "http://127.0.0.1:7475/health"
