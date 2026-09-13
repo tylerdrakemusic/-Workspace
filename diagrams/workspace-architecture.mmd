@@ -3,8 +3,8 @@
 %%   workspace-derived-services.mmd, workspace-integrations.mmd
 graph TB
     subgraph Workspace["⊕ Workspace"]
-        Portal[reports/portal.html<br/>synchronous portal shell]
-        Supervisor[portal_supervisor.py<br/>canonical resident supervisor<br/>127.0.0.1:8790]
+        Portal[reports/portal.html<br/>synchronous portal shell<br/>quiesced restart · readiness-gated frame refresh]
+        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>Host + Origin + rotating CSRF<br/>operation lock · synchronized snapshots]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
         FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard<br/>workspace.db · perf_runs]
@@ -35,8 +35,8 @@ graph TB
         CapitalDB[(Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution<br/>sigmacapital.db · SQLCipher)]
         CapitalLogging[Σ Capital shared logging boundary<br/>adapter + consumers + bootstrap]
     end
-    Supervisor -->|generate · serve no-store · focus browser| Portal
-    Portal -->|GET state · POST restart and retry| Supervisor
+    Supervisor -->|generate before bind · no-store · applyGeneration refresh| Portal
+    Portal -->|GET synchronized state · authorized POST · 409 on overlap| Supervisor
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime

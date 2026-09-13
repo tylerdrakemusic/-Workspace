@@ -11,10 +11,10 @@ graph LR
     Python --> SecurityTools[bandit · safety · pip-audit<br/>security and dependency scans]
     Python --> Radon[radon<br/>complexity scan]
     Python --> BoundedLogging[⊕ Workspace bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
-    Python --> Supervisor[portal_supervisor.py<br/>ThreadingHTTPServer · ThreadPoolExecutor<br/>subprocess with shell=false · 127.0.0.1:8790]
-    Supervisor --> ServiceConfig[portal_servers.json<br/>commands · cwd · ports · readiness<br/>accepted statuses · iframe cache-bust]
-    Supervisor --> WindowsProcess[Windows netstat + taskkill<br/>forced port reclamation]
-    ThinShims[open_portal.ps1 · launch_portal.ps1<br/>staged PowerShell/VBS · portal protocol] --> Supervisor
+    Python --> Supervisor[portal_supervisor.py<br/>127.0.0.1:8790 owner · regen after bind<br/>Host+Origin+rotating CSRF · locks→409 · shell=false]
+    Supervisor --> ServiceConfig[portal_servers.json<br/>Trade Gate /health · Executive query-free root<br/>cache-bust]
+    Supervisor --> WindowsProcess[netstat/taskkill fail closed<br/>latest 10 keep current · applyGeneration UI reload]
+    ThinShims[PowerShell/VBS · desktop/protocol/restart<br/>dispatch only] --> Supervisor
     PowerShell[PowerShell 7] --> ThinShims
     WindowsScript[Windows Script Host] --> ThinShims
     CapitalLoggingConsumers[Σ Capital consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalLoggingAdapter[Σ Capital utils.shared_logging adapter<br/>Capital default log path]

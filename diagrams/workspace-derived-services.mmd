@@ -4,19 +4,19 @@
 graph LR
     subgraph Control["⊕ Resident portal control plane"]
         Shims[PowerShell · VBS · portal protocol<br/>thin compatibility shims]
-        Supervisor[portal_supervisor.py<br/>127.0.0.1:8790]
-        Portal[portal.html<br/>synchronous shell · no-store]
-        Config[portal_servers.json<br/>command · cwd · port · enabled<br/>readiness URL · accepted statuses<br/>iframe cache-bust capability]
-        RuntimeState[(in-memory service state<br/>PID · command · cwd · started time<br/>generation · readiness · attempt · error)]
-        Logs[(generation-scoped stdout/stderr<br/>latest ten generations)]
+        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>operation lock · optional regen after bind]
+        Portal[portal.html<br/>synchronous shell · no-store<br/>quiesce then active-generation readiness reload]
+        Config[portal_servers.json<br/>command · cwd · port · enabled<br/>Trade Gate /health readiness<br/>Executive exact root · cache bust disabled]
+        RuntimeState[(lock-synchronized snapshots<br/>PID · command · cwd · started time<br/>generation · readiness · attempt · error)]
+        Logs[(generation-scoped stdout/stderr<br/>deterministic latest ten<br/>current generation preserved)]
     end
     subgraph Lifecycle["Configured service lifecycle"]
-        Reclaim[forced configured-port reclamation]
+        Reclaim[fail-closed configured-port reclamation<br/>inspect · terminate · verify absent]
         Pool[three-worker startup pool]
         Launch[exact configured command<br/>shell=false]
         Readiness[HTTP readiness<br/>30-second attempt deadline]
         AutoRetry[one automatic retry]
-        ManualRetry[manual per-service retry<br/>active generation]
+        ManualRetry[manual per-service retry<br/>active generation · overlap returns 409]
     end
     subgraph Projects["Local portal services"]
         Life[∞ Life services]
@@ -39,12 +39,12 @@ graph LR
         Gmail[Gmail service]
     end
 
-    Shims -->|GET /api/state · start once · POST /api/focus| Supervisor
+    Shims -->|all launch and restart paths dispatch only| Supervisor
     Config ==> Supervisor
-    Supervisor -->|GET portal| Portal
-    Portal -->|GET /api/state| Supervisor
-    Portal -->|POST /api/restart-all| Supervisor
-    Portal -->|POST /api/services/name/retry| ManualRetry
+    Supervisor -->|GET portal · applyGeneration refreshes loaded compatible frames| Portal
+    Portal -->|GET synchronized state| Supervisor
+    Portal -->|POST with loopback Host + matching Origin + rotating CSRF| Supervisor
+    Portal -->|POST retry under shared operation lock| ManualRetry
     Supervisor -->|focus browser on current generation| Portal
     Supervisor ==> RuntimeState
     Supervisor ==> Logs
