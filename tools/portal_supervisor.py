@@ -6,6 +6,7 @@ import argparse
 import ctypes
 import hmac
 import json
+import os
 import re
 import secrets
 import shlex
@@ -546,6 +547,13 @@ class PortalSupervisor:
         generation = uuid4().hex
         generation_logs = self.log_root / generation
         generation_logs.mkdir(parents=True, exist_ok=True)
+        existing_mtimes = [
+            path.stat().st_mtime_ns
+            for path in self.log_root.iterdir()
+            if path.is_dir() and path != generation_logs
+        ]
+        next_mtime = max(existing_mtimes, default=0) + 1_000_000
+        os.utime(generation_logs, ns=(next_mtime, next_mtime))
         with self._state_lock:
             self.current_generation = generation
             self.csrf_token = secrets.token_urlsafe(32)
