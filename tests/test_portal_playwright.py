@@ -159,9 +159,9 @@ def test_fr_pane_uses_live_iframe(page):
     auto-refresh work; a static fr_dashboard.html embed silently breaks both.
     """
     page.goto(PORTAL_URL, wait_until="domcontentloaded")
-    # Find pane-9 (Feature Requests) and check its iframe src
-    iframe_src = page.get_attribute("#pane-9 iframe", "src")
-    assert iframe_src is not None, "No iframe found in #pane-9 (Feature Requests pane)"
+    # Find pane-8 (Feature Requests) and check its iframe src
+    iframe_src = page.get_attribute("#pane-8 iframe", "src")
+    assert iframe_src is not None, "No iframe found in #pane-8 (Feature Requests pane)"
     assert iframe_src.startswith("http://localhost:7474"), (
         f"FR pane iframe must be http://localhost:7474, got: {iframe_src!r}\n"
         "Regenerate portal: C:\\G\\python.exe tools/dashboard_portal.py --regen --no-open"
@@ -171,8 +171,8 @@ def test_fr_pane_uses_live_iframe(page):
 def test_fr_nav_badge_is_live(page):
     """Feature Requests nav item must show 'Live' badge, not 'Static'."""
     page.goto(PORTAL_URL, wait_until="domcontentloaded")
-    # nav-item with data-idx=9 holds the Feature Requests entry
-    badge_text = page.inner_text("[data-idx='9'] .nav-badge")
+    # nav-item with data-idx=8 holds the Feature Requests entry
+    badge_text = page.inner_text("[data-idx='8'] .nav-badge")
     assert badge_text.strip().lower() == "live", (
         f"FR nav badge should be 'Live', got: {badge_text!r}"
     )

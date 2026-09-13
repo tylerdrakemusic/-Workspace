@@ -42,6 +42,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PORTAL_OUT = PROJECT_ROOT / "reports" / "portal.html"
 AGENT_OPS_OUT = PROJECT_ROOT / "reports" / "agent_ops_dashboard.html"
 SERVERS_CONFIG = PROJECT_ROOT / "tools" / "portal_servers.json"
+_PORTAL_EXCLUDED_DASHBOARD_IDS = frozenset({"quantum-randomness-service"})
 
 # Import registry
 sys.path.insert(0, str(PROJECT_ROOT / "tools"))
@@ -414,6 +415,18 @@ def _esc(val) -> str:
     return html_mod.escape(str(val)) if val else ""
 
 
+def _portal_manifest(manifest: dict) -> dict:
+  """Return the dashboard subset intentionally exposed by the Workspace portal."""
+  return {
+    **manifest,
+    "dashboards": [
+      dashboard
+      for dashboard in manifest["dashboards"]
+      if dashboard.get("id") not in _PORTAL_EXCLUDED_DASHBOARD_IDS
+    ],
+  }
+
+
 def regenerate_dashboards(manifest: dict) -> list[dict]:
     """Run one-shot CLI generators for static and living HTML dashboards."""
     results = []
@@ -765,6 +778,7 @@ def render_portal(manifest: dict) -> str:
     import base64
     import json as _json
     import urllib.parse
+    manifest = _portal_manifest(manifest)
     generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nav = _nav_items(manifest)
     servers = _load_servers()

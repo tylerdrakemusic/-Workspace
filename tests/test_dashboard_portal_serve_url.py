@@ -206,7 +206,7 @@ def test_repeated_generation_refresh_preserves_executive_root_url() -> None:
             served = served.replace("<head>", f'<head><base href="{portal_path.as_uri()}">', 1)
             page.set_content(served, wait_until="domcontentloaded")
             executive = page.locator('iframe[data-cache-bust="false"]')
-            compatible = page.locator('#pane-9 iframe')
+            compatible = page.locator('#pane-8 iframe')
             executive_root = executive.get_attribute("data-src")
 
             assert executive.get_attribute("src") == executive_root
