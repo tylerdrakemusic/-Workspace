@@ -629,10 +629,16 @@ def _iframe_source(url: str, servers: list[dict]) -> str:
   """Render a live iframe source according to its owning service capability."""
   parsed = urlparse(url)
   service = next((server for server in servers if server.get("port") == parsed.port), None)
+  if not service:
+    return f'src="{_esc(url)}"'
   cache_bust = not (service and service.get("iframe_cache_bust") is False)
   attribute = "src" if cache_bust else "data-src"
   capability = str(cache_bust).lower()
-  return f'data-cache-bust="{capability}" {attribute}="{_esc(url)}"'
+  return (
+    f'data-service="{_esc(str(service.get("name", "")))}" '
+    f'data-base-url="{_esc(url)}" data-cache-bust="{capability}" '
+    f'{attribute}="{_esc(url)}"'
+  )
 
 
 def _content_frames(manifest: dict, servers: list[dict] | None = None) -> str:
@@ -1020,6 +1026,18 @@ def render_portal(manifest: dict) -> str:
     border: none;
     background: var(--bg);
   }}
+  .dash-pane[data-frame-state="restarting"]::after,
+  .dash-pane[data-frame-state="failed"]::after {{
+    content: attr(data-frame-message);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 1rem;
+  }}
 
   /* Placeholder */
   .placeholder {{
@@ -1158,37 +1176,86 @@ def render_portal(manifest: dict) -> str:
     }});
 
     function openServer(port) {{ window.open('http://localhost:' + port, '_blank'); }}
+    let restartGeneration = null;
+    function managedFrames(serviceName) {{
+      return Array.from(document.querySelectorAll('iframe[data-service]')).filter(
+        frame => !serviceName || frame.dataset.service === serviceName
+      );
+    }}
+    function setFrameState(frame, state, message) {{
+      const pane = frame.closest('.dash-pane');
+      if (!pane) return;
+      if (state) {{
+        pane.dataset.frameState = state;
+        pane.dataset.frameMessage = message;
+      }} else {{
+        delete pane.dataset.frameState;
+        delete pane.dataset.frameMessage;
+      }}
+    }}
+    function quiesceManagedFrames(serviceName, state = 'restarting') {{
+      managedFrames(serviceName).forEach(frame => {{
+        frame.removeAttribute('src');
+        delete frame.dataset.loadedGeneration;
+        const label = state === 'failed' ? 'Service unavailable' : 'Restarting service...';
+        setFrameState(frame, state, label);
+      }});
+    }}
+    function managedFrameUrl(frame, generation) {{
+      const url = new URL(frame.dataset.baseUrl, window.location.href);
+      if (frame.dataset.cacheBust !== 'false') url.searchParams.set('generation', generation);
+      return url.toString();
+    }}
+    function applyGeneration(generation) {{
+      restartGeneration = generation;
+      document.querySelectorAll('iframe[src]:not([data-cache-bust="false"])').forEach(frame => {{
+        frame.dataset.pendingGeneration = generation;
+      }});
+    }}
+    function reconcileManagedFrame(service, state, generation) {{
+      const frame = managedFrames(service.name)[0];
+      if (!frame || !state) return;
+      const ready = state.readiness === 'ready' && state.launch_generation === generation;
+      if (!ready) {{
+        const frameState = state.readiness === 'failed' ? 'failed' : 'restarting';
+        quiesceManagedFrames(service.name, frameState);
+        return;
+      }}
+      const target = managedFrameUrl(frame, generation);
+      if (frame.getAttribute('src') !== target) {{
+        frame.src = target;
+      }}
+      frame.dataset.loadedGeneration = generation;
+      delete frame.dataset.pendingGeneration;
+      setFrameState(frame, '', '');
+    }}
     async function launchServers() {{
       const btn = document.getElementById('launch-btn');
       if (btn) {{ btn.textContent = 'Restarting...'; btn.disabled = true; }}
+      quiesceManagedFrames();
       try {{
         const response = await fetch('/api/restart-all', {{method: 'POST'}});
         if (!response.ok) throw new Error(`restart failed (${{response.status}})`);
         const payload = await response.json();
         applyGeneration(payload.generation);
+        await pollServers();
       }} catch (error) {{
         if (btn) btn.title = String(error);
+        await pollServers();
       }}
       setTimeout(() => {{
-        if (btn) {{ btn.textContent = '\u21bb Restart All'; btn.disabled = false; }}
         pollServers();
-      }}, 5000);
+      }}, 1000);
     }}
     const SERVERS = {server_js_list};
-    function applyGeneration(generation) {{
-      if (!generation) return;
-      document.querySelectorAll('iframe[src]:not([data-cache-bust="false"])').forEach(frame => {{
-        const url = new URL(frame.src, window.location.href);
-        url.searchParams.set('generation', generation);
-        frame.src = url.toString();
-      }});
-    }}
     async function retryService(name) {{
       const retry = document.querySelector(`.server-retry[data-service="${{CSS.escape(name)}}"]`);
       if (retry) retry.disabled = true;
+      quiesceManagedFrames(name);
       try {{
         const response = await fetch('/api/services/' + encodeURIComponent(name) + '/retry', {{method: 'POST'}});
         if (!response.ok) throw new Error(`retry failed (${{response.status}})`);
+        await pollServers();
       }} finally {{
         setTimeout(() => {{ if (retry) retry.disabled = false; pollServers(); }}, 1000);
       }}
@@ -1198,6 +1265,8 @@ def render_portal(manifest: dict) -> str:
         const response = await fetch('/api/state', {{cache: 'no-store'}});
         if (!response.ok) throw new Error(`state failed (${{response.status}})`);
         const payload = await response.json();
+        const generation = payload.generation;
+        let operationComplete = Boolean(restartGeneration);
         SERVERS.forEach(service => {{
           const state = payload.services[service.name];
           const dot = document.getElementById('dot-' + service.port);
@@ -1210,7 +1279,17 @@ def render_portal(manifest: dict) -> str:
           const diagnostic = `${{service.name}}: ${{state.readiness}} (attempt ${{state.attempt}})`;
           row.title = state.error || diagnostic;
           row.setAttribute('aria-label', state.error ? `${{diagnostic}}. ${{state.error}}` : diagnostic);
+          reconcileManagedFrame(service, state, generation);
+          if (restartGeneration && (
+            state.launch_generation !== restartGeneration ||
+            !['ready', 'failed'].includes(state.readiness)
+          )) operationComplete = false;
         }});
+        if (operationComplete) {{
+          restartGeneration = null;
+          const btn = document.getElementById('launch-btn');
+          if (btn) {{ btn.textContent = '\u21bb Restart All'; btn.disabled = false; }}
+        }}
       }} catch (error) {{
         const block = document.getElementById('server-status-block');
         if (block) block.title = `Supervisor unavailable: ${{error}}`;
