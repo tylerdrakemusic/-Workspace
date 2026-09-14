@@ -18,6 +18,11 @@ exactly where Tyler acts as the human gateway.
 - **Tyler is the only human in the loop.** Every agent-to-agent handoff is
   automated; every gate where intent, scope, safety, or finality matters is
   Tyler's.
+- **Private runtime artifacts may be absent from branch worktrees.** In
+  `∞Life`, `SUBJECT_PROFILE.json` is a private runtime artifact and may be
+  absent in branch worktrees. Operational fit checks must use DB-backed
+  `subject.height_cm` through the canonical runtime database, never a copied
+  profile or a missing-file failure.
 
 ## Tool-first Rule
 
@@ -238,14 +243,18 @@ Per-repo branches use the same name in each affected repo.
 ## Worktree Layout
 
 ```
-F:\worktrees\<fr-id>\<project-short-name>
+<repo>\.worktrees\<fr-id>\<project-short-name>
 ```
 
 Example:
 ```
-F:\worktrees\FR-20260422-multi-agent-flow\workspace
-F:\worktrees\FR-20260422-multi-agent-flow\infinitelife
+f:\⊕Workspace\.worktrees\FR-20260422-multi-agent-flow
+f:\∞Life\.worktrees\FR-20260422-multi-agent-flow
 ```
+
+When a diagram or other delegated file is edited, pass the complete
+worktree-qualified path to the receiving agent. Never hand off a bare
+repository-root path that could resolve to `main`.
 
 ### Child TODO Coordination
 

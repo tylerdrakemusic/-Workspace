@@ -96,6 +96,16 @@ Load and follow the `scope-creep` skill (`f:\.github\skills\scope-creep\SKILL.md
 - Files in this project that import from another project's DB (`heartmusic.db`, `infinitelife.db`)
 - Files that answer "yes" to: *"Would this file still make sense if ⟨ψ⟩Quantum were deleted?"*
 
+### Worktree-aware project database paths
+
+When a hygiene check or helper script reads `heartmusic.db` from a `❤Music`
+worktree under `.worktrees/<branch>/`, do not assume that the worktree's empty
+`src/data/` directory contains the live database. Follow the `❤Music` base
+contract: import `utils.init_db`, call
+`use_worktree_aware_db_path(<worktree-root>)`, then use `get_connection()`.
+The helper walks to the main checkout when the worktree does not contain the
+runtime database; never copy project production data into the worktree.
+
 ---
 
 ## Archive Format
