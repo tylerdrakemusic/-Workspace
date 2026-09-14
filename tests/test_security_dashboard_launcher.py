@@ -30,6 +30,10 @@ def test_launcher_routes_to_db_dashboard_generator_without_mutation_flags() -> N
 
 
 def test_generated_summary_matches_controlled_database_aggregates(monkeypatch) -> None:
+    """Verify dashboard shows ONLY open vulnerabilities in summary and severity breakdown.
+
+    Read-only dashboard must NOT expose reconciled status counts (Remediated, Accepted/FP, Stale).
+    """
     dashboard = _load_dashboard_module()
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
@@ -60,9 +64,18 @@ def test_generated_summary_matches_controlled_database_aggregates(monkeypatch) -
     vulns = dashboard.load_all_vulns()
     rendered = dashboard.render_html(vulns)
 
-    assert "<div class=\"stat\">4</div><div class=\"label\">Total Findings</div>" in rendered
-    assert '<div class="stat open-stat">2</div><div class="label">Open</div>' in rendered
-    assert '<div class="stat remediated-stat">1</div><div class="label">Remediated</div>' in rendered
-    assert '<div class="stat accepted-stat">1</div><div class="label">Accepted / FP</div>' in rendered
-    assert rendered.count('<span class="sev-count">1</span>') == 2
-    assert rendered.count('<span class="sev-count">0</span>') == 2
+    # ASSERT: Only open count should be shown; no reconciled status labels
+    assert '<div class="stat open-stat">2</div><div class="label">Open</div>' in rendered, \
+        "Dashboard must show open count"
+    assert "Total Findings" not in rendered, \
+        "Total Findings count must NOT appear in read-only dashboard"
+    assert "Remediated" not in rendered, \
+        "Remediated status label must NOT appear in read-only dashboard"
+    assert "Accepted / FP" not in rendered, \
+        "Accepted/FP status label must NOT appear in read-only dashboard"
+
+    # ASSERT: Severity breakdown shows only open counts (critical=1, high=1, medium=0, low=0)
+    assert rendered.count('<span class="sev-count">1</span>') == 2, \
+        "Severity breakdown should show 1 for critical and 1 for high"
+    assert rendered.count('<span class="sev-count">0</span>') == 2, \
+        "Severity breakdown should show 0 for medium and low"
