@@ -529,10 +529,10 @@ def test_nightly_scanner_calls_stale_sweep(db_conn) -> None:
         "security_scan_nightly must expose _run_stale_sweep(conn, *, dry_run)"
 
 
-# ── AC5: Dashboard HTML contains Stale filter and card ───────────────────────
+# ── AC5: Dashboard HTML omits stale controls in read-only open-finding view ──
 
-def test_dashboard_html_has_stale_filter_button() -> None:
-    """render_html must include a Stale filter button."""
+def test_dashboard_html_hides_stale_filter_button() -> None:
+    """render_html must omit stale filter controls in the read-only view."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
     import security_dashboard as sd
@@ -545,11 +545,11 @@ def test_dashboard_html_has_stale_filter_button() -> None:
          "created_at": "2026-01-01"},
     ]
     html = sd.render_html(vulns)
-    assert 'data-filter="stale"' in html, "Missing stale filter button"
+    assert 'data-filter="stale"' not in html, "Stale filter button should not render"
 
 
-def test_dashboard_html_has_stale_count_in_summary() -> None:
-    """render_html must show stale count in the summary section."""
+def test_dashboard_html_excludes_stale_count_from_summary() -> None:
+    """render_html must exclude stale counts from the open-finding summary."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
     import security_dashboard as sd
@@ -569,7 +569,5 @@ def test_dashboard_html_has_stale_count_in_summary() -> None:
          "override_note": None, "remediated_at": None, "created_at": "2026-01-01"},
     ]
     html = sd.render_html(vulns)
-    # Should contain "2" somewhere near "Stale" (the count)
-    assert "stale" in html.lower()
-    # The stale count label should appear
-    assert "Stale" in html
+    assert "stale" not in html.lower()
+    assert "Open" in html
