@@ -19,7 +19,7 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 1: Scope Conformance** — diff matches FR acceptance criteria? Out-of-scope changes? All criteria demonstrably satisfied?
 
-**Gate 2: Security** (delegate to `⊕workspace-security`) — secrets/tokens? OWASP Top 10 patterns? New dependency vetting? Agent framework modifications require explicit Tyler note in PR body.
+**Gate 2: Security** (delegate to `⊕workspace-security`) — secrets/tokens? OWASP Top 10 patterns? New dependency vetting? Agent framework modifications require explicit Tyler note in PR body. If subagent invocation is unavailable, run the security checks inline using the security agent's checklist, record that fallback and its result in the FR ledger, and keep the same gate decision. Do not silently skip the gate.
 
 **Gate 3: Alignment** (inline, no sub-agent) — convention drift, test harness consistency, naming. For multi-project FRs: check that each project follows the shared conventions defined in `copilot-instructions.md` (type hints, pytest layout, SQLite-only data, `src/utils/` utilities, agent sigil prefixes). Flag any drift as REQUEST_CHANGES.
 

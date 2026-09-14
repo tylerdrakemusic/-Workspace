@@ -103,7 +103,9 @@ Command:
 `C:\G\python.exe f:\👁AI-Manifest\tools\discover_todos.py --mode tech-debt [--project <key>] [--limit <n>]`
 
 Valid `--project` keys for tech-debt mode: `music`, `life`, `quantum`, `ai_manifest`,
-`workspace`, `capital` (capital is tech-debt-only; not valid for default discovery mode).
+`workspace`, `capital`. `capital` is only valid with `--mode tech-debt`, matching
+`TECH_DEBT_PROJECT_ROOTS` in `discover_todos.py`; it is not valid for default
+epic/story discovery because `PROJECT_ROOTS` intentionally excludes ΣCapital.
 
 ## Constraints
 

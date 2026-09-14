@@ -16,6 +16,11 @@ Functional QA gate for **light-complexity** feature requests. Runs on GPT-5.4 mi
 
 > All gate logic, test-plan derivation, pass/fail criteria, proof recording, and state-transition commands are identical to the standard-tier QA agent (`⊕workspace-qa.agent.md`). This file pins the model only.
 
+**Uniform proof bar:** For a light-tier FR, record and verify at least one
+durable proof artifact for every acceptance criterion before reporting PASS.
+The light model does not reduce the proof requirement or permit criteria to be
+covered only by a summary claim.
+
 Inherit the full QA protocol from `⊕workspace-qa.agent.md`. Follow every section: Context Bootstrap → Test Plan Derivation → Execution → Pass/Fail Decision → QA Report → Registry Update.
 
 **Hard block:** FAIL state prevents advancement to `ARCHITECTURE_REVIEW` regardless of tier.

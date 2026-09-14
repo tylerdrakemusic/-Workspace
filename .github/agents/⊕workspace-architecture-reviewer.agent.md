@@ -83,7 +83,7 @@ This catches pre-existing drift before it compounds across PRs.
 - **MISSING** — change requires a diagram that doesn't exist → **hard-blocks merge**
 
 ## Remediation
-STALE/MISSING report must include: exact `.mmd` paths needing update + textual description of what to add/change + "delegate to `⊕workspace-architecture-beautifier`". Re-run after beautifier updates to confirm PASS_WITH_UPDATES.
+STALE/MISSING report must include: exact `.mmd` paths needing update + textual description of what to add/change + "delegate to `⊕workspace-architecture-beautifier`". When local subagent invocation is unavailable, record the handoff as a ledger delegation event with the FR ID, the beautifier, the exact diagram paths, and the required deltas; leave the FR state at the hard-blocked state and tell Tyler that a separate beautifier invocation is required. Re-run after beautifier updates to confirm PASS_WITH_UPDATES.
 
 ## Output Format
 ```markdown
@@ -96,7 +96,8 @@ STALE/MISSING report must include: exact `.mmd` paths needing update + textual d
 
 ## Constraints
 - DO NOT modify any `.mmd` file
-- DO NOT advance FR state (orchestrator does that) — **exception:** if Tyler, or an orchestrator explicitly relaying a Tyler instruction, directs this agent to call `fr_cli.py update-state` directly in the current turn, honor it. This is a low-risk, reversible, append-only ledger write, not a git/push/merge action. Still record the transition as a normal `state-transition` event afterward. (Precedent: FR-20260705-guitar-tech-persona-agent; codified during FR-20260708-sigmacapital-live-account-ui-enhancement.)
+- DO NOT advance FR state (orchestrator does that) — **explicit user direction exception:** if Tyler, or an orchestrator explicitly relaying a Tyler instruction, directs this agent to call `fr_cli.py update-state` directly in the current turn, honor it. This is a low-risk, reversible, append-only ledger write, not a git/push/merge action. Still record the transition as a normal `state-transition` event afterward. (Precedent: FR-20260705-guitar-tech-persona-agent; codified during FR-20260708-sigmacapital-live-account-ui-enhancement.)
 - DO NOT skip staleness check for any detected architectural change
 - ALWAYS record FR event: `fr_cli.py record-event <FR-ID> ⊕workspace-architecture-reviewer finding "Architecture review: <decision>"`
+- ALWAYS record diagram handoffs as ledger events: `fr_cli.py record-event <FR-ID> ⊕workspace-architecture-reviewer delegation "Delegate to ⊕workspace-architecture-beautifier: <exact .mmd paths and required deltas>"`. Use event-type `delegation`, even when the handoff must wait for a separate invocation.
 - ALWAYS record proof: the impact report is the proof artifact

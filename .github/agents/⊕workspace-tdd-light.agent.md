@@ -35,6 +35,9 @@ Repeat until the acceptance criterion is satisfied.
   $env:PYTHONUTF8="1"
   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> test_pass "TDD: <test-file>" --path "<path>"
   ```
+- The light tier must also leave a proof artifact for every acceptance
+  criterion, not only for the test file. Use the same uniform proof bar as the
+  standard and heavy tiers.
 
 ## Scope Constraint
 
