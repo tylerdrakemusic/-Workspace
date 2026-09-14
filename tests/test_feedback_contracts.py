@@ -42,6 +42,29 @@ def test_architecture_reviewer_records_diagram_handoff_as_ledger_delegation() ->
     assert "fr_cli.py record-event" in reviewer
 
 
+def test_traceability_plan_matches_final_branch_ownership_scope() -> None:
+    plan = (
+        ROOT
+        / "proof"
+        / "FR-20260913-agent-feedback-contract-remediation"
+        / "feedback-traceability-test-plan.md"
+    ).read_text(encoding="utf-8")
+
+    changed_contracts = (
+        ".github/agents/⊕workspace-architecture-reviewer.agent.md",
+        ".github/agents/⊕workspace-discovery.agent.md",
+        ".github/agents/⊕workspace-qa-light.agent.md",
+        ".github/agents/⊕workspace-reviewer-light.agent.md",
+        ".github/agents/⊕workspace-reviewer.agent.md",
+        ".github/agents/⊕workspace-tdd-light.agent.md",
+        ".github/instructions/feature-request-flow.instructions.md",
+        ".github/instructions/hygiene-base.instructions.md",
+    )
+
+    assert all(path in plan for path in changed_contracts)
+    assert "no project-owned changes" in plan.lower()
+
+
 def test_light_tier_contracts_require_uniform_proof_artifacts() -> None:
     light_contracts = "\n".join(
         (
