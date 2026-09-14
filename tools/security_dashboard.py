@@ -265,7 +265,7 @@ def load_all_vulns() -> list[dict]:
     rows = conn.execute(
         "SELECT vuln_id, scan_date, category, severity, file_path, line_number, "
         "description, owasp_id, status, override_note, remediated_at, created_at "
-        "FROM vulnerabilities ORDER BY "
+        "FROM vulnerabilities WHERE status = 'open' ORDER BY "
         "CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 "
         "WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END, scan_date DESC"
     ).fetchall()
@@ -302,32 +302,29 @@ def _status_badge(status: str) -> str:
 
 
 def _summary_cards(vulns: list[dict]) -> str:
-    total = len(vulns)
-    open_v = sum(1 for v in vulns if v["status"] == "open")
-    remediated = sum(1 for v in vulns if v["status"] == "remediated")
-    accepted = sum(1 for v in vulns if v["status"] in ("accepted", "false_positive"))
-    stale = sum(1 for v in vulns if v["status"] == "stale")
-    crit = sum(1 for v in vulns if v["severity"] == "critical" and v["status"] == "open")
-    high = sum(1 for v in vulns if v["severity"] == "high" and v["status"] == "open")
-    medium = sum(1 for v in vulns if v["severity"] == "medium" and v["status"] == "open")
-    low = sum(1 for v in vulns if v["severity"] == "low" and v["status"] == "open")
+    """Generate summary cards showing only OPEN vulnerability counts.
+
+    Read-only dashboard: no reconciled status labels (Remediated, Accepted/FP, Stale).
+    """
+    # vulns is already filtered to 'open' status by load_all_vulns()
+    open_v = len(vulns)
+    crit = sum(1 for v in vulns if v["severity"] == "critical")
+    high = sum(1 for v in vulns if v["severity"] == "high")
+    medium = sum(1 for v in vulns if v["severity"] == "medium")
+    low = sum(1 for v in vulns if v["severity"] == "low")
 
     return f"""
     <div class="summary-grid">
-      <div class="card security-card">
-        <h3>Inventory</h3>
-        <div class="stat">{total}</div><div class="label">Total Findings</div>
-        <div class="stat open-stat">{open_v}</div><div class="label">Open</div>
-        <div class="stat remediated-stat">{remediated}</div><div class="label">Remediated</div>
-        <div class="stat accepted-stat">{accepted}</div><div class="label">Accepted / FP</div>
-        <div class="stat" style="color:var(--muted-badge)">{stale}</div><div class="label">Stale</div>
-      </div>
       <div class="card severity-card">
         <h3>Open by Severity</h3>
         <div class="sev-row"><span class="badge critical">CRITICAL</span> <span class="sev-count">{crit}</span></div>
         <div class="sev-row"><span class="badge fail">HIGH</span> <span class="sev-count">{high}</span></div>
         <div class="sev-row"><span class="badge partial">MEDIUM</span> <span class="sev-count">{medium}</span></div>
         <div class="sev-row"><span class="badge info">LOW</span> <span class="sev-count">{low}</span></div>
+      </div>
+      <div class="card security-card">
+        <h3>Observability</h3>
+        <div class="stat open-stat">{open_v}</div><div class="label">Open</div>
       </div>
     </div>"""
 
@@ -345,10 +342,7 @@ def _vuln_table(vulns: list[dict]) -> str:
              '<th class="sort-header" data-sort-type="string">File <span class="sort-icon"></span></th>',
              '<th class="sort-header" data-sort-type="number">Line <span class="sort-icon"></span></th>',
              '<th class="sort-header" data-sort-type="string">Description <span class="sort-icon"></span></th>',
-             '<th class="sort-header" data-sort-type="string">Status <span class="sort-icon"></span></th>',
-             '<th>Override Note</th>',
              '<th class="sort-header" data-sort-type="string">Scan Date <span class="sort-icon"></span></th>',
-             '<th>Actions</th>',
              "</tr></thead><tbody>"]
 
     for i, v in enumerate(vulns, 1):
@@ -357,10 +351,9 @@ def _vuln_table(vulns: list[dict]) -> str:
         # Shorten file_path for display
         short_fp = fp.replace("f:\\", "").replace("\\", "/")
         ln = v.get("line_number") or ""
-        note = v.get("override_note") or ""
         sev_val = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}.get(v["severity"], 4)
 
-        lines.append(f'<tr data-vuln-id="{vid}" data-status="{_esc(v["status"])}">')
+        lines.append(f'<tr data-vuln-id="{vid}">')
         lines.append(f'<td>{i}</td>')
         lines.append(f'<td data-sort-val="{sev_val}">{_severity_badge(v["severity"])}</td>')
         lines.append(f'<td data-sort-val="{_esc(v["category"])}">{_esc(v["category"])}</td>')
@@ -368,19 +361,8 @@ def _vuln_table(vulns: list[dict]) -> str:
         lines.append(f'<td class="file-cell" data-sort-val="{_esc(short_fp)}" title="{_esc(fp)}">{_esc(short_fp)}</td>')
         lines.append(f'<td class="num" data-sort-val="{ln}">{ln if ln else "&mdash;"}</td>')
         lines.append(f'<td class="desc-cell" data-sort-val="{_esc(v["description"])}">{_esc(v["description"])}</td>')
-        lines.append(f'<td data-sort-val="{_esc(v["status"])}">{_status_badge(v["status"])}</td>')
-        lines.append(f'<td class="note-cell">{_esc(note)}</td>')
         lines.append(f'<td class="ts" data-sort-val="{_esc(v["scan_date"])}">{_esc(v["scan_date"])}</td>')
-        lines.append(f'<td class="actions-cell">')
-        lines.append(f'  <select class="status-select" data-vid="{vid}">')
-        for st in ["open", "remediated", "accepted", "false_positive"]:
-            sel = " selected" if st == v["status"] else ""
-            label = st.replace("_", " ").title()
-            lines.append(f'    <option value="{st}"{sel}>{label}</option>')
-        lines.append(f'  </select>')
-        lines.append(f'  <input type="text" class="note-input" data-vid="{vid}" placeholder="Note..." value="{_esc(note)}">')
-        lines.append(f'  <button class="save-btn" data-vid="{vid}">Save</button>')
-        lines.append(f'</td></tr>')
+        lines.append(f'</tr>')
 
     lines.append("</tbody></table>")
     return "\n".join(lines)
@@ -476,8 +458,6 @@ def render_html(vulns: list[dict]) -> str:
   .severity-card h3 {{ color: var(--partial); }}
   .stat {{ font-size: 2rem; font-weight: 700; line-height: 1.2; }}
   .open-stat {{ color: var(--fail); }}
-  .remediated-stat {{ color: var(--success); }}
-  .accepted-stat {{ color: var(--accepted-color); }}
   .label {{
     color: var(--muted); font-size: 0.8rem;
     text-transform: uppercase; letter-spacing: 0.05em;
@@ -672,15 +652,6 @@ def render_html(vulns: list[dict]) -> str:
   </div>
 
   <div id="inventory-section" style="display:{'none' if open_v == 0 else 'block'};">
-    <div class="filter-bar" id="detail-filter-bar">
-      <label>Status:</label>
-      <button class="filter-btn active" data-filter="all" onclick="filterStatus('all', this)">All ({total})</button>
-      <button class="filter-btn" data-filter="open" onclick="filterStatus('open', this)">Open</button>
-      <button class="filter-btn" data-filter="remediated" onclick="filterStatus('remediated', this)">Remediated</button>
-      <button class="filter-btn" data-filter="accepted" onclick="filterStatus('accepted', this)">Accepted</button>
-      <button class="filter-btn" data-filter="false_positive" onclick="filterStatus('false_positive', this)">False Positive</button>
-      <button class="filter-btn" data-filter="stale" onclick="filterStatus('stale', this)">Stale</button>
-    </div>
     <h2 style="color: var(--security-accent); border-bottom: 2px solid var(--security-accent); padding-bottom: 0.5rem; margin: 2rem 0 1rem;">Vulnerability Inventory</h2>
     {table}
   </div>
@@ -689,7 +660,6 @@ def render_html(vulns: list[dict]) -> str:
 
   <div class="footer">
     ⊕Workspace &mdash; Security Vulnerability Dashboard &bull;
-    Override a finding: change status + add note + Save &bull;
     Re-scan: <code>python tools/security_dashboard.py --scan</code>
   </div>
 
@@ -708,133 +678,6 @@ def render_html(vulns: list[dict]) -> str:
         btn.textContent = 'Show Details \u25BC';
       }}
     }}
-
-    // ── Filtering ──
-    function filterStatus(status, btn) {{
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('#vuln-table tbody tr').forEach(row => {{
-        if (status === 'all' || row.dataset.status === status) {{
-          row.style.display = '';
-        }} else {{
-          row.style.display = 'none';
-        }}
-      }});
-    }}
-
-    // ── Save override (writes to a local JSON sidecar for the next --scan to pick up) ──
-    document.querySelectorAll('.save-btn').forEach(btn => {{
-      btn.addEventListener('click', () => {{
-        const vid = btn.dataset.vid;
-        const row = btn.closest('tr');
-        const select = row.querySelector('.status-select');
-        const noteInput = row.querySelector('.note-input');
-        const newStatus = select.value;
-        const note = noteInput.value;
-
-        // Update the row visually
-        applyOverrideVisual(row, newStatus, note);
-
-        // Save to localStorage for persistence + write sidecar
-        const overrides = JSON.parse(localStorage.getItem('vuln_overrides') || '{{}}');
-        overrides[vid] = {{ status: newStatus, note: note, ts: new Date().toISOString() }};
-        localStorage.setItem('vuln_overrides', JSON.stringify(overrides));
-
-        // Write sidecar file via hidden download
-        const blob = new Blob([JSON.stringify(overrides, null, 2)], {{type: 'application/json'}});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'vuln_overrides.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-
-        // Update summary counts
-        refreshSummary();
-
-        // Flash confirmation with CLI command
-        btn.classList.add('saved');
-        btn.textContent = '✓';
-        const toast = document.getElementById('toast');
-        const cmd = 'C:\\G\\python.exe tools/security_dashboard.py --set-status ' + vid + ' ' + newStatus + (note ? ' "' + note + '"' : '');
-        toast.innerHTML = 'Visual saved. Persist to DB:<br><code style="user-select:all;font-size:0.8em">' + cmd + '</code>';
-        toast.classList.add('show');
-        setTimeout(() => {{
-          toast.classList.remove('show');
-          btn.classList.remove('saved');
-          btn.textContent = 'Save';
-        }}, 6000);
-      }});
-    }});
-
-    // ── Apply override visuals to a single row ──
-    function applyOverrideVisual(row, newStatus, note) {{
-      row.dataset.status = newStatus;
-      const statusCell = row.children[7];
-      const badgeCls = {{open:'fail', remediated:'success', accepted:'accepted', false_positive:'muted'}}[newStatus] || 'fail';
-      statusCell.innerHTML = '<span class="badge ' + badgeCls + '">' + newStatus.replace('_',' ').toUpperCase() + '</span>';
-      statusCell.dataset.sortVal = newStatus;
-      row.children[8].textContent = note || '';
-      const select = row.querySelector('.status-select');
-      const noteInput = row.querySelector('.note-input');
-      if (select) select.value = newStatus;
-      if (noteInput) noteInput.value = note || '';
-    }}
-
-    function refreshSummary() {{
-      const rows = Array.from(document.querySelectorAll('#vuln-table tbody tr'));
-      let total=rows.length, open=0, remediated=0, accepted=0, crit=0, high=0, med=0, low=0;
-      rows.forEach(r => {{
-        const st = r.dataset.status;
-        if (st === 'open') open++;
-        else if (st === 'remediated') remediated++;
-        else accepted++;
-        if (st === 'open') {{
-          const sevCell = r.children[1];
-          const sev = (sevCell.textContent || '').trim().toLowerCase();
-          if (sev === 'critical') crit++;
-          else if (sev === 'high') high++;
-          else if (sev === 'medium') med++;
-          else if (sev === 'low') low++;
-        }}
-      }});
-      const cards = document.querySelectorAll('.security-card .stat');
-      if (cards[0]) cards[0].textContent = total;
-      if (cards[1]) cards[1].textContent = open;
-      if (cards[2]) cards[2].textContent = remediated;
-      if (cards[3]) cards[3].textContent = accepted;
-      const sevCounts = document.querySelectorAll('.severity-card .sev-count');
-      if (sevCounts[0]) sevCounts[0].textContent = crit;
-      if (sevCounts[1]) sevCounts[1].textContent = high;
-      if (sevCounts[2]) sevCounts[2].textContent = med;
-      if (sevCounts[3]) sevCounts[3].textContent = low;
-
-      // Toggle banner/inventory visibility based on open count
-      const banner = document.getElementById('zero-open-banner');
-      const invSec = document.getElementById('inventory-section');
-      if (banner) {{
-        if (open === 0) {{
-          banner.style.display = 'flex';
-          banner.querySelector('div > div:last-child').textContent = '0 open vulnerabilities \u2014 ' + total + ' findings resolved';
-          if (invSec && !invSec._userToggled) invSec.style.display = 'none';
-        }} else {{
-          banner.style.display = 'none';
-          if (invSec) invSec.style.display = 'block';
-        }}
-      }}
-    }}
-
-    // ── Load overrides from localStorage on page load ──
-    (function() {{
-      const overrides = JSON.parse(localStorage.getItem('vuln_overrides') || '{{}}');
-      let applied = 0;
-      for (const [vid, data] of Object.entries(overrides)) {{
-        const row = document.querySelector('tr[data-vuln-id="' + vid + '"');
-        if (!row) continue;
-        applyOverrideVisual(row, data.status, data.note);
-        applied++;
-      }}
-      if (applied > 0) refreshSummary();
-    }})();
 
     // ── Sortable table columns ──
     document.querySelectorAll('.sort-header').forEach(th => {{

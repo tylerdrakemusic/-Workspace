@@ -63,6 +63,12 @@ try:
 except Exception:  # pragma: no cover
     _run_api_pings = None
 
+# Import security dashboard for vulnerability count badge (may be monkeypatched in tests)
+try:
+    import security_dashboard as _security_dashboard  # type: ignore
+except Exception:  # pragma: no cover
+    _security_dashboard = None
+
 
 # ── AC4: Agent-ops health + freshness card ─────────────────────────────────
 
@@ -477,6 +483,29 @@ def _nav_items(manifest: dict) -> str:
         dtype = dash["type"]
         badge_cls = {"static_html": "static", "living_html": "living", "flask_app": "live", "console": "console", "inline_html": "static"}.get(dtype, "static")
         badge_label = {"static_html": "Static", "living_html": "Living", "flask_app": "Live", "console": "CLI", "inline_html": "Inline"}.get(dtype, dtype)
+
+        # Special handling for security dashboard: show open vulnerability count
+        if dash.get("id") == "security-vulns":
+            try:
+                # Get security_dashboard module, checking sys.modules first (for test monkeypatching)
+                import sys as _sys
+                sec_dashboard = _sys.modules.get("security_dashboard") or _sys.modules.get("dashboard_portal.__globals__['_security_dashboard']") or _security_dashboard
+
+                if sec_dashboard and hasattr(sec_dashboard, "get_connection"):
+                    conn = sec_dashboard.get_connection()
+                    open_count = conn.execute(
+                        "SELECT COUNT(*) as cnt FROM vulnerabilities WHERE status = 'open'"
+                    ).fetchone()[0]
+                    conn.close()
+                    if open_count > 0:
+                        badge_label = f"Open {open_count}"
+                        badge_cls = "warn"
+                    else:
+                        badge_label = "Clear"
+                        badge_cls = "clear"
+            except Exception:
+                pass  # Fall back to default badge if DB query fails
+
         items.append(f"""
         <div class="nav-item{active}" data-idx="{i}" onclick="switchDash({i}, this)">
           <span class="nav-icon">{icon}</span>
