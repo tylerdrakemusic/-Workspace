@@ -43,7 +43,7 @@ def _connect():
 def _hash_file(path: str) -> str | None:
     """SHA-256 of file contents, or None if missing."""
     p = Path(path)
-    if not p.exists():
+    if not p.exists() or p.is_dir():
         return None
     h = hashlib.sha256()
     with open(p, "rb") as f:

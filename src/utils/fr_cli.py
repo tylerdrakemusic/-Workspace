@@ -519,15 +519,35 @@ def cmd_get(args: argparse.Namespace) -> None:
     print(f"Cost source: {fr['cost_source']}")
     print(f"Cost reason: {fr['cost_reconciliation_status']}")
     print(f"Cost finalized: {fr['cost_finalized_at']}")
+    acceptance_criteria = fr["acceptance_criteria"] if "acceptance_criteria" in fr.keys() else None
+    print(f"Acceptance criteria: {acceptance_criteria}")
     events = conn.execute(
         "SELECT ts, agent, event_type, summary FROM fr_events WHERE fr_id=? ORDER BY ts",
         (args.fr_id,),
     ).fetchall()
+    has_artifacts = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='fr_artifacts'"
+    ).fetchone()
+    artifacts = (
+        conn.execute(
+            "SELECT ts, artifact_type, label, path_or_url FROM fr_artifacts WHERE fr_id=? ORDER BY ts",
+            (args.fr_id,),
+        ).fetchall()
+        if has_artifacts
+        else []
+    )
     conn.close()
     if events:
         print(f"\nEvents ({len(events)}):")
         for e in events:
-            print(f"  {e['ts']}  [{e['agent']}]  {e['event_type']:20s}  {e['summary'][:80]}")
+            print(f"  {e['ts']}  [{e['agent']}]  {e['event_type']:20s}  {e['summary']}")
+    if artifacts:
+        print(f"\nArtifacts ({len(artifacts)}):")
+        for artifact in artifacts:
+            print(
+                f"  {artifact['ts']}  [{artifact['artifact_type']}]  "
+                f"{artifact['label']}  {artifact['path_or_url'] or ''}"
+            )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

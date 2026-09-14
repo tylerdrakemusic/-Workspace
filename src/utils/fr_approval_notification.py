@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
+
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPOSITORY_ROOT) not in sys.path:
+	sys.path.insert(0, str(_REPOSITORY_ROOT))
+_UTILS_ROOT = Path(__file__).resolve().parent
+if str(_UTILS_ROOT) not in sys.path:
+	sys.path.insert(0, str(_UTILS_ROOT))
 
 from src.integrations.elevenlabs import ElevenLabsClient
 

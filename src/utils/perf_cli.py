@@ -19,8 +19,9 @@ from pathlib import Path
 try:
     from .init_db import get_connection, init_db
 except ImportError:
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from init_db import get_connection, init_db
+    _ROOT = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(_ROOT))
+    from src.utils.init_db import get_connection, init_db
 
 
 def _conn():
