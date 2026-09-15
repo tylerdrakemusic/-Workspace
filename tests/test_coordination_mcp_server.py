@@ -43,6 +43,41 @@ def test_fr_event_operation_delegates_to_canonical_fr_cli(monkeypatch):
     ]
 
 
+def test_cost_reconciliation_operation_delegates_fixed_arguments(monkeypatch):
+    from src.utils.coordination_mcp_server import invoke_coordination
+
+    calls: list[tuple[str, dict]] = []
+
+    def fake_run(operation: str, payload: dict) -> str:
+        calls.append((operation, payload))
+        return "cost reconciliation recorded"
+
+    monkeypatch.setattr(
+        "src.utils.coordination_mcp_server._run_fr_cli", fake_run
+    )
+
+    result = invoke_coordination(
+        "fr.reconcile_cost_unavailable",
+        {
+            "fr_id": "FR-20260912-workspace-server-startup-supervisor",
+            "source": "historical-operator-reconciliation",
+            "reason": "No retained usage payload",
+        },
+    )
+
+    assert result == "cost reconciliation recorded"
+    assert calls == [
+        (
+            "fr.reconcile_cost_unavailable",
+            {
+                "fr_id": "FR-20260912-workspace-server-startup-supervisor",
+                "source": "historical-operator-reconciliation",
+                "reason": "No retained usage payload",
+            },
+        )
+    ]
+
+
 def test_unknown_operation_is_rejected():
     from src.utils.coordination_mcp_server import invoke_coordination
 

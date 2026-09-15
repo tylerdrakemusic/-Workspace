@@ -58,6 +58,7 @@ substitute an arbitrary database or SQL call.
 - `get_fr`
 - `record_fr_event`
 - `record_fr_artifact`
+- `reconcile_fr_cost_unavailable`
 - Delegates FR writes to `fr_cli.py`, which remains the canonical state
 	mutation path.
 - `manifest-coordination` →
