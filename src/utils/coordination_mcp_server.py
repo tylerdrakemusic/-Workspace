@@ -11,7 +11,12 @@ from mcp.server.fastmcp import FastMCP
 
 FR_CLI_PATH = Path(__file__).with_name("fr_cli.py")
 _ALLOWED_OPERATIONS = frozenset(
-    {"fr.get", "fr.record_event", "fr.record_artifact"}
+    {
+        "fr.get",
+        "fr.record_event",
+        "fr.record_artifact",
+        "fr.reconcile_cost_unavailable",
+    }
 )
 _FORBIDDEN_ARGUMENTS = frozenset({"db", "sql"})
 
@@ -28,12 +33,21 @@ def _run_fr_cli(operation: str, payload: dict[str, Any]) -> str:
             payload["event_type"],
             payload["summary"],
         ]
-    else:
+    elif operation == "fr.record_artifact":
         args = [
             "record-artifact",
             payload["fr_id"],
             payload["artifact_type"],
             payload["label"],
+        ]
+    else:
+        args = [
+            "cost-reconcile-unavailable",
+            payload["fr_id"],
+            "--source",
+            payload["source"],
+            "--reason",
+            payload["reason"],
         ]
     if operation == "fr.record_artifact" and payload.get("path"):
         args.extend(["--path", payload["path"]])
@@ -58,6 +72,7 @@ def invoke_coordination(operation: str, payload: Mapping[str, Any]) -> str:
         "fr.get": {"fr_id"},
         "fr.record_event": {"fr_id", "agent", "event_type", "summary"},
         "fr.record_artifact": {"fr_id", "artifact_type", "label", "path"},
+        "fr.reconcile_cost_unavailable": {"fr_id", "source", "reason"},
     }[operation]
     if set(payload) - allowed_fields:
         raise ValueError("unexpected arguments for coordination operation")
@@ -101,6 +116,15 @@ def record_fr_artifact(
     if path is not None:
         payload["path"] = path
     return invoke_coordination("fr.record_artifact", payload)
+
+
+@mcp.tool()
+def reconcile_fr_cost_unavailable(fr_id: str, source: str, reason: str) -> str:
+    """Record an explicit unavailable historical cost outcome."""
+    return invoke_coordination(
+        "fr.reconcile_cost_unavailable",
+        {"fr_id": fr_id, "source": source, "reason": reason},
+    )
 
 
 if __name__ == "__main__":

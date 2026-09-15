@@ -440,6 +440,47 @@ def cmd_cost_finalize(args: argparse.Namespace) -> None:
     print(f"[fr_cli] cost persisted → {args.fr_id} ({result.status})")
 
 
+def cmd_cost_reconcile_unavailable(args: argparse.Namespace) -> None:
+    """Record a historical cost outcome when no usage payload is available."""
+    source = (args.source or "").strip()
+    reason = (args.reason or "").strip()
+    if not source or not reason:
+        print(
+            "[fr_cli] cost reconciliation requires a non-empty source and reason",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    conn = _conn()
+    fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
+    if not fr:
+        print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        conn.close()
+        sys.exit(1)
+    now = _now()
+    conn.execute(
+        "UPDATE feature_requests SET ai_credits_estimated=NULL, usd_cost_estimated=NULL, "
+        "cost_status='unavailable', cost_source=?, cost_reconciliation_status=?, "
+        "cost_finalized_at=?, updated_at=? WHERE id=?",
+        (source, reason, now, now, args.fr_id),
+    )
+    conn.execute(
+        "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary, details) "
+        "VALUES (?,?,?,?,?,?)",
+        (
+            args.fr_id,
+            now,
+            "⊕workspace-ci",
+            "cost-reconciliation",
+            "Historical cost outcome recorded as unavailable",
+            f"source={source}; reason={reason}",
+        ),
+    )
+    conn.commit()
+    conn.close()
+    print(f"[fr_cli] unavailable cost outcome recorded → {args.fr_id}")
+
+
 def cmd_cost_refresh(args: argparse.Namespace) -> None:
     """Refresh the persisted GitHub Copilot pricing snapshot explicitly."""
     path = Path(getattr(args, "snapshot_path", None) or DEFAULT_SNAPSHOT_PATH)
@@ -622,6 +663,14 @@ def main() -> None:
     p_final.add_argument("--usage-json", required=True)
     p_final.add_argument("--source", default="telemetry")
 
+    p_unavailable = sub.add_parser(
+        "cost-reconcile-unavailable",
+        help="Record an unavailable historical cost outcome",
+    )
+    p_unavailable.add_argument("fr_id")
+    p_unavailable.add_argument("--source", required=True)
+    p_unavailable.add_argument("--reason", required=True)
+
     p_refresh = sub.add_parser("cost-refresh", help="Refresh the persisted Copilot pricing snapshot")
     p_refresh.add_argument("--path", dest="snapshot_path", default=None)
 
@@ -652,6 +701,7 @@ def main() -> None:
         "record-artifact": cmd_record_artifact,
         "cost-baseline": cmd_cost_baseline,
         "cost-finalize": cmd_cost_finalize,
+        "cost-reconcile-unavailable": cmd_cost_reconcile_unavailable,
         "cost-refresh": cmd_cost_refresh,
         "close": cmd_close,
         "list": cmd_list,

@@ -53,9 +53,12 @@ def _make_conn(db_path: Path) -> sqlite3.Connection:
             final_state TEXT,
             cycle_timer_run_id TEXT,
             acceptance_criteria TEXT,
+            ai_credits_estimated REAL,
+            usd_cost_estimated REAL,
             cost_status TEXT,
             cost_source TEXT,
-            cost_reconciliation_status TEXT
+            cost_reconciliation_status TEXT,
+            cost_finalized_at TEXT
         );
         CREATE TABLE fr_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,6 +106,55 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
         owner=None,
         cycle_timer=None,
     )
+
+
+def test_cost_reconcile_unavailable_persists_explicit_historical_outcome(tmp_path) -> None:
+    db_path = tmp_path / "fr.db"
+    conn = _make_conn(db_path)
+
+    with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+        fr_cli, "_now", return_value="2026-09-15T12:00:00Z"
+    ):
+        fr_cli.cmd_cost_reconcile_unavailable(
+            argparse.Namespace(
+                fr_id="FR-TEST-001",
+                source="historical-operator-reconciliation",
+                reason="No model/token usage payload was retained for this historical merged maintenance FR.",
+            )
+        )
+
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    row = conn.execute(
+        "SELECT ai_credits_estimated, usd_cost_estimated, cost_status, cost_source, "
+        "cost_reconciliation_status, cost_finalized_at FROM feature_requests "
+        "WHERE id='FR-TEST-001'"
+    ).fetchone()
+    assert tuple(row) == (
+        None,
+        None,
+        "unavailable",
+        "historical-operator-reconciliation",
+        "No model/token usage payload was retained for this historical merged maintenance FR.",
+        "2026-09-15T12:00:00Z",
+    )
+    event = conn.execute(
+        "SELECT agent, event_type, summary FROM fr_events WHERE fr_id='FR-TEST-001'"
+    ).fetchone()
+    assert tuple(event) == (
+        "⊕workspace-ci",
+        "cost-reconciliation",
+        "Historical cost outcome recorded as unavailable",
+    )
+
+
+def test_cost_reconcile_unavailable_requires_source_and_reason(tmp_path) -> None:
+    conn = _make_conn(tmp_path / "fr.db")
+
+    with patch.object(fr_cli, "_conn", return_value=conn), pytest.raises(SystemExit):
+        fr_cli.cmd_cost_reconcile_unavailable(
+            argparse.Namespace(fr_id="FR-TEST-001", source="", reason="")
+        )
 
 
 class TestMergedGate:
