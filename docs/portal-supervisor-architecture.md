@@ -39,7 +39,7 @@ All responses include `Cache-Control: no-store`, `Pragma: no-cache`, and `Expire
 | `GET /` or `GET /portal.html` | Serves the generated portal shell and injects the active generation into compatible iframe URLs |
 | `GET /api/state` | Returns one synchronized snapshot of the active generation, supervisor-owned service state map, and current CSRF token |
 | `POST /api/restart-all` | Allocates a new generation, starts restart work on a daemon thread, and returns `202` with the new generation |
-| `POST /api/restart-master` | Reserves the operation lock, commits the handoff response, shuts down the resident listener, and relaunches a fresh supervisor that reclaims `8790` fail-closed before transferring the new generation |
+| `POST /api/restart-master` | Reserves the operation lock, commits the handoff response, shuts down the resident listener, and relaunches a detached fresh supervisor that reclaims `8790` fail-closed before transferring the new generation |
 | `POST /api/services/<name>/retry` | Runs one manual retry for the named enabled service in the active generation and returns `202` |
 | `POST /api/focus` | Opens or focuses the current portal URL and returns `200`; it does not restart services |
 
@@ -51,7 +51,7 @@ A single non-blocking operation lock serializes restart-all and per-service retr
 
 `POST /api/restart-master` is the control-plane restart, rather than a service-generation restart. It reserves the same non-blocking operation lock used by other mutations, prepares the next generation and its handoff state, and sends the `202` response before the resident listener begins shutdown. The response and handoff sequencing is intentional: the browser receives an accepted operation while the current process still owns the listener, so the request cannot depend on a socket that is already closing.
 
-After the response is committed, the resident supervisor shuts down its HTTP listener, reclaims `127.0.0.1:8790`, and exits. The replacement supervisor then owns subsequent child-service reclamation and warmup: it inspects each configured service listener, terminates any remaining owner, verifies that the port is absent, binds the loopback listener, transfers the new launch generation and CSRF boundary, regenerates the portal shell, and resumes service warmup. Any inspection, termination, or post-termination verification failure aborts the relaunch rather than adopting an unknown listener.
+After the response is committed, the resident supervisor shuts down its HTTP listener, reclaims `127.0.0.1:8790`, and exits. The replacement supervisor is launched as a detached Windows process, then owns subsequent child-service reclamation and warmup: it inspects each configured service listener, terminates any remaining owner, verifies that the port is absent, binds the loopback listener, transfers the new launch generation and CSRF boundary, regenerates the portal shell, and resumes service warmup. Any inspection, termination, or post-termination verification failure aborts the relaunch rather than adopting an unknown listener.
 
 The portal treats the transferred generation as authoritative. It refreshes cache-bust-compatible frames with the new generation, keeps query-sensitive frames on their exact configured URLs, and restores managed frames only after readiness reports `ready` for that generation. This prevents a browser pane from retaining an old document while the fresh supervisor is taking ownership.
 
