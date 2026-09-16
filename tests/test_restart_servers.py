@@ -397,6 +397,30 @@ def test_master_restart_does_not_launch_replacement_after_reclaim_failure() -> N
     assert launched == []
 
 
+def test_master_restart_launches_replacement_as_a_detached_process() -> None:
+    server = SimpleNamespace(shutdown=lambda: None, server_close=lambda: None)
+    launch_kwargs: dict[str, object] = {}
+
+    def popen(*_args: object, **kwargs: object) -> SimpleNamespace:
+        launch_kwargs.update(kwargs)
+        return SimpleNamespace(pid=4700)
+
+    with (
+        patch.object(supervisor_module.subprocess, "CREATE_NO_WINDOW", 0x08000000, create=True),
+        patch.object(supervisor_module.subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200, create=True),
+        patch.object(supervisor_module.subprocess, "DETACHED_PROCESS", 0x00000008, create=True),
+    ):
+        supervisor_module._restart_master_process(
+            server,
+            "fresh-generation",
+            reclaim=lambda _port: [],
+            popen=popen,
+        )
+
+    assert launch_kwargs["shell"] is False
+    assert launch_kwargs["creationflags"] == 0x08000208
+
+
 @pytest.mark.playwright
 @pytest.mark.parametrize("viewport", [{"width": 1280, "height": 800}, {"width": 390, "height": 844}])
 def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(

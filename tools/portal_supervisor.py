@@ -824,6 +824,7 @@ def _restart_master_process(
         stderr=subprocess.DEVNULL,
         shell=False,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        | getattr(subprocess, "DETACHED_PROCESS", 0)
         | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
     )
 
