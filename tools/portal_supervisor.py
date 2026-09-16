@@ -338,6 +338,7 @@ def create_http_server(
     supervisor: "PortalSupervisor",
     portal_path: Path,
     browser_open: Callable[[str], object],
+    master_restart: Callable[[], str] | None = None,
 ) -> ThreadingHTTPServer:
     """Create the resident supervisor HTTP server without starting its loop."""
 
@@ -398,6 +399,24 @@ def create_http_server(
             if not self._mutation_authorized():
                 self._json_response(403, {"error": "forbidden"})
                 return
+            if path == "/api/restart-master":
+                if master_restart is None:
+                    self._json_response(503, {"error": "master restart unavailable"})
+                    return
+                generation = supervisor.prepare_restart_master()
+                if generation is None:
+                    self._json_response(409, {"error": "operation in progress"})
+                    return
+                try:
+                    self._json_response(
+                        202,
+                        {"status": "restarting-master", "generation": generation},
+                    )
+                except Exception:
+                    supervisor.finish_restart_master()
+                    raise
+                supervisor.finish_restart_master(master_restart)
+                return
             if path == "/api/restart-all":
                 generation = supervisor.start_restart_all()
                 if generation is None:
@@ -441,11 +460,16 @@ def run_resident(
     browser_open: Callable[[str], object],
     start_background: Callable[[Callable[[], object]], object],
     open_browser: bool,
+    generation: str | None = None,
 ) -> None:
     """Generate, bind, warm services, and serve the resident portal."""
     generate_portal()
     server = server_factory()
-    generation = supervisor.new_generation()
+    generation = (
+        supervisor.new_generation()
+        if generation is None
+        else supervisor.new_generation(generation)
+    )
     start_background(lambda: supervisor.restart_all(generation))
     start_background(regenerate_optional)
     if open_browser:
@@ -537,14 +561,32 @@ class PortalSupervisor:
             raise
         return generation
 
+    def prepare_restart_master(self) -> str | None:
+        """Reserve the operation lock and generation for a resident-process handoff."""
+        if not self._operation_lock.acquire(blocking=False):
+            return None
+        try:
+            return self.new_generation()
+        except Exception:
+            self._operation_lock.release()
+            raise
+
+    def finish_restart_master(self, target: Callable[[], object] | None = None) -> None:
+        """Release the handoff lock after the response is sent and launch is scheduled."""
+        try:
+            if target is not None:
+                target()
+        finally:
+            self._operation_lock.release()
+
     def start_retry_service(self, name: str) -> bool:
         """Start one service retry unless another mutation operation is active."""
         service = self._service_named(name)
         return self._start_operation(lambda: self._retry_service(service))
 
-    def new_generation(self) -> str:
+    def new_generation(self, generation: str | None = None) -> str:
         """Allocate and retain a new launch generation before warmup starts."""
-        generation = uuid4().hex
+        generation = generation or uuid4().hex
         generation_logs = self.log_root / generation
         generation_logs.mkdir(parents=True, exist_ok=True)
         existing_mtimes = [
@@ -755,14 +797,51 @@ def load_config(path: Path) -> dict[str, object]:
     return config
 
 
+def _restart_master_process(
+    server: ThreadingHTTPServer,
+    generation: str,
+    *,
+    reclaim: Callable[[int], list[int]] = reclaim_port,
+    popen: Callable[..., object] = subprocess.Popen,
+) -> None:
+    """Close the resident listener, reclaim it fail-closed, and launch fresh code."""
+    server.shutdown()
+    server.server_close()
+    reclaim(SUPERVISOR_PORT)
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--serve",
+        "--no-open",
+        "--generation",
+        generation,
+    ]
+    popen(  # nosec B603 - fixed local executable and script
+        command,
+        cwd=str(PROJECT_ROOT),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        shell=False,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Workspace portal resident supervisor")
     parser.add_argument("--serve", action="store_true", help="run the resident supervisor")
     parser.add_argument("--no-open", action="store_true", help="do not open or focus a browser tab")
     parser.add_argument("--restart-all", action="store_true", help="restart all configured services")
+    parser.add_argument("--restart-master", action="store_true", help="restart the resident supervisor")
+    parser.add_argument("--generation", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     if not args.serve:
+        if args.restart_master and _supervisor_active():
+            _post_supervisor("/api/restart-master")
+            print("restarting master")
+            return
         if args.restart_all and _supervisor_active():
             _post_supervisor("/api/restart-all")
             print("restarting")
@@ -785,16 +864,36 @@ def main() -> None:
         now=time.time,
     )
     browser = lambda url: webbrowser.open(url, new=0, autoraise=True)
+    server_ref: list[ThreadingHTTPServer] = []
+
+    def restart_master() -> str:
+        threading.Thread(
+            target=_restart_master_process,
+            args=(server_ref[0], str(supervisor.current_generation)),
+            daemon=True,
+        ).start()
+        return str(supervisor.current_generation)
+
+    def server_factory() -> ThreadingHTTPServer:
+        server = create_http_server(
+            (SUPERVISOR_HOST, SUPERVISOR_PORT),
+            supervisor,
+            PORTAL_PATH,
+            browser,
+            master_restart=restart_master,
+        )
+        server_ref.append(server)
+        return server
+
     run_resident(
         supervisor,
         generate_portal=_generate_portal_shell,
         regenerate_optional=_regenerate_optional_dashboards,
-        server_factory=lambda: create_http_server(
-            (SUPERVISOR_HOST, SUPERVISOR_PORT), supervisor, PORTAL_PATH, browser
-        ),
+        server_factory=server_factory,
         browser_open=browser,
         start_background=lambda target: threading.Thread(target=target, daemon=True).start(),
         open_browser=not args.no_open,
+        generation=args.generation,
     )
 
 

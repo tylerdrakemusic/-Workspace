@@ -272,11 +272,6 @@ def test_render_portal_excludes_quantum_randomness_service() -> None:
     with (
         patch.object(dp, "_load_servers", return_value=[]),
         patch.object(dp, "_collect_api_health", return_value=[]),
-        patch.object(dp, "collect_portal_health", return_value={
-            "available": False,
-            "reason": "test",
-            "regen_cmd": "test",
-        }),
     ):
         rendered = dp.render_portal(manifest)
 
@@ -288,6 +283,27 @@ def test_render_portal_excludes_quantum_randomness_service() -> None:
     assert 'src="http://localhost:7474"' in rendered
     assert '<span class="stat-num">1</span> Dashboards' in rendered
     assert "&middot; 1 dashboards" in rendered
+
+
+def test_portal_has_master_restart_control_and_no_agent_ops_health_owner() -> None:
+    source = Path(dp.__file__).read_text(encoding="utf-8")
+    manifest = {"dashboards": [], "projects": []}
+
+    with (
+        patch.object(dp, "_load_servers", return_value=[]),
+        patch.object(dp, "_collect_api_health", return_value=[]),
+    ):
+        rendered = dp.render_portal(manifest)
+
+    assert 'id="master-restart-btn"' in rendered
+    assert "Restart Master Portal" in rendered
+    assert "fetch('/api/restart-master'" in rendered
+    assert "Master portal restarting" in rendered
+    assert "Master portal ready" in rendered
+    assert "Master portal restart failed" in rendered
+    assert "health-card" not in source
+    assert "collect_portal_health" not in source
+    assert "_render_health_card" not in source
 
 
 # ---------------------------------------------------------------------------

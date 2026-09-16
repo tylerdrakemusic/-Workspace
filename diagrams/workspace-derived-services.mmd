@@ -4,7 +4,7 @@
 graph LR
     subgraph Control["⊕ Resident portal control plane"]
         Shims[PowerShell · VBS · portal protocol<br/>thin compatibility shims]
-        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>operation lock · optional regen after bind]
+        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>operation lock · optional regen after bind<br/>master restart handoff · fresh generation]
         Portal[portal.html<br/>synchronous shell · no-store<br/>quiesce then active-generation readiness reload]
         Config[portal_servers.json<br/>command · cwd · port · enabled<br/>Trade Gate /health readiness<br/>Executive exact root · cache bust disabled]
         RuntimeState[(lock-synchronized snapshots<br/>PID · command · cwd · started time<br/>generation · readiness · attempt · error)]
@@ -12,10 +12,8 @@ graph LR
     end
     subgraph Lifecycle["Configured service lifecycle"]
         Reclaim[fail-closed configured-port reclamation<br/>inspect · terminate · verify absent]
-        Pool[three-worker startup pool]
         Launch[exact configured command<br/>shell=false]
         Readiness[HTTP readiness<br/>30-second attempt deadline]
-        AutoRetry[one automatic retry]
         ManualRetry[manual per-service retry<br/>active generation · overlap returns 409]
     end
     subgraph Projects["Local portal services"]
@@ -44,12 +42,14 @@ graph LR
     Supervisor -->|GET portal · applyGeneration refreshes loaded compatible frames| Portal
     Portal -->|GET synchronized state| Supervisor
     Portal -->|POST with loopback Host + matching Origin + rotating CSRF| Supervisor
+    Portal -->|POST /api/restart-master · reserve operation lock| Supervisor
+    Supervisor -->|commit 202 before shutdown · resident listener closes<br/>fail-closed reclaim 8790 · fresh bind · transfer generation| Supervisor
     Portal -->|POST retry under shared operation lock| ManualRetry
     Supervisor -->|focus browser on current generation| Portal
     Supervisor ==> RuntimeState
     Supervisor ==> Logs
-    Supervisor --> Reclaim --> Pool --> Launch --> Readiness
-    Readiness -->|first attempt failed| AutoRetry --> Reclaim
+    Supervisor --> Reclaim -->|three-worker startup pool| Launch --> Readiness
+    Readiness -->|first attempt failed · one automatic retry| Reclaim
     Readiness -->|ready or second failure| RuntimeState
     ManualRetry --> Reclaim
     Launch --> Life & Music & Quantum & Manifest & Capital & WorkspaceServices
@@ -69,7 +69,7 @@ graph LR
     Capital -.->|research and audit events| WorkspaceServices
     Manifest -.->|briefs and roadmap| WorkspaceServices
 
-    class Shims,Supervisor,Portal,Config,Reclaim,Pool,Launch,Readiness,AutoRetry,ManualRetry,WorkspaceServices ws
+    class Shims,Supervisor,Portal,Config,Reclaim,Launch,Readiness,ManualRetry,WorkspaceServices ws
     class RuntimeState,Logs db
     class Life life
     class Music music

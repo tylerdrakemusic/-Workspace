@@ -4,7 +4,7 @@
 graph TB
     subgraph Workspace["⊕ Workspace"]
         Portal[reports/portal.html<br/>synchronous portal shell<br/>quiesced restart · readiness-gated frame refresh]
-        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>Host + Origin + rotating CSRF<br/>operation lock · synchronized snapshots]
+        Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>Host + Origin + rotating CSRF<br/>operation lock · synchronized snapshots<br/>master restart handoff · fresh generation]
         Registry[dashboard_registry.py<br/>Spec Discovery]
         FRBoard[Feature Request Ledger<br/>FEATURE_REQUESTS.md]
         FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board cycle-time dashboard<br/>workspace.db · perf_runs]
@@ -37,6 +37,8 @@ graph TB
     end
     Supervisor -->|generate before bind · no-store · applyGeneration refresh| Portal
     Portal -->|GET synchronized state · authorized POST · 409 on overlap| Supervisor
+    Portal -->|POST /api/restart-master · loopback Host + Origin + rotating CSRF| Supervisor
+    Supervisor -->|reserve lock · commit 202 · shutdown resident listener<br/>fail-closed reclaim 8790 · fresh bind · transfer generation| Supervisor
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime

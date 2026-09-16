@@ -296,6 +296,8 @@ def test_generated_portal_uses_authoritative_supervisor_state_and_restart_action
     portal = (WORKSPACE_ROOT / "reports" / "portal.html").read_text(encoding="utf-8")
 
     assert 'id="supervisor-controls"' not in portal
+    assert "Agent Ops Monitor" not in portal
+    assert "portal_agent-ops.html" not in portal
     assert "fetch('/api/state', {cache: 'no-store'})" in portal
     assert "fetch('/api/services/' + encodeURIComponent(name) + '/retry', {method: 'POST'})" in portal
     assert "retry.hidden = state.readiness !== 'failed'" in portal
@@ -311,6 +313,88 @@ def test_generated_portal_uses_authoritative_supervisor_state_and_restart_action
     assert "btn.disabled = true" in launch_body
     assert launch_body.index("quiesceManagedFrames()") < launch_body.index("fetch('/api/restart-all'")
     assert "setTimeout" in launch_body
+
+
+def test_master_restart_uses_a_distinct_authorized_endpoint(tmp_path: Path) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text("<html><body></body></html>", encoding="utf-8")
+    supervisor = PortalSupervisor(
+        {"servers": []},
+        log_root=tmp_path / "logs",
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4600),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    events: list[str] = []
+    events_complete = threading.Event()
+
+    def record_event(event: str) -> None:
+        events.append(event)
+        if len(events) == 2:
+            events_complete.set()
+
+    server = supervisor_module.create_http_server(
+        ("127.0.0.1", 0),
+        supervisor,
+        portal_path,
+        lambda _url: None,
+        master_restart=lambda: record_event("shutdown-scheduled"),
+    )
+    handler_type = server.RequestHandlerClass
+    original_json_response = handler_type._json_response
+
+    def record_response_commit(handler: object, status: int, payload: dict[str, object]) -> None:
+        original_json_response(handler, status, payload)
+        record_event("response-committed")
+
+    handler_type._json_response = record_response_commit
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        origin = f"http://127.0.0.1:{server.server_port}"
+        previous_generation = supervisor.current_generation
+        request = Request(
+            f"{origin}/api/restart-master",
+            method="POST",
+            headers={"Origin": origin, "X-Supervisor-CSRF": supervisor.csrf_token},
+        )
+        with urlopen(request) as response:
+            payload = json.load(response)
+        assert response.status == 202
+        assert payload["status"] == "restarting-master"
+        assert payload["generation"] != previous_generation
+        assert events_complete.wait(timeout=2)
+        assert events == ["response-committed", "shutdown-scheduled"]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_restart_servers_shim_targets_master_restart() -> None:
+    script = RESTART_SERVERS.read_text(encoding="utf-8")
+
+    assert "--restart-master" in script
+    assert "--restart-all" not in script
+
+
+def test_master_restart_does_not_launch_replacement_after_reclaim_failure() -> None:
+    server = SimpleNamespace(shutdown=lambda: None, server_close=lambda: None)
+    launched: list[object] = []
+
+    def reclaim(_port: int) -> list[int]:
+        raise RuntimeError("port reclaim failed")
+
+    with pytest.raises(RuntimeError, match="port reclaim failed"):
+        supervisor_module._restart_master_process(
+            server,
+            "fresh-generation",
+            reclaim=reclaim,
+            popen=lambda *_args, **_kwargs: launched.append(True),
+        )
+
+    assert launched == []
 
 
 @pytest.mark.playwright
@@ -349,7 +433,6 @@ def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(
     }
     with (
         patch("dashboard_portal._load_servers", return_value=servers),
-        patch("dashboard_portal._render_health_card", return_value=""),
         patch("dashboard_portal._render_api_health_widget", return_value=""),
     ):
         portal = dashboard_portal.render_portal(manifest)
@@ -1093,7 +1176,7 @@ def test_legacy_restart_script_is_a_thin_supervisor_shim() -> None:
     text = RESTART_SERVERS.read_text(encoding="utf-8")
 
     assert "portal_supervisor.py" in text
-    assert "--restart-all" in text
+    assert "--restart-master" in text
     assert "Get-NetTCPConnection" not in text
     assert "Stop-Process" not in text
 
