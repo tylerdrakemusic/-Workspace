@@ -5,7 +5,7 @@ Lightweight HTTP server (stdlib only) that:
   - Serves fr_dashboard.html at /
   - Exposes GET /api/frs           → JSON list of FRs from fr_ledgers.db
   - Exposes GET /api/ledger/<FR-ID> → JSON list of events for one FR
-  - Exposes POST /signoff           → writes state=DONE to fr_ledgers.db via DB
+  - Exposes POST /signoff           → records Tyler's production-observation signoff
   - Polls fr_ledgers.db for changes and regenerates the dashboard HTML
 
 Usage:
@@ -52,9 +52,9 @@ GH_REPO = "-Workspace"
 # ── State machine for active-vs-archived ─────────────────────────────────────
 
 ACTIVE_STATES = {
-    "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
+  "OPEN", "TRIAGED", "BRANCHED", "BRANCH_CHECKED_OUT", "IN_PROGRESS",
     "REVIEW_REQUESTED", "AUTO_REVIEWED", "TYLER_APPROVED", "CHANGES_REQUESTED",
-    "SOAKING",
+  "SOAKING", "MERGED",
 }
 
 
@@ -384,7 +384,7 @@ _JS = r"""
 
   function renderBoard(frs) {
     const active = frs.filter(f => f.is_active);
-    const archived = frs.filter(f => !f.is_active && f.state.toUpperCase() !== 'DONE');
+    const archived = frs.filter(f => !f.is_active);
 
     const activeHtml = active.length
       ? active.map(renderFR).join('')
@@ -463,7 +463,7 @@ _JS = r"""
         const flash = document.getElementById('flash-slot');
         if (flash) {
           flash.className = 'banner banner-ok';
-          flash.textContent = '✓ ' + frId + ' signed off — marked DONE';
+          flash.textContent = '✓ ' + frId + ' signed off';
           flash.style.display = '';
           setTimeout(() => { flash.style.display = 'none'; }, 8000);
         }
@@ -564,7 +564,7 @@ def regenerate_dashboard(frs: list[dict[str, Any]], stale: bool = False) -> None
     """Write a fresh fr_dashboard.html from the parsed FR list."""
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     active = [f for f in frs if f["is_active"]]
-    archived = [f for f in frs if not f["is_active"] and f.get("state", "").upper() != "DONE"]
+    archived = [f for f in frs if not f["is_active"]]
 
     def card(fr: dict[str, Any]) -> str:
         signoff_btn = (
@@ -721,15 +721,39 @@ def _start_watcher() -> "_WatcherThread":
 # ─────────────────────────────────────────────────────────────────────────────
 
 def signoff_fr(fr_id: str) -> dict[str, Any]:
-    """Write state=DONE to fr_ledgers.db for the given FR."""
+    """Record Tyler's production-observation signoff for an FR."""
     if not _DB_AVAILABLE:
         return {"ok": False, "error": "fr_ledgers.db unavailable"}
     try:
         conn = _get_fr_conn()
         now = datetime.now(timezone.utc).isoformat()
+        row = conn.execute(
+            "SELECT state FROM feature_requests WHERE id=?", (fr_id,)
+        ).fetchone()
+        if row is None:
+            conn.close()
+            return {"ok": False, "error": f"FR not found: {fr_id}"}
+
+        previous_state = (row["state"] or "").strip()
+        if previous_state.upper() == "DONE":
+            conn.close()
+            return {"ok": True}
+
         conn.execute(
-            "UPDATE feature_requests SET state='DONE', updated_at=? WHERE id=?",
-            (now, fr_id),
+            "UPDATE feature_requests SET state='SIGNED_OFF', updated_at=?, signed_off_at=? WHERE id=?",
+            (now, now, fr_id),
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary, details) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                fr_id,
+                now,
+                "⊕workspace-overseer",
+                "signoff",
+                f"Tyler-authorized production-observation signoff; previous state {previous_state}",
+                "Tyler-authorized production-observation signoff recorded.",
+            ),
         )
         conn.commit()
         conn.close()
