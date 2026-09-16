@@ -4,6 +4,7 @@ Tests for fr_server.py — FR Ledger Panel Server
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 import threading
 import time
@@ -69,9 +70,13 @@ class TestQueryFRsFromDb:
         fr = _make_fr("FR-001", "BRANCHED")
         assert fr["is_active"] is True
 
-    def test_merged_state_not_active(self) -> None:
+    def test_branch_checked_out_and_merged_states_are_active(self) -> None:
+        assert _make_fr("FR-002A", "BRANCH_CHECKED_OUT")["is_active"] is True
+        assert _make_fr("FR-002B", "MERGED")["is_active"] is True
+
+    def test_merged_state_is_active(self) -> None:
         fr = _make_fr("FR-002", "MERGED")
-        assert fr["is_active"] is False
+        assert fr["is_active"] is True
 
     def test_review_requested_is_active(self) -> None:
         fr = _make_fr("FR-003", "REVIEW_REQUESTED", prs="[#9](...)", pr_number=9)
@@ -89,6 +94,103 @@ class TestQueryFRsFromDb:
     def test_state_class_merged(self) -> None:
         fr = _make_fr("FR-006", "MERGED")
         assert fr["state_class"] == "state-done"
+
+    @pytest.mark.parametrize("state", ["SIGNED_OFF", "ARCHIVED", "CLOSED", "DONE"])
+    def test_archived_states_render_in_archived_section(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, state: str
+    ) -> None:
+        reports_dir = tmp_path / "reports"
+        reports_dir.mkdir()
+        monkeypatch.setattr(fr_server, "DASHBOARD_HTML", reports_dir / "fr_dashboard.html")
+
+        fr_server.regenerate_dashboard([_make_fr("FR-ARCHIVED", state)])
+
+        html = (reports_dir / "fr_dashboard.html").read_text(encoding="utf-8")
+        assert 'id="archived-grid"' in html
+        assert "FR-ARCHIVED" in html
+        assert 'id="active-grid">\n    <div class="empty">No active FRs.</div>' in html
+
+
+def _make_signoff_db(db_path: Path, state: str = "SOAKING") -> sqlite3.Connection:
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        """
+        CREATE TABLE feature_requests (
+            id TEXT PRIMARY KEY, state TEXT, updated_at TEXT, signed_off_at TEXT
+        );
+        CREATE TABLE fr_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, fr_id TEXT, ts TEXT,
+            agent TEXT, event_type TEXT, summary TEXT, details TEXT
+        );
+        """
+    )
+    conn.execute(
+        "INSERT INTO feature_requests (id, state, updated_at, signed_off_at) VALUES (?, ?, ?, ?)",
+        ("FR-SIGNOFF", state, "old-updated", None),
+    )
+    conn.commit()
+    return conn
+
+
+def test_signoff_persists_signed_off_timestamps_and_audit_event(tmp_path: Path) -> None:
+    db_path = tmp_path / "fr.db"
+    conn = _make_signoff_db(db_path)
+
+    with patch.object(fr_server, "_DB_AVAILABLE", True), patch.object(
+        fr_server, "_get_fr_conn", return_value=conn
+    ), patch.object(fr_server, "datetime") as clock:
+        clock.now.return_value = type(
+            "Timestamp", (), {"isoformat": lambda self: "2026-09-15T12:34:56+00:00"}
+        )()
+        result = fr_server.signoff_fr("FR-SIGNOFF")
+
+    assert result == {"ok": True}
+    check_conn = sqlite3.connect(str(db_path))
+    check_conn.row_factory = sqlite3.Row
+    row = check_conn.execute(
+        "SELECT state, updated_at, signed_off_at FROM feature_requests WHERE id=?",
+        ("FR-SIGNOFF",),
+    ).fetchone()
+    event = check_conn.execute(
+        "SELECT agent, event_type, summary, details FROM fr_events WHERE fr_id=?",
+        ("FR-SIGNOFF",),
+    ).fetchone()
+    check_conn.close()
+
+    assert tuple(row) == (
+        "SIGNED_OFF",
+        "2026-09-15T12:34:56+00:00",
+        "2026-09-15T12:34:56+00:00",
+    )
+    assert event["agent"] == "⊕workspace-overseer"
+    assert event["event_type"] == "signoff"
+    assert "previous state SOAKING" in event["summary"]
+    assert "Tyler-authorized production-observation signoff" in event["details"]
+
+
+def test_signoff_does_not_mutate_historical_done_row(tmp_path: Path) -> None:
+    db_path = tmp_path / "fr.db"
+    conn = _make_signoff_db(db_path, state="DONE")
+
+    with patch.object(fr_server, "_DB_AVAILABLE", True), patch.object(
+        fr_server, "_get_fr_conn", return_value=conn
+    ), patch.object(fr_server, "datetime") as clock:
+        clock.now.return_value = type(
+            "Timestamp", (), {"isoformat": lambda self: "2026-09-15T12:34:56+00:00"}
+        )()
+        result = fr_server.signoff_fr("FR-SIGNOFF")
+
+    assert result == {"ok": True}
+    check_conn = sqlite3.connect(str(db_path))
+    row = check_conn.execute(
+        "SELECT state, updated_at, signed_off_at FROM feature_requests WHERE id=?",
+        ("FR-SIGNOFF",),
+    ).fetchone()
+    event_count = check_conn.execute("SELECT COUNT(*) FROM fr_events").fetchone()[0]
+    check_conn.close()
+    assert tuple(row) == ("DONE", "old-updated", None)
+    assert event_count == 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
