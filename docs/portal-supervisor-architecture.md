@@ -39,12 +39,21 @@ All responses include `Cache-Control: no-store`, `Pragma: no-cache`, and `Expire
 | `GET /` or `GET /portal.html` | Serves the generated portal shell and injects the active generation into compatible iframe URLs |
 | `GET /api/state` | Returns one synchronized snapshot of the active generation, supervisor-owned service state map, and current CSRF token |
 | `POST /api/restart-all` | Allocates a new generation, starts restart work on a daemon thread, and returns `202` with the new generation |
+| `POST /api/restart-master` | Reserves the operation lock, commits the handoff response, shuts down the resident listener, and relaunches a fresh supervisor that reclaims `8790` fail-closed before transferring the new generation |
 | `POST /api/services/<name>/retry` | Runs one manual retry for the named enabled service in the active generation and returns `202` |
 | `POST /api/focus` | Opens or focuses the current portal URL and returns `200`; it does not restart services |
 
 Mutation requests are authorized only when the `Host` is exactly the bound loopback authority, any supplied `Origin` matches that authority, and `X-Supervisor-CSRF` matches the current token. The token rotates with every new generation and is returned in API response headers so the portal can advance without reloading the shell. Unknown POST paths return `404`. Service names in retry paths are URL-decoded before lookup.
 
 A single non-blocking operation lock serializes restart-all and per-service retry. A concurrent mutation returns `409 operation in progress`; it cannot interleave process replacement or state writes. State updates and API snapshots share a re-entrant state lock, so a response cannot combine one generation with another generation's partially updated service map.
+
+### Master Restart Handoff
+
+`POST /api/restart-master` is the control-plane restart, rather than a service-generation restart. It reserves the same non-blocking operation lock used by other mutations, prepares the next generation and its handoff state, and sends the `202` response before the resident listener begins shutdown. The response and handoff sequencing is intentional: the browser receives an accepted operation while the current process still owns the listener, so the request cannot depend on a socket that is already closing.
+
+After the response is committed, the resident supervisor shuts down its HTTP listener, reclaims `127.0.0.1:8790`, and exits. The replacement supervisor then owns subsequent child-service reclamation and warmup: it inspects each configured service listener, terminates any remaining owner, verifies that the port is absent, binds the loopback listener, transfers the new launch generation and CSRF boundary, regenerates the portal shell, and resumes service warmup. Any inspection, termination, or post-termination verification failure aborts the relaunch rather than adopting an unknown listener.
+
+The portal treats the transferred generation as authoritative. It refreshes cache-bust-compatible frames with the new generation, keeps query-sensitive frames on their exact configured URLs, and restores managed frames only after readiness reports `ready` for that generation. This prevents a browser pane from retaining an old document while the fresh supervisor is taking ownership.
 
 ## Service Startup And Recovery
 
@@ -97,3 +106,5 @@ Before overwriting an existing staged file, registration copies it to a timestam
 - Preserve generation-scoped logs and deterministic latest-ten retention that always keeps the current generation unless the operational contract is deliberately revised.
 - Preserve frame quiescence and active-generation readiness gating before managed iframes reload.
 - Treat `/api/state` as the authoritative live projection while the resident process is running.
+- Keep `POST /api/restart-master` as a locked, response-before-shutdown handoff to a fresh supervisor; do not turn it into an in-process listener restart.
+- Preserve generation transfer, resident listener shutdown, fail-closed `8790` reclamation, fresh binding, and generation-aware portal cache refresh as one ordered operation.
