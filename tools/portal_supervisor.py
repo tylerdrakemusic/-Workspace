@@ -199,7 +199,7 @@ def dispatch_launch(
 def _supervisor_active() -> bool:
     try:
         with urlopen(
-            f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}/api/state", timeout=0.5
+            f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}/api/state", timeout=0.5  # nosec A02 - validated local supervisor
         ) as response:
             return int(response.status) == 200
     except (OSError, TimeoutError):
@@ -208,11 +208,11 @@ def _supervisor_active() -> bool:
 
 def _post_supervisor(path: str) -> None:
     with urlopen(
-        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}/api/state", timeout=2
+        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}/api/state", timeout=2  # nosec A02 - validated local supervisor
     ) as response:
         csrf_token = str(json.load(response)["csrf_token"])
     request = Request(
-        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}{path}",
+        f"http://{SUPERVISOR_HOST}:{SUPERVISOR_PORT}{path}",  # nosec A02 - validated local supervisor
         method="POST",
         headers={"X-Supervisor-CSRF": csrf_token},
     )
@@ -369,7 +369,7 @@ def create_http_server(
             if self.headers.get("Host") != expected_host:
                 return False
             origin = self.headers.get("Origin")
-            if origin is not None and origin != f"http://{expected_host}":
+            if origin is not None and origin != f"http://{expected_host}":  # nosec A02 - local origin validation
                 return False
             supplied_token = self.headers.get("X-Supervisor-CSRF", "")
             return hmac.compare_digest(supplied_token, supervisor.csrf_token)

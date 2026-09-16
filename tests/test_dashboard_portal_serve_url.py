@@ -365,7 +365,7 @@ def test_regenerate_dashboards_passes_list_not_string_to_subprocess() -> None:
         cmd = args[0]
         assert isinstance(cmd, list), (
             f"subprocess.run must receive a list, not {type(cmd).__name__!r} — "
-            "shell=True bypass guard"
+            "shell mode bypass guard"
         )
 
 

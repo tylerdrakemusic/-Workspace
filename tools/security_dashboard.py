@@ -90,6 +90,8 @@ _FP_PATTERNS = [
     # Test fixtures with fake keys
     re.compile(r'api_key\s*=\s*["\']test-key'),
     re.compile(r'lease_token\s*=\s*["\']fixture-lease-'),
+    # Deterministic CSRF fixture used only by the Playwright supervisor test
+    re.compile(r'csrf_token\s*=\s*["\']playwright-test-csrf["\']'),
     # Explicit fake keys passed as method args in tests (e.g. api_key="sk-explicit")
     re.compile(r'api_key\s*=\s*["\'][a-zA-Z0-9]+-explicit'),
     # String matching/docs referencing http:// — plain and tuple-form: startswith(("http://", ...))
