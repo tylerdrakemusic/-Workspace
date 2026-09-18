@@ -12,6 +12,10 @@ graph LR
     Workspace --> Capital[Σ Capital]
     Workspace --> WSDB[(workspace.db)]
     Workspace --> BoundedLogging[bounded_logging.py<br/>provider-neutral structured events]
+    Workspace --> AIHealthWidget[⊕ Workspace AI Health widget<br/>readiness details + safe diagnostics]
+    AIHealthWidget --> AIHealthContract[provider-neutral readiness contract<br/>in-memory result · live freshness]
+    AIHealthContract --> ElevenLabsAdapter[Workspace ElevenLabs readiness adapter<br/>authenticated · non-generative · bounded retry]
+    ElevenLabsAdapter --> ElevenLabs[ElevenLabs /v1/user]
     Workspace --> GmailAttachments[workspace-derived-gmail-attachments]
     Workspace --> OverseerAlert[⊕ governed repository voice bridge]
     OverseerAlert ==> ManifestAlertCapability[👁 governed_repository.py]
@@ -31,11 +35,11 @@ graph LR
     AggregateHandoff ==> QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
     QuantumValidator --> SufficiencyGate{Sufficiency gate}
     SufficiencyGate --> ExecutionDenied[Real-data execution denied]
-    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert ws
+    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter ws
     class Life,Music,Quantum,Manifest,Capital orch
     class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult orch
     class AggregateHandoff,SufficiencyGate,ExecutionDenied state
-    class GitHub,Mermaid ext
+    class GitHub,Mermaid,ElevenLabs ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,TodoExecutionLifecycle,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
