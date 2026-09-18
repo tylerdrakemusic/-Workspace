@@ -41,6 +41,8 @@ class ExecutionRecord:
     attempt: int
     max_retries: int
     idempotency_key: str | None
+    validated_handoff: bool
+    handoff_evidence: str | None
 
 
 class ExecutionLifecycle:
@@ -74,6 +76,8 @@ class ExecutionLifecycle:
                 attempt INTEGER NOT NULL,
                 max_retries INTEGER NOT NULL,
                 idempotency_key TEXT UNIQUE,
+                validated_handoff INTEGER NOT NULL DEFAULT 0,
+                handoff_evidence TEXT,
                 updated_at REAL NOT NULL
             );
             CREATE TABLE IF NOT EXISTS todo_execution_events (
@@ -97,6 +101,26 @@ class ExecutionLifecycle:
             );
             """
         )
+        previous_row_factory = self.connection.row_factory
+        self.connection.row_factory = None
+        try:
+            columns = {
+                row[1]
+                for row in self.connection.execute(
+                    "PRAGMA table_info(todo_execution_lifecycle)"
+                ).fetchall()
+            }
+        finally:
+            self.connection.row_factory = previous_row_factory
+        if "validated_handoff" not in columns:
+            self.connection.execute(
+                "ALTER TABLE todo_execution_lifecycle "
+                "ADD COLUMN validated_handoff INTEGER NOT NULL DEFAULT 0"
+            )
+        if "handoff_evidence" not in columns:
+            self.connection.execute(
+                "ALTER TABLE todo_execution_lifecycle ADD COLUMN handoff_evidence TEXT"
+            )
         self.connection.commit()
 
     def claim(
@@ -144,14 +168,16 @@ class ExecutionLifecycle:
                 attempt=(existing["attempt"] + 1 if existing is not None else 1),
                 max_retries=max_retries,
                 idempotency_key=idempotency_key,
+                validated_handoff=False,
+                handoff_evidence=None,
             )
             self.connection.execute(
                 """
                 INSERT INTO todo_execution_lifecycle
                     (todo_id, fr_id, worker_id, claim_id, lease_token, state,
                      lease_expires_at, heartbeat_at, attempt, max_retries,
-                     idempotency_key, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     idempotency_key, validated_handoff, handoff_evidence, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(todo_id) DO UPDATE SET
                     fr_id=excluded.fr_id, worker_id=excluded.worker_id,
                     claim_id=excluded.claim_id, lease_token=excluded.lease_token,
@@ -159,13 +185,16 @@ class ExecutionLifecycle:
                     heartbeat_at=excluded.heartbeat_at, attempt=excluded.attempt,
                     max_retries=excluded.max_retries,
                     idempotency_key=excluded.idempotency_key,
+                    validated_handoff=excluded.validated_handoff,
+                    handoff_evidence=excluded.handoff_evidence,
                     updated_at=excluded.updated_at
                 """,
                 (
                     record.todo_id, record.fr_id, record.worker_id, record.claim_id,
                     record.lease_token, record.state, record.lease_expires_at,
                     record.heartbeat_at, record.attempt, record.max_retries,
-                    record.idempotency_key, now,
+                    record.idempotency_key, record.validated_handoff,
+                    record.handoff_evidence, now,
                 ),
             )
             self._event(record, "claim accepted", None, now)
@@ -202,10 +231,28 @@ class ExecutionLifecycle:
 
     def complete(
         self, todo_id: str, worker_id: str, lease_token: str,
-        now: float, reason: str,
+        now: float, reason: str, *, validated_handoff: bool,
+        handoff_evidence: str,
     ) -> ExecutionRecord:
         """Complete an owned running execution exactly once."""
-        return self._finish(todo_id, worker_id, lease_token, now, "completed", reason, None)
+        record = self._owned(todo_id, worker_id, lease_token, now)
+        if not validated_handoff:
+            self._invalid_after_owned(record, "completed execution requires validated handoff", now)
+            raise InvalidTransitionError("completed execution requires validated handoff")
+        evidence = handoff_evidence.strip()
+        if not evidence:
+            self._invalid_after_owned(record, "completed execution requires handoff evidence", now)
+            raise InvalidTransitionError("completed execution requires handoff evidence")
+        if len(evidence) > 500:
+            self._invalid_after_owned(record, "handoff evidence must be concise", now)
+            raise InvalidTransitionError("handoff evidence must be concise")
+        if lease_token in evidence:
+            self._invalid_after_owned(record, "handoff evidence must not contain lease credentials", now)
+            raise InvalidTransitionError("handoff evidence must not contain lease credentials")
+        return self._finish(
+            todo_id, worker_id, lease_token, now, "completed", reason, None,
+            validated_handoff=True, handoff_evidence=evidence,
+        )
 
     def fail(
         self, todo_id: str, worker_id: str, lease_token: str,
@@ -299,7 +346,8 @@ class ExecutionLifecycle:
             self.connection.execute(
                 """UPDATE todo_execution_lifecycle
                    SET worker_id = ?, claim_id = ?, lease_token = ?, state = 'claimed',
-                       lease_expires_at = ?, heartbeat_at = ?, updated_at = ?
+                       lease_expires_at = ?, heartbeat_at = ?,
+                       validated_handoff = 0, handoff_evidence = NULL, updated_at = ?
                    WHERE todo_id = ? AND state = 'stale'""",
                 (worker_id, claim_id, lease_token, now + lease_seconds, now, now, todo_id),
             )
@@ -328,6 +376,8 @@ class ExecutionLifecycle:
     def _finish(
         self, todo_id: str, worker_id: str, lease_token: str, now: float,
         state: str, reason: str, error: str | None,
+        *, validated_handoff: bool | None = None,
+        handoff_evidence: str | None = None,
     ) -> ExecutionRecord:
         record = self._owned(todo_id, worker_id, lease_token, now)
         allowed_states = {"running"} | ({"claimed"} if state == "failed" else set())
@@ -339,7 +389,8 @@ class ExecutionLifecycle:
             raise InvalidTransitionError("lease expired")
         return self._update(record, state=state, lease_expires_at=record.lease_expires_at,
                             heartbeat_at=record.heartbeat_at, reason=reason, error=error,
-                            occurred_at=now)
+                            occurred_at=now, validated_handoff=validated_handoff,
+                            handoff_evidence=handoff_evidence)
 
     def _owned(self, todo_id: str, worker_id: str, lease_token: str, now: float) -> ExecutionRecord:
         row = self._row(todo_id)
@@ -350,6 +401,7 @@ class ExecutionLifecycle:
     def _update(
         self, record: ExecutionRecord, *, state: str, lease_expires_at: float,
         heartbeat_at: float, reason: str, occurred_at: float, error: str | None = None,
+        validated_handoff: bool | None = None, handoff_evidence: str | None = None,
     ) -> ExecutionRecord:
         self.connection.execute("BEGIN IMMEDIATE")
         try:
@@ -357,7 +409,8 @@ class ExecutionLifecycle:
             if row is None or row["claim_id"] != record.claim_id or row["state"] != record.state:
                 raise InvalidTransitionError("execution changed before transition")
             updated = self._update_in_transaction(row, state, lease_expires_at, heartbeat_at,
-                                                  reason, error, occurred_at)
+                                                  reason, error, occurred_at,
+                                                  validated_handoff, handoff_evidence)
             self.connection.commit()
             return updated
         except Exception:
@@ -367,12 +420,19 @@ class ExecutionLifecycle:
     def _update_in_transaction(
         self, row: sqlite3.Row, state: str, lease_expires_at: float,
         heartbeat_at: float, reason: str, error: str | None, occurred_at: float,
+        validated_handoff: bool | None = None, handoff_evidence: str | None = None,
     ) -> ExecutionRecord:
+        proof_values = (
+            int(validated_handoff) if state == "completed" and validated_handoff else 0,
+            handoff_evidence if state == "completed" and validated_handoff else None,
+        )
         self.connection.execute(
             """UPDATE todo_execution_lifecycle
-               SET state = ?, lease_expires_at = ?, heartbeat_at = ?, updated_at = ?
+               SET state = ?, lease_expires_at = ?, heartbeat_at = ?,
+                   validated_handoff = ?, handoff_evidence = ?, updated_at = ?
                WHERE todo_id = ? AND claim_id = ?""",
-            (state, lease_expires_at, heartbeat_at, occurred_at, row["todo_id"], row["claim_id"]),
+            (state, lease_expires_at, heartbeat_at, *proof_values, occurred_at,
+             row["todo_id"], row["claim_id"]),
         )
         updated = self._record(self._row(row["todo_id"]))
         self._event(updated, reason, error, occurred_at)
@@ -404,4 +464,6 @@ class ExecutionLifecycle:
             state=row["state"], lease_expires_at=row["lease_expires_at"],
             heartbeat_at=row["heartbeat_at"], attempt=row["attempt"],
             max_retries=row["max_retries"], idempotency_key=row["idempotency_key"],
+            validated_handoff=bool(row["validated_handoff"]),
+            handoff_evidence=row["handoff_evidence"],
         )

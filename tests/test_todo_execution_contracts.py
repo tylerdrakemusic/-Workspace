@@ -47,6 +47,23 @@ def test_execution_states_include_terminal_and_stale_states() -> None:
             ExecutionState.CANCELLED, ExecutionState.STALE} <= set(ExecutionState)
 
 
+def test_executable_todo_defaults_to_queued_and_completed_requires_validated_handoff() -> None:
+    assert TodoContract(todo_id="todo").execution_state is ExecutionState.QUEUED
+
+    with pytest.raises(ContractValidationError, match="validated handoff"):
+        TodoContract(
+            todo_id="todo",
+            execution_state=ExecutionState.COMPLETED,
+        )
+
+    completed = TodoContract(
+        todo_id="todo",
+        execution_state=ExecutionState.COMPLETED,
+        validated_handoff=True,
+    )
+    assert completed.validated_handoff is True
+
+
 def test_registry_rejects_duplicate_ids_invalid_parentage_and_duplicate_edges() -> None:
     contracts = (
         TodoContract(todo_id="parent"),

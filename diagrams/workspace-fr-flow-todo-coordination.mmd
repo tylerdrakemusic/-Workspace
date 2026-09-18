@@ -12,6 +12,25 @@ stateDiagram-v2
     }
     TODO_RUNTIME --> IN_PROGRESS: required children, artifacts, current parent head validated
 
+    %% Orthogonal execution-state contract for each admitted TODO.
+    state "Canonical TODO execution states" as EXECUTION_STATES {
+        [*] --> QUEUED
+        QUEUED --> CLAIMED: valid claim accepted
+        CLAIMED --> RUNNING: heartbeat accepted
+        RUNNING --> COMPLETED: validated handoff only
+        RUNNING --> FAILED: execution failure
+        CLAIMED --> STALE: lease expires
+        RUNNING --> STALE: lease expires
+        CLAIMED --> CANCELLED: valid cancellation
+        RUNNING --> CANCELLED: valid cancellation
+        FAILED --> QUEUED: explicit retry and budget remains
+        STALE --> QUEUED: explicit retry and budget remains
+        FAILED --> [*]: retry budget exhausted
+        STALE --> [*]: retry budget exhausted
+        COMPLETED --> [*]
+        CANCELLED --> [*]
+    }
+
     IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
     state "FR implementation anchor · child TODO coordination" as FR_COORDINATION {
         [*] --> TODO_ADMISSION
@@ -22,13 +41,15 @@ stateDiagram-v2
         SERIALIZED_INTEGRATION --> STALE_REBASE: child is stale
         STALE_REBASE --> SERIALIZED_INTEGRATION: rebase passes
         STALE_REBASE --> CONFLICT_HANDOFF: rebase conflict
-        SERIALIZED_INTEGRATION --> CONFLICT_HANDOFF: integration conflict
-        CONFLICT_HANDOFF --> CHILD_WORK: preserve source + sibling work
+        SERIALIZED_INTEGRATION --> CONFLICT_HANDOFF: integration conflict is coordination event
+        CONFLICT_HANDOFF --> SERIALIZED_INTEGRATION: coordination resolved, execution state unchanged
+        CONFLICT_HANDOFF --> CHILD_WORK: execution invalid, retry or rework required
         SERIALIZED_INTEGRATION --> CHILD_RETURN: integrate into FR feature branch
         CHILD_RETURN --> [*]: return to FR lifecycle; no gate bypass
     }
     FR_COORDINATION --> IN_PROGRESS: child handoff complete
 
+    class QUEUED,CLAIMED,RUNNING,COMPLETED,FAILED,STALE,CANCELLED state
     class TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN state
 
 classDef state   fill:#1a1a1a,stroke:#888,color:#fff

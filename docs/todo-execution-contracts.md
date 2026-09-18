@@ -42,6 +42,14 @@ TODO, validates worker/lease ownership and expiry, records immutable lifecycle
 events, bounds retries, and persists stale-worker recovery records. Callers
 provide the existing database connection; no separate database is created.
 
+API compatibility: callers migrating to `TodoContract` must populate the new
+`execution_state` and `validated_handoff` fields. Callers of
+`ExecutionLifecycle.complete(...)` must pass both `validated_handoff=` and the
+concise, non-secret `handoff_evidence=` keyword explicitly; completion is
+rejected without both. Existing `todo_execution_lifecycle` tables are migrated
+in place with `validated_handoff=0` and nullable `handoff_evidence`, so prior
+non-completed records remain unvalidated after restart.
+
 Pure readiness and capacity projection is documented in
 [`todo-readiness-scheduler.md`](todo-readiness-scheduler.md).
 

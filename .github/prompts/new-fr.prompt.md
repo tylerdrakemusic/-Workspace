@@ -33,6 +33,26 @@ streaming, audio, and cleanup errors are fail-open: continue the text
 workflow, preserve its state, and treat voice results as diagnostic only.
 Ordinary status narration is unauthorized and out of scope.
 
+## TODO Execution State Contract
+
+Every executable parent and child TODO created or adopted by this flow must
+persist and update exactly one canonical execution state:
+`queued`, `claimed`, `running`, `completed`, `failed`, `cancelled`, or `stale`.
+
+Use these rules when coordinating work:
+
+- Persist `queued` before dispatch, then update the durable state for claim,
+   heartbeat, retry, failure, cancellation, stale recovery, and takeover.
+- Set `completed` only after the handoff has been validated and its required
+   evidence is available. A status message or coordination event is not a
+   validated handoff.
+- Keep branch, worktree, and integration conflicts as coordination events. Do
+   not rewrite the execution state unless the execution itself is invalid.
+- Parent aggregation must reuse the existing `parent_join_state` precedence;
+   do not invent a second parent state reducer.
+- Before advancing the FR, verify every executable parent and child has a
+   persisted state and that any `completed` TODO has a validated handoff.
+
 <!-- ⊕workspace-intake instructions:
      1. Read the title (and any notes) above.
      2. Inspect the codebase to infer as many fields as possible: type, affected
