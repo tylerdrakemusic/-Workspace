@@ -388,3 +388,80 @@ def test_api_health_widget_title_is_ai_health() -> None:
 def test_api_health_widget_empty_returns_empty_string() -> None:
     """_render_api_health_widget must return empty string when given no rows (unchanged behaviour)."""
     assert dp._render_api_health_widget([]) == ""
+
+
+def test_api_health_widget_keeps_three_rows_and_renders_elevenlabs_drilldown() -> None:
+    rows = [
+        {
+            "name": "elevenlabs",
+            "label": "ElevenLabs",
+            "status": "up",
+            "latency_ms": 42.0,
+            "checked_at": None,
+            "readiness": {
+                "state": "ready",
+                "latency_ms": 42.0,
+                "quota": {"used": 120, "limit": 1000},
+                "capabilities": ["voice_synthesis", "streaming"],
+                "freshness": "live",
+                "diagnostic_code": None,
+            },
+        },
+        {"name": "huggingface", "label": "HuggingFace", "status": "up", "latency_ms": 20.0, "checked_at": None},
+        {"name": "perplexity", "label": "Perplexity.ai", "status": "down", "latency_ms": 90.0, "checked_at": None},
+    ]
+
+    html = dp._render_api_health_widget(rows)
+
+    assert html.count("api-health-row") == 3
+    assert "api-health-elevenlabs-details" in html
+    assert "State: ready" in html
+    assert "Quota: 120/1000" in html
+    assert "Capabilities: voice_synthesis, streaming" in html
+    assert "Freshness: live" in html
+
+
+def test_api_health_widget_does_not_label_stale_readiness_ready() -> None:
+    rows = [{
+        "name": "elevenlabs",
+        "label": "ElevenLabs",
+        "status": "up",
+        "latency_ms": 42.0,
+        "checked_at": None,
+        "readiness": {
+            "state": "ready",
+            "latency_ms": 42.0,
+            "quota": {"used": 120, "limit": 1000},
+            "capabilities": ["voice_synthesis"],
+            "freshness": "stale",
+            "diagnostic_code": "stale_result",
+        },
+    }]
+
+    html = dp._render_api_health_widget(rows)
+
+    assert "State: stale" in html
+    assert "State: ready" not in html
+
+
+def test_api_health_widget_redacts_unsafe_readiness_reason() -> None:
+    rows = [{
+        "name": "elevenlabs",
+        "label": "ElevenLabs",
+        "status": "down",
+        "latency_ms": 42.0,
+        "checked_at": None,
+        "readiness": {
+            "state": "unavailable",
+            "latency_ms": 42.0,
+            "quota": None,
+            "capabilities": [],
+            "freshness": "live",
+            "diagnostic_code": "token=super-secret-value",
+        },
+    }]
+
+    html = dp._render_api_health_widget(rows)
+
+    assert "super-secret-value" not in html
+    assert "Reason: unavailable" in html

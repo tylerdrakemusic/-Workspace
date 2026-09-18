@@ -56,9 +56,13 @@ except Exception:  # pragma: no cover - keep portal rendering even if import fai
 
 # Import API health monitor for endpoint status widget.
 try:
-    from api_health_monitor import run_pings as _run_api_pings  # type: ignore
+    from api_health_monitor import (  # type: ignore
+        check_elevenlabs_readiness as _check_elevenlabs_readiness,
+        run_pings as _run_api_pings,
+    )
 except Exception:  # pragma: no cover
     _run_api_pings = None
+    _check_elevenlabs_readiness = None
 
 # Import security dashboard for vulnerability count badge (may be monkeypatched in tests)
 try:
@@ -83,6 +87,17 @@ def _fmt_age(secs: float) -> str:
 
 
 _FRESH_YELLOW_SECS = 2 * 60 * 60
+_SAFE_READINESS_CODES = frozenset({
+  "missing_credentials",
+  "authentication_failed",
+  "provider_unavailable",
+  "provider_error",
+  "quota_malformed",
+  "transport_error",
+  "unexpected_error",
+  "stale_result",
+  "unknown",
+})
 
 
 # ── Master supervisor control ──────────────────────────────────────────────
@@ -156,7 +171,16 @@ def _collect_api_health() -> list[dict]:
     try:
         conn = _get_workspace_conn()
         try:
-            return _run_api_pings(conn)
+            rows = _run_api_pings(conn)
+            if _check_elevenlabs_readiness is not None:
+              readiness = _check_elevenlabs_readiness()
+              for row in rows:
+                if row.get("name") == "elevenlabs":
+                  row["readiness"] = readiness
+                  if readiness.get("state") != "ready":
+                    row["status"] = "unknown" if readiness.get("state") == "unknown" else "down"
+                  break
+            return rows
         finally:
             try:
                 conn.close()
@@ -205,6 +229,29 @@ def _render_api_health_widget(rows: list[dict]) -> str:
             f'<span class="api-age">{age_str}</span>'
             f'</div>'
         )
+        readiness = row.get("readiness")
+        if label == "ElevenLabs" and isinstance(readiness, dict):
+            readiness_state = readiness.get("state", "unknown")
+            if readiness.get("freshness") == "stale":
+                readiness_state = "stale"
+            quota = readiness.get("quota")
+            quota_text = "unavailable"
+            if isinstance(quota, dict):
+                quota_text = f'{quota.get("used")}/{quota.get("limit")}'
+            capabilities = readiness.get("capabilities") or []
+            diagnostic_code = readiness.get("diagnostic_code")
+            reason = diagnostic_code if diagnostic_code in _SAFE_READINESS_CODES else "unavailable"
+            lines.append(
+                '<details class="api-health-elevenlabs-details">'
+                '<summary>Readiness details</summary>'
+                f'<div>State: {_esc(readiness_state)}</div>'
+                f'<div>Latency: {_esc(readiness.get("latency_ms", "&mdash;"))}ms</div>'
+                f'<div>Quota: {_esc(quota_text)}</div>'
+                f'<div>Capabilities: {_esc(", ".join(str(item) for item in capabilities))}</div>'
+                f'<div>Freshness: {_esc(readiness.get("freshness", "unknown"))}</div>'
+                f'<div>Reason: {_esc(reason or "none")}</div>'
+                '</details>'
+            )
     lines.append("</div>")
     return "\n".join(lines)
 
