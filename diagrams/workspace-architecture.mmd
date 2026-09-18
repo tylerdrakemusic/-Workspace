@@ -14,6 +14,7 @@ graph TB
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
         BackupContract[Provider-neutral local<br/>database backup contract]
         BoundedLogging[bounded_logging.py<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
+        AIHealth[api_health_monitor.py → ReadinessResult → ⊕ AI Health widget<br/>provider-neutral · non-generative · in-memory<br/>ready · degraded · unavailable · unknown · live freshness<br/>safe diagnostic codes · no runtime import from 👁 AI-Manifest]
     end
     subgraph Life["∞ Life"]
         LifeDB[(Health & Longevity Tracking<br/>encrypted SQLCipher data)]

@@ -79,6 +79,47 @@ def test_ping_returns_down_on_4xx():
     assert "401" in result["error_msg"]
 
 
+def test_check_elevenlabs_readiness_returns_provider_neutral_live_result(monkeypatch):
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {
+        "character_count": 120,
+        "character_limit": 1000,
+    }
+
+    with patch.object(ahm.httpx, "get", return_value=response) as mock_get:
+        result = ahm.check_elevenlabs_readiness()
+
+    assert result["state"] == "ready"
+    assert result["provider"] == "elevenlabs"
+    assert result["quota"] == {"used": 120, "limit": 1000}
+    assert result["freshness"] == "live"
+    assert mock_get.call_count == 1
+
+
+def test_check_elevenlabs_readiness_handles_missing_credentials(monkeypatch):
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+
+    with patch.object(ahm.httpx, "get") as mock_get:
+        result = ahm.check_elevenlabs_readiness()
+
+    assert result["state"] == "unavailable"
+    assert result["diagnostic_code"] == "missing_credentials"
+    mock_get.assert_not_called()
+
+
+def test_check_elevenlabs_readiness_handles_malformed_quota(monkeypatch):
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {"character_count": "120", "character_limit": 1000}
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_elevenlabs_readiness()
+
+    assert result["state"] == "degraded"
+    assert result["diagnostic_code"] == "quota_malformed"
+
+
 # ── AC4: Failed pings write status=down + error_msg; never raise ─────────────
 
 def test_ping_never_raises_on_exception():

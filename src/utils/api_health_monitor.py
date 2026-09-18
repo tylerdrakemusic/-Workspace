@@ -56,6 +56,8 @@ _ENDPOINTS: list[dict[str, Any]] = [
 
 _RETAIN_ROWS = 30  # max rows per endpoint
 
+_ELEVENLABS_CAPABILITIES = ["voice_synthesis", "voice_listing", "streaming"]
+
 
 # ---------------------------------------------------------------------------
 # DB helpers
@@ -127,6 +129,63 @@ def _ping(ep: dict[str, Any]) -> dict[str, Any]:
             "latency_ms": round(latency_ms, 1),
             "error_msg": str(exc)[:200],
         }
+
+
+def check_elevenlabs_readiness() -> dict[str, Any]:
+    """Run a bounded, non-generative ElevenLabs readiness check in memory."""
+    api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    base = {
+        "provider": "elevenlabs",
+        "capabilities": list(_ELEVENLABS_CAPABILITIES),
+        "freshness": "live",
+        "quota": None,
+        "latency_ms": None,
+        "diagnostic_code": None,
+    }
+    if not api_key:
+        return {**base, "state": "unavailable", "diagnostic_code": "missing_credentials"}
+
+    started = time.monotonic()
+    headers = {"xi-api-key": api_key, "Content-Type": "application/json"}
+    for attempt in range(2):
+        try:
+            response = httpx.get(
+                "https://api.elevenlabs.io/v1/user",
+                headers=headers,
+                timeout=8.0,
+            )
+            latency_ms = round((time.monotonic() - started) * 1000, 1)
+            if response.status_code in {429, 500, 502, 503, 504} and attempt == 0:
+                continue
+            if response.status_code in {401, 403}:
+                return {**base, "state": "unavailable", "latency_ms": latency_ms,
+                        "diagnostic_code": "authentication_failed"}
+            if response.status_code in {429, 500, 502, 503, 504}:
+                return {**base, "state": "degraded", "latency_ms": latency_ms,
+                        "diagnostic_code": "provider_unavailable"}
+            if response.status_code >= 400:
+                return {**base, "state": "degraded", "latency_ms": latency_ms,
+                        "diagnostic_code": "provider_error"}
+            payload = response.json()
+            subscription = payload.get("subscription", payload)
+            used = subscription.get("character_count")
+            limit = subscription.get("character_limit")
+            if not isinstance(used, int) or not isinstance(limit, int) or used < 0 or limit < 0:
+                return {**base, "state": "degraded", "latency_ms": latency_ms,
+                        "diagnostic_code": "quota_malformed"}
+            return {**base, "state": "ready", "latency_ms": latency_ms,
+                    "quota": {"used": used, "limit": limit}}
+        except (httpx.TransportError, ValueError, TypeError):
+            if attempt == 0:
+                continue
+            return {**base, "state": "unknown",
+                    "latency_ms": round((time.monotonic() - started) * 1000, 1),
+                    "diagnostic_code": "transport_error"}
+        except Exception:
+            return {**base, "state": "unknown",
+                    "latency_ms": round((time.monotonic() - started) * 1000, 1),
+                    "diagnostic_code": "unexpected_error"}
+    return {**base, "state": "unknown", "diagnostic_code": "unknown"}
 
 
 # ---------------------------------------------------------------------------
