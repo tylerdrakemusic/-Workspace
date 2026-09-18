@@ -421,6 +421,29 @@ def test_api_health_widget_keeps_three_rows_and_renders_elevenlabs_drilldown() -
     assert "Freshness: live" in html
 
 
+def test_api_health_widget_uses_placeholder_for_unavailable_readiness_latency() -> None:
+    rows = [{
+        "name": "elevenlabs",
+        "label": "ElevenLabs",
+        "status": "down",
+        "latency_ms": None,
+        "checked_at": None,
+        "readiness": {
+            "state": "unavailable",
+            "latency_ms": None,
+            "quota": None,
+            "capabilities": [],
+            "freshness": "live",
+            "diagnostic_code": "missing_credentials",
+        },
+    }]
+
+    html = dp._render_api_health_widget(rows)
+
+    assert "Latency: &amp;mdash;" in html
+    assert "Latency: ms" not in html
+
+
 def test_api_health_widget_does_not_label_stale_readiness_ready() -> None:
     rows = [{
         "name": "elevenlabs",

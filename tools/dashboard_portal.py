@@ -241,11 +241,17 @@ def _render_api_health_widget(rows: list[dict]) -> str:
             capabilities = readiness.get("capabilities") or []
             diagnostic_code = readiness.get("diagnostic_code")
             reason = diagnostic_code if diagnostic_code in _SAFE_READINESS_CODES else "unavailable"
+            readiness_latency = readiness.get("latency_ms")
+            latency_text = (
+                f"{readiness_latency:.0f}ms"
+                if readiness_latency is not None
+                else "&mdash;"
+            )
             lines.append(
                 '<details class="api-health-elevenlabs-details">'
                 '<summary>Readiness details</summary>'
                 f'<div>State: {_esc(readiness_state)}</div>'
-                f'<div>Latency: {_esc(readiness.get("latency_ms", "&mdash;"))}ms</div>'
+                f'<div>Latency: {_esc(latency_text)}</div>'
                 f'<div>Quota: {_esc(quota_text)}</div>'
                 f'<div>Capabilities: {_esc(", ".join(str(item) for item in capabilities))}</div>'
                 f'<div>Freshness: {_esc(readiness.get("freshness", "unknown"))}</div>'
