@@ -84,6 +84,8 @@ class TodoContract:
     """Normalized identity and dependency declarations for one TODO."""
 
     todo_id: str
+    execution_state: ExecutionState = ExecutionState.QUEUED
+    validated_handoff: bool = False
     parent_id: str | None = None
     fr_id: str | None = None
     inherited_fr_id: str | None = None
@@ -94,6 +96,9 @@ class TodoContract:
 
     def __post_init__(self) -> None:
         todo_id = _identity(self.todo_id, "todo")
+        execution_state = ExecutionState(self.execution_state)
+        if execution_state is ExecutionState.COMPLETED and not self.validated_handoff:
+            raise ContractValidationError("completed TODO requires a validated handoff")
         parent_id = _identity(self.parent_id, "parent") if self.parent_id is not None else None
         fr_id = _identity(self.fr_id, "FR") if self.fr_id is not None else None
         inherited = (
@@ -113,6 +118,8 @@ class TodoContract:
         if len(set(resources)) != len(resources):
             raise ContractValidationError("duplicate resource declaration")
         object.__setattr__(self, "todo_id", todo_id)
+        object.__setattr__(self, "execution_state", execution_state)
+        object.__setattr__(self, "validated_handoff", bool(self.validated_handoff))
         object.__setattr__(self, "parent_id", parent_id)
         object.__setattr__(self, "fr_id", fr_id)
         object.__setattr__(self, "inherited_fr_id", inherited)

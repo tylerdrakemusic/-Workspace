@@ -26,6 +26,15 @@ class ChildWorktree:
     source_base: str
 
 
+@dataclass(frozen=True)
+class CoordinationEvent:
+    """Non-execution event emitted while coordinating child work."""
+
+    kind: str
+    todo_id: str
+    details: str
+
+
 class IntegrationConflict(CoordinationError):
     """Raised when a child cannot be rebased onto the current FR branch."""
 
@@ -60,6 +69,7 @@ class ChildWorktreeCoordinator:
         self._rebase = rebase or (lambda child, target_head: True)
         self._integrate = integrate or (lambda child: None)
         self._children: dict[str, ChildWorktree] = {}
+        self._events: list[CoordinationEvent] = []
         self._lock = Lock()
 
     def admit(self, child: ChildWorktree) -> None:
@@ -92,9 +102,18 @@ class ChildWorktreeCoordinator:
             if child.state != "completed" or not child.validated:
                 raise CoordinationError("only validated completed child work may integrate")
             if child.source_base != target_head and not self._rebase(child, target_head):
+                self._events.append(CoordinationEvent(
+                    kind="integration_conflict",
+                    todo_id=child.todo_id,
+                    details=f"target_head={target_head}",
+                ))
                 raise IntegrationConflict(child, self.target_branch, target_head)
             self._integrate(child)
             del self._children[todo_id]
+
+    def events(self, todo_id: str) -> tuple[CoordinationEvent, ...]:
+        """Return coordination events for one child without changing execution state."""
+        return tuple(event for event in self._events if event.todo_id == todo_id)
 
     def source(self, todo_id: str) -> ChildWorktree:
         """Return the preserved source assignment for a pending child."""

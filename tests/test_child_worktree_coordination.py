@@ -80,6 +80,7 @@ def test_integration_rebases_stale_child_and_preserves_sources_on_conflict() -> 
         "new-head",
     )
     assert conflicted.source(child.todo_id) == child
+    assert conflicted.events(child.todo_id)[0].kind == "integration_conflict"
 
 
 def test_admission_requires_lifecycle_owner_and_unique_isolated_worktree() -> None:

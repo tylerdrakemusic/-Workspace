@@ -66,6 +66,38 @@ def test_normal_construction_still_creates_schema_and_mutates() -> None:
     assert claim(lifecycle).state == "claimed"
 
 
+def test_existing_lifecycle_schema_is_migrated_without_validating_old_rows() -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(
+        """
+        CREATE TABLE todo_execution_lifecycle (
+            todo_id TEXT PRIMARY KEY,
+            fr_id TEXT,
+            worker_id TEXT NOT NULL,
+            claim_id TEXT NOT NULL UNIQUE,
+            lease_token TEXT NOT NULL UNIQUE,
+            state TEXT NOT NULL,
+            lease_expires_at REAL NOT NULL,
+            heartbeat_at REAL NOT NULL,
+            attempt INTEGER NOT NULL,
+            max_retries INTEGER NOT NULL,
+            idempotency_key TEXT UNIQUE,
+            updated_at REAL NOT NULL
+        );
+        INSERT INTO todo_execution_lifecycle VALUES
+            ('todo-legacy', 'FR-legacy', 'worker-a', 'claim-legacy',
+             'fixture-lease-legacy', 'running', 130.0, 105.0, 1, 0,
+             'delivery-legacy', 105.0);
+        """
+    )
+
+    lifecycle = ExecutionLifecycle(connection)
+    record = lifecycle.get("todo-legacy")
+
+    assert record.validated_handoff is False
+    assert record.handoff_evidence is None
+
+
 def test_active_claim_is_unique_but_repeated_delivery_is_idempotent() -> None:
     lifecycle = make_lifecycle()
 
@@ -132,10 +164,79 @@ def test_completion_and_failure_are_single_winner_terminal_races() -> None:
     claim(lifecycle)
     lifecycle.heartbeat("todo-1", "worker-a", "fixture-lease-100.0", 105.0, 30)
 
-    lifecycle.complete("todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done")
+    lifecycle.complete(
+        "todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done",
+        validated_handoff=True, handoff_evidence="child branch and worktree verified",
+    )
     with pytest.raises(InvalidTransitionError):
         lifecycle.fail("todo-1", "worker-a", "fixture-lease-100.0", 111.0, "late failure")
     assert lifecycle.get("todo-1").state == "completed"
+
+
+def test_completion_requires_validated_handoff() -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle)
+    lifecycle.heartbeat("todo-1", "worker-a", "fixture-lease-100.0", 105.0, 30)
+
+    with pytest.raises(InvalidTransitionError, match="validated handoff"):
+        lifecycle.complete(
+            "todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done",
+            validated_handoff=False, handoff_evidence="",
+        )
+
+    completed = lifecycle.complete(
+        "todo-1", "worker-a", "fixture-lease-100.0", 111.0, "done",
+        validated_handoff=True, handoff_evidence="child branch and worktree verified",
+    )
+    assert completed.state == "completed"
+    assert completed.validated_handoff is True
+    assert completed.handoff_evidence == "child branch and worktree verified"
+
+
+def test_completion_requires_concise_handoff_evidence() -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle)
+    lifecycle.heartbeat("todo-1", "worker-a", "fixture-lease-100.0", 105.0, 30)
+
+    with pytest.raises(InvalidTransitionError, match="handoff evidence"):
+        lifecycle.complete(
+            "todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done",
+            validated_handoff=True, handoff_evidence="   ",
+        )
+
+
+def test_validated_handoff_and_evidence_survive_connection_restart(tmp_path: Path) -> None:
+    database = tmp_path / "lifecycle.sqlite3"
+    connection = sqlite3.connect(database)
+    lifecycle = ExecutionLifecycle(connection)
+    claim(lifecycle)
+    lifecycle.heartbeat("todo-1", "worker-a", "fixture-lease-100.0", 105.0, 30)
+    lifecycle.complete(
+        "todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done",
+        validated_handoff=True, handoff_evidence="child branch and worktree verified",
+    )
+    connection.close()
+
+    restarted = ExecutionLifecycle(sqlite3.connect(database))
+    record = restarted.get("todo-1")
+    assert record.state == "completed"
+    assert record.validated_handoff is True
+    assert record.handoff_evidence == "child branch and worktree verified"
+
+
+@pytest.mark.parametrize("state", ["claimed", "running", "cancelled"])
+def test_noncompleted_states_have_no_validated_handoff_proof(state: str) -> None:
+    lifecycle = make_lifecycle()
+    claim(lifecycle)
+    if state == "running":
+        lifecycle.heartbeat("todo-1", "worker-a", "fixture-lease-100.0", 105.0, 30)
+    elif state == "cancelled":
+        lifecycle.cancel("todo-1", "worker-a", "fixture-lease-100.0", 105.0, "operator request")
+
+    record = lifecycle.get("todo-1")
+    assert record.state == state
+    assert record.validated_handoff is False
+    assert record.handoff_evidence is None
 
 
 def test_failure_retry_and_exhaustion_preserve_terminal_failure() -> None:
@@ -233,7 +334,10 @@ def test_terminal_execution_cannot_be_claimed_again(terminal_state: str) -> None
     claim(lifecycle)
     if terminal_state == "completed":
         lifecycle.heartbeat("todo-1", "worker-a", "fixture-lease-100.0", 105.0, 30)
-        lifecycle.complete("todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done")
+        lifecycle.complete(
+            "todo-1", "worker-a", "fixture-lease-100.0", 110.0, "done",
+            validated_handoff=True, handoff_evidence="child branch and worktree verified",
+        )
     else:
         lifecycle.cancel("todo-1", "worker-a", "fixture-lease-100.0", 105.0, "operator request")
 
@@ -287,7 +391,10 @@ def test_invalid_transition_has_structured_reason_and_error() -> None:
     lifecycle = make_lifecycle()
     claim(lifecycle)
     with pytest.raises(InvalidTransitionError):
-        lifecycle.complete("todo-1", "worker-a", "fixture-lease-100.0", 105.0, "not running")
+        lifecycle.complete(
+            "todo-1", "worker-a", "fixture-lease-100.0", 105.0, "not running",
+            validated_handoff=True, handoff_evidence="child branch and worktree verified",
+        )
     event = lifecycle.events("todo-1")[-1]
     assert event["reason"] == "invalid transition"
     assert event["error"]
