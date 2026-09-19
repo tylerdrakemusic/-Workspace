@@ -17,7 +17,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Mapping
 
 import httpx
 
@@ -186,6 +186,61 @@ def check_elevenlabs_readiness() -> dict[str, Any]:
                     "latency_ms": round((time.monotonic() - started) * 1000, 1),
                     "diagnostic_code": "unexpected_error"}
     return {**base, "state": "unknown", "diagnostic_code": "unknown"}
+
+def check_serpapi_readiness(*, smoke: bool = False) -> dict[str, Any]:
+    """Return SerpApi readiness without probing unless smoke is explicitly enabled."""
+    api_key = os.environ.get("SERPAPI_KEY", "").strip()
+    base = {
+        "provider": "serpapi",
+        "capabilities": ["google_finance_search"],
+        "freshness": "configuration",
+        "quota": None,
+        "latency_ms": None,
+        "diagnostic_code": None,
+    }
+    if not api_key:
+        return {**base, "state": "unavailable", "diagnostic_code": "missing_credentials"}
+    if not smoke:
+        return {**base, "state": "unknown", "diagnostic_code": "opt_in_required"}
+
+    started = time.monotonic()
+    try:
+        response = httpx.get(
+            "https://serpapi.com/search.json",
+            params={
+                "engine": "google_finance",
+                "q": "NASDAQ:GOOGL",
+                "api_key": api_key,
+            },
+            timeout=8.0,
+        )
+        latency_ms = round((time.monotonic() - started) * 1000, 1)
+        base = {**base, "freshness": "live"}
+        if response.status_code in {401, 403}:
+            return {**base, "state": "unavailable", "latency_ms": latency_ms,
+                    "diagnostic_code": "authentication_failed"}
+        if response.status_code == 429:
+            return {**base, "state": "degraded", "latency_ms": latency_ms,
+                    "diagnostic_code": "provider_unavailable"}
+        if response.status_code >= 400:
+            return {**base, "state": "degraded", "latency_ms": latency_ms,
+                    "diagnostic_code": "provider_error"}
+        payload = response.json()
+        if not isinstance(payload, Mapping):
+            return {**base, "state": "degraded", "latency_ms": latency_ms,
+                "diagnostic_code": "provider_error"}
+        if payload.get("error"):
+            return {**base, "state": "degraded", "latency_ms": latency_ms,
+                "diagnostic_code": "provider_error"}
+        return {**base, "state": "ready", "latency_ms": latency_ms}
+    except (httpx.TransportError, ValueError, TypeError):
+        return {**base, "state": "unknown",
+                "latency_ms": round((time.monotonic() - started) * 1000, 1),
+                "diagnostic_code": "transport_error"}
+    except Exception:
+        return {**base, "state": "unknown",
+                "latency_ms": round((time.monotonic() - started) * 1000, 1),
+                "diagnostic_code": "unexpected_error"}
 
 
 # ---------------------------------------------------------------------------

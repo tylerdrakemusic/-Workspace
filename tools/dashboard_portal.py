@@ -58,11 +58,13 @@ except Exception:  # pragma: no cover - keep portal rendering even if import fai
 try:
     from api_health_monitor import (  # type: ignore
         check_elevenlabs_readiness as _check_elevenlabs_readiness,
+        check_serpapi_readiness as _check_serpapi_readiness,
         run_pings as _run_api_pings,
     )
 except Exception:  # pragma: no cover
     _run_api_pings = None
     _check_elevenlabs_readiness = None
+    _check_serpapi_readiness = None
 
 # Import security dashboard for vulnerability count badge (may be monkeypatched in tests)
 try:
@@ -92,6 +94,7 @@ _SAFE_READINESS_CODES = frozenset({
   "authentication_failed",
   "provider_unavailable",
   "provider_error",
+  "opt_in_required",
   "quota_malformed",
   "transport_error",
   "unexpected_error",
@@ -181,6 +184,23 @@ def _collect_api_health() -> list[dict]:
                   if readiness.get("state") != "ready":
                     row["status"] = "unknown" if readiness.get("state") == "unknown" else "down"
                   break
+            if _check_serpapi_readiness is not None:
+              smoke = os.environ.get("SERPAPI_HEALTH_SMOKE", "").strip().lower() in {
+                "1", "true", "yes"
+              }
+              serpapi_readiness = _check_serpapi_readiness(smoke=smoke)
+              rows.append({
+                "name": "serpapi",
+                "label": "SerpApi",
+                "status": (
+                  "up" if serpapi_readiness.get("state") == "ready"
+                  else "down" if serpapi_readiness.get("state") == "unavailable"
+                  else "unknown"
+                ),
+                "latency_ms": serpapi_readiness.get("latency_ms"),
+                "checked_at": None,
+                "readiness": serpapi_readiness,
+              })
             return rows
         finally:
             try:
@@ -231,7 +251,7 @@ def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool =
             f'</div>'
         )
         readiness = row.get("readiness")
-        if label == "ElevenLabs" and isinstance(readiness, dict):
+        if isinstance(readiness, dict):
             readiness_state = readiness.get("state", "unknown")
             if readiness.get("freshness") == "stale":
                 readiness_state = "stale"
@@ -249,7 +269,7 @@ def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool =
                 else "&mdash;"
             )
             lines.append(
-                '<details class="api-health-elevenlabs-details">'
+                f'<details class="api-health-{_esc(row.get("name") or "provider")}-details">'
                 '<summary>Readiness details</summary>'
                 f'<div>State: {_esc(readiness_state)}</div>'
                 f'<div>Latency: {_esc(latency_text)}</div>'

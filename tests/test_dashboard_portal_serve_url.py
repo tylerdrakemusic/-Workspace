@@ -488,3 +488,55 @@ def test_api_health_widget_redacts_unsafe_readiness_reason() -> None:
 
     assert "super-secret-value" not in html
     assert "Reason: unavailable" in html
+
+
+def test_api_health_widget_renders_serpapi_provider_neutral_readiness() -> None:
+    rows = [{
+        "name": "serpapi",
+        "label": "SerpApi",
+        "status": "unknown",
+        "latency_ms": None,
+        "checked_at": None,
+        "readiness": {
+            "provider": "serpapi",
+            "state": "unknown",
+            "latency_ms": None,
+            "quota": None,
+            "capabilities": ["google_finance_search"],
+            "freshness": "configuration",
+            "diagnostic_code": "opt_in_required",
+        },
+    }]
+
+    html = dp._render_api_health_widget(rows)
+
+    assert "SerpApi" in html
+    assert "api-health-serpapi-details" in html
+    assert "State: unknown" in html
+    assert "Capabilities: google_finance_search" in html
+    assert "Reason: opt_in_required" in html
+
+
+def test_collect_api_health_passes_explicit_serpapi_smoke_flag(monkeypatch) -> None:
+    connection = MagicMock()
+    readiness = {
+        "provider": "serpapi",
+        "state": "unknown",
+        "latency_ms": None,
+        "quota": None,
+        "capabilities": ["google_finance_search"],
+        "freshness": "configuration",
+        "diagnostic_code": "opt_in_required",
+    }
+    serpapi_check = MagicMock(return_value=readiness)
+    monkeypatch.setenv("SERPAPI_HEALTH_SMOKE", "true")
+    monkeypatch.setattr(dp, "_get_workspace_conn", lambda: connection)
+    monkeypatch.setattr(dp, "_run_api_pings", lambda conn: [])
+    monkeypatch.setattr(dp, "_check_elevenlabs_readiness", None)
+    monkeypatch.setattr(dp, "_check_serpapi_readiness", serpapi_check)
+
+    rows = dp._collect_api_health()
+
+    serpapi_check.assert_called_once_with(smoke=True)
+    assert rows[-1]["name"] == "serpapi"
+    connection.close.assert_called_once_with()

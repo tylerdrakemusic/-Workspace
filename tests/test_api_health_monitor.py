@@ -120,6 +120,80 @@ def test_check_elevenlabs_readiness_handles_malformed_quota(monkeypatch):
     assert result["diagnostic_code"] == "quota_malformed"
 
 
+def test_check_serpapi_readiness_is_network_free_without_explicit_smoke(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+
+    with patch.object(ahm.httpx, "get") as mock_get:
+        result = ahm.check_serpapi_readiness()
+
+    assert result["provider"] == "serpapi"
+    assert result["state"] == "unknown"
+    assert result["freshness"] == "configuration"
+    assert result["diagnostic_code"] == "opt_in_required"
+    assert result["quota"] is None
+    mock_get.assert_not_called()
+
+
+def test_check_serpapi_readiness_smoke_returns_safe_live_result(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {"search_metadata": {"id": "smoke-123"}}
+
+    with patch.object(ahm.httpx, "get", return_value=response) as mock_get:
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == "ready"
+    assert result["freshness"] == "live"
+    assert result["diagnostic_code"] is None
+    assert "test-key-not-real" not in str(result)
+    mock_get.assert_called_once()
+
+
+def test_check_serpapi_readiness_smoke_parses_http_200_provider_error(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {"error": "Monthly quota limit reached"}
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == "degraded"
+    assert result["diagnostic_code"] == "provider_error"
+    assert "Monthly quota limit reached" not in str(result)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_state", "expected_code"),
+    [
+        (401, "unavailable", "authentication_failed"),
+        (429, "degraded", "provider_unavailable"),
+    ],
+)
+def test_check_serpapi_readiness_smoke_maps_provider_health_states(
+    monkeypatch, status_code, expected_state, expected_code
+):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(status_code)
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == expected_state
+    assert result["diagnostic_code"] == expected_code
+    assert "test-key-not-real" not in str(result)
+
+
+def test_check_serpapi_readiness_smoke_transport_failure_is_unknown(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+
+    with patch.object(ahm.httpx, "get", side_effect=ahm.httpx.ConnectError("key=test-key-not-real")):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == "unknown"
+    assert result["diagnostic_code"] == "transport_error"
+    assert "test-key-not-real" not in str(result)
+
+
 # ── AC4: Failed pings write status=down + error_msg; never raise ─────────────
 
 def test_ping_never_raises_on_exception():
