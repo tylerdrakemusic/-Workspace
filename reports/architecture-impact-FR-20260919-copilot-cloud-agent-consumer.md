@@ -1,7 +1,7 @@
 # ⊕ Architecture Impact Report - FR-20260919-copilot-cloud-agent-consumer
 
-**Commit reviewed:** `cdbd235cad32b927ae53e9b3d0638e3db8eee239`
-**Decision:** STALE
+**Commit reviewed:** `42a4e6e5ebf9b25d3c2f91ad57e2562a8a06a293`
+**Decision:** PASS
 
 ## Diff Review
 
@@ -28,30 +28,9 @@
 
 ## Diagram Review
 
-`diagrams/workspace-architecture-detail.mmd` does not contain the new
-`copilot_model_selection.py`, `consume_cloud_agent`, `CloudAgentConsumer`, or
-`persist_consumer_result` surface. The commit contains no Mermaid update, so
-the new controlling module is not represented in the architecture view.
-
-No update is required for `workspace-agent-topology.mmd`,
-`workspace-db-schema.mmd`, `workspace-tech-stack.mmd`,
-`workspace-integrations.mmd`, or the scheduler views: the commit adds no
-agent, dependency, schema, external integration, or scheduler.
-
-Required remediation: add a bounded Workspace consumer subgraph to
-`diagrams/workspace-architecture-detail.mmd` showing the metadata-only
-selection/inventory inputs, advisory or shadow selection, live preflight gate,
-official/extension-owned consumer boundary, opaque outcome recording, observed
-cost then published-pricing fallback, and fail-closed path. Preserve the
-existing diagram budgets, style, lineage, and all current relationships.
-
-Delegate to `⊕workspace-architecture-beautifier`.
-
-## Remediation Applied
-
-Updated `diagrams/workspace-architecture-detail.mmd` with a compact
+`diagrams/workspace-architecture-detail.mmd` represents the new bounded
 `⊕ Supported Copilot cloud-agent consumer surface` inside the existing
-Workspace boundary. The subgraph shows metadata-only route inputs through
+Workspace boundary. It shows metadata-only route inputs through
 `CachedInventory`, `select_model`, and `shadow_replay`, live capability
 preflight, the official or extension-owned `CloudAgentConsumer` boundary,
 `consume_cloud_agent`, opaque `ConsumerResult` and `TelemetryRecord` output,
@@ -60,29 +39,33 @@ fallback, `persist_consumer_result`, and the bounded FR artifact boundary.
 Unavailable preflight and bounded delegation failure are labeled as
 `not-activated` or `unavailable`, fail closed.
 
+No update is required for `workspace-agent-topology.mmd`,
+`workspace-db-schema.mmd`, `workspace-tech-stack.mmd`,
+`workspace-integrations.mmd`, or the scheduler views: the branch adds no
+agent, dependency, database schema, cross-project integration, or scheduler.
+
 No host-level delegation, undocumented endpoint, VS Code command, prompt,
 task payload, source code, output, or provider implementation is represented.
 
-## Remediation Validation
+## Validation
 
-- Corrected worktree diagram rendered through `mermaid.ink HTTP`: `200`, valid
-  SVG, `74,255` bytes.
-- Architecture-detail budget and lineage validation: compliant; `4,233`
-  UTF-8 characters, `41` nodes, `24` edges, no findings.
+- Current branch diagram set rendered through `mermaid.ink HTTP`: `47/47`,
+  valid SVG output.
+- Focused deterministic architecture and scheduler suite: `38 passed`.
+- Architecture-detail budget and lineage validation: compliant; the target
+  remains within the detail budget and preserves its parent/derived-view
+  contract.
+- Complete-agent-topology check: `23/23` agent files represented.
 - `git diff --check`: passed.
 
-## Validation Evidence
+## Boundary Validation
 
-- Focused consumer, diagram-inventory, and scheduler suite: `34 passed`.
-- Deterministic scheduler validator: no findings; all six canonical projects and
-  audited job records are covered.
-- Mermaid renderer: `mermaid.ink HTTP`; `47/47` diagrams rendered.
-- `git diff --check`: passed.
-- Documentation references `proof/copilot-consumer-demonstration.json`, but that
-  file is absent at the reviewed commit. This is recorded as a documentation
-  consistency gap, separate from the diagram staleness decision.
-
-## Required Handoff
-
-The hard-blocking `STALE` result requires the beautifier update above, followed
-by a re-run of this architecture review before the FR can advance.
+- No new dependency, database schema, cross-project integration, security, or
+  repository-visibility issue was found. The public Workspace surface remains
+  metadata-only and excludes credentials, prompts, task payloads, source code,
+  outputs, and sensitive domain data.
+- The implementation documentation's
+  `proof/copilot-consumer-demonstration.json` is present as a committed,
+  metadata-only demonstration of the supported consumer boundary. It records
+  the explicit `live_available: false` fail-closed result and contains no
+  prompts, task payloads, source code, outputs, or sensitive domain data.
