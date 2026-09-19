@@ -29,6 +29,11 @@ def redact_failure(error: BaseException) -> dict[str, str]:
         PermissionError: "backup operation was denied",
         ValueError: "backup policy is invalid",
     }
+    if type(error).__name__ == "BackupError" and "source changed during backup" in str(error):
+        return {
+            "error_type": type(error).__name__,
+            "message": "source changed during backup; retry when database writes are idle",
+        }
     message = next(
         (text for error_type, text in messages.items() if isinstance(error, error_type)),
         "backup operation failed",

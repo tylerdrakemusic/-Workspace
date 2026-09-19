@@ -4,12 +4,18 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 import tools.run_database_backup as runner
 from src.utils.database_backup import DestinationIdentityError
+
+
+APPROVED_VOLUME_ID = (
+    "volume-guid={433dc510-613d-11f1-b66e-9cb6d0f5b996};volume-serial=0x76e8cacf"
+)
 
 
 def _manifest(*paths: str) -> dict[str, object]:
@@ -72,6 +78,66 @@ def test_runner_fails_closed_when_destination_marker_mismatches(tmp_path: Path) 
 
     with pytest.raises(DestinationIdentityError, match="identity"):
         runner.run_backup(manifest_path, tmp_path, volume, "approved-volume")
+
+
+def test_destination_requires_marker_and_physical_volume_identity(tmp_path: Path) -> None:
+    from src.utils.database_backup import LocalVolumeDestination
+
+    volume = tmp_path / "volume"
+    destination = LocalVolumeDestination(
+        volume,
+        APPROVED_VOLUME_ID,
+        provision=True,
+        volume_identity_reader=lambda _: APPROVED_VOLUME_ID,
+    )
+
+    assert destination.is_verified(APPROVED_VOLUME_ID) is True
+
+    physical_mismatch = LocalVolumeDestination(
+        volume,
+        APPROVED_VOLUME_ID,
+        volume_identity_reader=lambda _: "volume-guid={different};volume-serial=0x1",
+    )
+    assert physical_mismatch.is_verified(APPROVED_VOLUME_ID) is False
+
+
+@pytest.mark.parametrize("marker", [b"\x00" * len(APPROVED_VOLUME_ID), b"not-a-volume-id\x00"])
+def test_destination_rejects_malformed_or_zero_filled_marker(
+    tmp_path: Path, marker: bytes
+) -> None:
+    from src.utils.database_backup import LocalVolumeDestination
+
+    volume = tmp_path / "volume"
+    volume.mkdir()
+    (volume / ".backup-volume-identity").write_bytes(marker)
+    destination = LocalVolumeDestination(
+        volume,
+        APPROVED_VOLUME_ID,
+        volume_identity_reader=lambda _: APPROVED_VOLUME_ID,
+    )
+
+    assert destination.resolve_identity() == ""
+    assert destination.is_verified(APPROVED_VOLUME_ID) is False
+
+
+def test_volume_guid_normalization_uses_canonical_guid_form() -> None:
+    from src.utils.database_backup import _normalize_volume_guid
+
+    assert _normalize_volume_guid(
+        "\\\\?\\Volume{433dc510-613d-11f1-b66e-9cb6d0f5b996}\\"
+    ) == (
+        "{433dc510-613d-11f1-b66e-9cb6d0f5b996}"
+    )
+
+
+def test_powershell_launcher_forwards_verified_volume_identity_to_python() -> None:
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "tools"
+        / "run_database_backup.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "'--volume-identity', $env:WORKSPACE_BACKUP_VOLUME_ID" in script
 
 
 def test_runner_copies_every_backup_allowed_manifest_entry_byte_for_byte(
@@ -170,6 +236,45 @@ def test_provisioning_refuses_to_overwrite_mismatched_marker(tmp_path: Path) -> 
         provision_volume(volume, "replacement-volume")
 
     assert marker.read_text(encoding="utf-8") == "original-volume\n"
+
+
+def test_provisioning_replaces_marker_only_with_explicit_authorization(
+    tmp_path: Path,
+) -> None:
+    from tools.provision_backup_volume import provision_volume
+
+    volume = tmp_path / "volume"
+    volume.mkdir()
+    marker = volume / ".backup-volume-identity"
+    marker.write_text("original-volume\n", encoding="utf-8")
+
+    provision_volume(volume, "replacement-volume", replace_existing=True)
+
+    assert marker.read_text(encoding="utf-8") == "replacement-volume\n"
+
+
+def test_provisioning_cli_runs_from_repository_root(tmp_path: Path) -> None:
+    script = Path(__file__).resolve().parents[1] / "tools" / "provision_backup_volume.py"
+    volume = tmp_path / "volume"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--volume-root",
+            str(volume),
+            "--volume-identity",
+            "approved-volume",
+        ],
+        cwd=script.parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert (volume / ".backup-volume-identity").read_text(encoding="utf-8") == (
+        "approved-volume\n"
+    )
 
 
 def test_scheduler_spec_is_daily_at_two_without_secret_arguments() -> None:
