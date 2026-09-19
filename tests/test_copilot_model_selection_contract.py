@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
 import pytest
 
@@ -8,6 +9,7 @@ from src.utils.copilot_model_selection import (
     AvailabilityFreshness,
     BenchmarkEvidence,
     CachedInventory,
+    ConsumerResult,
     ContractValidationError,
     DelegationManifest,
     InventorySnapshot,
@@ -17,10 +19,12 @@ from src.utils.copilot_model_selection import (
     SelectionCandidate,
     SupportedConsumerAdapter,
     dispatch,
+    consume_cloud_agent,
     ingest_benchmark,
     manifest_fingerprint,
     observed_cost_per_accepted,
     persist_telemetry,
+    persist_consumer_result,
     select_model,
     supported_consumer_demonstration,
     TelemetryRecord,
@@ -97,6 +101,88 @@ def test_supported_consumer_demonstration_records_absent_live_boundary() -> None
     assert proof["manifest_fingerprint"] == manifest_fingerprint(manifest)
     assert "prompt" not in str(proof).lower()
     assert "task_payload" not in str(proof).lower()
+
+
+def test_cloud_agent_consumer_preserves_advisory_intent_opaque_outcome_and_observed_cost() -> None:
+    class OpaqueConsumer:
+        def preflight(self, manifest):
+            return manifest.role == "qa" and manifest.tier == "standard"
+
+        def delegate(self, manifest):
+            return {"accepted": True}
+
+    manifest = DelegationManifest("FR-20260919-copilot-cloud-agent-consumer", "qa", "standard", "advisory-model", "advisory-provider", "available", "shadow selection")
+
+    result = consume_cloud_agent(
+        manifest,
+        OpaqueConsumer(),
+        observed_cost=Decimal("0.42"),
+        usage={"input_tokens": 999, "output_tokens": 111},
+    )
+
+    assert isinstance(result, ConsumerResult)
+    assert result.status == "accepted"
+    assert result.selected_model == "advisory-model"
+    assert result.selected_provider == "advisory-provider"
+    assert result.actual_model == "unknown"
+    assert result.actual_provider == "unknown"
+    assert result.cost_usd == Decimal("0.42")
+    assert result.cost_source == "observed-accepted-outcome"
+    assert "input_tokens" not in str(result.to_dict())
+
+
+def test_cloud_agent_consumer_fails_closed_when_route_capability_preflight_rejects() -> None:
+    class UnsupportedConsumer:
+        def preflight(self, manifest):
+            return False
+
+        def delegate(self, manifest):
+            raise AssertionError("unsupported route must not delegate")
+
+    manifest = DelegationManifest("FR-1", "review", "heavy", "model", "provider", "available", "advisory")
+
+    result = consume_cloud_agent(manifest, UnsupportedConsumer())
+
+    assert result.status == "not-activated"
+    assert result.failure_reason == "selected route does not support requested role or tier"
+    assert result.attempted_models == ()
+
+
+def test_cloud_agent_consumer_uses_authoritative_pricing_when_observed_cost_is_absent() -> None:
+    class SupportedConsumer:
+        def preflight(self, manifest):
+            return True
+
+        def delegate(self, manifest):
+            return {"accepted": True, "model_id": "GPT-4.1", "provider": "OpenAI"}
+
+    manifest = DelegationManifest("FR-1", "qa", "standard", "GPT-4.1", "advisory", "available", "advisory")
+
+    result = consume_cloud_agent(
+        manifest,
+        SupportedConsumer(),
+        usage={"input_tokens": 1000000},
+    )
+
+    assert result.status == "accepted"
+    assert result.cost_source == "authoritative-published-pricing"
+    assert result.cost_usd == Decimal("2.00000")
+
+
+def test_cloud_agent_consumer_persists_metadata_only_result(tmp_path) -> None:
+    result = ConsumerResult(
+        "not-activated", "model", "provider", "unknown", "unknown", (),
+        "selected route does not support requested role or tier",
+    )
+    destination = tmp_path / "consumer-results.jsonl"
+
+    persist_consumer_result(destination, result)
+
+    saved = destination.read_text(encoding="utf-8")
+    assert '"schema_version": 1' in saved
+    assert '"failure_reason": "selected route does not support requested role or tier"' in saved
+    assert "usage" not in saved
+    assert "task_payload" not in saved
 
 
 def _model(model_id: str, provider: str, *, quality: float = 0.9, cost: str = "1") -> ModelRecord:
