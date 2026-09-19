@@ -152,8 +152,9 @@ _API_HEALTH_WIDGET_CSS = """
   .api-dot {
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
   }
-  .api-dot.up      { background: #34d399; }
-  .api-dot.down    { background: #f87171; }
+  .api-dot.up, .api-dot.healthy { background: #34d399; }
+  .api-dot.down, .api-dot.attention { background: #fbbf24; }
+  .api-dot.unavailable { background: #f87171; }
   .api-dot.unknown { background: var(--muted); opacity: 0.5; }
   .api-ep-name  { flex: 1; color: var(--text); font-size: 0.72rem; }
   .api-latency  { color: var(--muted); font-size: 0.66rem; font-variant-numeric: tabular-nums; min-width: 3.4rem; text-align: right; }
@@ -190,15 +191,15 @@ def _collect_api_health() -> list[dict]:
         return []
 
 
-def _render_api_health_widget(rows: list[dict]) -> str:
+def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool = False) -> str:
     """Render the minimalist traffic-light + latency sidebar widget."""
-    if not rows:
+    if not rows and not include_backup_health:
         return ""
-
     lines = [
         '<div class="api-health-widget">',
-        '<div class="api-health-title">🔌 AI Health</div>',
     ]
+    if rows:
+        lines.append('<div class="api-health-title">🔌 AI Health</div>')
     for row in rows:
         status = row.get("status", "unknown")
         dot_cls = status if status in ("up", "down") else "unknown"
@@ -258,6 +259,30 @@ def _render_api_health_widget(rows: list[dict]) -> str:
                 f'<div>Reason: {_esc(reason or "none")}</div>'
                 '</details>'
             )
+    lines.extend([
+        '<div class="api-health-title">DB Backup Health</div>',
+        '<div class="api-health-row" id="database-backup-health" aria-live="polite">',
+        '<span class="api-dot unknown" id="database-backup-health-dot"></span>',
+        '<span class="api-ep-name" id="database-backup-health-state">Checking...</span>',
+        '<span class="api-age" id="database-backup-health-age"></span>',
+        '</div>',
+        '<div class="api-age" id="database-backup-health-failures"></div>',
+        '<script>(async function loadDatabaseBackupHealth() {',
+        'try { const response = await fetch("/api/health/database-backup", {cache: "no-store"});',
+        'if (!response.ok) throw new Error("health endpoint unavailable");',
+        'const health = await response.json();',
+        'const state = document.getElementById("database-backup-health-state");',
+        'const dot = document.getElementById("database-backup-health-dot");',
+        'const age = document.getElementById("database-backup-health-age");',
+        'const failures = document.getElementById("database-backup-health-failures");',
+        'state.textContent = health.state || "Unavailable";',
+        'const dotState = health.state === "Healthy" ? "healthy" : health.state === "Attention" ? "attention" : "unknown";',
+        'dot.className = "api-dot " + dotState;',
+        'age.textContent = health.last_success_age_seconds == null ? "" : Math.floor(health.last_success_age_seconds / 3600) + "h ago";',
+        'failures.textContent = (health.failure_categories || []).join(", ");',
+        '} catch (_) { document.getElementById("database-backup-health-state").textContent = "Unavailable"; }',
+        '})();</script>',
+      ] if include_backup_health else [])
     lines.append("</div>")
     return "\n".join(lines)
 
@@ -673,7 +698,9 @@ def render_portal(manifest: dict) -> str:
     stats = _stats_bar(manifest)
     server_js_list = _json.dumps([{"port": s["port"], "name": s["name"]} for s in servers])
     server_sidebar = _render_server_sidebar(servers)
-    api_health_widget = _render_api_health_widget(_collect_api_health())
+    api_health_widget = _render_api_health_widget(
+      _collect_api_health(), include_backup_health=True
+    )
     api_health_markup = f"    {api_health_widget}\n" if api_health_widget else ""
 
     # Load icon config for favicon + sigil tooltip

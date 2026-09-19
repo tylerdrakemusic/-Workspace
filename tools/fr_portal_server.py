@@ -47,6 +47,23 @@ WORKSPACE_PROJECT = Path(__file__).resolve().parent.parent        # F:\⊕Worksp
 SERVE_ROOT = WORKSPACE_PROJECT.parent                             # F:\
 PORTAL_URL_PATH = f"/{WORKSPACE_PROJECT.name}/reports/portal.html"
 FR_DASHBOARD_URL_PATH = f"/{WORKSPACE_PROJECT.name}/reports/fr_dashboard.html"
+sys.path.insert(0, str(WORKSPACE_PROJECT))
+from src.utils.database_backup_observability import collect_backup_health  # noqa: E402
+
+
+def database_backup_health_payload(probe=collect_backup_health) -> dict:
+    """Return a redacted backup-health payload for the local portal client."""
+    try:
+        return probe()
+    except Exception:
+        from datetime import datetime, timezone
+
+        return {
+            "state": "Unavailable",
+            "checked_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "last_success_age_seconds": None,
+            "failure_categories": ["probe_failure"],
+        }
 
 sys.path.insert(0, str(WORKSPACE_PROJECT / "tools"))
 import fr_signoff  # noqa: E402 — local import after sys.path tweak
@@ -124,6 +141,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/favicon.ico":
             self.send_response(204)
             self.end_headers()
+            return
+
+        if path == "/api/health/database-backup":
+            payload = json.dumps(database_backup_health_payload(), separators=(",", ":")).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(payload)
             return
 
         decoded = urllib.parse.unquote(path)
