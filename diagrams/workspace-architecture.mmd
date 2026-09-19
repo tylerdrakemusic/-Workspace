@@ -41,6 +41,7 @@ graph TB
     Portal -->|POST /api/restart-master · loopback Host + Origin + rotating CSRF| Supervisor
     Supervisor -->|reserve lock · commit 202 · shutdown resident listener<br/>fail-closed reclaim 8790 · fresh bind · transfer generation| Supervisor
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
+    Portal -->|"load -> local read-only DB Backup Health endpoint -> redacted Healthy / Attention / Unavailable aggregate -> separate DB Backup Health section; observes approved manifest, Windows Task Scheduler metadata, existing audit + generation evidence; evaluates backup_allowed=true only; no execution, restore, validation drill, scheduler mutation, raw paths, filenames, database names, secrets, or raw logs cross browser boundary"| AIHealth
     TodoRuntime --> DecisionMetadata
     TodoRuntime --> HandoffRuntime
     MAPI -.->|read-only state projection| TodoRuntime
@@ -48,8 +49,7 @@ graph TB
     TodoRuntime -->|Overseer entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
     TodoRuntime -->|CI entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
     AlertCapability -->|stable decision ID| TTSQueue
-    AlertCapability -->|bounded timeout| AlertFallback
-    AlertCapability -->|timeout or queue failure| AlertFallback
+    AlertCapability -->|bounded timeout or queue failure| AlertFallback
     AlertCapability -.->|async enqueue| TTSQueue
     TTSQueue -.->|durable output| LocalPlayback
     TodoRuntime -->|bounded execution lifecycle| FRBoard

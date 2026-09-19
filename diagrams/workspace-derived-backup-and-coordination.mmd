@@ -3,6 +3,15 @@
 %% Traceability.parent: diagrams/workspace-integrations.mmd
 graph TB
     Workspace[⊕ Workspace] --> Backup[provider-neutral backup contract]
+    Workspace --> PortalLoad[dashboard portal load]
+    PortalLoad -->|"GET /api/health/database-backup"| BackupHealthEndpoint[local read-only DB Backup Health endpoint]
+    ApprovedManifest[approved backup manifest] --> AllowedBackupEntries{backup_allowed=true entries only}
+    AllowedBackupEntries --> BackupHealthEndpoint
+    TaskMetadata[Windows Task Scheduler metadata] --> BackupHealthEndpoint
+    AuditGeneration[existing audit + generation evidence] --> BackupHealthEndpoint
+    BackupHealthEndpoint --> BackupHealthProjection[redacted aggregate<br/>Healthy / Attention / Unavailable]
+    BackupHealthProjection --> BrowserBoundary[Browser boundary<br/>aggregate fields only<br/>no backup execution, restore, validation drill, scheduler mutation,<br/>raw paths, filenames, database names, secrets, or raw logs]
+    BrowserBoundary -->|"separate DB Backup Health section"| AIHealthWidget[⊕ Workspace AI Health widget]
     BackupRunner[/run_database_backup.py<br/>scheduled backup/] --> Backup
     Backup --> Observability[database_backup_observability.py]
     BackupContract --> BackupInventory
@@ -25,9 +34,9 @@ graph TB
     Coord -.->|rejects| GenericSQL[no arbitrary SQL or routing]
     Life[∞ Life] -.->|redacted metadata only| Inventory
     Capital[Σ Capital] --> CapitalDB[(sigmacapital.db)]
-    class Workspace,Backup,BackupRunner,Observability,Inventory,Volume,Generations,Restore,Audit,Retention,NewestValid,Drill,Evidence,Objectives ws
+    class Workspace,Backup,BackupRunner,Observability,Inventory,Volume,Generations,Restore,Audit,Retention,NewestValid,Drill,Evidence,Objectives,PortalLoad,BackupHealthEndpoint,BackupHealthProjection,AIHealthWidget ws
     class Life,Capital orch
-    class Discovery,GenericSQL,Failure state
+    class Discovery,GenericSQL,Failure,AllowedBackupEntries,BrowserBoundary state
     class FRLedger,TodoDB,CapitalDB db
 classDef orch fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
