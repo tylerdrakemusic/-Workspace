@@ -122,3 +122,11 @@ def test_portal_widget_keeps_backup_section_when_ai_probe_has_no_rows() -> None:
     html = dashboard_portal._render_api_health_widget([], include_backup_health=True)
 
     assert "DB Backup Health" in html
+
+
+def test_portal_widget_marks_unavailable_backup_health_explicitly() -> None:
+    html = dashboard_portal._render_api_health_widget([], include_backup_health=True)
+
+    assert '.api-dot.unavailable { background: #f87171; }' in dashboard_portal._API_HEALTH_WIDGET_CSS
+    assert 'health.state === "Unavailable" ? "unavailable"' in html
+    assert 'document.getElementById("database-backup-health-dot").className = "api-dot unavailable"' in html

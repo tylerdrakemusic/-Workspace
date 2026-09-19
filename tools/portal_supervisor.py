@@ -26,6 +26,8 @@ from urllib.parse import unquote, urlparse
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
+from fr_portal_server import database_backup_health_payload
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "tools" / "portal_servers.json"
@@ -378,6 +380,9 @@ def create_http_server(
             path = urlparse(self.path).path
             if path == "/api/state":
                 self._json_response(200, supervisor.snapshot(include_token=True))
+                return
+            if path == "/api/health/database-backup":
+                self._json_response(200, database_backup_health_payload())
                 return
             if path in ("/", "/portal.html"):
                 portal_html = portal_path.read_text(encoding="utf-8")

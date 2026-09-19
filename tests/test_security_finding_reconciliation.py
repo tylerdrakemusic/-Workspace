@@ -101,5 +101,11 @@ def test_dynamic_supervisor_urls_have_explicit_local_service_suppression() -> No
         Path(__file__).resolve().parents[1] / "tools" / "portal_supervisor.py"
     ).read_text(encoding="utf-8").splitlines()
 
-    for line_number in (202, 211, 215):
-        assert "# nosec A02" in source[line_number - 1]
+    local_supervisor_url_lines = [
+        line
+        for line in source
+        if "SUPERVISOR_HOST" in line and "/api/" in line
+    ]
+
+    assert len(local_supervisor_url_lines) == 2
+    assert all("# nosec A02" in line for line in local_supervisor_url_lines)

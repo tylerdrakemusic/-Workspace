@@ -372,6 +372,91 @@ def test_master_restart_uses_a_distinct_authorized_endpoint(tmp_path: Path) -> N
         thread.join(timeout=2)
 
 
+def test_supervisor_serves_redacted_database_backup_health(tmp_path: Path) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text("<html><body></body></html>", encoding="utf-8")
+    supervisor = PortalSupervisor(
+        {"servers": []},
+        log_root=tmp_path / "logs",
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4600),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    server = supervisor_module.create_http_server(
+        ("127.0.0.1", 0), supervisor, portal_path, lambda _url: None
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        payload = {
+            "state": "Healthy",
+            "checked_at": "2026-09-18T12:00:00Z",
+            "last_success_age_seconds": 60,
+            "failure_categories": [],
+        }
+        with patch.object(
+            supervisor_module,
+            "database_backup_health_payload",
+            return_value=payload,
+        ):
+            with urlopen(
+                f"http://127.0.0.1:{server.server_port}/api/health/database-backup"
+            ) as response:
+                body = json.load(response)
+
+        assert response.status == 200
+        assert body == payload
+        assert set(body) == {
+            "state",
+            "checked_at",
+            "last_success_age_seconds",
+            "failure_categories",
+        }
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_generated_production_portal_contains_database_backup_health_client() -> None:
+    portal = (WORKSPACE_ROOT / "reports" / "portal.html").read_text(encoding="utf-8")
+
+    assert "DB Backup Health" in portal
+    assert "/api/health/database-backup" in portal
+
+
+def test_supervisor_serves_generated_database_backup_health_client(tmp_path: Path) -> None:
+    portal_path = tmp_path / "portal.html"
+    portal_path.write_text(
+        (WORKSPACE_ROOT / "reports" / "portal.html").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    supervisor = PortalSupervisor(
+        {"servers": []},
+        log_root=tmp_path / "logs",
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4600),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    server = supervisor_module.create_http_server(
+        ("127.0.0.1", 0), supervisor, portal_path, lambda _url: None
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with urlopen(f"http://127.0.0.1:{server.server_port}/portal.html") as response:
+            served_portal = response.read().decode("utf-8")
+        assert response.status == 200
+        assert "DB Backup Health" in served_portal
+        assert "/api/health/database-backup" in served_portal
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
 def test_restart_servers_shim_targets_master_restart() -> None:
     script = RESTART_SERVERS.read_text(encoding="utf-8")
 

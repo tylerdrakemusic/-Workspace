@@ -276,11 +276,11 @@ def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool =
         'const age = document.getElementById("database-backup-health-age");',
         'const failures = document.getElementById("database-backup-health-failures");',
         'state.textContent = health.state || "Unavailable";',
-        'const dotState = health.state === "Healthy" ? "healthy" : health.state === "Attention" ? "attention" : "unknown";',
+        'const dotState = health.state === "Healthy" ? "healthy" : health.state === "Attention" ? "attention" : health.state === "Unavailable" ? "unavailable" : "unknown";',
         'dot.className = "api-dot " + dotState;',
         'age.textContent = health.last_success_age_seconds == null ? "" : Math.floor(health.last_success_age_seconds / 3600) + "h ago";',
         'failures.textContent = (health.failure_categories || []).join(", ");',
-        '} catch (_) { document.getElementById("database-backup-health-state").textContent = "Unavailable"; }',
+        '} catch (_) { document.getElementById("database-backup-health-state").textContent = "Unavailable"; document.getElementById("database-backup-health-dot").className = "api-dot unavailable"; }',
         '})();</script>',
       ] if include_backup_health else [])
     lines.append("</div>")
