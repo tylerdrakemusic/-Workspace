@@ -59,29 +59,94 @@ class BackupDestination(ABC):
 class LocalVolumeDestination(BackupDestination):
     """Filesystem adapter for a pre-authorized external volume."""
 
-    def __init__(self, root: Path, identity: str, provision: bool = False) -> None:
+    def __init__(
+        self,
+        root: Path,
+        identity: str,
+        provision: bool = False,
+        volume_identity_reader: Callable[[Path], str] | None = None,
+        replace_existing: bool = False,
+    ) -> None:
         self._root = Path(root)
         self._identity_file = self._root / ".backup-volume-identity"
+        self._volume_identity_reader = volume_identity_reader or _read_windows_volume_identity
         if provision:
             self._root.mkdir(parents=True, exist_ok=True)
             if self._identity_file.exists():
                 current = self._identity_file.read_text(encoding="utf-8").strip()
-                if current != identity:
+                if current != identity and not replace_existing:
                     raise DestinationIdentityError("volume identity marker mismatch")
-            else:
+            if not self._identity_file.exists() or replace_existing:
                 self._identity_file.write_text(identity + "\n", encoding="utf-8")
 
     def resolve_identity(self) -> str:
         try:
-            return self._identity_file.read_text(encoding="utf-8").strip()
-        except OSError:
+            identity = self._identity_file.read_text(encoding="utf-8").strip()
+        except (OSError, UnicodeError):
             return ""
+        if not identity or any(ord(character) < 32 for character in identity):
+            return ""
+        return identity
 
     def is_verified(self, expected_identity: str) -> bool:
-        return self.resolve_identity() == expected_identity
+        if self.resolve_identity() != expected_identity:
+            return False
+        if not _requires_physical_identity(expected_identity):
+            return True
+        observed = self._volume_identity_reader(self._root)
+        return observed.casefold() == expected_identity.casefold()
 
     def path(self) -> Path:
         return self._root
+
+
+def _requires_physical_identity(identity: str) -> bool:
+    """Return whether an identity includes the Windows volume metadata contract."""
+    fields = identity.casefold().split(";")
+    return (
+        len(fields) == 2
+        and fields[0].startswith("volume-guid=")
+        and fields[1].startswith("volume-serial=0x")
+        and all(value.split("=", 1)[1] for value in fields)
+    )
+
+
+def _read_windows_volume_identity(root: Path) -> str:
+    """Read a mounted volume's stable GUID and serial on Windows."""
+    if os.name != "nt":
+        return ""
+    import ctypes
+
+    drive = Path(root).drive
+    if not drive:
+        return ""
+    mount_point = f"{drive}\\"
+    serial = ctypes.c_ulong()
+    volume_name = ctypes.create_unicode_buffer(261)
+    if not ctypes.windll.kernel32.GetVolumeInformationW(
+        mount_point,
+        None,
+        0,
+        ctypes.byref(serial),
+        None,
+        None,
+        None,
+        0,
+    ):
+        return ""
+    volume_guid = ctypes.create_unicode_buffer(51)
+    if not ctypes.windll.kernel32.GetVolumeNameForVolumeMountPointW(
+        mount_point, volume_guid, len(volume_guid)
+    ):
+        return ""
+    guid = _normalize_volume_guid(volume_guid.value)
+    return f"volume-guid={guid};volume-serial=0x{serial.value:08x}"
+
+
+def _normalize_volume_guid(volume_name: str) -> str:
+    """Normalize a Windows volume name to its brace-delimited GUID."""
+    guid = volume_name.removeprefix("\\\\?\\").rstrip("\\")
+    return guid.removeprefix("Volume")
 
 
 @dataclass(frozen=True)
@@ -154,6 +219,14 @@ def _atomic_copy(source: Path, destination: Path) -> None:
         os.replace(temporary, destination)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def _copy_with_source_stability_check(source: Path, destination: Path) -> None:
+    before = source.stat()
+    _atomic_copy(source, destination)
+    after = source.stat()
+    if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+        raise BackupError("source changed during backup; retry when database writes are idle")
 
 
 def _redacted_target_id(restore_root: Path) -> str:
@@ -308,7 +381,7 @@ class DatabaseBackup:
                 if not source.is_file():
                     raise BackupError(f"manifest source is missing: {source}")
                 target = temporary_root / Path(relative_path)
-                _atomic_copy(source, target)
+                _copy_with_source_stability_check(source, target)
                 files.append({"relative_path": relative_path, "sha256": _sha256(target)})
             metadata = {
                 "schema_version": 1,
