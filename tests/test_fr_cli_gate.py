@@ -158,6 +158,221 @@ def test_cost_reconcile_unavailable_requires_source_and_reason(tmp_path) -> None
 
 
 class TestMergedGate:
+    def test_parent_join_valid_multi_repository_evidence_uses_each_repository_head(
+        self, tmp_path
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        branch = "feature/FR-TEST-001"
+        workspace_head = "workspace-head"
+        music_head = "music-head"
+        acceptance_criteria = {
+            "parent_join": {
+                "required_todos": ["333-1", "333-2"],
+                "parent_repositories": [
+                    {
+                        "repository": "workspace",
+                        "project": "⊕Workspace",
+                        "parent_branch": branch,
+                    },
+                    {
+                        "repository": "music",
+                        "project": "❤Music",
+                        "parent_branch": branch,
+                    },
+                ],
+                "children": [
+                    {
+                        "todo_id": "333-1",
+                        "fr_id": "FR-TEST-001",
+                        "state": "completed",
+                        "validated": True,
+                        "required_artifacts": ["workspace-proof"],
+                        "artifacts": ["workspace-proof"],
+                        "integrated_branch": branch,
+                        "parent_head": workspace_head,
+                        "child_base": workspace_head,
+                        "repository": "workspace",
+                        "project": "⊕Workspace",
+                        "parent_branch": branch,
+                    },
+                    {
+                        "todo_id": "333-2",
+                        "fr_id": "FR-TEST-001",
+                        "state": "completed",
+                        "validated": True,
+                        "required_artifacts": ["music-proof"],
+                        "artifacts": ["music-proof"],
+                        "integrated_branch": branch,
+                        "parent_head": music_head,
+                        "child_base": music_head,
+                        "repository": "music",
+                        "project": "❤Music",
+                        "parent_branch": branch,
+                    },
+                ],
+            }
+        }
+        conn.execute(
+            "UPDATE feature_requests SET branch=?, acceptance_criteria=? WHERE id='FR-TEST-001'",
+            (branch, json.dumps(acceptance_criteria, ensure_ascii=False)),
+        )
+        conn.executemany(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("FR-TEST-001", "2026-07-03T00:00:00Z", "test", "note", "PARENT_JOIN:REQUIRED"),
+                ("FR-TEST-001", "2026-07-03T00:02:00Z", "test", "note", "PARENT_JOIN:PASS"),
+            ],
+        )
+        evidence = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:01:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": branch,
+            "parent_head": workspace_head,
+            "required_todos": ["333-1", "333-2"],
+            "parent_repositories": [
+                {"repository": "workspace", "project": "⊕Workspace", "parent_branch": branch, "parent_head": workspace_head},
+                {"repository": "music", "project": "❤Music", "parent_branch": branch, "parent_head": music_head},
+            ],
+            "children": acceptance_criteria["parent_join"]["children"],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) VALUES (?, ?, ?, ?)",
+            ("FR-TEST-001", evidence["evaluated_at"], "parent-join-evidence", json.dumps(evidence, ensure_ascii=False)),
+        )
+        conn.commit()
+
+        def resolve_repository_head(parent_branch: str, project: str) -> str:
+            assert parent_branch == branch
+            return {"⊕Workspace": workspace_head, "❤Music": music_head}[project]
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value=workspace_head
+        ), patch.object(
+            fr_cli, "_repository_parent_head_resolver", side_effect=resolve_repository_head
+        ):
+            fr_cli.cmd_update_state(_state_args("FR-TEST-001", "TYLER_APPROVED"))
+
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()
+        check_conn.close()
+        assert row[0] == "TYLER_APPROVED"
+
+    def test_parent_join_blocks_when_repository_head_resolution_fails(
+        self, tmp_path, capsys
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        branch = "feature/FR-TEST-001"
+        acceptance_criteria = {
+            "parent_join": {
+                "required_todos": ["333-1"],
+                "parent_repositories": [
+                    {
+                        "repository": "music",
+                        "project": "❤Music",
+                        "parent_branch": branch,
+                    }
+                ],
+                "children": [
+                    {
+                        "todo_id": "333-1",
+                        "fr_id": "FR-TEST-001",
+                        "state": "completed",
+                        "validated": True,
+                        "required_artifacts": [],
+                        "artifacts": [],
+                        "integrated_branch": branch,
+                        "parent_head": "music-head",
+                        "child_base": "music-head",
+                        "repository": "music",
+                        "project": "❤Music",
+                        "parent_branch": branch,
+                    }
+                ],
+            }
+        }
+        conn.execute(
+            "UPDATE feature_requests SET branch=?, acceptance_criteria=? WHERE id='FR-TEST-001'",
+            (branch, json.dumps(acceptance_criteria, ensure_ascii=False)),
+        )
+        conn.executemany(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("FR-TEST-001", "2026-07-03T00:00:00Z", "test", "note", "PARENT_JOIN:REQUIRED"),
+                ("FR-TEST-001", "2026-07-03T00:02:00Z", "test", "note", "PARENT_JOIN:PASS"),
+            ],
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="workspace-head"
+        ), patch.object(
+            fr_cli,
+            "_repository_parent_head_resolver",
+            side_effect=OSError("repository worktree unavailable"),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "TYLER_APPROVED"))
+
+        assert exc_info.value.code != 0
+        error = capsys.readouterr().err
+        assert "repository-specific parent head resolution failed" in error
+
+    def test_parent_join_blocks_when_repository_contract_is_explicitly_empty(
+        self, tmp_path, capsys
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        branch = "feature/FR-TEST-001"
+        acceptance_criteria = {
+            "parent_join": {
+                "required_todos": ["333-1"],
+                "parent_repositories": [],
+                "children": [
+                    {
+                        "todo_id": "333-1",
+                        "fr_id": "FR-TEST-001",
+                        "state": "completed",
+                        "validated": True,
+                        "required_artifacts": [],
+                        "artifacts": [],
+                        "integrated_branch": branch,
+                        "parent_head": "workspace-head",
+                        "child_base": "workspace-head",
+                    }
+                ],
+            }
+        }
+        conn.execute(
+            "UPDATE feature_requests SET branch=?, acceptance_criteria=? WHERE id='FR-TEST-001'",
+            (branch, json.dumps(acceptance_criteria)),
+        )
+        conn.executemany(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("FR-TEST-001", "2026-07-03T00:00:00Z", "test", "note", "PARENT_JOIN:REQUIRED"),
+                ("FR-TEST-001", "2026-07-03T00:02:00Z", "test", "note", "PARENT_JOIN:PASS"),
+            ],
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value="workspace-head"
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "TYLER_APPROVED"))
+
+        assert exc_info.value.code != 0
+        error = capsys.readouterr().err
+        assert "repository-specific parent head resolution failed" in error
+
     def test_set_acceptance_criteria_updates_field_and_records_audit_event(self, tmp_path) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)

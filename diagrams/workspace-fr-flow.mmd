@@ -15,6 +15,9 @@ stateDiagram-v2
     state "Bounded TODO operational runtime" as TODO_RUNTIME
     state "FR implementation anchor · child TODO coordination" as FR_COORDINATION
     state "Evidence-backed parent join gate" as PARENT_JOIN_EVALUATION
+    state "Repository-aware child snapshots" as REPOSITORY_CHILD_SNAPSHOTS
+    state "Trusted repository branch/head resolution" as REPOSITORY_HEAD_RESOLUTION
+    state "Recompute against current repository heads" as CURRENT_HEAD_RECOMPUTE
     state "Diagram remediation" as DIAGRAM_REMEDIATION
 
     IN_PROGRESS --> TODO_RUNTIME: operational TODO execution
@@ -22,8 +25,13 @@ stateDiagram-v2
     IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
     FR_COORDINATION --> IN_PROGRESS: child handoff complete
     IN_PROGRESS --> PARENT_JOIN_EVALUATION: implementation done
-    PARENT_JOIN_EVALUATION --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
-    PARENT_JOIN_EVALUATION --> IN_PROGRESS: PARENT_JOIN:PASS blocked
+    PARENT_JOIN_EVALUATION --> REPOSITORY_CHILD_SNAPSHOTS: load child snapshots
+    REPOSITORY_CHILD_SNAPSHOTS --> REPOSITORY_HEAD_RESOLUTION: repository/project identity required
+    REPOSITORY_HEAD_RESOLUTION --> CURRENT_HEAD_RECOMPUTE: resolve each declared repository
+    REPOSITORY_HEAD_RESOLUTION --> IN_PROGRESS: missing, stale, or mismatched repository contract
+    CURRENT_HEAD_RECOMPUTE --> PARENT_JOIN_EVALUATION: single-repo compatibility uses parent branch/head
+    CURRENT_HEAD_RECOMPUTE --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
+    CURRENT_HEAD_RECOMPUTE --> IN_PROGRESS: PARENT_JOIN:PASS blocked
     FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
     ARCHITECTURE_REVIEW --> DIAGRAM_REMEDIATION: STALE/MISSING → reject
@@ -48,8 +56,12 @@ stateDiagram-v2
         Technical progression through FUNCTIONAL_QA,
         ARCHITECTURE_REVIEW, REVIEW_REQUESTED, and
         AUTO_REVIEWED remains available while child
-        TODO bookkeeping is incomplete. Recompute accepts
-        PARENT_JOIN:PASS only with fresh valid evidence.
+        TODO bookkeeping is incomplete. Child snapshots identify
+        repository and project. Each declared repository resolves
+        a trusted branch/head, then evidence is recomputed against
+        current heads. Missing, stale, or mismatched contracts fail
+        closed. Single-repo inputs retain the parent branch/head path.
+        Recompute accepts PARENT_JOIN:PASS only with fresh valid evidence.
         Recycled-light and bounded-fix rework paths are
         detailed in workspace-fr-flow-review-and-recycle.mmd.
     end note

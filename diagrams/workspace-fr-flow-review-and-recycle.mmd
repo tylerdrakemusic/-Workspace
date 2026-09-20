@@ -5,10 +5,22 @@ stateDiagram-v2
     IN_PROGRESS --> PARENT_JOIN_EVALUATION: implementation done
     state "Evidence-backed parent join gate" as PARENT_JOIN_EVALUATION {
         [*] --> PARENT_JOIN_EVALUATOR
-        PARENT_JOIN_EVALUATOR --> PARENT_JOIN_EVIDENCE: parent_join_gates.evaluate_parent_join
-        PARENT_JOIN_EVIDENCE --> PARENT_JOIN_RECOMPUTE: persist parent-join-evidence
-        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_PASS: recompute against latest evidence
-        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_BLOCKED: missing, stale, or mismatched evidence
+        state "Repository-aware child snapshots" as CHILD_SNAPSHOTS
+        state "Trusted repository contracts" as REPOSITORY_CONTRACTS
+        state "Current repository heads" as CURRENT_REPOSITORY_HEADS
+        PARENT_JOIN_EVALUATOR --> CHILD_SNAPSHOTS: parent_join_gates.evaluate_parent_join
+        CHILD_SNAPSHOTS --> REPOSITORY_CONTRACTS: repository/project identity
+        REPOSITORY_CONTRACTS --> CURRENT_REPOSITORY_HEADS: trusted branch/head resolution
+        REPOSITORY_CONTRACTS --> PARENT_JOIN_BLOCKED: missing or mismatched contract
+        CURRENT_REPOSITORY_HEADS --> PARENT_JOIN_EVIDENCE: persist parent-join-evidence
+        PARENT_JOIN_EVIDENCE --> PARENT_JOIN_RECOMPUTE: compare snapshots with current heads
+        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_PASS: fresh compatible evidence
+        PARENT_JOIN_RECOMPUTE --> PARENT_JOIN_BLOCKED: stale or mismatched evidence
+        note right of CURRENT_REPOSITORY_HEADS
+            One head per declared repository.
+            Single-repo compatibility uses the
+            parent branch/head contract.
+        end note
         PARENT_JOIN_PASS --> [*]: accept PARENT_JOIN:PASS
         PARENT_JOIN_BLOCKED --> [*]: reject PARENT_JOIN:PASS
     }
