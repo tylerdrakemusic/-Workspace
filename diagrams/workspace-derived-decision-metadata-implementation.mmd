@@ -17,9 +17,11 @@ graph TB
     end
     subgraph Contracts["Evidence and gate contracts"]
         JoinEvaluator[parent_join_gates.evaluate_parent_join]
+        ChildSnapshots[Child snapshots<br/>repository + project identity]
+        RepositoryContracts[(Trusted parent repository contracts<br/>branch/head per repository)]
         JoinEvidence[(parent-join-evidence)]
-        JoinRecompute[Recompute against latest evidence]
-        JoinGate{Accept PARENT_JOIN:PASS?}
+        JoinRecompute[Recompute against current repository heads]
+        JoinGate{Accept PARENT_JOIN:PASS?<br/>fail closed on missing, stale, or mismatched contract}
         QA[FUNCTIONAL_QA]
         Architecture[ARCHITECTURE_REVIEW]
     end
@@ -46,7 +48,10 @@ graph TB
     TodoRuntime --> WorkspaceDB
     FRCLI ==> FRLedger
     TodoRuntime --> JoinEvaluator
-    JoinEvaluator --> JoinEvidence
+    JoinEvaluator --> ChildSnapshots
+    ChildSnapshots --> RepositoryContracts
+    RepositoryContracts -->|single-repo compatibility included| JoinEvidence
+    RepositoryContracts --> JoinEvidence
     JoinEvidence --> JoinRecompute
     JoinRecompute --> JoinGate
     JoinGate -->|pass| QA
@@ -65,8 +70,8 @@ graph TB
     Backup -.->|cross-project backup boundary| Quantum
     Backup -.->|cross-project backup boundary| Capital
     DecisionBoundary -.->|parent detail owns schema, history, priority boundary| DecisionCurrent
-    class TodoRuntime,TodoPolicy,Coordination,FRCLI,DecisionBoundary,JoinEvaluator,JoinRecompute,JoinGate,Backup,Scope,Manifest,Discovery,Destination,Restore ws
-    class WorkspaceDB,FRLedger,DecisionCurrent,DecisionHistory,JoinEvidence db
+    class TodoRuntime,TodoPolicy,Coordination,FRCLI,DecisionBoundary,JoinEvaluator,ChildSnapshots,TrustedHeads,JoinRecompute,JoinGate,JoinBlocked,Backup,Scope,Manifest,Discovery,Destination,Restore ws
+    class WorkspaceDB,FRLedger,DecisionCurrent,DecisionHistory,RepositoryContracts,JoinEvidence db
     class ManifestConsumer manifest
     class Life life
     class Music music
