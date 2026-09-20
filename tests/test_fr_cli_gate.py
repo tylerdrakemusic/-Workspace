@@ -24,6 +24,49 @@ sys.path.insert(0, str(PROJECT_ROOT / "src" / "utils"))
 import fr_cli
 
 
+def test_repository_parent_head_resolver_reads_only_sigma_git_metadata(tmp_path: Path) -> None:
+    branch = "feature/FR-20260919-sigmacapital-serpapi-google-finance-enrichment"
+    project_root = tmp_path / "sigmacapital"
+    worktrees_root = project_root / ".worktrees"
+    worktree = worktrees_root / "serpapi-enrichment"
+    project_root.mkdir()
+    subprocess.run(["git", "-C", str(project_root), "init", "--quiet"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "config", "user.email", "test@example.com"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "config", "user.name", "Test User"], check=True)
+    (project_root / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(project_root), "add", "README.md"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "commit", "--quiet", "-m", "fixture"], check=True)
+    worktrees_root.mkdir()
+    subprocess.run(
+        ["git", "-C", str(project_root), "worktree", "add", "-b", branch, str(worktree)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    expected_head = subprocess.run(
+        ["git", "-C", str(worktree), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.strip()
+    calls: list[tuple[str, ...]] = []
+    original_run = fr_cli.subprocess.run
+
+    def record_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        calls.append(tuple(command))
+        return original_run(command, **kwargs)
+
+    with patch.dict(fr_cli.PROJECT_ROOTS, {"ΣCapital": project_root}), patch.object(
+        fr_cli.subprocess, "run", side_effect=record_run
+    ):
+        resolved_head = fr_cli._resolve_repository_parent_head(branch, "ΣCapital")
+
+    assert resolved_head == expected_head
+    assert all(command[0] == "git" and command[3] in {"branch", "rev-parse"} for command in calls)
+    assert all(Path(command[2]).is_relative_to(project_root) for command in calls)
+    assert all("data" not in command[2].lower() and "secret" not in command[2].lower() for command in calls)
+
+
 def _make_conn(db_path: Path) -> sqlite3.Connection:
     """File-backed sqlite3 connection with the FR ledger schema (unencrypted, test-only).
 
