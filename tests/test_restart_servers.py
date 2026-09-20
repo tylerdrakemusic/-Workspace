@@ -102,6 +102,23 @@ def test_fresh_launch_reclaims_ports_and_records_exact_process_metadata(tmp_path
     }
 
 
+def test_first_generation_log_uses_a_windows_compatible_timestamp(tmp_path: Path) -> None:
+    supervisor = PortalSupervisor(
+        {"servers": []},
+        log_root=tmp_path,
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4100),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    before = time.time_ns()
+
+    generation = supervisor.new_generation("a" * 32)
+
+    generation_mtime = (tmp_path / generation).stat().st_mtime_ns
+    assert generation_mtime >= before
+
+
 def test_readiness_failure_restarts_once_then_stays_failed(tmp_path: Path) -> None:
     reclaimed: list[int] = []
     deadlines: list[int] = []
@@ -372,6 +389,87 @@ def test_master_restart_uses_a_distinct_authorized_endpoint(tmp_path: Path) -> N
         thread.join(timeout=2)
 
 
+def test_master_restart_handoff_worker_survives_resident_shutdown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "portal_servers.json"
+    config_path.write_text(json.dumps({"servers": []}), encoding="utf-8")
+    captured: dict[str, object] = {}
+
+    class RecordingThread:
+        def __init__(
+            self,
+            *,
+            target: object,
+            args: tuple[object, ...],
+            daemon: bool,
+        ) -> None:
+            captured["daemon"] = daemon
+            self.target = target
+            self.args = args
+
+        def start(self) -> None:
+            captured["started"] = True
+            self.target(*self.args)
+
+    replacement_events: list[tuple[object, str]] = []
+    resident_server = SimpleNamespace(server_port=8790)
+
+    def create_server(*_args: object, master_restart: object, **_kwargs: object) -> object:
+        captured["master_restart"] = master_restart
+        return resident_server
+
+    def run_resident_stub(supervisor: PortalSupervisor, **kwargs: object) -> None:
+        kwargs["server_factory"]()
+        captured["generation"] = supervisor.new_generation("a" * 32)
+        captured["master_restart"]()
+
+    monkeypatch.setattr(sys, "argv", [str(SUPERVISOR_SCRIPT), "--serve", "--no-open"])
+    monkeypatch.setattr(supervisor_module, "CONFIG_PATH", config_path)
+    monkeypatch.setattr(supervisor_module, "LOG_ROOT", tmp_path / "logs")
+    monkeypatch.setattr(supervisor_module, "create_http_server", create_server)
+    monkeypatch.setattr(supervisor_module, "run_resident", run_resident_stub)
+    monkeypatch.setattr(supervisor_module, "_generate_portal_shell", lambda: None)
+    monkeypatch.setattr(supervisor_module, "_regenerate_optional_dashboards", lambda: None)
+    monkeypatch.setattr(
+        supervisor_module,
+        "_restart_master_process",
+        lambda server, generation: replacement_events.append((server, generation)),
+    )
+    monkeypatch.setattr(supervisor_module.threading, "Thread", RecordingThread)
+
+    supervisor_module.main()
+
+    assert captured["daemon"] is False
+    assert captured["started"] is True
+    assert replacement_events == [(resident_server, captured["generation"])]
+
+
+def test_master_restart_failure_releases_operation_lock(tmp_path: Path) -> None:
+    supervisor = PortalSupervisor(
+        {"servers": []},
+        log_root=tmp_path / "logs",
+        reclaim_port=lambda _port: None,
+        launch_process=lambda *_args: SimpleNamespace(pid=4600),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+    )
+    release_events: list[str] = []
+
+    assert supervisor.prepare_restart_master()
+
+    def failed_launch() -> None:
+        release_events.append("launch-attempted")
+        raise OSError("replacement launch failed")
+
+    with pytest.raises(OSError, match="replacement launch failed"):
+        supervisor.finish_restart_master(failed_launch)
+
+    assert release_events == ["launch-attempted"]
+    assert supervisor.operation_active is False
+
+
 def test_supervisor_serves_redacted_database_backup_health(tmp_path: Path) -> None:
     portal_path = tmp_path / "portal.html"
     portal_path.write_text("<html><body></body></html>", encoding="utf-8")
@@ -504,6 +602,38 @@ def test_master_restart_launches_replacement_as_a_detached_process() -> None:
 
     assert launch_kwargs["shell"] is False
     assert launch_kwargs["creationflags"] == 0x08000208
+
+
+def test_master_restart_resolves_script_path_without_module_file(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = SimpleNamespace(shutdown=lambda: None, server_close=lambda: None)
+    captured: dict[str, object] = {}
+
+    def popen(command: list[str], **kwargs: object) -> SimpleNamespace:
+        captured["command"] = command
+        captured.update(kwargs)
+        return SimpleNamespace(pid=4701)
+
+    monkeypatch.delattr(supervisor_module, "__file__")
+
+    supervisor_module._restart_master_process(
+        server,
+        "fresh-generation",
+        reclaim=lambda _port: [],
+        popen=popen,
+    )
+
+    assert captured["command"] == [
+        sys.executable,
+        str(SUPERVISOR_SCRIPT.resolve()),
+        "--serve",
+        "--no-open",
+        "--generation",
+        "fresh-generation",
+    ]
+    assert captured["cwd"] == str(WORKSPACE_ROOT)
+    assert captured["shell"] is False
 
 
 @pytest.mark.playwright

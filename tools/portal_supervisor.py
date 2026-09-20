@@ -31,6 +31,7 @@ from fr_portal_server import database_backup_health_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "tools" / "portal_servers.json"
+SUPERVISOR_SCRIPT_PATH = PROJECT_ROOT / "tools" / "portal_supervisor.py"
 PORTAL_PATH = PROJECT_ROOT / "reports" / "portal.html"
 LOG_ROOT = PROJECT_ROOT / "logs" / "portal_supervisor"
 SUPERVISOR_HOST = "127.0.0.1"
@@ -599,7 +600,7 @@ class PortalSupervisor:
             for path in self.log_root.iterdir()
             if path.is_dir() and path != generation_logs
         ]
-        next_mtime = max(existing_mtimes, default=0) + 1_000_000
+        next_mtime = max(existing_mtimes, default=time.time_ns()) + 1_000_000
         os.utime(generation_logs, ns=(next_mtime, next_mtime))
         with self._state_lock:
             self.current_generation = generation
@@ -815,7 +816,7 @@ def _restart_master_process(
     reclaim(SUPERVISOR_PORT)
     command = [
         sys.executable,
-        str(Path(__file__).resolve()),
+        str(SUPERVISOR_SCRIPT_PATH),
         "--serve",
         "--no-open",
         "--generation",
@@ -876,7 +877,7 @@ def main() -> None:
         threading.Thread(
             target=_restart_master_process,
             args=(server_ref[0], str(supervisor.current_generation)),
-            daemon=True,
+            daemon=False,
         ).start()
         return str(supervisor.current_generation)
 
