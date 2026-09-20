@@ -249,8 +249,8 @@ def _configure_sqlcipher_connection(connection: Any, key_env: str) -> None:
     key = os.environ.get(key_env, "")
     if not key:
         raise BackupError("SQLCipher key environment variable is unavailable")
-    raw_key = key.encode("utf-8").hex()
-    connection.execute(f'PRAGMA key="x\'{raw_key}\'"')
+    safe_key = key.replace("'", "''")
+    connection.execute(f"PRAGMA key='{safe_key}'")
     for pragma in SQLCIPHER_RESTORE_PRAGMAS:
         connection.execute(pragma)
 
@@ -358,10 +358,7 @@ def _validate_restored_databases(restore_root: Path, metadata: dict[str, Any]) -
         database_path = restore_root / str(database["relative_path"])
         connection = sqlcipher3.connect(str(database_path))
         try:
-            raw_key = key.encode("utf-8").hex()
-            connection.execute(f'PRAGMA key="x\'{raw_key}\'"')
-            for pragma in SQLCIPHER_RESTORE_PRAGMAS:
-                connection.execute(pragma)
+            _configure_sqlcipher_connection(connection, str(key_env))
             tables = connection.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name LIMIT 1"
             ).fetchone()

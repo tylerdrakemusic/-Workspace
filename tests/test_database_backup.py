@@ -292,6 +292,56 @@ def test_sqlcipher_database_uses_consistent_backup_path_instead_of_raw_copy(
     assert result.manifest_path.is_file()
 
 
+def test_sqlcipher_configuration_uses_canonical_literal_key_syntax(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class RecordingConnection:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+
+        def execute(self, statement: str) -> None:
+            self.statements.append(statement)
+
+    connection = RecordingConnection()
+    monkeypatch.setenv("WORKSPACE_DB_KEY", "literal-key-with-'quote")
+
+    database_backup_module._configure_sqlcipher_connection(connection, "WORKSPACE_DB_KEY")
+
+    assert connection.statements == [
+        "PRAGMA key='literal-key-with-''quote'",
+        *database_backup_module.SQLCIPHER_RESTORE_PRAGMAS,
+    ]
+
+
+def test_sqlcipher_copy_fails_closed_without_key_and_creates_no_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class FakeConnection:
+        def close(self) -> None:
+            pass
+
+    class FakeSqlcipher:
+        class Connection:
+            backup = object()
+
+        @staticmethod
+        def connect(path: str) -> FakeConnection:
+            return FakeConnection()
+
+    source = tmp_path / "workspace.db"
+    destination = tmp_path / "external" / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    monkeypatch.delenv("WORKSPACE_DB_KEY", raising=False)
+    monkeypatch.setitem(sys.modules, "sqlcipher3", FakeSqlcipher)
+
+    with pytest.raises(BackupError, match="SQLCipher key environment variable is unavailable"):
+        database_backup_module._copy_sqlcipher_database(
+            source, destination, "WORKSPACE_DB_KEY"
+        )
+
+    assert not destination.exists()
+
+
 def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -606,7 +656,7 @@ def test_generic_restore_validation_attempts_committed_music_sqlcipher_database(
 
     assert fake_sqlcipher.paths == [str(restored_path)]
     assert fake_sqlcipher.connections[0].statements == [
-        'PRAGMA key="x\'746573742d6b6579\'"',
+        "PRAGMA key='test-key'",
         "PRAGMA cipher_page_size=4096",
         "PRAGMA kdf_iter=256000",
         "PRAGMA cipher_hmac_algorithm=HMAC_SHA512",
@@ -703,7 +753,7 @@ def test_restored_sqlcipher_bytes_open_with_runtime_generated_key(
     source = tmp_path / "workspace.db"
     connection = sqlcipher3.connect(str(source))
     try:
-        connection.execute(f'PRAGMA key="x\'{key.encode().hex()}\'"')
+        connection.execute(f"PRAGMA key='{key}'")
         connection.execute("CREATE TABLE contract (value TEXT NOT NULL)")
         connection.execute("INSERT INTO contract VALUES ('restored')")
         connection.commit()
@@ -733,7 +783,7 @@ def test_restored_sqlcipher_bytes_open_with_runtime_generated_key(
 
     restored = sqlcipher3.connect(str(restore_root / "workspace.db"))
     try:
-        restored.execute(f'PRAGMA key="x\'{key.encode().hex()}\'"')
+        restored.execute(f"PRAGMA key='{key}'")
         assert restored.execute("SELECT value FROM contract").fetchone() == ("restored",)
     finally:
         restored.close()
