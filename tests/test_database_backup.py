@@ -139,6 +139,82 @@ def test_backup_rejects_source_changed_during_copy_and_cleans_generation(
     assert not list(destination_root.glob("generations/*.tmp"))
 
 
+def test_backup_retries_transient_source_instability_and_records_redacted_attempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+    original_copy = database_backup_module._copy_with_source_stability_check
+    attempts = 0
+
+    def fail_once(source_path: Path, destination_path: Path) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise BackupError(
+                f"source changed during backup: {source_path}; WORKSPACE_DB_KEY=secret"
+            )
+        original_copy(source_path, destination_path)
+
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+    monkeypatch.setattr(database_backup_module, "_copy_with_source_stability_check", fail_once)
+
+    result = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    assert attempts == 2
+    assert result.manifest_path.is_file()
+    audit = (destination_root / "backup-audit.jsonl").read_text(encoding="utf-8")
+    assert '"event": "backup_attempt"' in audit
+    assert '"attempt": 1' in audit
+    assert "workspace.db" not in audit
+    assert "WORKSPACE_DB_KEY" not in audit
+    assert "secret" not in audit
+
+
+def test_backup_bounds_source_instability_retries_and_records_each_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+
+    def always_unstable(source_path: Path, destination_path: Path) -> None:
+        raise BackupError(
+            f"source changed during backup: {source_path}; database contents must stay private"
+        )
+
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+    monkeypatch.setattr(
+        database_backup_module, "_copy_with_source_stability_check", always_unstable
+    )
+
+    with pytest.raises(BackupError, match="source changed during backup"):
+        DatabaseBackup(
+            manifest=_manifest(),
+            source_root=tmp_path,
+            destination=destination,
+            expected_destination_identity="approved-volume",
+            now=lambda: "2026-08-16T12:00:00Z",
+        ).run()
+
+    audit_lines = (destination_root / "backup-audit.jsonl").read_text(encoding="utf-8").splitlines()
+    attempts = [json.loads(line) for line in audit_lines]
+    assert [record["attempt"] for record in attempts] == [1, 2, 3]
+    serialized = "\n".join(audit_lines)
+    assert str(source) not in serialized
+    assert "database contents" not in serialized
+    assert not (destination_root / "generations" / "20260816T120000Z").exists()
+
+
 def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(tmp_path: Path) -> None:
     first_source = tmp_path / "workspace.db"
     second_source = tmp_path / "music" / "heartmusic-store"

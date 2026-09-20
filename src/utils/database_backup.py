@@ -17,10 +17,11 @@ from src.utils.database_backup_scope import (
     discover_databases,
     validate_manifest,
 )
-from src.utils.database_backup_observability import enforce_retention
+from src.utils.database_backup_observability import enforce_retention, record_backup_attempt
 
 
 MANIFEST_KEY_ENV = "WORKSPACE_BACKUP_MANIFEST_KEY"
+SOURCE_STABILITY_MAX_ATTEMPTS = 3
 SQLCIPHER_RESTORE_PRAGMAS = (
     "PRAGMA cipher_page_size=4096",
     "PRAGMA kdf_iter=256000",
@@ -229,6 +230,21 @@ def _copy_with_source_stability_check(source: Path, destination: Path) -> None:
         raise BackupError("source changed during backup; retry when database writes are idle")
 
 
+def _copy_with_source_stability_retries(
+    source: Path, destination: Path, evidence_path: Path
+) -> None:
+    for attempt in range(1, SOURCE_STABILITY_MAX_ATTEMPTS + 1):
+        try:
+            _copy_with_source_stability_check(source, destination)
+            return
+        except BackupError as error:
+            if "source changed during backup" not in str(error):
+                raise
+            record_backup_attempt(evidence_path, attempt, error)
+            if attempt == SOURCE_STABILITY_MAX_ATTEMPTS:
+                raise
+
+
 def _redacted_target_id(restore_root: Path) -> str:
     digest = hashlib.sha256(str(restore_root.resolve()).encode("utf-8")).hexdigest()[:16]
     return f"restore-{digest}"
@@ -372,6 +388,7 @@ class DatabaseBackup:
         temporary_root = generation_root.with_name(generation_root.name + ".tmp")
         temporary_root.mkdir(parents=True)
         files: list[dict[str, str]] = []
+        audit_path = self._destination.path() / "backup-audit.jsonl"
         try:
             for entry in entries:
                 if not entry.get("backup_allowed", False):
@@ -381,7 +398,7 @@ class DatabaseBackup:
                 if not source.is_file():
                     raise BackupError(f"manifest source is missing: {source}")
                 target = temporary_root / Path(relative_path)
-                _copy_with_source_stability_check(source, target)
+                _copy_with_source_stability_retries(source, target, audit_path)
                 files.append({"relative_path": relative_path, "sha256": _sha256(target)})
             metadata = {
                 "schema_version": 1,
@@ -422,7 +439,6 @@ class DatabaseBackup:
                 shutil.rmtree(temporary_root)
         self._prune_generations()
         final_manifest = generation_root / "manifest.json"
-        audit_path = self._destination.path() / "backup-audit.jsonl"
         with audit_path.open("a", encoding="utf-8") as audit:
             audit.write(
                 json.dumps(

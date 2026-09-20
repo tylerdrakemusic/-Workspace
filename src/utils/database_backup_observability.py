@@ -41,6 +41,22 @@ def redact_failure(error: BaseException) -> dict[str, str]:
     return {"error_type": type(error).__name__, "message": message}
 
 
+def record_backup_attempt(
+    evidence_path: Path, attempt: int, error: BaseException
+) -> None:
+    """Append redacted failure evidence for one backup attempt."""
+    evidence_path = Path(evidence_path)
+    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "event": "backup_attempt",
+        "attempt": attempt,
+        "status": "failed",
+        "failure": redact_failure(error),
+    }
+    with evidence_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+
 def enforce_retention(
     generations_root: Path,
     retention: int = 30,
