@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import src.utils.database_backup as database_backup_module
 from src.utils.database_backup import BackupError
 from src.utils.database_backup_scope import discover_databases, load_manifest, validate_manifest
 from tools.register_database_backup_task import build_task_spec
@@ -113,6 +114,12 @@ def test_scheduled_life_root_action_resolves_redacted_manifest_key(
     volume.mkdir()
     (volume / ".backup-volume-identity").write_text("temporary-volume\n", encoding="utf-8")
     manifest_path = Path(__file__).parents[1] / "src" / "config" / "database_backup_scope.json"
+
+    def copy_test_database(source: Path, destination: Path, key_env: str) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(source.read_bytes())
+
+    monkeypatch.setattr(database_backup_module, "_copy_sqlcipher_database", copy_test_database)
 
     result = backup_runner.run_scheduled_backups(
         manifest_path=manifest_path,

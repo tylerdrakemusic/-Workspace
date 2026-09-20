@@ -22,27 +22,33 @@ _FAILURE_CATEGORIES = frozenset({
 })
 
 
-def redact_failure(error: BaseException) -> dict[str, str]:
-    """Return a stable failure category without paths, keys, or database names."""
+def redact_failure(
+    error: BaseException, database_id: str | None = None
+) -> dict[str, str]:
+    """Return a stable failure category with an optional approved logical ID."""
     messages = {
         FileNotFoundError: "backup source is unavailable",
         PermissionError: "backup operation was denied",
         ValueError: "backup policy is invalid",
     }
     if type(error).__name__ == "BackupError" and "source changed during backup" in str(error):
-        return {
+        failure = {
             "error_type": type(error).__name__,
             "message": "source changed during backup; retry when database writes are idle",
         }
-    message = next(
-        (text for error_type, text in messages.items() if isinstance(error, error_type)),
-        "backup operation failed",
-    )
-    return {"error_type": type(error).__name__, "message": message}
+    else:
+        message = next(
+            (text for error_type, text in messages.items() if isinstance(error, error_type)),
+            "backup operation failed",
+        )
+        failure = {"error_type": type(error).__name__, "message": message}
+    if database_id:
+        failure["database_id"] = database_id
+    return failure
 
 
 def record_backup_attempt(
-    evidence_path: Path, attempt: int, error: BaseException
+    evidence_path: Path, attempt: int, error: BaseException, database_id: str | None = None
 ) -> None:
     """Append redacted failure evidence for one backup attempt."""
     evidence_path = Path(evidence_path)
@@ -51,7 +57,7 @@ def record_backup_attempt(
         "event": "backup_attempt",
         "attempt": attempt,
         "status": "failed",
-        "failure": redact_failure(error),
+        "failure": redact_failure(error, database_id=database_id),
     }
     with evidence_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")

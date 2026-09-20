@@ -231,7 +231,7 @@ def _copy_with_source_stability_check(source: Path, destination: Path) -> None:
 
 
 def _copy_with_source_stability_retries(
-    source: Path, destination: Path, evidence_path: Path
+    source: Path, destination: Path, evidence_path: Path, database_id: str | None = None
 ) -> None:
     for attempt in range(1, SOURCE_STABILITY_MAX_ATTEMPTS + 1):
         try:
@@ -240,9 +240,51 @@ def _copy_with_source_stability_retries(
         except BackupError as error:
             if "source changed during backup" not in str(error):
                 raise
-            record_backup_attempt(evidence_path, attempt, error)
+            record_backup_attempt(evidence_path, attempt, error, database_id=database_id)
             if attempt == SOURCE_STABILITY_MAX_ATTEMPTS:
                 raise
+
+
+def _configure_sqlcipher_connection(connection: Any, key_env: str) -> None:
+    key = os.environ.get(key_env, "")
+    if not key:
+        raise BackupError("SQLCipher key environment variable is unavailable")
+    raw_key = key.encode("utf-8").hex()
+    connection.execute(f'PRAGMA key="x\'{raw_key}\'"')
+    for pragma in SQLCIPHER_RESTORE_PRAGMAS:
+        connection.execute(pragma)
+
+
+def _copy_sqlcipher_database(source: Path, destination: Path, key_env: str) -> None:
+    """Copy an encrypted database through SQLCipher without creating plaintext."""
+    try:
+        import sqlcipher3
+    except ImportError as error:  # pragma: no cover - dependency is deployment-specific
+        raise BackupError("SQLCipher backup support is unavailable") from error
+    if not hasattr(sqlcipher3.Connection, "backup"):
+        raise BackupError("SQLCipher backup support is unavailable")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    source_connection = None
+    destination_connection = None
+    try:
+        source_connection = sqlcipher3.connect(str(source))
+        _configure_sqlcipher_connection(source_connection, key_env)
+        destination_connection = sqlcipher3.connect(str(destination))
+        _configure_sqlcipher_connection(destination_connection, key_env)
+        source_connection.backup(destination_connection)
+        destination_connection.commit()
+    except BackupError:
+        raise
+    except Exception as error:  # noqa: BLE001 - normalize driver details
+        raise BackupError("SQLCipher database backup failed") from error
+    finally:
+        if source_connection is not None:
+            source_connection.close()
+        if destination_connection is not None:
+            destination_connection.close()
+        if not destination.is_file():
+            destination.unlink(missing_ok=True)
 
 
 def _redacted_target_id(restore_root: Path) -> str:
@@ -398,7 +440,22 @@ class DatabaseBackup:
                 if not source.is_file():
                     raise BackupError(f"manifest source is missing: {source}")
                 target = temporary_root / Path(relative_path)
-                _copy_with_source_stability_retries(source, target, audit_path)
+                database_id = str(entry.get("id", ""))
+                if entry.get("encryption") == "sqlcipher":
+                    key_env = entry.get("key_env")
+                    if not isinstance(key_env, str) or not key_env:
+                        raise BackupError("SQLCipher database key metadata is missing")
+                    try:
+                        _copy_sqlcipher_database(source, target, key_env)
+                    except BackupError as error:
+                        record_backup_attempt(
+                            audit_path, 1, error, database_id=database_id
+                        )
+                        raise
+                else:
+                    _copy_with_source_stability_retries(
+                        source, target, audit_path, database_id=database_id
+                    )
                 files.append({"relative_path": relative_path, "sha256": _sha256(target)})
             metadata = {
                 "schema_version": 1,
