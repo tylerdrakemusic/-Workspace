@@ -99,6 +99,7 @@ def reclaim_port(
             encoding="utf-8",
             errors="replace",
             check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
@@ -114,6 +115,7 @@ def reclaim_port(
             encoding="utf-8",
             errors="replace",
             check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip() or f"exit {result.returncode}"
@@ -274,6 +276,7 @@ def _regenerate_optional_dashboards(
             timeout=timeout_seconds,
             check=False,
             shell=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         returncode = int(getattr(result, "returncode", 0))
         output = "\n".join(
