@@ -33,8 +33,10 @@ from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
 from parent_join_gates import (
     PARENT_JOIN_EVALUATOR_IDENTITY,
     ChildJoinSnapshot,
+    ParentRepositorySnapshot,
     evaluate_parent_join,
 )
+from workspace_discovery import PROJECT_ROOTS
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -52,6 +54,10 @@ _PARENT_JOIN_PASS_RE = re.compile(
     r"PARENT_JOIN\s*[:\-]?\s*(PASS|COMPLETE)\b", re.IGNORECASE
 )
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+_WORKSPACE_ROOT = next(
+    (parent for parent in _REPOSITORY_ROOT.parents if parent.name == "⊕Workspace"),
+    _REPOSITORY_ROOT,
+)
 
 
 def _resolve_parent_head(parent_branch: str) -> str:
@@ -82,7 +88,45 @@ def _resolve_parent_head(parent_branch: str) -> str:
     return current_head
 
 
+def _resolve_repository_parent_head(parent_branch: str, project: str) -> str:
+    """Resolve a project's parent head from trusted roots and worktrees."""
+    project_root = PROJECT_ROOTS.get(project)
+    if project_root is None:
+        raise ValueError("unknown parent repository project")
+    candidates: list[Path] = []
+    if project == "⊕Workspace":
+        candidates.append(_REPOSITORY_ROOT)
+        candidates.append(_WORKSPACE_ROOT / "⊕Workspace")
+    else:
+        candidates.append(project_root)
+    worktrees_root = project_root / ".worktrees"
+    if worktrees_root.is_dir():
+        candidates.extend(sorted(path for path in worktrees_root.iterdir() if path.is_dir()))
+    for candidate in dict.fromkeys(candidates):
+        branch_result = subprocess.run(
+            ["git", "-C", str(candidate), "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if branch_result.returncode != 0 or branch_result.stdout.strip() != parent_branch:
+            continue
+        head_result = subprocess.run(
+            ["git", "-C", str(candidate), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        head = head_result.stdout.strip()
+        if head_result.returncode == 0 and re.fullmatch(r"[0-9a-fA-F]{40}", head):
+            return head
+    raise ValueError("checked-out repository branch does not match the FR parent branch")
+
+
 _parent_head_resolver: Callable[[str], str | None] | None = _resolve_parent_head
+_repository_parent_head_resolver: Callable[[str, str], str | None] | None = (
+    _resolve_repository_parent_head
+)
 
 
 def _conn():
@@ -123,10 +167,28 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
     ).fetchone()
     parent_branch = fr["branch"] if fr and hasattr(fr, "keys") else (fr[0] if fr else None)
     acceptance_criteria = fr["acceptance_criteria"] if fr and hasattr(fr, "keys") else (fr[1] if fr else None)
+    multi_repo_contract_declared = False
     try:
         contract = json.loads(acceptance_criteria or "{}")
         parent_join = contract["parent_join"]
         required_todos = parent_join["required_todos"]
+        multi_repo_contract_declared = (
+            "parent_repositories" in parent_join or "repositories" in parent_join
+        )
+        repository_contract = parent_join.get(
+            "parent_repositories", parent_join.get("repositories", [])
+        )
+        if not isinstance(repository_contract, list):
+            raise ValueError
+        parent_repositories = tuple(
+            ParentRepositorySnapshot(
+                repository=repository["repository"],
+                project=repository["project"],
+                parent_branch=repository["parent_branch"],
+                parent_head="",
+            )
+            for repository in repository_contract
+        )
         canonical_children = tuple(
             ChildJoinSnapshot(**child) for child in parent_join["children"]
         )
@@ -134,6 +196,7 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
             raise ValueError
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         required_todos = ()
+        parent_repositories = ()
         canonical_children = ()
     if _parent_head_resolver is None or not parent_branch:
         current_parent_head = None
@@ -144,6 +207,30 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
             current_parent_head = None
     if not current_parent_head:
         current_parent_head = None
+    resolved_repositories: tuple[ParentRepositorySnapshot, ...] = ()
+    repository_resolution_blocked = multi_repo_contract_declared
+    if parent_repositories:
+        if _repository_parent_head_resolver is None:
+            resolved_repositories = ()
+        else:
+            try:
+                resolved_repositories = tuple(
+                    ParentRepositorySnapshot(
+                        repository=repository.repository,
+                        project=repository.project,
+                        parent_branch=repository.parent_branch,
+                        parent_head=_repository_parent_head_resolver(
+                            repository.parent_branch, repository.project
+                        ) or "",
+                    )
+                    for repository in parent_repositories
+                )
+                repository_resolution_blocked = (
+                    len(resolved_repositories) != len(parent_repositories)
+                    or any(not repository.parent_head for repository in resolved_repositories)
+                )
+            except (OSError, RuntimeError, ValueError):
+                resolved_repositories = ()
     evidence_rows = conn.execute(
         "SELECT ts, label FROM fr_artifacts "
         "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
@@ -175,12 +262,29 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
                 continue
             if not required_todos or not canonical_children:
                 continue
+            if evidence.get("required_todos") != list(required_todos):
+                continue
+            evidence_children = tuple(
+                ChildJoinSnapshot(**child) for child in evidence.get("children", ())
+            )
+            if evidence_children != canonical_children:
+                continue
+            if repository_resolution_blocked:
+                continue
+            if resolved_repositories:
+                evidence_repositories = tuple(
+                    ParentRepositorySnapshot(**repository)
+                    for repository in evidence.get("parent_repositories", ())
+                )
+                if evidence_repositories != resolved_repositories:
+                    continue
             result = evaluate_parent_join(
                 fr_id=fr_id,
                 parent_branch=parent_branch,
                 parent_head=current_parent_head,
                 required_todos=required_todos,
                 children=canonical_children,
+                parent_repositories=resolved_repositories,
             )
             if (
                 result.complete
@@ -194,6 +298,10 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
         except (AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             continue
     blocker = (
+        "repository-specific parent head resolution failed; "
+        if repository_resolution_blocked
+        else ""
+    ) + (
         "evaluator identity is missing or mismatched; "
         if evaluator_identity_blocked
         else ""
