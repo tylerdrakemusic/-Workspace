@@ -1,6 +1,6 @@
 # ⊕ Architecture Impact Report - FR-20260919-copilot-cloud-agent-consumer
 
-**Commit reviewed:** `42a4e6e5ebf9b25d3c2f91ad57e2562a8a06a293`
+**Commit reviewed:** `6e20b758c46b714aa679203dcf9a97d371b5c67d`
 **Decision:** PASS
 
 ## Diff Review
