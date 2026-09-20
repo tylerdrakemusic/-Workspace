@@ -15,9 +15,17 @@ directories remain outside the scope.
 ## Operator Workflow
 
 1. Confirm the destination identity marker and required environment variables.
-2. Run the scheduled backup using the approved inventory manifest.
-3. Review the redacted status and `backup-audit.jsonl`; failures contain no
-   source paths, database contents, or key values.
+2. Run the scheduled backup using the approved inventory manifest. Declared
+   SQLCipher databases use the installed driver's online backup API with the
+   configured key applied to both connections, preserving encryption at the
+   destination. Missing SQLCipher support or key metadata fails closed; it
+   never falls back to a raw or plaintext copy. Entries without SQLCipher
+   metadata retain the bounded source-stability check and retry up to three
+   total attempts.
+3. Review the redacted status and `backup-audit.jsonl`; each failed attempt is
+   durable evidence identified only by the approved logical database ID.
+   Records contain no source paths, filenames, database contents, key names, or
+   key values.
 4. Validate the manifest authentication, checksums, SQLCipher opening, and
    schema metadata in an isolated restore directory. Never restore into a live
    project root or runtime database.

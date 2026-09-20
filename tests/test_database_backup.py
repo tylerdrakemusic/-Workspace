@@ -139,7 +139,162 @@ def test_backup_rejects_source_changed_during_copy_and_cleans_generation(
     assert not list(destination_root.glob("generations/*.tmp"))
 
 
-def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(tmp_path: Path) -> None:
+def test_backup_retries_transient_source_instability_and_records_redacted_attempt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+    original_copy = database_backup_module._copy_with_source_stability_check
+    attempts = 0
+
+    def fail_once(source_path: Path, destination_path: Path) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise BackupError(
+                f"source changed during backup: {source_path}; WORKSPACE_DB_KEY=secret"
+            )
+        original_copy(source_path, destination_path)
+
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+    monkeypatch.setattr(database_backup_module, "_copy_with_source_stability_check", fail_once)
+
+    result = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    assert attempts == 2
+    assert result.manifest_path.is_file()
+    audit = (destination_root / "backup-audit.jsonl").read_text(encoding="utf-8")
+    assert '"event": "backup_attempt"' in audit
+    assert '"attempt": 1' in audit
+    assert "workspace.db" not in audit
+    assert "WORKSPACE_DB_KEY" not in audit
+    assert "secret" not in audit
+
+
+def test_backup_bounds_source_instability_retries_and_records_each_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+
+    def always_unstable(source_path: Path, destination_path: Path) -> None:
+        raise BackupError(
+            f"source changed during backup: {source_path}; database contents must stay private"
+        )
+
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+    monkeypatch.setattr(
+        database_backup_module, "_copy_with_source_stability_check", always_unstable
+    )
+
+    with pytest.raises(BackupError, match="source changed during backup"):
+        DatabaseBackup(
+            manifest=_manifest(),
+            source_root=tmp_path,
+            destination=destination,
+            expected_destination_identity="approved-volume",
+            now=lambda: "2026-08-16T12:00:00Z",
+        ).run()
+
+    audit_lines = (destination_root / "backup-audit.jsonl").read_text(encoding="utf-8").splitlines()
+    attempts = [json.loads(line) for line in audit_lines]
+    assert [record["attempt"] for record in attempts] == [1, 2, 3]
+    serialized = "\n".join(audit_lines)
+    assert str(source) not in serialized
+    assert "database contents" not in serialized
+    assert not (destination_root / "generations" / "20260816T120000Z").exists()
+
+
+def test_backup_failure_evidence_identifies_logical_database_without_sensitive_details(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "private-database.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+    manifest = _manifest(path=source.name)
+    manifest["databases"][0]["id"] = "workspace-approved-db"
+
+    def always_unstable(source_path: Path, destination_path: Path) -> None:
+        raise BackupError(
+            f"source changed during backup: {source_path}; "
+            "WORKSPACE_DB_KEY=super-secret; contents=private-row"
+        )
+
+    monkeypatch.setattr(
+        database_backup_module, "_copy_with_source_stability_check", always_unstable
+    )
+
+    with pytest.raises(BackupError, match="source changed during backup"):
+        DatabaseBackup(
+            manifest=manifest,
+            source_root=tmp_path,
+            destination=destination,
+            expected_destination_identity="approved-volume",
+            now=lambda: "2026-08-16T12:00:00Z",
+        ).run()
+
+    audit = (destination_root / "backup-audit.jsonl").read_text(encoding="utf-8")
+    assert '"database_id": "workspace-approved-db"' in audit
+    for forbidden in (str(source), source.name, "WORKSPACE_DB_KEY", "super-secret", "private-row"):
+        assert forbidden not in audit
+
+
+def test_sqlcipher_database_uses_consistent_backup_path_instead_of_raw_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes")
+    destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+    manifest = _manifest()
+    manifest["databases"][0]["encryption"] = "sqlcipher"
+    manifest["databases"][0]["key_env"] = "WORKSPACE_DB_KEY"
+    calls: list[tuple[Path, Path, str]] = []
+
+    def consistent_copy(source_path: Path, destination_path: Path, key_env: str) -> None:
+        calls.append((source_path, destination_path, key_env))
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        destination_path.write_bytes(source_path.read_bytes())
+
+    def raw_copy_is_forbidden(*args: object, **kwargs: object) -> None:
+        raise AssertionError("SQLCipher entries must not use raw-copy fallback")
+
+    monkeypatch.setattr(database_backup_module, "_copy_sqlcipher_database", consistent_copy)
+    monkeypatch.setattr(
+        database_backup_module, "_copy_with_source_stability_retries", raw_copy_is_forbidden
+    )
+
+    result = DatabaseBackup(
+        manifest=manifest,
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    assert calls == [
+        (
+            source,
+            tmp_path / "external" / "generations" / "20260816T120000Z.tmp" / "workspace.db",
+            "WORKSPACE_DB_KEY",
+        )
+    ]
+    assert result.manifest_path.is_file()
+
+
+def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     first_source = tmp_path / "workspace.db"
     second_source = tmp_path / "music" / "heartmusic-store"
     second_source.parent.mkdir()
@@ -169,6 +324,12 @@ def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(tmp_path
         },
     ]
     destination = LocalVolumeDestination(tmp_path / "external", "approved-volume", provision=True)
+
+    def copy_test_database(source_path: Path, destination_path: Path, key_env: str) -> None:
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        destination_path.write_bytes(source_path.read_bytes())
+
+    monkeypatch.setattr(database_backup_module, "_copy_sqlcipher_database", copy_test_database)
 
     result = DatabaseBackup(
         manifest=manifest,

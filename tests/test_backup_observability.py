@@ -22,6 +22,24 @@ def test_failure_details_are_redacted_and_structured() -> None:
     assert "SIGMACAPITAL_DB_KEY" not in json.dumps(failure)
 
 
+def test_failure_details_keep_only_approved_logical_database_id() -> None:
+    error = RuntimeError(
+        "source changed during backup: F:/private/sigmacapital.db; "
+        "SIGMACAPITAL_DB_KEY=secret; contents=account-number"
+    )
+
+    failure = observability.redact_failure(error, database_id="capital-approved-db")
+
+    assert failure == {
+        "error_type": "RuntimeError",
+        "message": "backup operation failed",
+        "database_id": "capital-approved-db",
+    }
+    serialized = json.dumps(failure)
+    for forbidden in ("sigmacapital.db", "SIGMACAPITAL_DB_KEY", "secret", "account-number"):
+        assert forbidden not in serialized
+
+
 def test_retention_preserves_latest_valid_recovery_point(tmp_path: Path) -> None:
     generations = tmp_path / "generations"
     generations.mkdir()
