@@ -221,6 +221,17 @@ def test_discover_databases_rejects_duplicate_project_basename_keys(tmp_path) ->
         discover_databases({"workspace": tmp_path})
 
 
+def test_discover_databases_prefers_canonical_capital_data_store(tmp_path) -> None:
+    (tmp_path / "data").mkdir()
+    (tmp_path / "src" / "data").mkdir(parents=True)
+    (tmp_path / "data" / "sigmacapital.db").touch()
+    (tmp_path / "src" / "data" / "sigmacapital.db").touch()
+
+    discovered = discover_databases({"capital": tmp_path})
+
+    assert discovered == [{"path": "capital/data/sigmacapital.db"}]
+
+
 def test_discover_databases_accepts_unique_project_basename_keys(tmp_path) -> None:
     (tmp_path / "first").mkdir()
     (tmp_path / "second").mkdir()
@@ -446,6 +457,24 @@ def test_committed_music_entry_declares_sqlcipher_restore_validation_metadata() 
 
     assert music_entry["encryption"] == "sqlcipher"
     assert music_entry["key_env"] == "HEARTMUSIC_DB_KEY"
+
+
+def test_committed_manifest_uses_canonical_database_ownership_and_key_metadata() -> None:
+    worktree = Path(__file__).resolve().parent.parent
+    manifest = load_manifest(worktree / "src" / "config" / "database_backup_scope.json")
+    entries = {entry["id"]: entry for entry in manifest["databases"]}
+
+    assert entries["quantum-quantumpsi"]["key_env"] == "QUANTUM_DB_KEY"
+    assert entries["quantum-quantumpsi"]["key_format"] == "hex"
+    assert "encryption" not in entries["manifest-todos"]
+    assert "key_env" not in entries["manifest-todos"]
+    assert entries["workspace"]["path"] == "⊕Workspace/src/data/workspace.db"
+    assert entries["workspace"]["schema_tables"] == ["perf_runs"]
+    assert entries["workspace-agent-perf"]["backup_allowed"] is False
+    assert "agent_perf.db" in entries["workspace-agent-perf"]["path"]
+    assert entries["workspace-fr-ledgers"]["key_env"] == "WORKSPACE_DB_KEY"
+    assert "encryption" not in entries["workspace-manifest-todos"]
+    assert "key_env" not in entries["workspace-manifest-todos"]
 
 
 def test_scheduler_registration_uses_canonical_music_project_root() -> None:

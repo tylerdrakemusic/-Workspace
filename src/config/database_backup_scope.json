@@ -68,7 +68,8 @@
       "backup_allowed": true,
       "reason": "Authoritative ⟨ψ⟩Quantum application database.",
       "encryption": "sqlcipher",
-      "key_env": "QUANTUMPSI_DB_KEY"
+      "key_env": "QUANTUM_DB_KEY",
+      "key_format": "hex"
     },
     {
       "id": "quantum-orion-config",
@@ -82,9 +83,7 @@
       "path": "👁AI-Manifest/src/data/manifest_todos.db",
       "classification": "coordination",
       "backup_allowed": true,
-      "reason": "Coordination database used by the manifest service.",
-      "encryption": "sqlcipher",
-      "key_env": "MANIFEST_TODOS_DB_KEY"
+      "reason": "Unencrypted coordination database used by the manifest service."
     },
     {
       "id": "manifest-todos-legacy",
@@ -104,10 +103,8 @@
       "id": "workspace-agent-perf",
       "path": "⊕Workspace/src/data/agent_perf.db",
       "classification": "coordination",
-      "backup_allowed": true,
-      "reason": "Shared agent performance coordination store.",
-      "encryption": "sqlcipher",
-      "key_env": "AGENT_PERF_DB_KEY"
+      "backup_allowed": false,
+      "reason": "Superseded performance store; perf_runs is owned by workspace.db."
     },
     {
       "id": "workspace-fr-ledgers",
@@ -116,16 +113,14 @@
       "backup_allowed": true,
       "reason": "Feature-request coordination ledger.",
       "encryption": "sqlcipher",
-      "key_env": "FR_LEDGERS_DB_KEY"
+      "key_env": "WORKSPACE_DB_KEY"
     },
     {
       "id": "workspace-manifest-todos",
       "path": "⊕Workspace/src/data/manifest_todos.db",
       "classification": "coordination",
       "backup_allowed": true,
-      "reason": "Shared coordination todo store.",
-      "encryption": "sqlcipher",
-      "key_env": "MANIFEST_TODOS_DB_KEY"
+      "reason": "Unencrypted shared coordination todo store."
     },
     {
       "id": "workspace",
@@ -134,7 +129,8 @@
       "backup_allowed": true,
       "reason": "Authoritative shared workspace database.",
       "encryption": "sqlcipher",
-      "key_env": "WORKSPACE_DB_KEY"
+      "key_env": "WORKSPACE_DB_KEY",
+      "schema_tables": ["perf_runs"]
     },
     {
       "id": "workspace-temporary",

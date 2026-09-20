@@ -245,17 +245,29 @@ def _copy_with_source_stability_retries(
                 raise
 
 
-def _configure_sqlcipher_connection(connection: Any, key_env: str) -> None:
+def _configure_sqlcipher_connection(
+    connection: Any, key_env: str, *, key_format: str = "literal"
+) -> None:
     key = os.environ.get(key_env, "")
     if not key:
         raise BackupError("SQLCipher key environment variable is unavailable")
-    safe_key = key.replace("'", "''")
-    connection.execute(f"PRAGMA key='{safe_key}'")
+    if key_format == "hex":
+        connection.execute(f'PRAGMA key="x\'{key.encode().hex()}\'"')
+    elif key_format == "literal":
+        safe_key = key.replace("'", "''")
+        connection.execute(f"PRAGMA key='{safe_key}'")
+    else:
+        raise BackupError("SQLCipher key format is unsupported")
     for pragma in SQLCIPHER_RESTORE_PRAGMAS:
         connection.execute(pragma)
 
 
-def _copy_sqlcipher_database(source: Path, destination: Path, key_env: str) -> None:
+def _copy_sqlcipher_database(
+    source: Path,
+    destination: Path,
+    key_env: str,
+    key_format: str = "literal",
+) -> None:
     """Copy an encrypted database through SQLCipher without creating plaintext."""
     try:
         import sqlcipher3
@@ -269,9 +281,13 @@ def _copy_sqlcipher_database(source: Path, destination: Path, key_env: str) -> N
     destination_connection = None
     try:
         source_connection = sqlcipher3.connect(str(source))
-        _configure_sqlcipher_connection(source_connection, key_env)
+        _configure_sqlcipher_connection(
+            source_connection, key_env, key_format=key_format
+        )
         destination_connection = sqlcipher3.connect(str(destination))
-        _configure_sqlcipher_connection(destination_connection, key_env)
+        _configure_sqlcipher_connection(
+            destination_connection, key_env, key_format=key_format
+        )
         source_connection.backup(destination_connection)
         destination_connection.commit()
     except BackupError:
@@ -442,8 +458,14 @@ class DatabaseBackup:
                     key_env = entry.get("key_env")
                     if not isinstance(key_env, str) or not key_env:
                         raise BackupError("SQLCipher database key metadata is missing")
+                    key_format = entry.get("key_format", "literal")
                     try:
-                        _copy_sqlcipher_database(source, target, key_env)
+                        if key_format == "literal":
+                            _copy_sqlcipher_database(source, target, key_env)
+                        else:
+                            _copy_sqlcipher_database(
+                                source, target, key_env, key_format=key_format
+                            )
                     except BackupError as error:
                         record_backup_attempt(
                             audit_path, 1, error, database_id=database_id
@@ -470,6 +492,7 @@ class DatabaseBackup:
                                 "classification",
                                 "encryption",
                                 "key_env",
+                                "key_format",
                                 "schema_tables",
                             )
                             if field in entry
@@ -553,7 +576,7 @@ class DatabaseBackup:
             if manifest_path.is_file():
                 try:
                     validate_backup(manifest_path)
-                except BackupError:
+                except (BackupError, OSError, TypeError, ValueError, KeyError):
                     continue
                 valid_generations.add(generation.name)
         enforce_retention(

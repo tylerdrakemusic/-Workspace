@@ -110,6 +110,26 @@ def test_backup_writes_hashed_manifest_and_prunes_old_generations(tmp_path: Path
     assert validate_backup(result.manifest_path) is True
 
 
+def test_backup_skips_malformed_retained_generation_during_pruning(tmp_path: Path) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"database-bytes")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+    malformed = destination_root / "generations" / "old-malformed"
+    malformed.mkdir(parents=True)
+    (malformed / "manifest.json").write_text("{", encoding="utf-8")
+
+    result = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=tmp_path,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    assert result.manifest_path.is_file()
+
+
 def test_backup_rejects_source_changed_during_copy_and_cleans_generation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -309,6 +329,29 @@ def test_sqlcipher_configuration_uses_canonical_literal_key_syntax(
 
     assert connection.statements == [
         "PRAGMA key='literal-key-with-''quote'",
+        *database_backup_module.SQLCIPHER_RESTORE_PRAGMAS,
+    ]
+
+
+def test_sqlcipher_configuration_supports_canonical_hex_key_syntax(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class RecordingConnection:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+
+        def execute(self, statement: str) -> None:
+            self.statements.append(statement)
+
+    connection = RecordingConnection()
+    monkeypatch.setenv("QUANTUM_DB_KEY", "quantum-key")
+
+    database_backup_module._configure_sqlcipher_connection(
+        connection, "QUANTUM_DB_KEY", key_format="hex"
+    )
+
+    assert connection.statements == [
+        'PRAGMA key="x\'7175616e74756d2d6b6579\'"',
         *database_backup_module.SQLCIPHER_RESTORE_PRAGMAS,
     ]
 

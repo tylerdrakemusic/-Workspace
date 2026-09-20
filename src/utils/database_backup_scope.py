@@ -34,7 +34,13 @@ REQUIRED_DATABASE_FIELDS = {
     "backup_allowed",
     "reason",
 }
-OPTIONAL_DATABASE_FIELDS = {"discovery", "encryption", "key_env", "schema_tables"}
+OPTIONAL_DATABASE_FIELDS = {
+    "discovery",
+    "encryption",
+    "key_env",
+    "key_format",
+    "schema_tables",
+}
 EXCLUSION_FIELDS = {"pattern", "reason"}
 DISCOVERY_FIELDS = {"project", "basename"}
 DATABASE_SUFFIXES = {".db", ".sqlite", ".sqlite3"}
@@ -60,6 +66,9 @@ EXCLUDED_DIRECTORY_NAMES = {
 DISPLAY_PROJECT_KEYS = {
     "∞Life": "life",
     "ΣCapital": "capital",
+}
+CANONICAL_DISCOVERY_PATHS = {
+    ("capital", "sigmacapital.db"): "capital/data/sigmacapital.db",
 }
 
 
@@ -186,6 +195,8 @@ def validate_manifest(
             )
         if "encryption" in database and database["encryption"] != "sqlcipher":
             raise ValueError("database encryption must be sqlcipher")
+        if "key_format" in database and database["key_format"] not in {"literal", "hex"}:
+            raise ValueError("database key_format must be literal or hex")
         if "key_env" in database and (
             not isinstance(database["key_env"], str)
             or not re.fullmatch(r"[A-Z][A-Z0-9_]*", database["key_env"])
@@ -306,6 +317,16 @@ def discover_databases(
             path = f"{project}/{relative_path}" if label else relative_path
             previous_path = discovery_keys.get(discovery_key)
             if previous_path is not None:
+                canonical_path = CANONICAL_DISCOVERY_PATHS.get(discovery_key)
+                if canonical_path in {previous_path, path}:
+                    if previous_path == canonical_path:
+                        continue
+                    discovered = [
+                        entry for entry in discovered if entry["path"] != previous_path
+                    ]
+                    discovery_keys[discovery_key] = path
+                    discovered.append({"path": path})
+                    continue
                 raise ValueError(
                     "discovery collision for "
                     f"(project={project!r}, basename={candidate.name!r}): "
