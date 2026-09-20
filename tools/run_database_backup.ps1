@@ -54,7 +54,8 @@ if ((Get-Content -LiteralPath $marker -Raw).Trim() -cne $env:WORKSPACE_BACKUP_VO
 
 $runnerArguments = @(
     '--manifest', $Manifest,
-    '--volume-root', $volume
+    '--volume-root', $volume,
+    '--volume-identity', $env:WORKSPACE_BACKUP_VOLUME_ID
 )
 if ($ProjectRoot.Count -gt 0) {
     if (-not [string]::IsNullOrWhiteSpace($SourceRoot)) {
