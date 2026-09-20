@@ -30,7 +30,16 @@ class TestDiscovery:
     def test_discovers_all_projects(self):
         projects = wd.discover_projects()
         assert isinstance(projects, list)
-        assert len(projects) == 5
+        assert len(projects) == 6
+
+    def test_discovers_sigmacapital_with_canonical_private_identity(self):
+        project = next(project for project in wd.discover_projects() if project["name"] == "ΣCapital")
+
+        assert project == {
+            "name": "ΣCapital",
+            "root": Path(r"f:\ΣCapital"),
+            "sigil": "Σ",
+        }
 
     def test_discovers_all_agents(self):
         agents = wd.discover_agents()
@@ -114,11 +123,11 @@ class TestAlignment:
 
     @pytest.mark.skipif(
         os.getenv("CI") == "true",
-        reason="requires local multi-root workspace filesystem (all 5 projects checked out)",
+        reason="requires local multi-root workspace filesystem (all 6 projects checked out)",
     )
     def test_all_projects_have_tests(self):
         report = wd.alignment_report()
-        assert len(report) == 5
+        assert len(report) == 6
         for entry in report:
             assert entry["has_tests"] is True, (
                 f"Project {entry['project']!r} has no tests (has_tests=False)"

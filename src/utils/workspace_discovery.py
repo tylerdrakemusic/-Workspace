@@ -21,6 +21,7 @@ PROJECT_ROOTS: dict[str, Path] = {
     "⟨ψ⟩Quantum":   Path(r"f:\⟨ψ⟩Quantum"),
     "👁AI-Manifest": Path(r"f:\👁AI-Manifest"),
     "⊕Workspace":    Path(r"f:\⊕Workspace"),
+    "ΣCapital":      Path(r"f:\ΣCapital"),
 }
 
 PROJECT_SIGILS: dict[str, str] = {
@@ -29,6 +30,7 @@ PROJECT_SIGILS: dict[str, str] = {
     "⟨ψ⟩Quantum":   "⟨ψ⟩",
     "👁AI-Manifest": "👁",
     "⊕Workspace":    "⊕",
+    "ΣCapital":      "Σ",
 }
 
 # Resolve relative to this module: src/utils/ → src/ → repo-root/ → .github/agents/
@@ -58,6 +60,7 @@ _PROJECT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "⟨ψ⟩Quantum":   ("⟨ψ⟩quantum", "quantum"),
     "👁AI-Manifest": ("👁ai-manifest", "manifest"),
     "⊕Workspace":    ("⊕workspace", "workspace"),
+    "ΣCapital":      ("σcapital", "capital"),
 }
 
 # ---------------------------------------------------------------------------
@@ -172,4 +175,6 @@ def _detect_sigil(name: str) -> str:
         return "👁"
     if name.startswith("⊕"):
         return "⊕"
+    if name.startswith("Σ"):
+        return "Σ"
     return "unknown"
