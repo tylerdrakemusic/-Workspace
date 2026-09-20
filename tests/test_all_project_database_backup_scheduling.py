@@ -115,7 +115,12 @@ def test_scheduled_life_root_action_resolves_redacted_manifest_key(
     (volume / ".backup-volume-identity").write_text("temporary-volume\n", encoding="utf-8")
     manifest_path = Path(__file__).parents[1] / "src" / "config" / "database_backup_scope.json"
 
-    def copy_test_database(source: Path, destination: Path, key_env: str) -> None:
+    def copy_test_database(
+        source: Path,
+        destination: Path,
+        key_env: str,
+        key_format: str = "literal",
+    ) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(source.read_bytes())
 
@@ -144,7 +149,6 @@ def test_scope_contains_all_six_canonical_project_roots_and_redacted_capital_ent
         "music-heartmusic",
         "quantum-quantumpsi",
         "manifest-todos",
-        "workspace-agent-perf",
         "workspace-fr-ledgers",
         "workspace-manifest-todos",
         "workspace",
