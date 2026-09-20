@@ -16,8 +16,7 @@ graph LR
     Workspace --> DashboardPortal[Dashboard portal<br/>load]
     DashboardPortal -->|"GET /api/health/database-backup"| BackupHealthEndpoint[local read-only DB Backup Health endpoint]
     BackupHealthEndpoint --> BackupHealthInputs[approved backup manifest<br/>Windows Task Scheduler metadata<br/>existing audit + generation evidence]
-    BackupHealthInputs --> AllowedBackupEntries{backup_allowed=true entries only}
-    AllowedBackupEntries --> BackupHealthProjection[redacted aggregate<br/>Healthy / Attention / Unavailable]
+    BackupHealthInputs --> BackupHealthProjection[backup_allowed=true entries only<br/>redacted aggregate<br/>Healthy / Attention / Unavailable]
     BackupHealthProjection --> BrowserBoundary[Browser boundary<br/>aggregate fields only<br/>no execution, restore, validation drill, scheduler mutation,<br/>raw paths, filenames, database names, secrets, or raw logs]
     BrowserBoundary -->|"separate DB Backup Health section"| AIHealthWidget
     AIHealthWidget --> AIHealthContract[provider-neutral readiness contract<br/>in-memory result · live freshness]
@@ -38,15 +37,18 @@ graph LR
     Manifest --> ManifestBriefPortal[Executive Audio Brief Portal<br/>read-only TODO lifecycle projection]
     ManifestBriefPortal -.->|read-only state projection| TodoExecutionLifecycle[(todo_execution_lifecycle<br/>⊕ canonical execution state)]
     Capital --> CapitalDB[(sigmacapital.db)]
+    Capital --> CapitalSerpApiReadiness[Σ Capital SerpApi readiness<br/>configuration-only default<br/>no quota-consuming request<br/>SERPAPI_KEY environment-only boundary<br/>credentials_configured · activation_enabled=false]
+    CapitalSerpApiReadiness -.->|explicit operator authorization only| SerpApiSmoke{{read-only smoke opt-in}}
+    SerpApiSmoke -.-> SerpApiGoogleFinance([SerpApi Google Finance])
     Life --> AggregateHandoff[Aggregate-only Life-to-Quantum handoff]
     AggregateHandoff ==> QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
     QuantumValidator --> SufficiencyGate{Sufficiency gate}
     SufficiencyGate --> ExecutionDenied[Real-data execution denied]
-    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection ws
+    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection,CapitalSerpApiReadiness ws
     class Life,Music,Quantum,Manifest,Capital orch
     class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult orch
-    class AggregateHandoff,SufficiencyGate,ExecutionDenied,AllowedBackupEntries,BrowserBoundary state
-    class GitHub,Mermaid,ElevenLabs ext
+    class AggregateHandoff,SufficiencyGate,ExecutionDenied,BrowserBoundary,SerpApiSmoke state
+    class GitHub,Mermaid,ElevenLabs,SerpApiGoogleFinance ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,TodoExecutionLifecycle,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

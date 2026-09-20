@@ -13,28 +13,25 @@ graph TB
         AlertFallback[Fail-open text result<br/>blocking decision workflow preserved]
         HandoffRuntime[agent_handoff_protocol.py<br/>durable envelope/result exchange]
         BackupContract[Provider-neutral local<br/>database backup contract]
-        BoundedLogging[bounded_logging.py<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
+        BoundedLogging[Σ Capital shared logging boundary + bounded_logging.py<br/>adapter + consumers + bootstrap<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
         AIHealth[api_health_monitor.py → ReadinessResult → ⊕ AI Health widget<br/>provider-neutral · non-generative · in-memory<br/>ready · degraded · unavailable · unknown · live freshness<br/>safe diagnostic codes · no runtime import from 👁 AI-Manifest]
     end
     subgraph Life["∞ Life"]
-        LifeDB[(Health & Longevity Tracking<br/>encrypted SQLCipher data)]
     end
     subgraph Music["❤ Music"]
-        MusicDB[(Catalog · Setlist · Guitar Trainer<br/>heartmusic.db · SQLCipher)]
     end
     subgraph Quantum["⟨ψ⟩ Quantum"]
-        QDB[(Shor · QRNG · IBM Quantum<br/>quantumpsi.db · SQLCipher)]
     end
     subgraph Manifest["👁 AI-Manifest"]
         MAPI[Executive Audio Brief Portal<br/>ElevenLabs · OpenAI<br/>Voice & Briefs]
-        ManifestDB[(manifest_todos.db<br/>SQLCipher · canonical coordination)]
         AlertCapability[RepositoryVoiceInjection<br/>governed repository voice capability · explicit authorization · stable decision ID · bounded timeout]
         TTSQueue[(tts_queue<br/>durable queue · stable decision ID deduplication)]
         LocalPlayback[injected/local Windows playback]
     end
     subgraph Capital["Σ Capital"]
-        CapitalDB[(Weekend Picks · Signals<br/>Sim + human-confirmed LIVE execution<br/>sigmacapital.db · SQLCipher)]
-        CapitalLogging[Σ Capital shared logging boundary<br/>adapter + consumers + bootstrap]
+        CapitalSerpApiReadiness[SerpApi readiness<br/>configuration-only by default]
+        SerpApiKeyBoundary{SERPAPI_KEY<br/>environment-only}
+        SerpApiSmoke{{explicit read-only smoke opt-in}}
     end
     Supervisor -->|generate before bind · no-store · applyGeneration refresh| Portal
     Portal -->|GET synchronized state · authorized POST · 409 on overlap| Supervisor
@@ -59,24 +56,28 @@ graph TB
     Registry -.scans.-> Manifest
     Registry -.scans.-> Capital
     Registry -.scans.-> Workspace
-    Life --> LifeDB
-    Music --> MusicDB
-    Quantum --> QDB
-    Capital --> CapitalDB
-    CapitalLogging --> BoundedLogging
-    LifeDB -.-> BackupContract
-    MusicDB -.-> BackupContract
-    QDB -.-> BackupContract
-    CapitalDB -.-> BackupContract
-    ManifestDB -.->|explicit approved canonical mapping| BackupContract
-    BackupContract -.->|operator-approved isolated SQLCipher restore| ManifestDB
+    subgraph Data["Shared SQLCipher data"]
+        ProjectDBs[(Health · Catalog · Quantum · Manifest · Capital<br/>project databases · SQLCipher)]
+    end
+    Life --> ProjectDBs
+    Music --> ProjectDBs
+    Quantum --> ProjectDBs
+    Manifest --> ProjectDBs
+    Capital --> ProjectDBs
+    Capital --> CapitalSerpApiReadiness
+    CapitalSerpApiReadiness --> SerpApiKeyBoundary
+    SerpApiKeyBoundary -.->|operator authorization only| SerpApiSmoke
+    ProjectDBs -.-> BackupContract
+    BackupContract -.->|explicit approved canonical mapping| ProjectDBs
+    BackupContract -.->|operator-approved isolated SQLCipher restore| ProjectDBs
     BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
     class Workspace ws
     class Life,Music,Quantum,Manifest,Capital project
-    class Supervisor,DecisionMetadata,AlertCapability,AlertFallback,BoundedLogging,FRDashboard ws
+    class Supervisor,DecisionMetadata,AlertCapability,AlertFallback,BoundedLogging,FRDashboard,CapitalSerpApiReadiness ws
     class TTSQueue db
     class MAPI,LocalPlayback manifest
-    class CapitalLogging orch
+    class SerpApiSmoke state
+    class SerpApiKeyBoundary state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
