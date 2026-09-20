@@ -1,0 +1,10 @@
+{
+  "attempted_models": [],
+  "boundary": "DelegationConsumer.delegate(DelegationManifest)",
+  "consumer": "supported-consumer-adapter",
+  "fallback_reason": "all bounded delegation attempts failed",
+  "live_available": false,
+  "manifest_fingerprint": "94f0d4c094729e22b762597c6261f1353c9cacae0e549a18de98464b9712fa60",
+  "result_status": "not-activated",
+  "schema_version": 1
+}

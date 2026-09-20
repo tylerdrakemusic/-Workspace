@@ -29,6 +29,14 @@ double for that boundary. `supported_consumer_demonstration` exercises
 default `live_available=False` result is explicit and is not evidence that a
 real Copilot consumer is present.
 
+The supported cloud-agent consumer contract is `consume_cloud_agent`. Its
+consumer-owned `preflight` must accept the requested manifest before
+delegation. A rejected role or tier returns `not-activated` with the
+deterministic reason `selected route does not support requested role or tier`.
+The selected model and provider are advisory route intent. Provider responses
+may disclose neither value, in which case the result records both as
+`unknown` rather than silently substituting or claiming exact model control.
+
 ## Selection
 
 Selection first applies hard gates for availability, role/tier coverage,
@@ -56,6 +64,10 @@ failure, accepted outcome, and pricing provenance. Use the existing
 reconciliation, and `perf_cli.py` for run timing. Persist only ledger-compatible
 metadata. `shadow_replay` exercises selection without activation and is the
 preferred dry-run for FR-flow validation.
+`ConsumerResult` uses observed accepted-outcome cost first and the
+authoritative published pricing snapshot only as a fallback; unavailable cost
+remains unavailable. `persist_consumer_result` appends only that metadata to
+JSONL and does not introduce a database schema.
 The committed demonstration proof is in
 `proof/copilot-consumer-demonstration.json`; rerun the focused contract test to
 reconstruct its supported boundary and metadata-only assertions.

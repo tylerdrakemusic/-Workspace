@@ -8,6 +8,14 @@ graph TB
         FRLedgerDir[.github/FR_LEDGERS/FR-*.md<br/>canonical FR ledgers + audit links]
         FRDashboardHTML[reports/fr_dashboard.html<br/>generated HTML artifact]
         FRServer[src/utils/fr_server.py<br/>refresh + serve boundary + GET /]
+        subgraph CopilotConsumer["⊕ Supported Copilot cloud-agent consumer surface"]
+            CopilotRoute[Metadata-only route inputs<br/>CachedInventory · select_model · shadow_replay]
+            CopilotGate{{Live capability preflight<br/>official or extension-owned CloudAgentConsumer<br/>consume_cloud_agent}}
+            CopilotTelemetry[Opaque ConsumerResult + TelemetryRecord<br/>observed accepted cost, then published pricing fallback<br/>persist_consumer_result → FR artifact boundary<br/>bounded metadata only]
+            CopilotRoute --> CopilotGate
+            CopilotGate -->|available| CopilotTelemetry
+            CopilotGate -->|unavailable or delegation failure: not-activated / unavailable, fail closed| CopilotTelemetry
+        end
     end
     FRRegistry -->|loads| FRDashboard
     FRLedgerDir -->|loads| FRDashboard
@@ -48,6 +56,8 @@ graph TB
     class FRDashboard,FRServer ws
     class FRRegistry,FRLedgerDir db
     class FRDashboardHTML ws
+    class CopilotRoute,CopilotTelemetry ws
+    class CopilotGate state
     class GmailMCP,GmailClient,GmailPolicy,ListAttachments,DownloadAttachment,AtomicWrite,RetentionCleanup ws
     class ReadAuthorization,SizeGate,OperatorApproval state
     class GmailService ext

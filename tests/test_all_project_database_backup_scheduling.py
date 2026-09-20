@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from src.utils.database_backup import BackupError
 from src.utils.database_backup_scope import discover_databases, load_manifest, validate_manifest
 from tools.register_database_backup_task import build_task_spec
 import tools.run_database_backup as backup_runner
@@ -185,3 +186,30 @@ def test_scheduled_backup_reports_each_project_and_overall_failure(tmp_path: Pat
     assert result.overall_status == "failed"
     assert result.project_outcomes["workspace"].status == "failed"
     assert result.failure_reason
+
+
+def test_scheduled_backup_redacts_concurrent_source_write_reason(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_during_copy(*args: object, **kwargs: object) -> None:
+        raise BackupError(
+            "source changed during backup; retry when database writes are idle: "
+            f"{tmp_path / 'private.db'}"
+        )
+
+    monkeypatch.setattr(backup_runner, "run_backup", fail_during_copy)
+
+    result = backup_runner.run_scheduled_backups(
+        manifest_path=tmp_path / "manifest.json",
+        project_roots={"capital": tmp_path},
+        volume_root=tmp_path / "volume",
+        volume_identity="trusted",
+    )
+
+    assert result.overall_status == "failed"
+    assert result.failure_reason == "BackupError"
+    assert result.failure == {
+        "error_type": "BackupError",
+        "message": "source changed during backup; retry when database writes are idle",
+    }
+    assert "private.db" not in str(result.failure)

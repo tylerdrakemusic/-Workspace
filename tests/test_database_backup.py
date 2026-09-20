@@ -110,6 +110,35 @@ def test_backup_writes_hashed_manifest_and_prunes_old_generations(tmp_path: Path
     assert validate_backup(result.manifest_path) is True
 
 
+def test_backup_rejects_source_changed_during_copy_and_cleans_generation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "workspace.db"
+    source.write_bytes(b"encrypted-db-bytes-before-write")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+    original_copy = database_backup_module._atomic_copy
+
+    def copy_then_source_changes(source_path: Path, destination_path: Path) -> None:
+        original_copy(source_path, destination_path)
+        source_path.write_bytes(b"encrypted-db-bytes-after-write")
+
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+    monkeypatch.setattr(database_backup_module, "_atomic_copy", copy_then_source_changes)
+
+    with pytest.raises(BackupError, match="source changed during backup"):
+        DatabaseBackup(
+            manifest=_manifest(),
+            source_root=tmp_path,
+            destination=destination,
+            expected_destination_identity="approved-volume",
+            now=lambda: "2026-08-16T12:00:00Z",
+        ).run()
+
+    assert not (destination_root / "generations" / "20260816T120000Z").exists()
+    assert not list(destination_root.glob("generations/*.tmp"))
+
+
 def test_backup_metadata_preserves_each_allowed_entry_path_and_metadata(tmp_path: Path) -> None:
     first_source = tmp_path / "workspace.db"
     second_source = tmp_path / "music" / "heartmusic-store"

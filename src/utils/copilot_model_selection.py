@@ -269,6 +269,10 @@ class DelegationConsumer(Protocol):
     def delegate(self, manifest: "DelegationManifest") -> dict[str, Any]: ...
 
 
+class CloudAgentConsumer(DelegationConsumer, Protocol):
+    def preflight(self, manifest: "DelegationManifest") -> bool: ...
+
+
 class UnsupportedDelegationConsumer:
     def delegate(self, manifest: "DelegationManifest") -> dict[str, Any]:
         raise UnsupportedCopilotError("supported Copilot delegation consumer is unavailable")
@@ -417,6 +421,26 @@ class FallbackRecord:
 
 
 @dataclass(frozen=True)
+class ConsumerResult:
+    status: str
+    selected_model: str
+    selected_provider: str
+    actual_model: str
+    actual_provider: str
+    attempted_models: tuple[str, ...]
+    failure_reason: str | None = None
+    cost_usd: Decimal | None = None
+    cost_source: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        result = asdict(self)
+        result["attempted_models"] = list(self.attempted_models)
+        result["cost_usd"] = str(self.cost_usd) if self.cost_usd is not None else None
+        result["schema_version"] = SCHEMA_VERSION
+        return result
+
+
+@dataclass(frozen=True)
 class DelegationManifest:
     fr_id: str
     role: str
@@ -463,6 +487,59 @@ def dispatch(manifest: DelegationManifest, consumer: DelegationConsumer | None, 
             pass
     reason = "supported Copilot delegation consumer is unavailable" if consumer is None else "all bounded delegation attempts failed"
     return None, FallbackRecord(manifest.model_id, tuple(attempted), None, reason)
+
+
+def _cost_metadata(model_id: str, observed_cost: Decimal | None, usage: dict[str, Any] | None) -> tuple[Decimal | None, str | None]:
+    if observed_cost is not None:
+        if observed_cost < 0:
+            raise ContractValidationError("observed cost must be non-negative")
+        return observed_cost, "observed-accepted-outcome"
+    if usage is None:
+        return None, "unavailable"
+    calculated = calculate_copilot_cost(model_id, usage)
+    if calculated.status == "estimated":
+        return calculated.usd, "authoritative-published-pricing"
+    return None, "unavailable"
+
+
+def _consumer_preflight(consumer: CloudAgentConsumer, manifest: DelegationManifest) -> bool:
+    try:
+        return bool(consumer.preflight(manifest))
+    except Exception:
+        return False
+
+
+def consume_cloud_agent(
+    manifest: DelegationManifest,
+    consumer: CloudAgentConsumer | None,
+    *,
+    observed_cost: Decimal | None = None,
+    usage: dict[str, Any] | None = None,
+    failover: Sequence[DelegationManifest] = (),
+    last_known_good: DelegationManifest | None = None,
+    retry_limit: int = 2,
+) -> ConsumerResult:
+    """Consume a supported cloud-agent route while preserving opaque outcomes."""
+    if manifest.role not in ROLES or manifest.tier not in TIERS:
+        return ConsumerResult("not-activated", manifest.model_id, manifest.provider, "unknown", "unknown", (), "unsupported role or tier")
+    if consumer is None or not hasattr(consumer, "preflight"):
+        return ConsumerResult("not-activated", manifest.model_id, manifest.provider, "unknown", "unknown", (), "supported consumer preflight is unavailable")
+    if not _consumer_preflight(consumer, manifest):
+        return ConsumerResult("not-activated", manifest.model_id, manifest.provider, "unknown", "unknown", (), "selected route does not support requested role or tier")
+    result, fallback = dispatch(
+        manifest,
+        consumer,
+        failover=failover,
+        last_known_good=last_known_good,
+        preflight=lambda candidate: _consumer_preflight(consumer, candidate),
+        retry_limit=retry_limit,
+    )
+    if result is None:
+        return ConsumerResult("not-activated", manifest.model_id, manifest.provider, "unknown", "unknown", fallback.attempted_models, fallback.reason)
+    actual_model = result.get("model_id") if isinstance(result.get("model_id"), str) and result["model_id"].strip() else "unknown"
+    actual_provider = result.get("provider") if isinstance(result.get("provider"), str) and result["provider"].strip() else "unknown"
+    cost_usd, cost_source = _cost_metadata(manifest.model_id, observed_cost, usage)
+    return ConsumerResult("accepted", manifest.model_id, manifest.provider, actual_model, actual_provider, fallback.attempted_models, cost_usd=cost_usd, cost_source=cost_source)
 
 
 def supported_consumer_demonstration(manifest: DelegationManifest, adapter: SupportedConsumerAdapter) -> dict[str, Any]:
@@ -518,6 +595,13 @@ def persist_telemetry(path: Path, record: TelemetryRecord) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record.to_dict(), sort_keys=True) + "\n")
+
+
+def persist_consumer_result(path: Path, result: ConsumerResult) -> None:
+    """Append one metadata-only consumer result without creating a schema."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(result.to_dict(), sort_keys=True) + "\n")
 
 
 def shadow_replay(candidates: Iterable[SelectionCandidate], scenarios: Iterable[dict[str, Any]]) -> list[SelectionDecision]:
