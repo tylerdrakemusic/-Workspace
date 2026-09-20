@@ -960,11 +960,13 @@ def test_restart_all_and_retry_contention_returns_conflict_without_stale_state(
 
 def test_reclaim_port_force_terminates_every_listener_pid() -> None:
     commands: list[list[str]] = []
+    kwargs_list: list[dict[str, object]] = []
     netstat_calls = 0
 
-    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+    def run(command: list[str], **kwargs: object) -> SimpleNamespace:
         nonlocal netstat_calls
         commands.append(command)
+        kwargs_list.append(kwargs)
         if command[0] == "netstat":
             netstat_calls += 1
             return SimpleNamespace(
@@ -986,6 +988,16 @@ def test_reclaim_port_force_terminates_every_listener_pid() -> None:
     assert killed == [1234, 5678]
     assert ["taskkill", "/PID", "1234", "/F", "/T"] in commands
     assert ["taskkill", "/PID", "5678", "/F", "/T"] in commands
+    assert len(kwargs_list) == 4
+    assert all(
+        kwargs["creationflags"] == getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        and kwargs["capture_output"] is True
+        and kwargs["text"] is True
+        and kwargs["encoding"] == "utf-8"
+        and kwargs["errors"] == "replace"
+        and kwargs["check"] is False
+        for kwargs in kwargs_list
+    )
 
 
 def test_reclaim_port_reports_taskkill_failure() -> None:
@@ -1327,6 +1339,36 @@ def test_optional_regeneration_is_bounded_and_reports_failures(
         )
     ]
     assert expected_diagnostic in log_path.read_text(encoding="utf-8").casefold()
+
+
+def test_optional_regeneration_hides_windows_console_without_changing_run_contract(
+    tmp_path: Path,
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        calls.append(kwargs)
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    supervisor_module._regenerate_optional_dashboards(
+        run=run,
+        timeout_seconds=120,
+        log_path=tmp_path / "optional-regeneration.log",
+    )
+
+    assert calls == [
+        {
+            "cwd": str(WORKSPACE_ROOT),
+            "capture_output": True,
+            "text": True,
+            "encoding": "utf-8",
+            "errors": "replace",
+            "timeout": 120,
+            "check": False,
+            "shell": False,
+            "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        }
+    ]
 
 
 def test_supervisor_uses_reserved_port_8790_everywhere() -> None:
