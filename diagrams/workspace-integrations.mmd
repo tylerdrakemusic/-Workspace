@@ -34,7 +34,7 @@ graph LR
     Music --> MusicDB[(heartmusic.db)]
     Quantum --> QDB[(quantumpsi.db)]
     Manifest --> ManifestDB[(manifest_todos.db)]
-    Manifest --> ManifestBriefPortal[Executive Audio Brief Portal<br/>read-only TODO lifecycle projection]
+    Manifest --> ManifestBriefPortal[Executive Audio Brief Portal<br/>read-only TODO lifecycle projection<br/>TODO related_projects: list&#91;str&#93;<br/>validated cross-repo projection<br/>canonical project keys at boundary]
     ManifestBriefPortal -.->|read-only state projection| TodoExecutionLifecycle[(todo_execution_lifecycle<br/>⊕ canonical execution state)]
     Capital --> CapitalDB[(sigmacapital.db)]
     Capital --> CapitalSerpApiReadiness[Σ Capital SerpApi readiness<br/>configuration-only default<br/>no quota-consuming request<br/>SERPAPI_KEY environment-only boundary<br/>credentials_configured · activation_enabled=false]
