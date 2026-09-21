@@ -12,7 +12,7 @@ graph LR
     Python --> Radon[radon<br/>complexity scan]
     Python --> BoundedLogging[⊕ Workspace bounded_logging.py<br/>provider-neutral structured events + bounded JSONL sink]
     Python --> Supervisor[portal_supervisor.py<br/>127.0.0.1:8790 owner · regen after bind<br/>Host+Origin+rotating CSRF · locks→409 · shell=false]
-    Supervisor --> ServiceConfig[portal_servers.json<br/>Trade Gate /health · Executive query-free root<br/>cache-bust]
+    Supervisor --> ServiceConfig[portal_servers.json<br/>Trade Gate /health · Executive /health is live<br/>cache-bust]
     Supervisor --> WindowsProcess[netstat/taskkill fail closed<br/>latest 10 keep current · applyGeneration UI reload]
     ThinShims[PowerShell/VBS · desktop/protocol/restart<br/>dispatch only] --> Supervisor
     PowerShell[PowerShell 7] --> ThinShims

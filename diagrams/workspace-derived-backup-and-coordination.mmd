@@ -30,7 +30,7 @@ graph TB
     Observability --> Objectives[RPO 24h / RTO 4h reporting]
     Workspace --> Coord[governed coordination MCP]
     Coord --> FRLedger[(fr_ledgers.db)]
-    Coord --> TodoDB[(manifest_todos.db)]
+    Coord -->|create/update contract persists related_projects| TodoDB[(manifest_todos.db)]
     Coord -.->|rejects| GenericSQL[no arbitrary SQL or routing]
     Life[∞ Life] -.->|redacted metadata only| Inventory
     Capital[Σ Capital] --> CapitalDB[(sigmacapital.db)]
