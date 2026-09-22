@@ -290,7 +290,7 @@ def test_dispatch_starts_once_then_focuses_existing_supervisor() -> None:
     assert focuses == 1
 
 
-def test_server_sidebar_places_failed_only_retry_before_open() -> None:
+def test_server_sidebar_places_retry_before_open() -> None:
     sidebar = dashboard_portal._render_server_sidebar([_service("Alpha", 5101)])
 
     retry = (
@@ -310,14 +310,18 @@ def test_server_sidebar_places_failed_only_retry_before_open() -> None:
 
 
 def test_generated_portal_uses_authoritative_supervisor_state_and_restart_actions() -> None:
-    portal = (WORKSPACE_ROOT / "reports" / "portal.html").read_text(encoding="utf-8")
+    with (
+        patch("dashboard_portal._load_servers", return_value=[_service("Alpha", 5101)]),
+        patch("dashboard_portal._render_api_health_widget", return_value=""),
+    ):
+        portal = dashboard_portal.render_portal({"dashboards": [], "projects": []})
 
     assert 'id="supervisor-controls"' not in portal
     assert "Agent Ops Monitor" not in portal
     assert "portal_agent-ops.html" not in portal
     assert "fetch('/api/state', {cache: 'no-store'})" in portal
     assert "fetch('/api/services/' + encodeURIComponent(name) + '/retry', {method: 'POST'})" in portal
-    assert "retry.hidden = state.readiness !== 'failed'" in portal
+    assert "retry.hidden = false" in portal
     assert "dot.classList.toggle('up', state.readiness === 'ready')" in portal
     assert "dot.classList.toggle('down', state.readiness === 'failed')" in portal
     assert "row.title = state.error ||" in portal
@@ -713,6 +717,8 @@ def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(
         page.wait_for_function(
             "() => [...document.querySelectorAll('iframe[data-service]')].every(frame => frame.src)"
         )
+        assert page.locator('.server-retry[data-service="Alpha"]').is_visible()
+        assert page.locator('.server-retry[data-service="Executive"]').is_visible()
 
         page.evaluate(
             """() => {
@@ -739,6 +745,8 @@ def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(
         assert page.locator('.dash-pane[data-frame-state="restarting"]').count() == 2
         page.evaluate("pollServers()")
         assert frame_requests == []
+        assert page.locator('.server-retry[data-service="Alpha"]').is_visible()
+        assert page.locator('.server-retry[data-service="Executive"]').is_visible()
 
         state["services"]["Alpha"]["readiness"] = "ready"
         state["services"]["Executive"].update(readiness="failed", error="status 503")
@@ -749,6 +757,11 @@ def test_generated_portal_quiesces_managed_frames_until_each_service_is_ready(
         executive = page.locator('iframe[data-service="Executive"]')
         assert alpha.get_attribute("src") == "http://localhost:5101/base?view=main&generation=generation-2"
         assert executive.get_attribute("src") is None
+        assert page.locator('.server-retry[data-service="Alpha"]').is_visible()
+        assert page.locator('.server-retry[data-service="Executive"]').is_visible()
+        state["services"]["Alpha"].update(readiness="queued", error=None)
+        page.evaluate("pollServers()")
+        assert page.locator('.server-retry[data-service="Alpha"]').is_visible()
         assert page.locator('.server-retry[data-service="Executive"]').is_visible()
         failed_interval_requests = list(frame_requests)
         page.evaluate("pollServers()")
