@@ -139,9 +139,9 @@ def run_owasp_scan() -> list[dict]:
             if (
                 "__pycache__" in rel
                 or "pyClones" in rel
-                or "\.venv\\" in rel
+                or ".venv\\" in rel
                 or "/.venv/" in rel
-                or "\.worktrees\\" in rel
+                or ".worktrees\\" in rel
                 or "/.worktrees/" in rel
                 or ("resume" in pyfile.parts and "retired-security-json-shim" in pyfile.parts)
             ):

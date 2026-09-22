@@ -26,8 +26,14 @@ def test_canonical_db_path_fails_closed_when_only_worktree_db_exists(
         init_db.require_canonical_db_path(worktree_root)
 
 
-def test_canonical_db_path_preserves_parent_root_resolution() -> None:
-    assert init_db.require_canonical_db_path(WORKTREE_ROOT) == CANONICAL_DB
+def test_canonical_db_path_preserves_parent_root_resolution(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    worktree_root = project_root / ".worktrees" / "feature"
+    canonical_db = project_root / "src" / "data" / "workspace.db"
+    canonical_db.parent.mkdir(parents=True)
+    canonical_db.write_bytes(b"canonical placeholder")
+
+    assert init_db.require_canonical_db_path(worktree_root) == canonical_db
 
 
 def test_architecture_restores_unrelated_relationships_within_overview_budget() -> None:
