@@ -6,7 +6,7 @@ graph LR
         Shims[PowerShell · VBS · portal protocol<br/>thin compatibility shims]
         Supervisor[portal_supervisor.py<br/>sole 127.0.0.1:8790 owner<br/>operation lock · optional regen after bind<br/>master restart handoff · fresh generation]
         Portal[portal.html<br/>synchronous shell · no-store<br/>quiesce then active-generation readiness reload]
-        Config[portal_servers.json<br/>command · cwd · port · enabled<br/>Trade Gate /health readiness<br/>Executive exact root · cache bust disabled]
+        Config[portal_servers.json<br/>command · cwd · port · enabled<br/>Trade Gate /health readiness<br/>Executive /health readiness endpoint · cache bust disabled]
         RuntimeState[(lock-synchronized snapshots<br/>PID · command · cwd · started time<br/>generation · readiness · attempt · error)]
         Logs[(generation-scoped stdout/stderr<br/>deterministic latest ten<br/>current generation preserved)]
     end

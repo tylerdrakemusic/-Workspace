@@ -59,7 +59,7 @@
       },
       "cwd": "f:\\👁AI-Manifest",
       "port": 8200,
-      "health_url": "http://127.0.0.1:8200/",
+      "health_url": "http://127.0.0.1:8200/health",
       "health_timeout_s": 10
     },
     "⊕Workspace": {
