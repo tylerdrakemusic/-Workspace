@@ -1249,7 +1249,7 @@ def render_portal(manifest: dict) -> str:
           if (!state || !dot || !row || !retry) return;
           dot.classList.toggle('up', state.readiness === 'ready');
           dot.classList.toggle('down', state.readiness === 'failed');
-          retry.hidden = state.readiness !== 'failed';
+          retry.hidden = false;
           const diagnostic = `${{service.name}}: ${{state.readiness}} (attempt ${{state.attempt}})`;
           row.title = state.error || diagnostic;
           row.setAttribute('aria-label', state.error ? `${{diagnostic}}. ${{state.error}}` : diagnostic);
