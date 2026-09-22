@@ -53,6 +53,20 @@ graph TB
         RetentionCleanup --> AtomicWrite
     end
 
+    subgraph SecurityDashboardFlow["⊕ Security vulnerability dashboard"]
+        SecurityConfig[dashboard.json<br/>security-vulns registration]
+        SecurityLauncher[/open_security_dashboard.ps1<br/>launcher/]
+        SecurityGenerator[tools/security_dashboard.py<br/>default --no-open generation<br/>load_all_vulns selects status = open]
+        SecurityDB[(f:\⊕Workspace\src\data\workspace.db<br/>SQLCipher canonical DB<br/>vulnerabilities table)]
+        SecurityHTML[reports/security_dashboard.html<br/>generated HTML artifact]
+        SecurityShim[src/data/security_findings.json<br/>retired non-authoritative shim]
+        SecurityConfig -->|declares generator and output| SecurityGenerator
+        SecurityLauncher -->|invokes generator| SecurityGenerator
+        SecurityDB -->|read-only SELECT of open rows| SecurityGenerator
+        SecurityGenerator ==>|renders| SecurityHTML
+        SecurityShim -.->|retired, not read| SecurityGenerator
+    end
+
     class FRDashboard,FRServer ws
     class FRRegistry,FRLedgerDir db
     class FRDashboardHTML ws
@@ -61,6 +75,9 @@ graph TB
     class GmailMCP,GmailClient,GmailPolicy,ListAttachments,DownloadAttachment,AtomicWrite,RetentionCleanup ws
     class ReadAuthorization,SizeGate,OperatorApproval state
     class GmailService ext
+    class SecurityConfig,SecurityLauncher,SecurityGenerator,SecurityHTML ws
+    class SecurityDB db
+    class SecurityShim state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc

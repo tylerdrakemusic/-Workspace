@@ -15,6 +15,7 @@ graph TB
         BackupContract[Provider-neutral local<br/>database backup contract]
         BoundedLogging[Σ Capital shared logging boundary + bounded_logging.py<br/>adapter + consumers + bootstrap<br/>Workspace-owned provider-neutral structured events + bounded JSONL sink]
         AIHealth[api_health_monitor.py → ReadinessResult → ⊕ AI Health widget<br/>provider-neutral · non-generative · in-memory<br/>ready · degraded · unavailable · unknown · live freshness<br/>safe diagnostic codes · no runtime import from 👁 AI-Manifest]
+        SecurityDashboard[tools/security_dashboard.py<br/>default generation reads open vulnerabilities<br/>read-only DB query with --no-open]
     end
     subgraph Life["∞ Life"]
     end
@@ -33,14 +34,12 @@ graph TB
         SerpApiKeyBoundary{SERPAPI_KEY<br/>environment-only}
         SerpApiSmoke{{explicit read-only smoke opt-in}}
     end
-    Supervisor -->|generate before bind · no-store · applyGeneration refresh| Portal
-    Portal -->|GET synchronized state · authorized POST · 409 on overlap| Supervisor
+    Supervisor -->|generate before bind · no-store · applyGeneration refresh| Portal; Portal -->|GET synchronized state · authorized POST · 409 on overlap| Supervisor
     Portal -->|POST /api/restart-master · loopback Host + Origin + rotating CSRF| Supervisor
     Supervisor -->|reserve lock · commit 202 · shutdown resident listener<br/>fail-closed reclaim 8790 · fresh bind · transfer generation| Supervisor
     Portal -->|"repository-local manifests -> generated aggregate registry"| Registry
     Portal -->|"load -> local read-only DB Backup Health endpoint -> redacted Healthy / Attention / Unavailable aggregate -> separate DB Backup Health section; observes approved manifest, Windows Task Scheduler metadata, existing audit + generation evidence; evaluates backup_allowed=true only; no execution, restore, validation drill, scheduler mutation, raw paths, filenames, database names, secrets, or raw logs cross browser boundary"| AIHealth
-    TodoRuntime --> DecisionMetadata
-    TodoRuntime --> HandoffRuntime
+    TodoRuntime --> DecisionMetadata; TodoRuntime --> HandoffRuntime
     MAPI -.->|read-only state projection| TodoRuntime
     DecisionMetadata -.->|shared contract consumer| Manifest
     TodoRuntime -->|Overseer entry point · explicit authorization · repository_voice_authorized gate| AlertCapability
@@ -58,13 +57,14 @@ graph TB
     Registry -.scans.-> Workspace
     subgraph Data["Shared SQLCipher data"]
         ProjectDBs[(Health · Catalog · Quantum · Manifest · Capital<br/>project databases · SQLCipher)]
+        WorkspaceDB[(f:\⊕Workspace\src\data\workspace.db<br/>SQLCipher canonical workspace DB)]
     end
     Life --> ProjectDBs
     Music --> ProjectDBs
     Quantum --> ProjectDBs
     Manifest --> ProjectDBs
     Capital --> ProjectDBs
-    Capital --> CapitalSerpApiReadiness
+    Capital --> CapitalSerpApiReadiness; WorkspaceDB -->|read-only SELECT of open vulnerabilities| SecurityDashboard
     CapitalSerpApiReadiness --> SerpApiKeyBoundary
     SerpApiKeyBoundary -.->|operator authorization only| SerpApiSmoke
     ProjectDBs -.-> BackupContract
@@ -73,8 +73,8 @@ graph TB
     BackupContract -.->|fail-closed discovery and redacted failure reporting| Registry
     class Workspace ws
     class Life,Music,Quantum,Manifest,Capital project
-    class Supervisor,DecisionMetadata,AlertCapability,AlertFallback,BoundedLogging,FRDashboard,CapitalSerpApiReadiness ws
-    class TTSQueue db
+    class Supervisor,DecisionMetadata,AlertCapability,AlertFallback,BoundedLogging,FRDashboard,CapitalSerpApiReadiness,SecurityDashboard ws
+    class TTSQueue,WorkspaceDB db
     class MAPI,LocalPlayback manifest
     class SerpApiSmoke state
     class SerpApiKeyBoundary state

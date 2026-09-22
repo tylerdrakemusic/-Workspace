@@ -44,7 +44,7 @@
       "type": "static_html",
       "generator": "tools/security_dashboard.py",
       "output": "reports/security_dashboard.html",
-      "cli": "C:\\G\\python.exe tools/security_dashboard.py --scan --no-open",
+      "cli": "C:\\G\\python.exe tools/security_dashboard.py --no-open",
       "category": "security",
       "icon": "🛡️",
       "priority": 53

@@ -38,23 +38,34 @@ erDiagram
         real checked_at
     }
     VULNERABILITIES {
-        integer id PK
-        text scan_id
-        text project
+        text vuln_id PK
+        text scan_date
+        text category
         text severity
-        text finding
         text file_path
-        real detected_at
+        integer line_number
+        text description
+        text owasp_id
+        text status
+        text override_note
+        text remediated_at
+        text created_at
     }
     SCAN_RUN_LOG {
-        integer id PK
-        text scan_id
-        text scan_type
+        text run_id PK
+        text started_at
+        text completed_at
+        text projects_scanned
+        integer new_vulns_count
+        integer total_findings
+        integer bandit_exit_code
+        integer safety_exit_code
         text status
-        real started_at
-        real finished_at
+        text error_detail
     }
-    SCAN_RUN_LOG ||--o{ VULNERABILITIES : produces
+    %% security_dashboard.py reads vulnerabilities for default generation.
+    %% src/data/security_findings.json is a retired non-authoritative shim,
+    %% not a database entity or current dashboard input.
     AGENT_FEEDBACK {
         integer id PK
         text timestamp

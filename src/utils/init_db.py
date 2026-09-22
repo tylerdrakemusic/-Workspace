@@ -22,10 +22,20 @@ def resolve_worktree_db_path(start: Path, max_levels: int = 5) -> Path | None:
     candidate = start
     for _ in range(max_levels):
         db = candidate / "src" / "data" / "workspace.db"
-        if db.exists():
+        if ".worktrees" not in candidate.parts and db.is_file() and db.stat().st_size > 0:
             return db
         candidate = candidate.parent
     return None
+
+
+def require_canonical_db_path(start: Path, max_levels: int = 5) -> Path:
+    """Return the canonical workspace DB path or fail closed."""
+    resolved = resolve_worktree_db_path(start, max_levels=max_levels)
+    if resolved is None:
+        raise FileNotFoundError(
+            "canonical workspace database is missing, empty, or unavailable"
+        )
+    return resolved
 
 
 def use_worktree_aware_db_path(start: Path) -> None:
