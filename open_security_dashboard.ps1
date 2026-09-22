@@ -4,8 +4,8 @@
 
 $ErrorActionPreference = "Stop"
 $Python = "C:\G\python.exe"
-$DashboardScript = "f:\⊕Workspace\tools\security_dashboard.py"
-$Dashboard  = "f:\⊕Workspace\reports\security_dashboard.html"
+$DashboardScript = Join-Path $PSScriptRoot "tools\security_dashboard.py"
+$Dashboard = Join-Path $PSScriptRoot "reports\security_dashboard.html"
 
 Write-Host "⊕ Generating security dashboard..." -ForegroundColor Cyan
 & $Python $DashboardScript --no-open

@@ -30,6 +30,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUT_PATH = PROJECT_ROOT / "reports" / "security_dashboard.html"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+import utils.init_db as init_db
+init_db.DB_PATH = init_db.require_canonical_db_path(PROJECT_ROOT)
 from utils.init_db import get_connection
 
 # Register Brave
@@ -142,6 +144,7 @@ def run_owasp_scan() -> list[dict]:
                 or "/.venv/" in rel
                 or "\.worktrees\\" in rel
                 or "/.worktrees/" in rel
+                or ("resume" in pyfile.parts and "retired-security-json-shim" in pyfile.parts)
             ):
                 continue
             try:
@@ -744,6 +747,8 @@ def main() -> None:
     parser.add_argument("--no-open", action="store_true", help="Generate without opening browser")
     parser.add_argument("--seed", action="store_true", help="Seed manual audit findings + generate")
     parser.add_argument("--scan", action="store_true", help="Run OWASP grep scan, upsert, generate")
+    parser.add_argument("--import-overrides", action="store_true",
+              help="Import and remove the pending override sidecar before generating")
     parser.add_argument("--set-status", nargs="+", metavar=("VULN_ID", "STATUS"),
                         help="Set status for a vuln: VULN_ID STATUS [NOTE]")
     args = parser.parse_args()
@@ -760,10 +765,10 @@ def main() -> None:
         update_vuln_status(vid, status, note)
         print(f"  Updated {vid} → {status}" + (f" ({note})" if note else ""))
 
-    # Import any pending overrides from sidecar
-    imported = import_overrides()
-    if imported:
-        print(f"  Imported {imported} overrides from vuln_overrides.json")
+    if args.import_overrides:
+        imported = import_overrides()
+        if imported:
+          print(f"  Imported {imported} overrides from vuln_overrides.json")
 
     if args.seed:
         inserted, skipped = upsert_findings(SEED_FINDINGS)
