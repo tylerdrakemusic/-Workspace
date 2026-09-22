@@ -31,7 +31,6 @@ OUT_PATH = PROJECT_ROOT / "reports" / "security_dashboard.html"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 import utils.init_db as init_db
-init_db.DB_PATH = init_db.require_canonical_db_path(PROJECT_ROOT)
 from utils.init_db import get_connection
 
 # Register Brave
@@ -743,6 +742,7 @@ def import_overrides() -> int:
 # ── Main ──────────────────────────────────────────────────────
 
 def main() -> None:
+    init_db.DB_PATH = init_db.require_canonical_db_path(PROJECT_ROOT)
     parser = argparse.ArgumentParser(description="⊕ Security Vulnerability Dashboard")
     parser.add_argument("--no-open", action="store_true", help="Generate without opening browser")
     parser.add_argument("--seed", action="store_true", help="Seed manual audit findings + generate")

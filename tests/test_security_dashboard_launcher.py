@@ -71,6 +71,7 @@ def test_default_generation_is_read_only_and_skips_override_import(monkeypatch, 
     monkeypatch.setattr(dashboard, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(dashboard, "OUT_PATH", tmp_path / "reports" / "security_dashboard.html")
     monkeypatch.setattr(dashboard, "get_connection", open_connection)
+    monkeypatch.setattr(dashboard.init_db, "require_canonical_db_path", lambda _root: database_path)
     monkeypatch.setattr(
         dashboard,
         "import_overrides",
@@ -113,12 +114,16 @@ def test_security_dashboard_manifest_generation_does_not_scan_or_mutate_inventor
 
 
 def test_dashboard_generator_resolves_canonical_workspace_db_from_worktree() -> None:
+    import pytest
+
+    canonical_db = WORKTREE_ROOT.parent.parent / "src" / "data" / "workspace.db"
+    if not canonical_db.is_file() or canonical_db.stat().st_size == 0:
+        pytest.skip("canonical workspace database is unavailable in CI")
+
     _load_dashboard_module()
     from utils import init_db
 
-    canonical_db = WORKTREE_ROOT.parent.parent / "src" / "data" / "workspace.db"
-
-    assert init_db.DB_PATH == canonical_db
+    assert init_db.require_canonical_db_path(WORKTREE_ROOT) == canonical_db
 
 
 def test_generated_summary_matches_controlled_database_aggregates(monkeypatch) -> None:
