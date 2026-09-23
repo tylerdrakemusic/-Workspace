@@ -24,6 +24,7 @@ def test_music_launchers_accept_supervisor_project_root_and_preserve_contract() 
 
     for launcher in (band_launcher, dashboard_launcher):
         assert re.search(r"param\(\[string\]\$ProjectRoot", launcher)
+        assert '$env:PYTHONUTF8 = "1"' in launcher
 
     assert "Get-ChildItem" not in band_launcher
     assert "Join-Path $ProjectRoot" in band_launcher
