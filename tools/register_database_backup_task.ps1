@@ -65,6 +65,9 @@ $ProjectRootArguments = '-ProjectRoot ' + ($ProjectRoots -join ',')
 foreach ($name in @('WORKSPACE_BACKUP_VOLUME', 'WORKSPACE_BACKUP_VOLUME_ID', 'WORKSPACE_BACKUP_MANIFEST_KEY')) {
     $value = [Environment]::GetEnvironmentVariable($name, 'Process')
     if ([string]::IsNullOrWhiteSpace($value)) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'Machine')
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
         $value = [Environment]::GetEnvironmentVariable($name, 'User')
     }
     if ([string]::IsNullOrWhiteSpace($value)) {

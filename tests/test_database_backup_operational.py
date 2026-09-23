@@ -140,6 +140,89 @@ def test_powershell_launcher_forwards_verified_volume_identity_to_python() -> No
     assert "'--volume-identity', $env:WORKSPACE_BACKUP_VOLUME_ID" in script
 
 
+def test_launcher_exports_machine_environment_configuration_to_runner(
+    tmp_path: Path,
+) -> None:
+    tools = Path(__file__).resolve().parents[1] / "tools"
+    launcher = (tools / "run_database_backup.ps1").read_text(encoding="utf-8")
+    volume = tmp_path / "volume"
+    volume.mkdir()
+    (volume / ".backup-volume-identity").write_text("machine-volume-id\n", encoding="utf-8")
+    output = tmp_path / "runner-output.json"
+    (tmp_path / "approved-manifest.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "run_database_backup.py").write_text(
+        "import json, os, sys\n"
+        "Path = __import__('pathlib').Path\n"
+        "Path(os.environ['BACKUP_TEST_OUTPUT']).write_text(json.dumps({\n"
+        "    'volume': os.environ.get('WORKSPACE_BACKUP_VOLUME'),\n"
+        "    'volume_id': os.environ.get('WORKSPACE_BACKUP_VOLUME_ID'),\n"
+        "    'manifest_key': os.environ.get('WORKSPACE_BACKUP_MANIFEST_KEY'),\n"
+        "    'arguments': sys.argv[1:],\n"
+        "}), encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    launcher = launcher.replace(
+        "[Environment]::GetEnvironmentVariable($name, 'Machine')",
+        "Get-TestEnvironmentVariable $name 'Machine'",
+    ).replace(
+        "[IO.Path]::GetFullPath('E:\\WorkspaceBackup')",
+        f"[IO.Path]::GetFullPath('{volume}')",
+    )
+    test_environment_provider = (
+        "function Get-TestEnvironmentVariable([string] $Name, [string] $Target) {\n"
+        "    if ($Target -eq 'Machine') {\n"
+        "        return @{\n"
+        "            WORKSPACE_BACKUP_VOLUME = $env:BACKUP_TEST_VOLUME\n"
+        "            WORKSPACE_BACKUP_VOLUME_ID = 'machine-volume-id'\n"
+        "            WORKSPACE_BACKUP_MANIFEST_KEY = 'machine-manifest-key'\n"
+        "        }[$Name]\n"
+        "    }\n"
+        "    return [Environment]::GetEnvironmentVariable($Name, $Target)\n"
+        "}\n"
+    )
+    launcher = launcher.replace("Set-StrictMode -Version Latest", test_environment_provider + "Set-StrictMode -Version Latest", 1)
+    launcher_path = tmp_path / "run_database_backup.ps1"
+    launcher_path.write_text(launcher, encoding="utf-8")
+
+    environment = os.environ.copy()
+    for name in (
+        "WORKSPACE_BACKUP_VOLUME",
+        "WORKSPACE_BACKUP_VOLUME_ID",
+        "WORKSPACE_BACKUP_MANIFEST_KEY",
+    ):
+        environment.pop(name, None)
+    environment["BACKUP_TEST_VOLUME"] = str(volume)
+    environment["BACKUP_TEST_OUTPUT"] = str(output)
+    completed = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(launcher_path),
+            "-Python",
+            sys.executable,
+            "-Manifest",
+            str(tmp_path / "approved-manifest.json"),
+            "-SourceRoot",
+            str(tmp_path),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=environment,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    consumed = json.loads(output.read_text(encoding="utf-8"))
+    assert consumed["volume"] == str(volume)
+    assert consumed["volume_id"] == "machine-volume-id"
+    assert consumed["manifest_key"] == "machine-manifest-key"
+    assert "machine-manifest-key" not in consumed["arguments"]
+
+
 def test_runner_copies_every_backup_allowed_manifest_entry_byte_for_byte(
     tmp_path: Path,
 ) -> None:
