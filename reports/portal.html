@@ -360,10 +360,12 @@
     </div>
     <div class="api-health-widget">
 <div class="api-health-title">🔌 AI Health</div>
-<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">ElevenLabs</span><span class="api-latency">250ms</span><span class="api-age">2s ago</span></div>
-<details class="api-health-elevenlabs-details"><summary>Readiness details</summary><div>State: ready</div><div>Latency: 250ms</div><div>Quota: 94577/200382</div><div>Capabilities: voice_synthesis, voice_listing, streaming</div><div>Freshness: live</div><div>Reason: unavailable</div></details>
-<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">HuggingFace</span><span class="api-latency">250ms</span><span class="api-age">2s ago</span></div>
-<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">Perplexity.ai</span><span class="api-latency">1516ms</span><span class="api-age">2s ago</span></div>
+<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">ElevenLabs</span><span class="api-latency">266ms</span><span class="api-age">1s ago</span></div>
+<details class="api-health-elevenlabs-details"><summary>Readiness details</summary><div>State: ready</div><div>Latency: 219ms</div><div>Quota: 23967/225338</div><div>Capabilities: voice_synthesis, voice_listing, streaming</div><div>Freshness: live</div><div>Reason: unavailable</div></details>
+<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">HuggingFace</span><span class="api-latency">312ms</span><span class="api-age">1s ago</span></div>
+<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">Perplexity.ai</span><span class="api-latency">359ms</span><span class="api-age">1s ago</span></div>
+<div class="api-health-row"><span class="api-dot unknown"></span><span class="api-ep-name">SerpApi</span><span class="api-latency">&mdash;</span><span class="api-age"></span></div>
+<details class="api-health-serpapi-details"><summary>Readiness details</summary><div>State: unknown</div><div>Latency: &amp;mdash;</div><div>Quota: unavailable</div><div>Capabilities: google_finance_search</div><div>Freshness: configuration</div><div>Reason: opt_in_required</div></details>
 <div class="api-health-title">DB Backup Health</div>
 <div class="api-health-row" id="database-backup-health" aria-live="polite">
 <span class="api-dot unknown" id="database-backup-health-dot"></span>
@@ -392,10 +394,6 @@ failures.textContent = (health.failure_categories || []).join(", ");
     <div class="stats-bar">
       <div class="stat-chip"><span class="stat-num">13</span> Dashboards</div>
       <div class="stat-chip"><span class="stat-num">6</span> Projects</div>
-      <div class="stat-chip"><span class="stat-num">3</span> Static</div>
-      <div class="stat-chip"><span class="stat-num">6</span> Live</div>
-      <div class="stat-chip"><span class="stat-num">0</span> Console</div>
-      <div class="stat-chip"><span class="stat-num">8</span> Categories</div>
     </div>
     <div class="nav-section">
       
@@ -405,7 +403,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Trade Approval Gate</span>
             <span class="nav-project">ΣCapital</span>
           </div>
-          <span class="nav-badge live">Live</span>
+          
         </div>
 
         <div class="nav-item" data-idx="1" onclick="switchDash(1, this)">
@@ -414,7 +412,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Biomarker Dashboard</span>
             <span class="nav-project">∞Life</span>
           </div>
-          <span class="nav-badge living">Living</span>
+          
         </div>
 
         <div class="nav-item" data-idx="2" onclick="switchDash(2, this)">
@@ -423,7 +421,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Music Dashboard</span>
             <span class="nav-project">❤Music</span>
           </div>
-          <span class="nav-badge live">Live</span>
+          
         </div>
 
         <div class="nav-item" data-idx="3" onclick="switchDash(3, this)">
@@ -432,7 +430,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Band Management</span>
             <span class="nav-project">❤Music</span>
           </div>
-          <span class="nav-badge living">Living</span>
+          
         </div>
 
         <div class="nav-item" data-idx="4" onclick="switchDash(4, this)">
@@ -441,7 +439,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Guitar Trainer</span>
             <span class="nav-project">❤Music</span>
           </div>
-          <span class="nav-badge live">Live</span>
+          
         </div>
 
         <div class="nav-item" data-idx="5" onclick="switchDash(5, this)">
@@ -450,7 +448,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">❤ Studio</span>
             <span class="nav-project">❤Music</span>
           </div>
-          <span class="nav-badge live">Live</span>
+          
         </div>
 
         <div class="nav-item" data-idx="6" onclick="switchDash(6, this)">
@@ -459,7 +457,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Executive</span>
             <span class="nav-project">👁AI-Manifest</span>
           </div>
-          <span class="nav-badge live">Live</span>
+          
         </div>
 
         <div class="nav-item" data-idx="7" onclick="switchDash(7, this)">
@@ -468,7 +466,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Quantum Benchmarks</span>
             <span class="nav-project">⟨ψ⟩Quantum</span>
           </div>
-          <span class="nav-badge living">Living</span>
+          
         </div>
 
         <div class="nav-item" data-idx="8" onclick="switchDash(8, this)">
@@ -477,7 +475,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Feature Requests</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
-          <span class="nav-badge live">Live</span>
+          
         </div>
 
         <div class="nav-item" data-idx="9" onclick="switchDash(9, this)">
@@ -486,7 +484,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Copilot Usage Monitor</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
-          <span class="nav-badge static">Static</span>
+          
         </div>
 
         <div class="nav-item" data-idx="10" onclick="switchDash(10, this)">
@@ -495,7 +493,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Security Vulnerabilities</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
-          <span class="nav-badge static">Static</span>
+          <span class="nav-badge static">Clear</span>
         </div>
 
         <div class="nav-item" data-idx="11" onclick="switchDash(11, this)">
@@ -504,7 +502,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Password Generator</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
-          <span class="nav-badge static">Inline</span>
+          
         </div>
 
         <div class="nav-item" data-idx="12" onclick="switchDash(12, this)">
@@ -513,7 +511,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
             <span class="nav-title">Architecture Diagrams</span>
             <span class="nav-project">⊕Workspace</span>
           </div>
-          <span class="nav-badge static">Static</span>
+          
         </div>
     </div>
     <div class="server-status" id="server-status-block">
@@ -530,7 +528,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
       <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#8635; Restart All</button></div>
     </div>
     <div class="sidebar-footer">
-      Generated 2026-09-18 20:57:19 &middot; 13 dashboards<br>
+      Generated 2026-09-23 15:59:20 &middot; 13 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
@@ -822,7 +820,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
           if (!state || !dot || !row || !retry) return;
           dot.classList.toggle('up', state.readiness === 'ready');
           dot.classList.toggle('down', state.readiness === 'failed');
-          retry.hidden = state.readiness !== 'failed';
+          retry.hidden = false;
           const diagnostic = `${service.name}: ${state.readiness} (attempt ${state.attempt})`;
           row.title = state.error || diagnostic;
           row.setAttribute('aria-label', state.error ? `${diagnostic}. ${state.error}` : diagnostic);

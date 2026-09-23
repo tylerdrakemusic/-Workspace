@@ -383,12 +383,12 @@ def _nav_items(manifest: dict) -> str:
         project = _esc(dash.get("project", ""))
         sigil = _esc(dash.get("sigil", ""))
         active = " active" if i == 0 else ""
-        dtype = dash["type"]
-        badge_cls = {"static_html": "static", "living_html": "living", "flask_app": "live", "console": "console", "inline_html": "static"}.get(dtype, "static")
-        badge_label = {"static_html": "Static", "living_html": "Living", "flask_app": "Live", "console": "CLI", "inline_html": "Inline"}.get(dtype, dtype)
+        badge_html = ""
 
         # Special handling for security dashboard: show open vulnerability count
         if dash.get("id") == "security-vulns":
+            badge_cls = "static"
+            badge_label = "Clear"
             try:
                 # Get security_dashboard module, checking sys.modules first (for test monkeypatching)
                 import sys as _sys
@@ -407,7 +407,9 @@ def _nav_items(manifest: dict) -> str:
                         badge_label = "Clear"
                         badge_cls = "clear"
             except Exception:
-                pass  # Fall back to default badge if DB query fails
+                pass  # Keep the status badge visible if the DB query fails.
+            if badge_label:
+                badge_html = f'<span class="nav-badge {badge_cls}">{badge_label}</span>'
 
         items.append(f"""
         <div class="nav-item{active}" data-idx="{i}" onclick="switchDash({i}, this)">
@@ -416,7 +418,7 @@ def _nav_items(manifest: dict) -> str:
             <span class="nav-title">{title}</span>
             <span class="nav-project">{project}</span>
           </div>
-          <span class="nav-badge {badge_cls}">{badge_label}</span>
+          {badge_html}
         </div>""")
     return "\n".join(items)
 
@@ -660,18 +662,10 @@ def _stats_bar(manifest: dict) -> str:
     """Generate stats summary."""
     total = len(manifest["dashboards"])
     projects = len([p for p in manifest["projects"] if p["has_spec"]])
-    static = sum(1 for d in manifest["dashboards"] if d["type"] == "static_html")
-    live = sum(1 for d in manifest["dashboards"] if d["type"] == "flask_app")
-    console = sum(1 for d in manifest["dashboards"] if d["type"] == "console")
-    cats = len(set(d["category"] for d in manifest["dashboards"]))
     return f"""
     <div class="stats-bar">
       <div class="stat-chip"><span class="stat-num">{total}</span> Dashboards</div>
       <div class="stat-chip"><span class="stat-num">{projects}</span> Projects</div>
-      <div class="stat-chip"><span class="stat-num">{static}</span> Static</div>
-      <div class="stat-chip"><span class="stat-num">{live}</span> Live</div>
-      <div class="stat-chip"><span class="stat-num">{console}</span> Console</div>
-      <div class="stat-chip"><span class="stat-num">{cats}</span> Categories</div>
     </div>"""
 
 
