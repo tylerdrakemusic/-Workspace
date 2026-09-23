@@ -5,6 +5,8 @@ if (-not (Test-Path -LiteralPath $ProjectRoot -PathType Container)) {
 	exit 1
 }
 
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
 $env:PYTHONPATH = Join-Path $ProjectRoot "src"
 $toolPath = Join-Path $ProjectRoot "src\band_mgmt\generate_band_mgmt_panel.py"
 
