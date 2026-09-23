@@ -140,6 +140,7 @@ def test_powershell_launcher_forwards_verified_volume_identity_to_python() -> No
     assert "'--volume-identity', $env:WORKSPACE_BACKUP_VOLUME_ID" in script
 
 
+@pytest.mark.skipif(os.name != "nt", reason="PowerShell launcher requires Windows")
 def test_launcher_exports_machine_environment_configuration_to_runner(
     tmp_path: Path,
 ) -> None:
@@ -193,9 +194,12 @@ def test_launcher_exports_machine_environment_configuration_to_runner(
         environment.pop(name, None)
     environment["BACKUP_TEST_VOLUME"] = str(volume)
     environment["BACKUP_TEST_OUTPUT"] = str(output)
+    powershell = shutil.which("powershell.exe")
+    if powershell is None:
+        pytest.skip("Windows PowerShell is unavailable on this runner")
     completed = subprocess.run(
         [
-            "powershell.exe",
+            powershell,
             "-NoProfile",
             "-ExecutionPolicy",
             "Bypass",
