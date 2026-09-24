@@ -25,6 +25,7 @@ from roadmap_generator import (  # noqa: E402
     generate_roadmap,
     parse_dependencies,
 )
+from roadmap_parsing import canonicalize_project as focused_canonicalize_project  # noqa: E402
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -47,6 +48,10 @@ def test_parse_dependencies_none_present():
 def test_parse_dependencies_handles_none_and_empty():
     assert parse_dependencies(None) == []
     assert parse_dependencies("") == []
+
+
+def test_focused_parsing_module_preserves_project_normalization():
+    assert focused_canonicalize_project("?Workspace") == "⊕Workspace"
 
 
 def test_extract_fr_dependencies_scans_multiple_fields_and_dedupes():
