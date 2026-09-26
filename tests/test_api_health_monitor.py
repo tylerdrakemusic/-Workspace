@@ -162,10 +162,23 @@ def test_check_serpapi_readiness_smoke_parses_http_200_provider_error(monkeypatc
     assert "Monthly quota limit reached" not in str(result)
 
 
+def test_check_serpapi_readiness_smoke_maps_invalid_api_key_to_authentication_failed(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {"error": "Invalid API key"}
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == "degraded"
+    assert result["diagnostic_code"] == "authentication_failed"
+    assert "Invalid API key" not in str(result)
+
+
 @pytest.mark.parametrize(
     ("provider_message", "expected_code"),
     [
-        ("Invalid API key.", "invalid_api_key"),
+        ("Invalid API key.", "authentication_failed"),
         ("Monthly quota limit reached", "quota_exhausted"),
         ("Rate limit reached", "quota_exhausted"),
         ("Access denied for this account", "account_access_denied"),

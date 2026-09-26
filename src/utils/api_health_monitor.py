@@ -65,7 +65,7 @@ def _serpapi_error_code(error: Any) -> str:
         return "provider_error"
     message = error.lower()
     if "invalid api key" in message:
-        return "invalid_api_key"
+        return "authentication_failed"
     if "access denied" in message or (
         "account" in message and any(term in message for term in ("denied", "suspended", "disabled"))
     ):
