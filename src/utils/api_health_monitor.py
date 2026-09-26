@@ -59,6 +59,28 @@ _RETAIN_ROWS = 30  # max rows per endpoint
 _ELEVENLABS_CAPABILITIES = ["voice_synthesis", "voice_listing", "streaming"]
 
 
+def _serpapi_error_code(error: Any) -> str:
+    """Map known SerpApi error categories to safe diagnostic codes."""
+    if not isinstance(error, str):
+        return "provider_error"
+    message = error.lower()
+    if "invalid api key" in message:
+        return "authentication_failed"
+    if "access denied" in message or (
+        "account" in message and any(term in message for term in ("denied", "suspended", "disabled"))
+    ):
+        return "account_access_denied"
+    if "invalid engine" in message or (
+        "invalid" in message and any(term in message for term in ("query", "parameter"))
+    ):
+        return "invalid_engine_or_query"
+    if "rate limit" in message:
+        return "quota_exhausted"
+    if "quota" in message and ("limit" in message or "exceed" in message):
+        return "quota_exhausted"
+    return "provider_error"
+
+
 # ---------------------------------------------------------------------------
 # DB helpers
 # ---------------------------------------------------------------------------
@@ -221,7 +243,7 @@ def check_serpapi_readiness(*, smoke: bool = False) -> dict[str, Any]:
                     "diagnostic_code": "authentication_failed"}
         if response.status_code == 429:
             return {**base, "state": "degraded", "latency_ms": latency_ms,
-                    "diagnostic_code": "provider_unavailable"}
+                "diagnostic_code": "quota_exhausted"}
         if response.status_code >= 400:
             return {**base, "state": "degraded", "latency_ms": latency_ms,
                     "diagnostic_code": "provider_error"}
@@ -231,7 +253,10 @@ def check_serpapi_readiness(*, smoke: bool = False) -> dict[str, Any]:
                 "diagnostic_code": "provider_error"}
         if payload.get("error"):
             return {**base, "state": "degraded", "latency_ms": latency_ms,
-                "diagnostic_code": "provider_error"}
+                "diagnostic_code": _serpapi_error_code(payload["error"])}
+        if not isinstance(payload.get("search_metadata"), Mapping):
+            return {**base, "state": "degraded", "latency_ms": latency_ms,
+                "diagnostic_code": "malformed_response"}
         return {**base, "state": "ready", "latency_ms": latency_ms}
     except (httpx.TransportError, ValueError, TypeError):
         return {**base, "state": "unknown",
