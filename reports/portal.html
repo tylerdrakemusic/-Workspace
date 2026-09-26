@@ -323,6 +323,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.28rem;
+    flex-shrink: 0;
+    max-height: 14rem;
+    overflow-y: auto;
   }
   .api-health-title {
     font-size: 0.64rem;
@@ -332,12 +335,22 @@
     color: var(--muted);
     margin-bottom: 0.1rem;
   }
+  .api-health-title.primary { color: var(--text); }
   .api-health-row {
     display: flex;
     align-items: center;
     gap: 0.45rem;
     font-size: 0.72rem;
   }
+  .api-health-readiness {
+    margin: 0.05rem 0 0.15rem 1rem;
+    padding-left: 0.45rem;
+    border-left: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.62rem;
+    line-height: 1.35;
+  }
+  .api-health-readiness summary { cursor: pointer; color: var(--muted); }
   .api-dot {
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
   }
@@ -359,14 +372,14 @@
       <div class="master-restart-status" id="master-restart-status" role="status" aria-live="polite"></div>
     </div>
     <div class="api-health-widget">
-<div class="api-health-title">🔌 AI Health</div>
-<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">ElevenLabs</span><span class="api-latency">266ms</span><span class="api-age">1s ago</span></div>
-<details class="api-health-elevenlabs-details"><summary>Readiness details</summary><div>State: ready</div><div>Latency: 219ms</div><div>Quota: 23967/225338</div><div>Capabilities: voice_synthesis, voice_listing, streaming</div><div>Freshness: live</div><div>Reason: unavailable</div></details>
-<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">HuggingFace</span><span class="api-latency">312ms</span><span class="api-age">1s ago</span></div>
-<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">Perplexity.ai</span><span class="api-latency">359ms</span><span class="api-age">1s ago</span></div>
+<div class="api-health-title primary">🔌 AI Health</div>
+<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">ElevenLabs</span><span class="api-latency">406ms</span><span class="api-age">2s ago</span></div>
+<details class="api-health-readiness api-health-elevenlabs-details"><summary>Readiness details</summary><div>State: ready</div><div>Latency: 469ms</div><div>Quota: 26375/225338</div><div>Capabilities: voice_synthesis, voice_listing, streaming</div><div>Freshness: live</div><div>Reason: unavailable</div></details>
+<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">HuggingFace</span><span class="api-latency">437ms</span><span class="api-age">2s ago</span></div>
+<div class="api-health-row"><span class="api-dot up"></span><span class="api-ep-name">Perplexity.ai</span><span class="api-latency">609ms</span><span class="api-age">2s ago</span></div>
 <div class="api-health-row"><span class="api-dot unknown"></span><span class="api-ep-name">SerpApi</span><span class="api-latency">&mdash;</span><span class="api-age"></span></div>
-<details class="api-health-serpapi-details"><summary>Readiness details</summary><div>State: unknown</div><div>Latency: &amp;mdash;</div><div>Quota: unavailable</div><div>Capabilities: google_finance_search</div><div>Freshness: configuration</div><div>Reason: opt_in_required</div></details>
-<div class="api-health-title">DB Backup Health</div>
+<details class="api-health-readiness api-health-serpapi-details"><summary>Readiness details</summary><div>State: unknown</div><div>Latency: &amp;mdash;</div><div>Quota: unavailable</div><div>Capabilities: google_finance_search</div><div>Freshness: configuration</div><div>Reason: opt_in_required</div></details>
+<div class="api-health-title primary">DB Backup Health</div>
 <div class="api-health-row" id="database-backup-health" aria-live="polite">
 <span class="api-dot unknown" id="database-backup-health-dot"></span>
 <span class="api-ep-name" id="database-backup-health-state">Checking...</span>
@@ -528,7 +541,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
       <div style="margin-top:.2rem"><button class="server-launch" id="launch-btn" style="width:100%;text-align:center;padding:.25rem 0;" onclick="launchServers()">&#8635; Restart All</button></div>
     </div>
     <div class="sidebar-footer">
-      Generated 2026-09-23 15:59:20 &middot; 13 dashboards<br>
+      Generated 2026-09-26 07:52:28 &middot; 13 dashboards<br>
       <span style="opacity:.6">Add services: <code style="font-size:.65rem">tools/portal_servers.json</code></span>
     </div>
   </aside>
@@ -539,7 +552,7 @@ failures.textContent = (health.failure_categories || []).join(", ");
 <div class="dash-pane" id="pane-3" style="display:none"><iframe data-service="Band Management" data-base-url="http://127.0.0.1:8765/" data-cache-bust="true" src="http://127.0.0.1:8765/" frameborder="0" allow="autoplay"></iframe></div>
 <div class="dash-pane" id="pane-4" style="display:none"><iframe data-service="Guitar Trainer" data-base-url="http://localhost:5055" data-cache-bust="true" src="http://localhost:5055" frameborder="0" allow="autoplay"></iframe></div>
 <div class="dash-pane" id="pane-5" style="display:none"><iframe data-service="Studio Equipment" data-base-url="http://localhost:5065" data-cache-bust="true" src="http://localhost:5065" frameborder="0" allow="autoplay"></iframe></div>
-<div class="dash-pane" id="pane-6" style="display:none"><iframe data-service="Executive" data-base-url="http://127.0.0.1:8200" data-cache-bust="false" data-src="http://127.0.0.1:8200" frameborder="0" allow="autoplay"></iframe></div>
+<div class="dash-pane" id="pane-6" style="display:none"><iframe data-service="Executive" data-base-url="http://127.0.0.1:8200" data-cache-bust="false" data-src="http://127.0.0.1:8200" frameborder="0" allow="autoplay; clipboard-write"></iframe></div>
 <div class="dash-pane" id="pane-7" style="display:none"><iframe data-service="Quantum Benchmark" data-base-url="http://127.0.0.1:8210/" data-cache-bust="true" src="http://127.0.0.1:8210/" frameborder="0" allow="autoplay"></iframe></div>
 <div class="dash-pane" id="pane-8" style="display:none"><iframe data-service="FR Board" data-base-url="http://localhost:7474" data-cache-bust="true" src="http://localhost:7474" frameborder="0" allow="autoplay"></iframe></div>
 <div class="dash-pane" id="pane-9" style="display:none"><iframe src="portal_copilot-usage.html" frameborder="0"></iframe></div>

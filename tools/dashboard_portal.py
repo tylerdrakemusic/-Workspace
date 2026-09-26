@@ -137,6 +137,9 @@ _API_HEALTH_WIDGET_CSS = """
     display: flex;
     flex-direction: column;
     gap: 0.28rem;
+    flex-shrink: 0;
+    max-height: 14rem;
+    overflow-y: auto;
   }
   .api-health-title {
     font-size: 0.64rem;
@@ -146,12 +149,22 @@ _API_HEALTH_WIDGET_CSS = """
     color: var(--muted);
     margin-bottom: 0.1rem;
   }
+  .api-health-title.primary { color: var(--text); }
   .api-health-row {
     display: flex;
     align-items: center;
     gap: 0.45rem;
     font-size: 0.72rem;
   }
+  .api-health-readiness {
+    margin: 0.05rem 0 0.15rem 1rem;
+    padding-left: 0.45rem;
+    border-left: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.62rem;
+    line-height: 1.35;
+  }
+  .api-health-readiness summary { cursor: pointer; color: var(--muted); }
   .api-dot {
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
   }
@@ -219,7 +232,7 @@ def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool =
         '<div class="api-health-widget">',
     ]
     if rows:
-        lines.append('<div class="api-health-title">🔌 AI Health</div>')
+        lines.append('<div class="api-health-title primary">🔌 AI Health</div>')
     for row in rows:
         status = row.get("status", "unknown")
         dot_cls = status if status in ("up", "down") else "unknown"
@@ -269,7 +282,7 @@ def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool =
                 else "&mdash;"
             )
             lines.append(
-                f'<details class="api-health-{_esc(row.get("name") or "provider")}-details">'
+                f'<details class="api-health-readiness api-health-{_esc(row.get("name") or "provider")}-details">'
                 '<summary>Readiness details</summary>'
                 f'<div>State: {_esc(readiness_state)}</div>'
                 f'<div>Latency: {_esc(latency_text)}</div>'
@@ -280,7 +293,7 @@ def _render_api_health_widget(rows: list[dict], *, include_backup_health: bool =
                 '</details>'
             )
     lines.extend([
-        '<div class="api-health-title">DB Backup Health</div>',
+      '<div class="api-health-title primary">DB Backup Health</div>',
         '<div class="api-health-row" id="database-backup-health" aria-live="polite">',
         '<span class="api-dot unknown" id="database-backup-health-dot"></span>',
         '<span class="api-ep-name" id="database-backup-health-state">Checking...</span>',
