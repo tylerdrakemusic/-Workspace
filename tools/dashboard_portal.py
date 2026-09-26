@@ -635,9 +635,14 @@ def _content_frames(manifest: dict, servers: list[dict] | None = None) -> str:
           )
     elif dash["type"] == "flask_app":
       url = dash.get("url", "http://localhost:5050")
+      iframe_allow = (
+        "autoplay; clipboard-write"
+        if dash.get("id") == "executive-audio-brief"
+        else "autoplay"
+      )
       panes.append(
         f'<div class="dash-pane" id="pane-{i}" style="display:{display}">'
-        f'<iframe {_iframe_source(url, servers)} frameborder="0" allow="autoplay"></iframe></div>'
+        f'<iframe {_iframe_source(url, servers)} frameborder="0" allow="{iframe_allow}"></iframe></div>'
       )
     elif dash["type"] == "inline_html":
       inline_id = dash.get("inline_id", "")
