@@ -526,6 +526,30 @@ def test_api_health_widget_renders_serpapi_provider_neutral_readiness() -> None:
     assert "Reason: opt_in_required" in html
 
 
+def test_api_health_widget_prioritizes_status_rows_over_subtle_readiness_details() -> None:
+    rows = [{
+        "name": "elevenlabs",
+        "label": "ElevenLabs",
+        "status": "up",
+        "latency_ms": 42.0,
+        "checked_at": None,
+        "readiness": {"state": "ready", "freshness": "live"},
+    }]
+
+    html = dp._render_api_health_widget(rows, include_backup_health=True)
+
+    assert 'class="api-health-title primary"' in html
+    assert "api-health-readiness" in html
+    assert '.api-health-readiness {' in dp._API_HEALTH_WIDGET_CSS
+    assert 'font-size: 0.62rem' in dp._API_HEALTH_WIDGET_CSS
+
+
+def test_api_health_widget_keeps_a_bounded_sidebar_footprint() -> None:
+    assert 'max-height: 14rem' in dp._API_HEALTH_WIDGET_CSS
+    assert 'overflow-y: auto' in dp._API_HEALTH_WIDGET_CSS
+    assert 'flex-shrink: 0;\n    max-height: 14rem;' in dp._API_HEALTH_WIDGET_CSS
+
+
 def test_collect_api_health_passes_explicit_serpapi_smoke_flag(monkeypatch) -> None:
     connection = MagicMock()
     readiness = {
