@@ -167,7 +167,7 @@ def test_check_serpapi_readiness_smoke_parses_http_200_provider_error(monkeypatc
     [
         ("Invalid API key.", "invalid_api_key"),
         ("Monthly quota limit reached", "quota_exhausted"),
-        ("Rate limit reached", "rate_limited"),
+        ("Rate limit reached", "quota_exhausted"),
         ("Access denied for this account", "account_access_denied"),
         ("Invalid engine specified", "invalid_engine_or_query"),
     ],
@@ -187,6 +187,16 @@ def test_check_serpapi_readiness_smoke_allowlists_actionable_provider_errors(
     assert provider_message not in str(result)
 
 
+def test_check_serpapi_readiness_smoke_maps_http_429_to_quota_exhausted(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(429)
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["diagnostic_code"] == "quota_exhausted"
+
+
 def test_check_serpapi_readiness_smoke_rejects_malformed_success_payload(monkeypatch):
     monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
     response = _mock_response(200)
@@ -204,7 +214,7 @@ def test_check_serpapi_readiness_smoke_rejects_malformed_success_payload(monkeyp
     ("status_code", "expected_state", "expected_code"),
     [
         (401, "unavailable", "authentication_failed"),
-        (429, "degraded", "provider_unavailable"),
+        (429, "degraded", "quota_exhausted"),
     ],
 )
 def test_check_serpapi_readiness_smoke_maps_provider_health_states(

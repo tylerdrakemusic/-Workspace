@@ -75,7 +75,7 @@ def _serpapi_error_code(error: Any) -> str:
     ):
         return "invalid_engine_or_query"
     if "rate limit" in message:
-        return "rate_limited"
+        return "quota_exhausted"
     if "quota" in message and ("limit" in message or "exceed" in message):
         return "quota_exhausted"
     return "provider_error"
@@ -243,7 +243,7 @@ def check_serpapi_readiness(*, smoke: bool = False) -> dict[str, Any]:
                     "diagnostic_code": "authentication_failed"}
         if response.status_code == 429:
             return {**base, "state": "degraded", "latency_ms": latency_ms,
-                    "diagnostic_code": "provider_unavailable"}
+                "diagnostic_code": "quota_exhausted"}
         if response.status_code >= 400:
             return {**base, "state": "degraded", "latency_ms": latency_ms,
                     "diagnostic_code": "provider_error"}
