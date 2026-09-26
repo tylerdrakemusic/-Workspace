@@ -166,6 +166,15 @@ def test_executive_iframe_opt_out_preserves_raw_root_path() -> None:
     assert "http://127.0.0.1:8200/?generation=" not in served
 
 
+def test_executive_iframe_allows_clipboard_writes() -> None:
+    """The executive iframe must be allowed to use the browser clipboard API."""
+    manifest = _make_flask_manifest("executive-audio-brief", "http://127.0.0.1:8200/")
+
+    frames = dp._content_frames(manifest, servers=dp._load_servers())
+
+    assert 'allow="autoplay; clipboard-write"' in frames
+
+
 def test_compatible_iframe_keeps_generation_cache_busting() -> None:
     """Services without an opt-out must remain eligible for generation cache busting."""
     manifest = _make_flask_manifest("fr-board", "http://localhost:7474/")
