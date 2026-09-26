@@ -158,8 +158,46 @@ def test_check_serpapi_readiness_smoke_parses_http_200_provider_error(monkeypatc
         result = ahm.check_serpapi_readiness(smoke=True)
 
     assert result["state"] == "degraded"
-    assert result["diagnostic_code"] == "provider_error"
+    assert result["diagnostic_code"] == "quota_exhausted"
     assert "Monthly quota limit reached" not in str(result)
+
+
+@pytest.mark.parametrize(
+    ("provider_message", "expected_code"),
+    [
+        ("Invalid API key.", "invalid_api_key"),
+        ("Monthly quota limit reached", "quota_exhausted"),
+        ("Rate limit reached", "rate_limited"),
+        ("Access denied for this account", "account_access_denied"),
+        ("Invalid engine specified", "invalid_engine_or_query"),
+    ],
+)
+def test_check_serpapi_readiness_smoke_allowlists_actionable_provider_errors(
+    monkeypatch, provider_message, expected_code
+):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {"error": provider_message}
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == "degraded"
+    assert result["diagnostic_code"] == expected_code
+    assert provider_message not in str(result)
+
+
+def test_check_serpapi_readiness_smoke_rejects_malformed_success_payload(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key-not-real")
+    response = _mock_response(200)
+    response.json.return_value = {"unexpected": "shape"}
+
+    with patch.object(ahm.httpx, "get", return_value=response):
+        result = ahm.check_serpapi_readiness(smoke=True)
+
+    assert result["state"] == "degraded"
+    assert result["diagnostic_code"] == "malformed_response"
+    assert "unexpected" not in str(result)
 
 
 @pytest.mark.parametrize(

@@ -499,6 +499,36 @@ def test_api_health_widget_redacts_unsafe_readiness_reason() -> None:
     assert "Reason: unavailable" in html
 
 
+@pytest.mark.parametrize("diagnostic_code", [
+    "invalid_api_key",
+    "account_access_denied",
+    "invalid_engine_or_query",
+    "quota_exhausted",
+    "rate_limited",
+    "malformed_response",
+])
+def test_api_health_widget_renders_allowlisted_serpapi_diagnostic_code(diagnostic_code: str) -> None:
+    rows = [{
+        "name": "serpapi",
+        "label": "SerpApi",
+        "status": "down",
+        "latency_ms": 42.0,
+        "checked_at": None,
+        "readiness": {
+            "state": "degraded",
+            "latency_ms": 42.0,
+            "quota": None,
+            "capabilities": ["google_finance_search"],
+            "freshness": "live",
+            "diagnostic_code": diagnostic_code,
+        },
+    }]
+
+    html = dp._render_api_health_widget(rows)
+
+    assert f"Reason: {diagnostic_code}" in html
+
+
 def test_api_health_widget_renders_serpapi_provider_neutral_readiness() -> None:
     rows = [{
         "name": "serpapi",
