@@ -222,6 +222,17 @@ class OperationalRuntime:
         claimed: list[ExecutionRecord] = []
         for index, item in enumerate(result.ready, start=1):
             contract = next(contract for contract in self.contracts if contract.todo_id == item.todo_id)
+            idempotency_key = f"dispatch-{now}-{contract.todo_id}"
+            try:
+                self.lifecycle.get(contract.todo_id)
+            except KeyError:
+                self.lifecycle.register_queued(
+                    todo_id=contract.todo_id,
+                    fr_id=contract.fr_id or contract.inherited_fr_id,
+                    now=now,
+                    max_retries=self.config.max_retries,
+                    idempotency_key=idempotency_key,
+                )
             record = self.lifecycle.claim(
                 todo_id=contract.todo_id,
                 fr_id=contract.fr_id or contract.inherited_fr_id,
@@ -231,7 +242,7 @@ class OperationalRuntime:
                 now=now,
                 lease_seconds=self.config.lease_seconds,
                 max_retries=self.config.max_retries,
-                idempotency_key=f"dispatch-{now}-{contract.todo_id}",
+                idempotency_key=idempotency_key,
             )
             self.telemetry.emit("claim", record.todo_id, attempt=record.attempt)
             claimed.append(record)

@@ -32,12 +32,12 @@ class ExecutionRecord:
 
     todo_id: str
     fr_id: str | None
-    worker_id: str
-    claim_id: str
-    lease_token: str
+    worker_id: str | None
+    claim_id: str | None
+    lease_token: str | None
     state: str
-    lease_expires_at: float
-    heartbeat_at: float
+    lease_expires_at: float | None
+    heartbeat_at: float | None
     attempt: int
     max_retries: int
     idempotency_key: str | None
@@ -67,12 +67,12 @@ class ExecutionLifecycle:
             CREATE TABLE IF NOT EXISTS todo_execution_lifecycle (
                 todo_id TEXT PRIMARY KEY,
                 fr_id TEXT,
-                worker_id TEXT NOT NULL,
-                claim_id TEXT NOT NULL UNIQUE,
-                lease_token TEXT NOT NULL UNIQUE,
+                worker_id TEXT,
+                claim_id TEXT UNIQUE,
+                lease_token TEXT UNIQUE,
                 state TEXT NOT NULL,
-                lease_expires_at REAL NOT NULL,
-                heartbeat_at REAL NOT NULL,
+                lease_expires_at REAL,
+                heartbeat_at REAL,
                 attempt INTEGER NOT NULL,
                 max_retries INTEGER NOT NULL,
                 idempotency_key TEXT UNIQUE,
@@ -83,7 +83,7 @@ class ExecutionLifecycle:
             CREATE TABLE IF NOT EXISTS todo_execution_events (
                 event_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 todo_id TEXT NOT NULL,
-                claim_id TEXT NOT NULL,
+                claim_id TEXT,
                 state TEXT NOT NULL,
                 reason TEXT NOT NULL,
                 error TEXT,
@@ -121,7 +121,138 @@ class ExecutionLifecycle:
             self.connection.execute(
                 "ALTER TABLE todo_execution_lifecycle ADD COLUMN handoff_evidence TEXT"
             )
+        self._migrate_nullable_claim_fields()
         self.connection.commit()
+
+    def _migrate_nullable_claim_fields(self) -> None:
+        previous_row_factory = self.connection.row_factory
+        self.connection.row_factory = None
+        try:
+            lifecycle_info = self.connection.execute(
+                "PRAGMA table_info(todo_execution_lifecycle)"
+            ).fetchall()
+            event_info = self.connection.execute(
+                "PRAGMA table_info(todo_execution_events)"
+            ).fetchall()
+        finally:
+            self.connection.row_factory = previous_row_factory
+        lifecycle_not_null = {
+            row[1] for row in lifecycle_info if row[3]
+        }
+        if lifecycle_not_null.intersection(
+            {"worker_id", "claim_id", "lease_token", "lease_expires_at", "heartbeat_at"}
+        ):
+            self.connection.execute(
+                """CREATE TABLE todo_execution_lifecycle_new (
+                    todo_id TEXT PRIMARY KEY,
+                    fr_id TEXT,
+                    worker_id TEXT,
+                    claim_id TEXT UNIQUE,
+                    lease_token TEXT UNIQUE,
+                    state TEXT NOT NULL,
+                    lease_expires_at REAL,
+                    heartbeat_at REAL,
+                    attempt INTEGER NOT NULL,
+                    max_retries INTEGER NOT NULL,
+                    idempotency_key TEXT UNIQUE,
+                    validated_handoff INTEGER NOT NULL DEFAULT 0,
+                    handoff_evidence TEXT,
+                    updated_at REAL NOT NULL
+                )"""
+            )
+            self.connection.execute(
+                """INSERT INTO todo_execution_lifecycle_new
+                   SELECT todo_id, fr_id, worker_id, claim_id, lease_token, state,
+                          lease_expires_at, heartbeat_at, attempt, max_retries,
+                          idempotency_key, validated_handoff, handoff_evidence, updated_at
+                   FROM todo_execution_lifecycle"""
+            )
+            self.connection.execute("DROP TABLE todo_execution_lifecycle")
+            self.connection.execute(
+                "ALTER TABLE todo_execution_lifecycle_new RENAME TO todo_execution_lifecycle"
+            )
+
+        event_claim_not_null = any(
+            row[1] == "claim_id" and row[3] for row in event_info
+        )
+        if event_claim_not_null:
+            self.connection.execute(
+                """CREATE TABLE todo_execution_events_new (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    todo_id TEXT NOT NULL,
+                    claim_id TEXT,
+                    state TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    error TEXT,
+                    occurred_at REAL NOT NULL
+                )"""
+            )
+            self.connection.execute(
+                """INSERT INTO todo_execution_events_new
+                   SELECT event_id, todo_id, claim_id, state, reason, error, occurred_at
+                   FROM todo_execution_events"""
+            )
+            self.connection.execute("DROP TABLE todo_execution_events")
+            self.connection.execute(
+                "ALTER TABLE todo_execution_events_new RENAME TO todo_execution_events"
+            )
+        self.connection.execute(
+            """CREATE INDEX IF NOT EXISTS idx_todo_execution_events_todo
+               ON todo_execution_events(todo_id, event_id)"""
+        )
+
+    def register_queued(
+        self,
+        *,
+        todo_id: str,
+        fr_id: str | None,
+        now: float,
+        max_retries: int = 0,
+        idempotency_key: str,
+    ) -> ExecutionRecord:
+        """Durably register one idempotent TODO before assigning a worker lease."""
+        if max_retries < 0 or not idempotency_key.strip():
+            raise ValueError("invalid retry policy or idempotency key")
+        self.connection.execute("BEGIN IMMEDIATE")
+        try:
+            existing = self._row(todo_id)
+            if existing is not None:
+                if existing["idempotency_key"] != idempotency_key:
+                    raise DuplicateClaimError(
+                        f"TODO already has a different registration: {todo_id}"
+                    )
+                self.connection.commit()
+                return self._record(existing)
+
+            record = ExecutionRecord(
+                todo_id=todo_id,
+                fr_id=fr_id,
+                worker_id=None,
+                claim_id=None,
+                lease_token=None,
+                state="queued",
+                lease_expires_at=None,
+                heartbeat_at=None,
+                attempt=0,
+                max_retries=max_retries,
+                idempotency_key=idempotency_key,
+                validated_handoff=False,
+                handoff_evidence=None,
+            )
+            self.connection.execute(
+                """INSERT INTO todo_execution_lifecycle
+                   (todo_id, fr_id, worker_id, claim_id, lease_token, state,
+                    lease_expires_at, heartbeat_at, attempt, max_retries,
+                    idempotency_key, validated_handoff, handoff_evidence, updated_at)
+                   VALUES (?, ?, NULL, NULL, NULL, 'queued', NULL, NULL, 0, ?, ?, 0, NULL, ?)""",
+                (todo_id, fr_id, max_retries, idempotency_key, now),
+            )
+            self._event(record, "queued registration accepted", None, now)
+            self.connection.commit()
+            return record
+        except Exception:
+            self.connection.rollback()
+            raise
 
     def claim(
         self,
@@ -146,7 +277,11 @@ class ExecutionLifecycle:
                 (todo_id,),
             ).fetchone()
             if existing is not None:
-                if idempotency_key and existing["idempotency_key"] == idempotency_key:
+                if (
+                    existing["state"] != "queued"
+                    and idempotency_key
+                    and existing["idempotency_key"] == idempotency_key
+                ):
                     self.connection.commit()
                     return self._record(existing)
                 if existing["state"] in {"claimed", "running"}:

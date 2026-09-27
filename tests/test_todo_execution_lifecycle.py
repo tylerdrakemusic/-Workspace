@@ -8,6 +8,7 @@ import pytest
 from todo_execution_lifecycle import (
     DuplicateClaimError,
     ExecutionLifecycle,
+    ExecutionRecord,
     InvalidTransitionError,
     LeaseOwnershipError,
     RetryExhaustedError,
@@ -66,6 +67,78 @@ def test_normal_construction_still_creates_schema_and_mutates() -> None:
     assert claim(lifecycle).state == "claimed"
 
 
+def test_queued_registration_is_idempotent_durable_and_has_no_lease(tmp_path: Path) -> None:
+    database = tmp_path / "queued.sqlite3"
+    lifecycle = ExecutionLifecycle(sqlite3.connect(database))
+
+    queued = lifecycle.register_queued(
+        todo_id="todo-queued",
+        fr_id="FR-queued",
+        now=100.0,
+        max_retries=2,
+        idempotency_key="dispatch-queued",
+    )
+
+    assert queued.state == "queued"
+    assert queued.worker_id is None
+    assert queued.claim_id is None
+    assert queued.lease_token is None
+    assert queued.lease_expires_at is None
+    assert queued.heartbeat_at is None
+    assert lifecycle.register_queued(
+        todo_id="todo-queued",
+        fr_id="FR-queued",
+        now=101.0,
+        max_retries=2,
+        idempotency_key="dispatch-queued",
+    ) == queued
+
+    lifecycle.connection.close()
+    restarted = ExecutionLifecycle(sqlite3.connect(database))
+
+    assert restarted.get("todo-queued") == queued
+    assert len(restarted.events("todo-queued")) == 1
+
+
+def test_claim_takes_over_queued_registration_with_canonical_lease() -> None:
+    lifecycle = make_lifecycle()
+    lifecycle.register_queued(
+        todo_id="todo-queued",
+        fr_id="FR-queued",
+        now=100.0,
+        max_retries=1,
+        idempotency_key="dispatch-queued",
+    )
+
+    canonical_lease = "fixture-" + "lease-canonical"
+
+    def submit_canonical_claim(now: float) -> ExecutionRecord:
+        return lifecycle.claim(
+            todo_id="todo-queued",
+            fr_id="FR-queued",
+            worker_id="worker-canonical",
+            claim_id="claim-canonical",
+            lease_token=canonical_lease,
+            now=now,
+            lease_seconds=30,
+            max_retries=1,
+            idempotency_key="dispatch-queued",
+        )
+
+    claimed = submit_canonical_claim(110.0)
+
+    assert claimed.state == "claimed"
+    assert claimed.worker_id == "worker-canonical"
+    assert claimed.claim_id == "claim-canonical"
+    assert claimed.lease_token == canonical_lease
+    assert claimed.attempt == 1
+    assert submit_canonical_claim(111.0) == claimed
+    assert [event["claim_id"] for event in lifecycle.events("todo-queued")] == [
+        None,
+        "claim-canonical",
+    ]
+
+
 def test_existing_lifecycle_schema_is_migrated_without_validating_old_rows() -> None:
     connection = sqlite3.connect(":memory:")
     connection.executescript(
@@ -88,6 +161,18 @@ def test_existing_lifecycle_schema_is_migrated_without_validating_old_rows() -> 
             ('todo-legacy', 'FR-legacy', 'worker-a', 'claim-legacy',
              'fixture-lease-legacy', 'running', 130.0, 105.0, 1, 0,
              'delivery-legacy', 105.0);
+        CREATE TABLE todo_execution_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            todo_id TEXT NOT NULL,
+            claim_id TEXT NOT NULL,
+            state TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            error TEXT,
+            occurred_at REAL NOT NULL
+        );
+        INSERT INTO todo_execution_events
+            (todo_id, claim_id, state, reason, error, occurred_at)
+        VALUES ('todo-legacy', 'claim-legacy', 'running', 'legacy event', NULL, 105.0);
         """
     )
 
@@ -96,6 +181,28 @@ def test_existing_lifecycle_schema_is_migrated_without_validating_old_rows() -> 
 
     assert record.validated_handoff is False
     assert record.handoff_evidence is None
+    assert lifecycle.events("todo-legacy")[0]["reason"] == "legacy event"
+    lifecycle_columns = {
+        row[1]: row[3]
+        for row in connection.execute("PRAGMA table_info(todo_execution_lifecycle)")
+    }
+    event_columns = {
+        row[1]: row[3]
+        for row in connection.execute("PRAGMA table_info(todo_execution_events)")
+    }
+    assert lifecycle_columns["claim_id"] == 0
+    assert lifecycle_columns["lease_expires_at"] == 0
+    assert event_columns["claim_id"] == 0
+
+    migrated_again = ExecutionLifecycle(connection)
+    assert migrated_again.get("todo-legacy") == record
+    assert len(migrated_again.events("todo-legacy")) == 1
+    assert migrated_again.register_queued(
+        todo_id="todo-after-migration",
+        fr_id="FR-legacy",
+        now=200.0,
+        idempotency_key="queued-after-migration",
+    ).state == "queued"
 
 
 def test_active_claim_is_unique_but_repeated_delivery_is_idempotent() -> None:

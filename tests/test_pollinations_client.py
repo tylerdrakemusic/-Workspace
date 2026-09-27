@@ -86,9 +86,9 @@ class TestPollinationsPrimary:
 # Fallthrough to DiceBear tests
 # ---------------------------------------------------------------------------
 
-class TestDiceBearFallback:
-    def test_falls_back_on_small_response(self, tmp_path: Path) -> None:
-        """Pollinations returning <10KB should fall through to DiceBear."""
+class TestPollinationsFailure:
+    def test_dicebear_result_is_reported_as_failure(self, tmp_path: Path) -> None:
+        """An illustrated fallback must not be accepted as generated imagery."""
         tiny = b"\xff\xd8" + b"x" * 100   # 102 bytes — below _MIN_PHOTOREALISTIC_BYTES
         call_count = [0]
 
@@ -100,27 +100,15 @@ class TestDiceBearFallback:
 
         with patch("urllib.request.urlopen", side_effect=fake_urlopen):
             client = PollinationsClient()
-            result = client.generate_image("test prompt", output_dir=tmp_path)
+            with pytest.raises(PollinationsError, match="Pollinations"):
+                client.generate_image("test prompt", output_dir=tmp_path)
 
-        assert result.exists()
-        assert call_count[0] == 2  # both tiers were called
-        assert "dicebear_" in result.name
+        assert call_count[0] == 1  # no DiceBear fallback request
 
-    def test_falls_back_on_network_error(self, tmp_path: Path) -> None:
-        call_count = [0]
-
-        def fake_urlopen(req, timeout):
-            call_count[0] += 1
-            if call_count[0] == 1:
-                raise OSError("connection refused")
-            return _mock_urlopen(_FAKE_PNG)
-
-        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
-            client = PollinationsClient()
-            result = client.generate_image("test prompt", output_dir=tmp_path)
-
-        assert result.exists()
-        assert call_count[0] == 2
+    def test_network_error_is_not_replaced_with_avatar(self, tmp_path: Path) -> None:
+        with patch("urllib.request.urlopen", side_effect=OSError("connection refused")):
+            with pytest.raises(PollinationsError, match="Pollinations"):
+                PollinationsClient().generate_image("test prompt", output_dir=tmp_path)
 
     def test_raises_if_both_tiers_fail(self, tmp_path: Path) -> None:
         with patch("urllib.request.urlopen", side_effect=OSError("no network")):
