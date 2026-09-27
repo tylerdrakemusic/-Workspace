@@ -59,6 +59,22 @@ def test_runtime_loads_injected_policy_and_applies_capacity_lease_and_retry_limi
     assert runtime.lifecycle.get("todo-0").max_retries == 0
 
 
+def test_dispatch_persists_lease_free_queue_before_canonical_claim() -> None:
+    runtime = OperationalRuntime(
+        sqlite3.connect(":memory:"),
+        (TodoContract(todo_id="todo-queued", fr_id="FR-1"),),
+    )
+
+    claimed = runtime.dispatch(now=100.0)
+
+    assert len(claimed) == 1
+    events = runtime.lifecycle.events("todo-queued")
+    assert [event["state"] for event in events] == ["queued", "claimed"]
+    assert events[0]["claim_id"] is None
+    assert events[0]["reason"] == "queued registration accepted"
+    assert events[1]["claim_id"] == claimed[0].claim_id
+
+
 def test_runtime_rejects_invalid_injected_policy() -> None:
     with pytest.raises(ValueError, match="max_total_todo_workers"):
         OperationalRuntime(
