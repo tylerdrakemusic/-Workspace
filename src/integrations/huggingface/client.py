@@ -1,4 +1,4 @@
-"""HuggingFace Inference API image generation client.
+"""Hugging Face Inference Providers image generation client.
 
 Self-contained: reads HF_TOKEN from environment.
 No dependency on any per-project config.
@@ -16,24 +16,23 @@ Usage (from any workspace project)::
 
 Notes
 -----
-- Default model: ``black-forest-labs/FLUX.1-schnell`` via the HuggingFace router.
-  Fast (~5 s); no cold-start penalty.
-- API base changed from ``api-inference.huggingface.co/models`` to
-  ``router.huggingface.co/hf-inference/models`` (the old path returns 404).
-- ``size`` is parsed from ``"WxH"`` string to ``{"width": W, "height": H}``
-  as expected by the HuggingFace Inference payload.
+- Default model: ``black-forest-labs/FLUX.1-Krea-dev`` via the ``fal-ai``
+    Inference Provider.
+- ``size`` is parsed from ``"WxH"`` and passed as ``width`` and ``height``.
 - Model ID is constructor-injectable for easy swap to other models.
-- ``negative_prompt`` is accepted by ``generate_image`` and forwarded in
-  ``parameters`` when the model supports it.
+- ``negative_prompt`` and ``seed`` are forwarded to the provider when supported.
 """
 
 from __future__ import annotations
 
 import hashlib
+from io import BytesIO
 import os
 import random
 import sys
 from pathlib import Path
+
+from huggingface_hub import InferenceClient
 
 # Quantum entropy for image seeds — falls back to secrets CSPRNG if cache absent
 try:
@@ -46,11 +45,9 @@ except Exception:
     def _quantum_seed() -> int:  # type: ignore[misc]
         return random.randint(0, 2**31 - 1)  # nosec B311
 
-import httpx
-
-DEFAULT_MODEL_ID = "black-forest-labs/FLUX.1-schnell"
-HF_INFERENCE_BASE = "https://router.huggingface.co/hf-inference/models"
-REQUEST_TIMEOUT = 60.0  # FLUX.1-schnell typically completes in 5-15 s
+DEFAULT_MODEL_ID = "black-forest-labs/FLUX.1-Krea-dev"
+DEFAULT_PROVIDER = "fal-ai"
+REQUEST_TIMEOUT = 60.0
 DEFAULT_SIZE = "1024x1024"
 
 
@@ -59,16 +56,16 @@ class HuggingFaceImageError(RuntimeError):
 
 
 class HuggingFaceImageClient:
-    """Thin wrapper around the HuggingFace Inference API for image generation.
+    """Thin wrapper around Hugging Face Inference Providers for image generation.
 
     API key resolution order:
     1. ``api_key`` constructor argument
-    2. ``HF_TOKEN`` environment variable
+    2. ``HF_TOKEN`` environment variable (Inference Providers permission required)
 
     Parameters
     ----------
     model_id:
-        HuggingFace model ID to use for inference. Defaults to SDXL.
+        Hugging Face model ID to use for inference. Defaults to FLUX.1-Krea-dev.
     api_key:
         HuggingFace API token. Falls back to ``HF_TOKEN`` env var.
     """
@@ -82,14 +79,17 @@ class HuggingFaceImageClient:
         if not resolved:
             raise EnvironmentError(
                 "HuggingFace API token not found. "
-                "Set the HF_TOKEN environment variable or pass api_key= explicitly."
+                "Set HF_TOKEN to a token with Inference Providers permission "
+                "or pass api_key= explicitly."
             )
         self._api_key = resolved
         self._model_id = model_id
-        self._headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
+        self._client = InferenceClient(
+            model=self._model_id,
+            provider=DEFAULT_PROVIDER,
+            token=self._api_key,
+            timeout=REQUEST_TIMEOUT,
+        )
 
     # ------------------------------------------------------------------
     # Image generation
@@ -136,33 +136,28 @@ class HuggingFaceImageClient:
         save_dir.mkdir(parents=True, exist_ok=True)
 
         width, height = self._parse_size(size)
-        url = f"{HF_INFERENCE_BASE}/{self._model_id}"
-        parameters: dict = {"width": width, "height": height, "seed": seed if seed is not None else _quantum_seed()}
-        if negative_prompt:
-            parameters["negative_prompt"] = negative_prompt
-        payload = {
-            "inputs": prompt,
-            "parameters": parameters,
-        }
-
         try:
-            with httpx.Client(timeout=REQUEST_TIMEOUT) as client:
-                resp = client.post(url, json=payload, headers=self._headers)
-        except httpx.RequestError as exc:
+            image = self._client.text_to_image(
+                prompt,
+                width=width,
+                height=height,
+                negative_prompt=negative_prompt,
+                seed=seed if seed is not None else _quantum_seed(),
+            )
+        except Exception as exc:
             raise HuggingFaceImageError(
-                f"Network error calling HuggingFace Inference API: {exc}"
+                f"Hugging Face Inference Providers error: {exc}"
             ) from exc
 
-        if resp.status_code != 200:
+        image_buffer = BytesIO()
+        try:
+            image.save(image_buffer, format="PNG")
+        except Exception as exc:
             raise HuggingFaceImageError(
-                f"HuggingFace API error {resp.status_code}: {resp.text[:400]}"
-            )
+                f"Hugging Face Inference Providers returned an invalid image: {exc}"
+            ) from exc
 
-        content = resp.content
-        if not content:
-            raise HuggingFaceImageError("HuggingFace API returned empty response body.")
-
-        return self._save_image(content, prompt, save_dir)
+        return self._save_image(image_buffer.getvalue(), prompt, save_dir)
 
     # ------------------------------------------------------------------
     # Internal helpers

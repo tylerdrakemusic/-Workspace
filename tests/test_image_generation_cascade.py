@@ -126,6 +126,6 @@ def test_default_cascade_preserves_provider_order_and_model_provenance(
 
     assert calls == ["openai", "huggingface"]
     assert result.provider == "huggingface"
-    assert result.model == "black-forest-labs/FLUX.1-schnell"
+    assert result.model == "black-forest-labs/FLUX.1-Krea-dev"
     assert result.diagnostics[0].provider == "openai"
     assert result.diagnostics[0].model == "gpt-image-1"
