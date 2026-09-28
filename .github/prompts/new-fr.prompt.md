@@ -39,6 +39,27 @@ Every executable parent and child TODO created or adopted by this flow must
 persist and update exactly one canonical execution state:
 `queued`, `claimed`, `running`, `completed`, `failed`, `cancelled`, or `stale`.
 
+Use these `workspace-coordination` MCP tools with the listed inputs:
+
+- `todo_register_queued(todo_id, idempotency_key, fr_id?)`
+- `todo_claim(todo_id, worker_id, claim_idempotency_key, fr_id?)`
+- `todo_heartbeat(todo_id, worker_id, lease_token)`
+- `todo_fail(todo_id, worker_id, lease_token, error)`
+- `todo_retry(todo_id)`
+- `todo_cancel(todo_id, worker_id, lease_token)`
+- `todo_recover_stale()`
+- `todo_takeover(todo_id, worker_id, approved)`
+- `todo_complete(todo_id, worker_id, lease_token, validated_handoff, handoff_evidence)`
+- `todo_get(todo_id)` and `todo_events(todo_id)` for read-only inspection.
+
+The server derives timestamps, worker-capacity limits, lease duration, and retry
+limits from policy. Generate `claim_idempotency_key` from at least 32 random
+bytes (for example, `secrets.token_urlsafe(32)`) and keep it private; only the
+same worker with that key can replay a claim and recover its existing lease.
+Only claim and approved takeover return a `lease_token`; keep it private and
+pass it only to that worker's heartbeat, failure, cancellation, or completion
+call. Takeover also requires `takeover_enabled` in policy and `approved=true`.
+
 Use these rules when coordinating work:
 
 - Persist `queued` before dispatch, then update the durable state for claim,
@@ -57,17 +78,15 @@ Use these rules when coordinating work:
      1. Read the title (and any notes) above.
      2. Inspect the codebase to infer as many fields as possible: type, affected
         projects, motivation, risk, dependencies, and out-of-scope boundaries.
-     1.5 TODO CROSS-REFERENCE: Query manifest_todos.db for open todos that overlap
-        this request. SQL pattern (adapt project key as needed):
-          SELECT id, text, priority FROM todos
-          WHERE done=0 AND project=<inferred_project>
-            AND text LIKE '%<keyword>%'
-          ORDER BY priority DESC LIMIT 5;
-        Surface any matches in the Phase B scope card under "📎 Related todos".
-        On Tyler's confirmation, write the FR ID into each matched row:
-          UPDATE todos SET fr_id='<FR-ID>' WHERE id=<matched_id>;
-        DB path: f:\👁AI-Manifest\src\data\manifest_todos.db
-        If no matches, skip silently.
+       1.5 TODO CROSS-REFERENCE: Use the governed manifest-coordination tools;
+            never query or update manifest_todos.db with SQL.
+            Call `mcp_manifest-coor_list_open_todos(project=<inferred_project>)`,
+            then `mcp_manifest-coor_read_todo(todo_id=<candidate_id>)` for relevant
+            candidates. Surface overlapping matches in the Phase B scope card under
+            "📎 Related todos". Only after Tyler confirms, call
+            `mcp_manifest-coor_link_confirmed_todo_to_fr(todo_id=<matched_id>,
+            fr_id=<FR-ID>, confirmed=true)` for each confirmed match. If there are no
+            matches, skip silently.
      3. Run your Phase A interview — but ONLY ask about fields you genuinely cannot
         infer. Skip any question whose answer is obvious from the title, notes, or
         codebase. Fewer questions = better. Use vscode_askQuestions with prefilled

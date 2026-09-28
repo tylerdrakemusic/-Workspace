@@ -26,6 +26,10 @@ class RetryExhaustedError(LifecycleError):
     """Raised when a failed or stale attempt has no retry budget left."""
 
 
+class CapacityLimitError(LifecycleError):
+    """Raised when a claim would exceed configured worker capacity."""
+
+
 @dataclass(frozen=True)
 class ExecutionRecord:
     """Current durable execution state for one TODO attempt."""
@@ -123,6 +127,41 @@ class ExecutionLifecycle:
             )
         self._migrate_nullable_claim_fields()
         self.connection.commit()
+
+    def _ensure_capacity(
+        self,
+        *,
+        todo_id: str,
+        fr_id: str | None,
+        max_parallel_per_fr: int | None,
+        global_worker_capacity: int | None,
+        pre_fr_capacity: int | None,
+    ) -> None:
+        active_states = ("claimed", "running")
+        active_without_current = (
+            "SELECT COUNT(*) FROM todo_execution_lifecycle "
+            "WHERE state IN (?, ?) AND todo_id != ?"
+        )
+        if global_worker_capacity is not None:
+            active_count = self.connection.execute(
+                active_without_current, (*active_states, todo_id)
+            ).fetchone()[0]
+            if active_count >= global_worker_capacity:
+                raise CapacityLimitError("global TODO worker capacity reached")
+        if fr_id is None and pre_fr_capacity is not None:
+            active_count = self.connection.execute(
+                active_without_current + " AND fr_id IS NULL",
+                (*active_states, todo_id),
+            ).fetchone()[0]
+            if active_count >= pre_fr_capacity:
+                raise CapacityLimitError("pre-FR TODO worker capacity reached")
+        elif fr_id is not None and max_parallel_per_fr is not None:
+            active_count = self.connection.execute(
+                active_without_current + " AND fr_id = ?",
+                (*active_states, todo_id, fr_id),
+            ).fetchone()[0]
+            if active_count >= max_parallel_per_fr:
+                raise CapacityLimitError("per-FR TODO worker capacity reached")
 
     def _migrate_nullable_claim_fields(self) -> None:
         previous_row_factory = self.connection.row_factory
@@ -266,10 +305,16 @@ class ExecutionLifecycle:
         lease_seconds: int,
         max_retries: int = 0,
         idempotency_key: str | None = None,
+        max_parallel_per_fr: int | None = None,
+        global_worker_capacity: int | None = None,
+        pre_fr_capacity: int | None = None,
     ) -> ExecutionRecord:
         """Atomically claim a TODO or return its exact repeated delivery."""
         if lease_seconds <= 0 or max_retries < 0:
             raise ValueError("invalid lease or retry policy")
+        capacities = (max_parallel_per_fr, global_worker_capacity, pre_fr_capacity)
+        if any(limit is not None and limit <= 0 for limit in capacities):
+            raise ValueError("worker capacities must be positive")
         self.connection.execute("BEGIN IMMEDIATE")
         try:
             existing = self.connection.execute(
@@ -278,10 +323,14 @@ class ExecutionLifecycle:
             ).fetchone()
             if existing is not None:
                 if (
-                    existing["state"] != "queued"
+                    existing["state"] in {"claimed", "running"}
                     and idempotency_key
                     and existing["idempotency_key"] == idempotency_key
                 ):
+                    if existing["worker_id"] != worker_id:
+                        raise DuplicateClaimError(
+                            f"TODO claim belongs to a different worker: {todo_id}"
+                        )
                     self.connection.commit()
                     return self._record(existing)
                 if existing["state"] in {"claimed", "running"}:
@@ -290,6 +339,14 @@ class ExecutionLifecycle:
                     raise InvalidTransitionError(
                         "claim requires a new or queued execution"
                     )
+
+            self._ensure_capacity(
+                todo_id=todo_id,
+                fr_id=fr_id,
+                max_parallel_per_fr=max_parallel_per_fr,
+                global_worker_capacity=global_worker_capacity,
+                pre_fr_capacity=pre_fr_capacity,
+            )
 
             record = ExecutionRecord(
                 todo_id=todo_id,
@@ -469,6 +526,9 @@ class ExecutionLifecycle:
         now: float,
         lease_seconds: int,
         reason: str,
+        max_parallel_per_fr: int | None = None,
+        global_worker_capacity: int | None = None,
+        pre_fr_capacity: int | None = None,
     ) -> ExecutionRecord:
         """Assign a new lease to one explicitly recovered stale execution."""
         if lease_seconds <= 0:
@@ -478,6 +538,13 @@ class ExecutionLifecycle:
             row = self._row(todo_id)
             if row is None or row["state"] != "stale":
                 raise InvalidTransitionError("takeover requires stale state")
+            self._ensure_capacity(
+                todo_id=todo_id,
+                fr_id=row["fr_id"],
+                max_parallel_per_fr=max_parallel_per_fr,
+                global_worker_capacity=global_worker_capacity,
+                pre_fr_capacity=pre_fr_capacity,
+            )
             self.connection.execute(
                 """UPDATE todo_execution_lifecycle
                    SET worker_id = ?, claim_id = ?, lease_token = ?, state = 'claimed',
