@@ -99,11 +99,14 @@ Use these rules when coordinating work:
      8. On amendments → update the draft and re-confirm.
 
    PARENT JOIN: If the FR is decomposed into child TODOs, record the required
-   child IDs and join criteria in the FR plan. Before FUNCTIONAL_QA or any
-   later FR state, publish PARENT_JOIN:PASS only after every child is
-   completed, validated, artifact-complete, integrated into the current FR
-   branch, and current with the parent head. Missing, stale, conflicting, or
-   invalid children must remain explicit blockers.
+   child IDs and join criteria in the FR plan. Incomplete child work or join
+   bookkeeping does not block technical progression through FUNCTIONAL_QA,
+   ARCHITECTURE_REVIEW, REVIEW_REQUESTED, or AUTO_REVIEWED. Keep missing, stale,
+   conflicting, or invalid children explicit, and do not claim PARENT_JOIN:PASS
+   while any required child is incomplete. Before TYLER_APPROVED, MERGED,
+   SOAKING, or SIGNED_OFF, require every child to be completed, validated,
+   artifact-complete, integrated into the current FR branch, and current with
+   the parent head; publish PARENT_JOIN:PASS only after those checks pass.
 
      0. MODE CHECK: Confirm you are running as ⊕workspace-overseer. If not,
         hand off to that agent now — it provides MCP pre-flight, agent discovery,
