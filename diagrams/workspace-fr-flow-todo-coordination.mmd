@@ -4,20 +4,26 @@
 stateDiagram-v2
     IN_PROGRESS --> TODO_RUNTIME: operational TODO execution
     state "Bounded TODO operational runtime" as TODO_RUNTIME {
-        [*] --> TODO_DISPATCH
-        TODO_DISPATCH --> TODO_CLAIM: policy defaults 8 per FR / 16 global
-        TODO_CLAIM --> TODO_LEASE: durable claim / lease / retry
-        TODO_LEASE --> TODO_OUTCOME: allowlisted in-memory outcomes
-        TODO_OUTCOME --> [*]
+        [*] --> TODO_DISPATCH: /new-fr persists queued via todo_register_queued before dispatch
+        TODO_DISPATCH --> TODO_CLAIM: todo_claim via workspace-coordination MCP
+        TODO_CLAIM --> TODO_LEASE: durable claim returns lease
+        TODO_LEASE --> TODO_OUTCOME: todo_heartbeat then todo_complete / todo_fail / todo_cancel via MCP
+        TODO_OUTCOME --> [*]: terminal outcome persisted through workspace-coordination MCP
     }
     TODO_RUNTIME --> IN_PROGRESS: required children, artifacts, current parent head validated
+
+    note right of TODO_RUNTIME
+        todo_retry, todo_recover_stale, and approved todo_takeover use the same
+        fixed workspace-coordination MCP allowlist and server policy.
+        Arbitrary database and SQL arguments are rejected.
+    end note
 
     %% Orthogonal execution-state contract for each admitted TODO.
     state "Canonical TODO execution states" as EXECUTION_STATES {
         [*] --> QUEUED
         QUEUED --> CLAIMED: valid claim accepted
         CLAIMED --> RUNNING: heartbeat accepted
-        RUNNING --> COMPLETED: validated handoff only
+        RUNNING --> COMPLETED: todo_complete with validated handoff and evidence
         RUNNING --> FAILED: execution failure
         CLAIMED --> STALE: lease expires
         RUNNING --> STALE: lease expires
@@ -49,7 +55,17 @@ stateDiagram-v2
     }
     FR_COORDINATION --> IN_PROGRESS: child handoff complete
 
+    note right of FR_COORDINATION
+        Parent aggregation reuses the existing parent_join_state precedence.
+        Coordination conflicts remain events unless execution itself is invalid.
+    end note
+
     class QUEUED,CLAIMED,RUNNING,COMPLETED,FAILED,STALE,CANCELLED state
     class TODO_ADMISSION,CHILD_ASSIGNED,CLAIM_VALIDATED,CHILD_WORK,SERIALIZED_INTEGRATION,STALE_REBASE,CONFLICT_HANDOFF,CHILD_RETURN state
 
-classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+classDef tyler   fill:#2a1a3a,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext     fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db      fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state   fill:#1a1a1a,stroke:#888888,color:#cccccc

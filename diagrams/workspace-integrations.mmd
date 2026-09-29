@@ -10,7 +10,9 @@ graph LR
     Workspace --> Quantum[⟨ψ⟩ Quantum]
     Workspace --> Manifest[👁 AI-Manifest]
     Workspace --> Capital[Σ Capital]
-    Workspace --> WSDB[(workspace.db)]
+    Workspace --> WSDB[(workspace.db<br/>canonical TODO lifecycle storage)]
+    Workspace --> WorkspaceCoord[⊕ workspace-coordination MCP<br/>ExecutionLifecycle API · fixed TODO lifecycle allowlist<br/>rejects arbitrary db/sql and generic state setter]
+    WorkspaceCoord ==> WSDB
     Workspace --> BoundedLogging[bounded_logging.py<br/>provider-neutral structured events]
     Workspace --> AIHealthWidget[⊕ Workspace AI Health widget<br/>readiness details + safe diagnostics]
     Workspace --> DashboardPortal[Dashboard portal<br/>load]
@@ -34,8 +36,8 @@ graph LR
     Music --> MusicDB[(heartmusic.db)]
     Quantum --> QDB[(quantumpsi.db)]
     Manifest --> ManifestDB[(manifest_todos.db)]
-    Manifest --> ManifestBriefPortal[Executive Audio Brief Portal<br/>read-only TODO lifecycle projection<br/>TODO related_projects: list&#91;str&#93;<br/>validated cross-repo projection<br/>canonical project keys at boundary]
-    ManifestBriefPortal -.->|read-only state projection| TodoExecutionLifecycle[(todo_execution_lifecycle<br/>⊕ canonical execution state)]
+    Manifest --> ManifestBriefPortal[👁 AI-Manifest Executive Board<br/>read-only TODO lifecycle projection<br/>TODO related_projects: list&#91;str&#93;<br/>validated cross-repo projection<br/>canonical project keys at boundary]
+    WSDB -.->|read-only lifecycle projection only| ManifestBriefPortal
     Capital --> CapitalDB[(sigmacapital.db)]
     Capital --> CapitalSerpApiReadiness[Σ Capital SerpApi readiness<br/>configuration-only default<br/>no quota-consuming request<br/>SERPAPI_KEY environment-only boundary<br/>credentials_configured · activation_enabled=false]
     CapitalSerpApiReadiness -.->|explicit operator authorization only| SerpApiSmoke{{read-only smoke opt-in}}
@@ -44,17 +46,18 @@ graph LR
     AggregateHandoff ==> QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
     QuantumValidator --> SufficiencyGate{Sufficiency gate}
     SufficiencyGate --> ExecutionDenied[Real-data execution denied]
-    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection,CapitalSerpApiReadiness ws
+    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection,CapitalSerpApiReadiness,WorkspaceCoord ws
     class Life,Music,Quantum,Manifest,Capital orch
     class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult orch
     class AggregateHandoff,SufficiencyGate,ExecutionDenied,BrowserBoundary,SerpApiSmoke state
     class GitHub,Mermaid,ElevenLabs,SerpApiGoogleFinance ext
-    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,TodoExecutionLifecycle,CapitalDB,TTSQueue db
+    class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
 classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
