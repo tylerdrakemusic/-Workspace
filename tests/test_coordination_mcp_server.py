@@ -56,6 +56,60 @@ def _claim_key(purpose: str) -> str:
     return f"claim-replay-{purpose}-" + "0" * 43
 
 
+def test_todo_claim_and_get_operations_support_sqlcipher_connections() -> None:
+    import sqlcipher3
+
+    from src.utils import coordination_mcp_server
+
+    connection = sqlcipher3.connect(":memory:")
+    config = _todo_config()
+    try:
+        queued = json.loads(
+            _invoke_todo(
+                coordination_mcp_server,
+                connection,
+                config,
+                "todo.register_queued",
+                {
+                    "todo_id": "sqlcipher-operation",
+                    "fr_id": "FR-sqlcipher-operation",
+                    "idempotency_key": "dispatch-sqlcipher-operation",
+                },
+            )
+        )
+        claimed = json.loads(
+            _invoke_todo(
+                coordination_mcp_server,
+                connection,
+                config,
+                "todo.claim",
+                {
+                    "todo_id": "sqlcipher-operation",
+                    "fr_id": "FR-sqlcipher-operation",
+                    "worker_id": "worker-sqlcipher-operation",
+                    "claim_idempotency_key": _claim_key("sqlcipher-operation"),
+                },
+            )
+        )
+        current = json.loads(
+            _invoke_todo(
+                coordination_mcp_server,
+                connection,
+                config,
+                "todo.get",
+                {"todo_id": "sqlcipher-operation"},
+            )
+        )
+
+        assert queued["state"] == "queued"
+        assert claimed["state"] == "claimed"
+        assert claimed["lease_token"]
+        assert current["state"] == "claimed"
+        assert current["worker_id"] == "worker-sqlcipher-operation"
+    finally:
+        connection.close()
+
+
 def test_todo_mcp_registry_exposes_only_fixed_lifecycle_inputs():
     from src.utils.coordination_mcp_server import mcp
 

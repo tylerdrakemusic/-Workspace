@@ -4,6 +4,17 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass
+from importlib import import_module
+from typing import Any
+
+
+def _row_factory_for(connection: Any) -> Any:
+    driver_name = type(connection).__module__.split(".", 1)[0]
+    try:
+        driver = import_module(driver_name)
+    except ImportError:
+        return sqlite3.Row
+    return getattr(driver, "Row", sqlite3.Row)
 
 
 class LifecycleError(RuntimeError):
@@ -54,7 +65,7 @@ class ExecutionLifecycle:
 
     def __init__(self, connection: sqlite3.Connection) -> None:
         self.connection = connection
-        self.connection.row_factory = sqlite3.Row
+        self.connection.row_factory = _row_factory_for(connection)
         self._create_schema()
 
     @classmethod
@@ -62,7 +73,7 @@ class ExecutionLifecycle:
         """Wrap an existing lifecycle connection without schema or transaction writes."""
         lifecycle = cls.__new__(cls)
         lifecycle.connection = connection
-        lifecycle.connection.row_factory = sqlite3.Row
+        lifecycle.connection.row_factory = _row_factory_for(connection)
         return lifecycle
 
     def _create_schema(self) -> None:
@@ -640,7 +651,7 @@ class ExecutionLifecycle:
         self._event(updated, reason, error, occurred_at)
         return updated
 
-    def _record_invalid(self, todo_id: str, row: sqlite3.Row | None, reason: str, now: float) -> None:
+    def _record_invalid(self, todo_id: str, row: Any | None, reason: str, now: float) -> None:
         if row is not None:
             self._event(self._record(row), "invalid transition", reason, now)
 
@@ -653,13 +664,13 @@ class ExecutionLifecycle:
             self.connection.rollback()
             raise
 
-    def _row(self, todo_id: str) -> sqlite3.Row | None:
+    def _row(self, todo_id: str) -> Any | None:
         return self.connection.execute(
             "SELECT * FROM todo_execution_lifecycle WHERE todo_id = ?", (todo_id,)
         ).fetchone()
 
     @staticmethod
-    def _record(row: sqlite3.Row) -> ExecutionRecord:
+    def _record(row: Any) -> ExecutionRecord:
         return ExecutionRecord(
             todo_id=row["todo_id"], fr_id=row["fr_id"], worker_id=row["worker_id"],
             claim_id=row["claim_id"], lease_token=row["lease_token"],

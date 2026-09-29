@@ -67,6 +67,40 @@ def test_normal_construction_still_creates_schema_and_mutates() -> None:
     assert claim(lifecycle).state == "claimed"
 
 
+def test_lifecycle_claim_and_read_support_sqlcipher_connections() -> None:
+    import sqlcipher3
+
+    connection = sqlcipher3.connect(":memory:")
+    lifecycle = ExecutionLifecycle(connection)
+    lifecycle.register_queued(
+        todo_id="sqlcipher-todo",
+        fr_id="FR-sqlcipher",
+        now=99.0,
+        max_retries=1,
+        idempotency_key="dispatch-sqlcipher",
+    )
+
+    claimed = lifecycle.claim(
+        todo_id="sqlcipher-todo",
+        fr_id="FR-sqlcipher",
+        worker_id="worker-sqlcipher",
+        claim_id="claim-sqlcipher",
+        lease_token="fixture-" + "lease-sqlcipher",
+        now=100.0,
+        lease_seconds=30,
+        max_retries=1,
+        idempotency_key="delivery-sqlcipher",
+    )
+    read_only = ExecutionLifecycle.read_only(connection)
+
+    assert claimed.state == "claimed"
+    assert read_only.get("sqlcipher-todo") == claimed
+    assert [event["state"] for event in read_only.events("sqlcipher-todo")] == [
+        "queued",
+        "claimed",
+    ]
+
+
 def test_queued_registration_is_idempotent_durable_and_has_no_lease(tmp_path: Path) -> None:
     database = tmp_path / "queued.sqlite3"
     lifecycle = ExecutionLifecycle(sqlite3.connect(database))
