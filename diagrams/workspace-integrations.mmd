@@ -8,7 +8,8 @@ graph LR
     Workspace --> Life[∞ Life]
     Workspace --> Music[❤ Music]
     Workspace --> Quantum[⟨ψ⟩ Quantum]
-    Workspace --> Manifest[👁 AI-Manifest]
+    Workspace --> Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
+    Manifest -.->|"bounded read-only technical-doc allowlist"| Capital[Σ Capital technical docs<br/>parallel-test-execution.md<br/>shared-structured-logging.md<br/>no private financial paths or database access]
     Workspace --> Capital[Σ Capital]
     Workspace --> WSDB[(workspace.db<br/>canonical TODO lifecycle storage)]
     Workspace --> WorkspaceCoord[⊕ workspace-coordination MCP<br/>ExecutionLifecycle API · fixed TODO lifecycle allowlist<br/>rejects arbitrary db/sql and generic state setter]
@@ -49,7 +50,7 @@ graph LR
     class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection,CapitalSerpApiReadiness,WorkspaceCoord ws
     class Life,Music,Quantum,Manifest,Capital orch
     class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult orch
-    class AggregateHandoff,SufficiencyGate,ExecutionDenied,BrowserBoundary,SerpApiSmoke state
+    class AggregateHandoff,SufficiencyGate,ExecutionDenied,BrowserBoundary,SerpApiSmoke,CapitalDiscoveryDocs state
     class GitHub,Mermaid,ElevenLabs,SerpApiGoogleFinance ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

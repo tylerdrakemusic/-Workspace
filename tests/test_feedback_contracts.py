@@ -93,5 +93,8 @@ def test_discovery_contract_matches_discover_todos_capital_mapping() -> None:
     normalized_discovery = " ".join(discovery.lower().split())
 
     assert "capital" in normalized_discovery
-    assert "only valid with `--mode tech-debt`" in normalized_discovery
-    assert "not valid for default epic/story discovery" in normalized_discovery
+    assert "supports capital in default epic/story discovery" in normalized_discovery
+    assert "bounded safe allowlist" in normalized_discovery
+    assert "tech-debt mode remains independently supported" in normalized_discovery
+    assert "only valid with `--mode tech-debt`" not in normalized_discovery
+    assert "not valid for default epic/story discovery" not in normalized_discovery
