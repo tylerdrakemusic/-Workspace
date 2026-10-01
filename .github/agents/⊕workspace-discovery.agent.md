@@ -41,8 +41,15 @@ JSON file for the mechanical parts (dedup against open todos, priority scoring,
 DB insert). This is the primary workflow now — not a fallback.
 
 ### Step 1 — Generate candidates yourself
-For each project in scope, read its `AGENT_STARTUP.md`, `README.md`, and relevant
-`docs/**/*.md` / `research/**/*.md` directly with `read_file`/`grep_search`. Also
+For each non-Capital project in scope, read its `AGENT_STARTUP.md`, `README.md`,
+and relevant `docs/**/*.md` / `research/**/*.md` directly with `read_file`/
+`grep_search`. For explicit Capital epic/story discovery, use only the bounded safe allowlist
+`ΣCapital/docs/parallel-test-execution.md` and
+`ΣCapital/docs/shared-structured-logging.md`; do not read Capital root guidance,
+research, `.github`, account, holdings, statements, picks, database, env, logs,
+or tmp paths. Never copy account or other private financial details into shared
+TODO rationale, implementation hints, or context snapshots. Tech-debt mode
+remains independently supported and continues to scan Capital code only. Also
 pull existing open todos for context:
 ```powershell
 C:\G\python.exe -c "import sys; sys.path.insert(0, r'f:\👁AI-Manifest'); from src.utils.todos_db import get_open_todos; import json; print(json.dumps(get_open_todos(), default=str))"
@@ -102,10 +109,15 @@ scaffold via a mode flag rather than a separate agent.
 Command:
 `C:\G\python.exe f:\👁AI-Manifest\tools\discover_todos.py --mode tech-debt [--project <key>] [--limit <n>]`
 
+The discovery tool supports capital in default epic/story discovery when
+explicitly selected, with a bounded safe allowlist for context collection.
+Omitting `--project` keeps
+the existing five-project default set unchanged. Tech-debt mode remains
+independently supported and scans Capital code only, without accessing its DB or
+financial data.
+
 Valid `--project` keys for tech-debt mode: `music`, `life`, `quantum`, `ai_manifest`,
-`workspace`, `capital`. `capital` is only valid with `--mode tech-debt`, matching
-`TECH_DEBT_PROJECT_ROOTS` in `discover_todos.py`; it is not valid for default
-epic/story discovery because `PROJECT_ROOTS` intentionally excludes ΣCapital.
+`workspace`, `capital`.
 
 ## Constraints
 
