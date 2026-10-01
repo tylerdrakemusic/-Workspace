@@ -42,12 +42,8 @@ DB insert). This is the primary workflow now — not a fallback.
 
 ### Step 1 — Generate candidates yourself
 For each non-Capital project in scope, read its `AGENT_STARTUP.md`, `README.md`,
-and relevant `docs/**/*.md` / `research/**/*.md` directly with `read_file`/
-`grep_search`. For explicit Capital epic/story discovery, use only the bounded safe allowlist
-`ΣCapital/docs/parallel-test-execution.md` and
-`ΣCapital/docs/shared-structured-logging.md`; do not read Capital root guidance,
-research, `.github`, account, holdings, statements, picks, database, env, logs,
-or tmp paths. Never copy account or other private financial details into shared
+and relevant `docs/**/*.md` / `research/**/*.md` 
+Never copy account or other private financial details into shared
 TODO rationale, implementation hints, or context snapshots. Tech-debt mode
 remains independently supported and continues to scan Capital code only. Also
 pull existing open todos for context:
