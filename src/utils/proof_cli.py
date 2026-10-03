@@ -22,6 +22,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
+import sqlcipher3
+
 try:
     from .init_db import get_connection, init_db
 except ImportError:
@@ -33,6 +35,9 @@ PROOF_TYPES = [
     "metric", "screenshot", "dashboard", "test_pass",
     "perf_regression_alert", "perf_low_data",
 ]
+_RECORD_MAX_ATTEMPTS = 3
+_RECORD_BUSY_TIMEOUT_MS = 250
+_RECORD_RETRY_DELAY_SECONDS = 0.05
 
 
 def _connect():
@@ -52,26 +57,79 @@ def _hash_file(path: str) -> str | None:
     return h.hexdigest()
 
 
+def _is_transient_database_lock(error: Exception) -> bool:
+    if not isinstance(error, sqlcipher3.OperationalError):
+        return False
+    message = str(error).lower()
+    return any(
+        marker in message
+        for marker in ("database is locked", "database table is locked", "database schema is locked", "database is busy")
+    )
+
+
 # ── Commands ───────────────────────────────────────────────────
 
 def cmd_record(args) -> None:
-    conn = _connect()
     proof_id = uuid.uuid4().hex[:12]
 
     artifact_hash = args.hash
     if not artifact_hash and args.path:
         artifact_hash = _hash_file(args.path)
 
-    conn.execute(
-        """INSERT INTO proof_artifacts
-           (proof_id, run_id, agent, proof_type, description, artifact_path, artifact_hash)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (proof_id, args.run_id, args.agent, args.proof_type,
-         args.description, args.path, artifact_hash),
+    record_values = (
+        args.run_id, args.agent, args.proof_type, args.description, args.path, artifact_hash,
     )
-    conn.commit()
-    conn.close()
-    print(proof_id)
+    for attempt in range(1, _RECORD_MAX_ATTEMPTS + 1):
+        conn = None
+        try:
+            conn = _connect()
+            conn.execute(f"PRAGMA busy_timeout={_RECORD_BUSY_TIMEOUT_MS}")
+            existing = conn.execute(
+                """SELECT run_id, agent, proof_type, description, artifact_path, artifact_hash
+                   FROM proof_artifacts WHERE proof_id = ?""",
+                (proof_id,),
+            ).fetchone()
+            if existing is not None:
+                if tuple(existing) != record_values:
+                    raise RuntimeError("proof ID collision with a different artifact")
+                conn.close()
+                print(proof_id)
+                return
+
+            conn.execute(
+                """INSERT INTO proof_artifacts
+                   (proof_id, run_id, agent, proof_type, description, artifact_path, artifact_hash)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (proof_id, *record_values),
+            )
+            conn.commit()
+            conn.close()
+            print(proof_id)
+            return
+        except Exception as error:
+            if conn is not None:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            if not _is_transient_database_lock(error):
+                raise
+            if attempt == _RECORD_MAX_ATTEMPTS:
+                print(
+                    f"Proof record retries exhausted after {_RECORD_MAX_ATTEMPTS} attempts: {error}",
+                    file=sys.stderr,
+                )
+                raise SystemExit(1) from error
+            print(
+                f"Retrying proof record after transient database lock ({attempt}/{_RECORD_MAX_ATTEMPTS})",
+                file=sys.stderr,
+                flush=True,
+            )
+            time.sleep(_RECORD_RETRY_DELAY_SECONDS * attempt)
 
 
 def cmd_verify(args) -> None:
