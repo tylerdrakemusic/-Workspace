@@ -8,20 +8,96 @@ on:
 
 jobs:
   test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     # CI runtime budget — bump as test suite grows (FR-20260425)
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - name: Check out peer contract source
-        uses: actions/checkout@v4
-        with:
-          repository: tylerdrakemusic/AI-Manifest
-          ref: main
-          path: ai-manifest-contract
+      - name: Set up peer contract
+        env:
+          PEER_REPOSITORY: tylerdrakemusic/AI-Manifest
+        run: |
+          set -euo pipefail
+          peer_url="https://github.com/${PEER_REPOSITORY}.git"
+          selected_ref="main"
+          summary_ref="main"
+          peer_sha=""
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && -z "${GITHUB_HEAD_REF:-}" ]]; then
+            echo "GITHUB_HEAD_REF is empty for a pull request" >&2
+            exit 1
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && -n "${GITHUB_HEAD_REF:-}" ]]; then
+            lookup_succeeded=false
+            for attempt in 1 2 3; do
+              if lookup_result="$(git ls-remote "$peer_url" "refs/heads/${GITHUB_HEAD_REF}")"; then
+                lookup_succeeded=true
+                if [[ -n "$lookup_result" ]]; then
+                  selected_ref="$GITHUB_HEAD_REF"
+                  summary_ref="$GITHUB_HEAD_REF"
+                  peer_sha="${lookup_result%%$'\t'*}"
+                else
+                  summary_ref="main (fallback: no matching peer branch for ${GITHUB_HEAD_REF})"
+                fi
+                break
+              fi
+              if [[ "$attempt" -lt 3 ]]; then sleep "$attempt"; fi
+            done
+            if [[ "$lookup_succeeded" != true ]]; then
+              echo "Peer branch lookup failed after 3 attempts" >&2
+              exit 1
+            fi
+          fi
+
+          if [[ -z "$peer_sha" ]]; then
+            main_lookup_succeeded=false
+            for attempt in 1 2 3; do
+              if lookup_result="$(git ls-remote "$peer_url" refs/heads/main)" && [[ -n "$lookup_result" ]]; then
+                main_lookup_succeeded=true
+                peer_sha="${lookup_result%%$'\t'*}"
+                break
+              fi
+              if [[ "$attempt" -lt 3 ]]; then sleep "$attempt"; fi
+            done
+            if [[ "$main_lookup_succeeded" != true ]]; then
+              echo "Peer main lookup failed after 3 attempts" >&2
+              exit 1
+            fi
+          fi
+
+          git init ai-manifest-contract
+          checkout_succeeded=false
+          for attempt in 1 2 3; do
+            if git -C ai-manifest-contract fetch --depth=1 "$peer_url" "$peer_sha" \
+              && git -C ai-manifest-contract checkout --detach FETCH_HEAD; then
+              checkout_succeeded=true
+              break
+            fi
+            if [[ "$attempt" -lt 3 ]]; then sleep "$attempt"; fi
+          done
+          if [[ "$checkout_succeeded" != true ]]; then
+            echo "Peer checkout failed after 3 attempts" >&2
+            exit 1
+          fi
+
+          checked_out_sha="$(git -C ai-manifest-contract rev-parse HEAD)"
+          if [[ "$checked_out_sha" != "$peer_sha" ]]; then
+            echo "Peer checkout SHA did not match resolved SHA" >&2
+            exit 1
+          fi
+          {
+            echo "### Peer contract source"
+            echo "- Peer repository: ${PEER_REPOSITORY}"
+            echo "- Selected ref: ${summary_ref}"
+            echo "- Checked-out SHA: ${checked_out_sha}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up Python
         uses: actions/setup-python@v5
