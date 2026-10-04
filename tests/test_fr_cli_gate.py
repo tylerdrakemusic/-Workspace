@@ -67,6 +67,39 @@ def test_repository_parent_head_resolver_reads_only_sigma_git_metadata(tmp_path:
     assert all("data" not in command[2].lower() and "secret" not in command[2].lower() for command in calls)
 
 
+def test_repository_parent_head_resolver_finds_shared_workspace_worktree(tmp_path: Path) -> None:
+    branch = "feature/FR-20261003-shared-workspace-portrait-cascade"
+    workspace_root = tmp_path / "workspace"
+    project_root = tmp_path / "life"
+    project_root.mkdir()
+    subprocess.run(["git", "-C", str(project_root), "init", "--quiet"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "config", "user.email", "test@example.com"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "config", "user.name", "Test User"], check=True)
+    (project_root / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(project_root), "add", "README.md"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "commit", "--quiet", "-m", "fixture"], check=True)
+
+    worktree_path = workspace_root / ".worktrees" / branch.replace("/", "-") / "life"
+    worktree_path.parent.mkdir(parents=True)
+    subprocess.run(
+        ["git", "-C", str(project_root), "worktree", "add", "-b", branch, str(worktree_path)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    expected_head = subprocess.run(
+        ["git", "-C", str(worktree_path), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    with patch.dict(fr_cli.PROJECT_ROOTS, {"∞Life": project_root}), patch.object(
+        fr_cli, "_WORKSPACE_ROOT", workspace_root
+    ):
+        assert fr_cli._resolve_repository_parent_head(branch, "∞Life") == expected_head
+
+
 def _make_conn(db_path: Path) -> sqlite3.Connection:
     """File-backed sqlite3 connection with the FR ledger schema (unencrypted, test-only).
 

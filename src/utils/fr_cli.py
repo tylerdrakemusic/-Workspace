@@ -102,6 +102,27 @@ def _resolve_repository_parent_head(parent_branch: str, project: str) -> str:
     worktrees_root = project_root / ".worktrees"
     if worktrees_root.is_dir():
         candidates.extend(sorted(path for path in worktrees_root.iterdir() if path.is_dir()))
+    shared_branch_root = _WORKSPACE_ROOT / ".worktrees" / parent_branch.replace("/", "-")
+    if project_root.parent == _WORKSPACE_ROOT.parent and shared_branch_root.is_dir():
+        def git_common_dir(path: Path) -> Path | None:
+            result = subprocess.run(
+                ["git", "-C", str(path), "rev-parse", "--git-common-dir"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode != 0:
+                return None
+            common_dir = Path(result.stdout.strip())
+            if not common_dir.is_absolute():
+                common_dir = path / common_dir
+            return common_dir.resolve()
+
+        project_common_dir = git_common_dir(project_root)
+        if project_common_dir is not None:
+            for candidate in sorted(path for path in shared_branch_root.iterdir() if path.is_dir()):
+                if git_common_dir(candidate) == project_common_dir:
+                    candidates.append(candidate)
     for candidate in dict.fromkeys(candidates):
         branch_result = subprocess.run(
             ["git", "-C", str(candidate), "branch", "--show-current"],
