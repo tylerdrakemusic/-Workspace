@@ -184,6 +184,85 @@ def _state_args(fr_id: str, new_state: str) -> argparse.Namespace:
     )
 
 
+def test_set_parent_branch_backfills_signed_off_metadata_without_transition(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db_path = tmp_path / "fr.db"
+    conn = _make_conn(db_path)
+    conn.execute(
+        "UPDATE feature_requests SET state='SIGNED_OFF', branch=NULL WHERE id=?",
+        ("FR-TEST-001",),
+    )
+    conn.commit()
+    branch = "feature/FR-TEST-001"
+
+    monkeypatch.setattr(fr_cli, "_conn", lambda: conn)
+    monkeypatch.setattr(fr_cli, "_resolve_parent_head", lambda value: "a" * 40)
+    monkeypatch.setattr(fr_cli, "_now", lambda: "2026-10-04T00:00:00Z")
+    monkeypatch.setattr(sys, "argv", ["fr_cli.py", "set-parent-branch", "FR-TEST-001", branch])
+
+    fr_cli.main()
+
+    check_conn = sqlite3.connect(str(db_path))
+    row = check_conn.execute(
+        "SELECT state, branch, updated_at FROM feature_requests WHERE id=?",
+        ("FR-TEST-001",),
+    ).fetchone()
+    event = check_conn.execute(
+        "SELECT event_type, summary FROM fr_events WHERE fr_id=? ORDER BY id DESC LIMIT 1",
+        ("FR-TEST-001",),
+    ).fetchone()
+    check_conn.close()
+
+    assert row == ("SIGNED_OFF", branch, "2026-10-04T00:00:00Z")
+    assert event == (
+        "metadata-repair",
+        f"Parent branch metadata set to {branch} at {'a' * 40}; FR state unchanged",
+    )
+
+
+def test_set_parent_branch_rejects_non_signed_off_fr(tmp_path: Path) -> None:
+    db_path = tmp_path / "fr.db"
+    conn = _make_conn(db_path)
+
+    with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+        fr_cli, "_resolve_parent_head", return_value="a" * 40
+    ), pytest.raises(SystemExit):
+        fr_cli.cmd_set_parent_branch(
+            argparse.Namespace(fr_id="FR-TEST-001", branch="feature/FR-TEST-001")
+        )
+
+    check_conn = sqlite3.connect(str(db_path))
+    row = check_conn.execute(
+        "SELECT state, branch FROM feature_requests WHERE id=?", ("FR-TEST-001",)
+    ).fetchone()
+    check_conn.close()
+    assert row == ("ARCHITECTURE_REVIEW", "feature/FR-TEST-001")
+
+
+def test_set_parent_branch_rejects_conflicting_existing_branch(tmp_path: Path) -> None:
+    db_path = tmp_path / "fr.db"
+    conn = _make_conn(db_path)
+    conn.execute(
+        "UPDATE feature_requests SET state='SIGNED_OFF' WHERE id=?", ("FR-TEST-001",)
+    )
+    conn.commit()
+
+    with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+        fr_cli, "_resolve_parent_head", return_value="a" * 40
+    ), pytest.raises(SystemExit):
+        fr_cli.cmd_set_parent_branch(
+            argparse.Namespace(fr_id="FR-TEST-001", branch="feature/FR-OTHER")
+        )
+
+    check_conn = sqlite3.connect(str(db_path))
+    row = check_conn.execute(
+        "SELECT state, branch FROM feature_requests WHERE id=?", ("FR-TEST-001",)
+    ).fetchone()
+    check_conn.close()
+    assert row == ("SIGNED_OFF", "feature/FR-TEST-001")
+
+
 def test_cost_reconcile_unavailable_persists_explicit_historical_outcome(tmp_path) -> None:
     db_path = tmp_path / "fr.db"
     conn = _make_conn(db_path)
