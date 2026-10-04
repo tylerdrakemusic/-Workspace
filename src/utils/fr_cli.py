@@ -454,6 +454,58 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
     print(f"[fr_cli] acceptance criteria updated → {args.fr_id}")
 
 
+def cmd_set_parent_branch(args: argparse.Namespace) -> None:
+    branch = args.branch.strip()
+    if not branch:
+        print("[fr_cli] parent branch must not be empty", file=sys.stderr)
+        sys.exit(2)
+    try:
+        parent_head = _resolve_parent_head(branch)
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"[fr_cli] parent branch is not the checked-out branch: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    conn = _conn()
+    fr = conn.execute(
+        "SELECT state, branch FROM feature_requests WHERE id=?", (args.fr_id,)
+    ).fetchone()
+    if not fr:
+        conn.close()
+        print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        sys.exit(1)
+    if fr["state"].upper() != "SIGNED_OFF":
+        conn.close()
+        print("[fr_cli] parent branch backfill requires SIGNED_OFF state", file=sys.stderr)
+        sys.exit(1)
+    if fr["branch"] not in (None, "", branch):
+        conn.close()
+        print("[fr_cli] refusing to replace a different parent branch", file=sys.stderr)
+        sys.exit(1)
+    if fr["branch"] == branch:
+        conn.close()
+        print(f"[fr_cli] parent branch already set → {args.fr_id}")
+        return
+
+    now = _now()
+    conn.execute(
+        "UPDATE feature_requests SET branch=?, updated_at=? WHERE id=?",
+        (branch, now, args.fr_id),
+    )
+    conn.execute(
+        "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?,?,?,?,?)",
+        (
+            args.fr_id,
+            now,
+            "⊕workspace-ci",
+            "metadata-repair",
+            f"Parent branch metadata set to {branch} at {parent_head}; FR state unchanged",
+        ),
+    )
+    conn.commit()
+    conn.close()
+    print(f"[fr_cli] parent branch set without state transition → {args.fr_id}")
+
+
 def cmd_update_state(args: argparse.Namespace) -> None:
     conn = _conn()
     fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
@@ -756,6 +808,13 @@ def main() -> None:
     p_ac.add_argument("fr_id")
     p_ac.add_argument("criteria_json")
 
+    # set-parent-branch
+    p_branch = sub.add_parser(
+        "set-parent-branch", help="Backfill parent branch metadata without a state transition"
+    )
+    p_branch.add_argument("fr_id")
+    p_branch.add_argument("branch")
+
     # update-state
     p_st = sub.add_parser("update-state", help="Transition an FR to a new state")
     p_st.add_argument("fr_id")
@@ -826,6 +885,7 @@ def main() -> None:
         "open": cmd_open,
         "record-event": cmd_record_event,
         "set-acceptance-criteria": cmd_set_acceptance_criteria,
+        "set-parent-branch": cmd_set_parent_branch,
         "update-state": cmd_update_state,
         "record-artifact": cmd_record_artifact,
         "cost-baseline": cmd_cost_baseline,
