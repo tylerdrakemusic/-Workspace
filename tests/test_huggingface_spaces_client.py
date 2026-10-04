@@ -42,10 +42,16 @@ def _stream_lines(lines: list[str]):
     return ctx
 
 
-def _download_response(content: bytes = _FAKE_PNG) -> MagicMock:
+def _download_response(
+    content: bytes = _FAKE_PNG,
+    *,
+    status_code: int = 200,
+    headers: dict[str, str] | None = None,
+) -> MagicMock:
     resp = MagicMock(spec=httpx.Response)
-    resp.status_code = 200
+    resp.status_code = status_code
     resp.content = content
+    resp.headers = headers or {}
     return resp
 
 
@@ -120,6 +126,118 @@ class TestHappyPath:
 
         assert captured_url[0].startswith(_SPACE)
 
+    def test_rejects_untrusted_custom_space_base_before_download_request(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("HF_TOKEN", "hf-test")
+        hostile_base = "https://attacker.example"
+        sse_lines = [f"data: {json.dumps([{'url': f'{hostile_base}/out.png'}])}"]
+
+        with (
+            patch("httpx.post", return_value=_post_response()),
+            patch.object(httpx.Client, "stream", return_value=_stream_lines(sse_lines)),
+            patch("httpx.get", return_value=_download_response()) as get,
+        ):
+            with pytest.raises(HFSpacesError, match="Unsafe"):
+                HFSpacesImageClient(space_base=hostile_base).generate_image(
+                    "test", output_dir=tmp_path
+                )
+
+        get.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "img_url",
+        [
+            "http://black-forest-labs-flux-1-schnell.hf.space/file=/tmp/out.png",
+            "https://attacker.example/out.png",
+            "ftp://black-forest-labs-flux-1-schnell.hf.space/out.png",
+            "//attacker.example/out.png",
+        ],
+    )
+    def test_rejects_unsafe_image_url_before_request(
+        self,
+        img_url: str,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("HF_TOKEN", "hf-test")
+        sse_lines = [f"data: {json.dumps([{'url': img_url}])}"]
+
+        with (
+            patch("httpx.post", return_value=_post_response()),
+            patch.object(httpx.Client, "stream", return_value=_stream_lines(sse_lines)),
+            patch("httpx.get") as get,
+        ):
+            with pytest.raises(HFSpacesError, match="Unsafe image URL"):
+                HFSpacesImageClient().generate_image("test", output_dir=tmp_path)
+
+        get.assert_not_called()
+
+    def test_follows_only_validated_same_host_redirects_manually(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("HF_TOKEN", "hf-test")
+        img_url = f"{_SPACE}/file=/tmp/out.png"
+        sse_lines = [f"data: {json.dumps([{'url': img_url}])}"]
+        redirect = _download_response(
+            status_code=302, headers={"location": "/file=/tmp/final.png"}
+        )
+
+        with (
+            patch("httpx.post", return_value=_post_response()),
+            patch.object(httpx.Client, "stream", return_value=_stream_lines(sse_lines)),
+            patch("httpx.get", side_effect=[redirect, _download_response()]) as get,
+        ):
+            result = HFSpacesImageClient().generate_image("test", output_dir=tmp_path)
+
+        assert result.read_bytes() == _FAKE_PNG
+        assert [call.args[0] for call in get.call_args_list] == [
+            img_url,
+            f"{_SPACE}/file=/tmp/final.png",
+        ]
+        assert all(call.kwargs["follow_redirects"] is False for call in get.call_args_list)
+
+    def test_rejects_unsafe_redirect_before_requesting_target(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("HF_TOKEN", "hf-test")
+        img_url = f"{_SPACE}/file=/tmp/out.png"
+        sse_lines = [f"data: {json.dumps([{'url': img_url}])}"]
+        redirect = _download_response(
+            status_code=302, headers={"location": "https://attacker.example/out.png"}
+        )
+
+        with (
+            patch("httpx.post", return_value=_post_response()),
+            patch.object(httpx.Client, "stream", return_value=_stream_lines(sse_lines)),
+            patch("httpx.get", return_value=redirect) as get,
+        ):
+            with pytest.raises(HFSpacesError, match="Unsafe image URL"):
+                HFSpacesImageClient().generate_image("test", output_dir=tmp_path)
+
+        assert get.call_count == 1
+        assert get.call_args.kwargs["follow_redirects"] is False
+
+    def test_stops_after_bounded_same_host_redirects(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("HF_TOKEN", "hf-test")
+        img_url = f"{_SPACE}/file=/tmp/out.png"
+        sse_lines = [f"data: {json.dumps([{'url': img_url}])}"]
+        redirect = _download_response(
+            status_code=302, headers={"location": "/file=/tmp/next.png"}
+        )
+
+        with (
+            patch("httpx.post", return_value=_post_response()),
+            patch.object(httpx.Client, "stream", return_value=_stream_lines(sse_lines)),
+            patch("httpx.get", return_value=redirect) as get,
+        ):
+            with pytest.raises(HFSpacesError, match="redirect limit"):
+                HFSpacesImageClient().generate_image("test", output_dir=tmp_path)
+
+        assert get.call_count == 4
+
 
 # ---------------------------------------------------------------------------
 # Error / failure paths
@@ -176,7 +294,7 @@ class TestErrorPaths:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("HF_TOKEN", "hf-test")
-        sse_lines = [f"data: {json.dumps([{'url': 'https://example.com/img.png'}])}"]
+        sse_lines = [f"data: {json.dumps([{'url': f'{_SPACE}/img.png'}])}"]
 
         with (
             patch("httpx.post", return_value=_post_response()),
@@ -189,7 +307,7 @@ class TestErrorPaths:
     def test_creates_output_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("HF_TOKEN", "hf-test")
         new_dir = tmp_path / "deep" / "nested"
-        img_url = "https://example.com/img.png"
+        img_url = f"{_SPACE}/img.png"
         sse_lines = [f"data: {json.dumps([{'url': img_url}])}"]
 
         with (
