@@ -27,6 +27,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -36,6 +37,8 @@ _DEFAULT_STEPS = 4
 _SUBMIT_TIMEOUT = 20      # seconds to submit the job
 _STREAM_TIMEOUT = 90      # seconds to stream the result (generation ~5-30s on ZeroGPU)
 _MIN_IMAGE_BYTES = 10_000
+_MAX_DOWNLOAD_REDIRECTS = 3
+_REDIRECT_STATUS_CODES = {301, 302, 303, 307, 308}
 
 
 class HFSpacesError(RuntimeError):
@@ -51,7 +54,25 @@ class HFSpacesImageClient:
     """
 
     def __init__(self, space_base: str = _SPACE_BASE) -> None:
+        try:
+            parsed_base = urlsplit(space_base)
+            port = parsed_base.port
+        except ValueError as exc:
+            raise HFSpacesError("Unsafe Space base") from exc
+
+        host = parsed_base.hostname
+        if (
+            parsed_base.scheme.lower() != "https"
+            or not host
+            or not host.lower().endswith(".hf.space")
+            or parsed_base.username is not None
+            or parsed_base.password is not None
+            or port not in (None, 443)
+        ):
+            raise HFSpacesError("Unsafe Space base")
+
         self._space_base = space_base.rstrip("/")
+        self._space_host = host
         self._token = os.environ.get("HF_TOKEN", "")
 
     def generate_image(
@@ -174,14 +195,13 @@ class HFSpacesImageClient:
             return out_path
 
         if img_url:
+            parsed_url = urlsplit(img_url)
             full_url = (
-                img_url if img_url.startswith("http")
-                else f"{self._space_base}/{img_url.lstrip('/')}"
+                img_url
+                if parsed_url.scheme or parsed_url.netloc
+                else urljoin(f"{self._space_base}/", img_url)
             )
-            try:
-                dl = httpx.get(full_url, timeout=30, follow_redirects=True)
-            except httpx.RequestError as exc:
-                raise HFSpacesError(f"Download error: {exc}") from exc
+            dl = self._download_image_response(full_url)
             if dl.status_code != 200:
                 raise HFSpacesError(f"Image download HTTP {dl.status_code}")
             if len(dl.content) < _MIN_IMAGE_BYTES:
@@ -190,3 +210,46 @@ class HFSpacesImageClient:
             return out_path
 
         raise HFSpacesError("No image data in space response")
+
+    def _validate_download_url(self, url: str) -> str:
+        """Require an HTTPS URL on this exact Space host before making a request."""
+        try:
+            parsed = urlsplit(url)
+            port = parsed.port
+        except ValueError as exc:
+            raise HFSpacesError(f"Unsafe image URL: {url!r}") from exc
+
+        if (
+            parsed.scheme.lower() != "https"
+            or not self._space_host
+            or parsed.hostname is None
+            or parsed.hostname.lower() != self._space_host.lower()
+            or parsed.username is not None
+            or parsed.password is not None
+            or port not in (None, 443)
+        ):
+            raise HFSpacesError(f"Unsafe image URL: {url!r}")
+        return url
+
+    def _download_image_response(self, url: str) -> httpx.Response:
+        """Fetch a Space image without following unvalidated redirects."""
+        current_url = self._validate_download_url(url)
+        for redirect_count in range(_MAX_DOWNLOAD_REDIRECTS + 1):
+            try:
+                response = httpx.get(
+                    current_url, timeout=30, follow_redirects=False
+                )
+            except httpx.RequestError as exc:
+                raise HFSpacesError(f"Download error: {exc}") from exc
+
+            if response.status_code not in _REDIRECT_STATUS_CODES:
+                return response
+
+            location = response.headers.get("location")
+            if not location:
+                raise HFSpacesError("Image download redirect has no Location")
+            if redirect_count >= _MAX_DOWNLOAD_REDIRECTS:
+                raise HFSpacesError("Image download redirect limit exceeded")
+            current_url = self._validate_download_url(urljoin(current_url, location))
+
+        raise HFSpacesError("Image download redirect limit exceeded")

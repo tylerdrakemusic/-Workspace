@@ -17,6 +17,7 @@ class ImageProvider:
     name: str
     model: str
     generate: ImageGenerator
+    accepts_negative_prompt: bool = False
 
 
 @dataclass(frozen=True)
@@ -55,7 +56,11 @@ class ImageGenerationCascade:
         self.providers = providers
 
     def generate(
-        self, prompt: str, *, output_dir: Path | None = None
+        self,
+        prompt: str,
+        *,
+        output_dir: Path | None = None,
+        negative_prompt: str | None = None,
     ) -> ImageGenerationResult:
         """Generate an image from *prompt* using the first successful provider."""
         if not prompt.strip():
@@ -63,7 +68,12 @@ class ImageGenerationCascade:
         diagnostics: list[ImageProviderDiagnostic] = []
         for provider in self.providers:
             try:
-                path = provider.generate(prompt, output_dir=output_dir)
+                if provider.accepts_negative_prompt:
+                    path = provider.generate(
+                        prompt, output_dir=output_dir, negative_prompt=negative_prompt
+                    )
+                else:
+                    path = provider.generate(prompt, output_dir=output_dir)
             except Exception as exc:
                 diagnostics.append(
                     ImageProviderDiagnostic(provider.name, provider.model, str(exc))
@@ -98,5 +108,49 @@ def default_image_cascade() -> ImageGenerationCascade:
             ImageProvider("openai", DEFAULT_MODEL, generate_openai),
             ImageProvider("huggingface", DEFAULT_MODEL_ID, generate_huggingface),
             ImageProvider("pollinations", "default", generate_pollinations),
+        )
+    )
+
+
+def portrait_image_cascade(persona_svg: Path | str) -> ImageGenerationCascade:
+    """Build the portrait-specific provider sequence with a local SVG fallback."""
+    from .huggingface.client import DEFAULT_MODEL_ID, HuggingFaceImageClient
+    from .huggingface.spaces_client import HFSpacesImageClient
+    from .pollinations.client import PollinationsClient
+
+    svg_path = Path(persona_svg)
+
+    def generate_huggingface(
+        prompt: str,
+        *,
+        output_dir: Path | None,
+        negative_prompt: str | None,
+    ) -> Path:
+        return HuggingFaceImageClient().generate_image(
+            prompt, output_dir=output_dir, negative_prompt=negative_prompt
+        )
+
+    def generate_hf_spaces(prompt: str, *, output_dir: Path | None) -> Path:
+        return HFSpacesImageClient().generate_image(
+            prompt, output_dir=output_dir or "."
+        )
+
+    def generate_pollinations(prompt: str, *, output_dir: Path | None) -> Path:
+        return PollinationsClient().generate_image(prompt, output_dir=output_dir or ".")
+
+    def use_persona_svg(prompt: str, *, output_dir: Path | None) -> Path:
+        if svg_path.suffix.lower() != ".svg" or not svg_path.is_file():
+            raise FileNotFoundError(f"persona SVG is unavailable: {svg_path}")
+        return svg_path
+
+    return ImageGenerationCascade(
+        (
+            ImageProvider(
+                "huggingface", DEFAULT_MODEL_ID, generate_huggingface,
+                accepts_negative_prompt=True,
+            ),
+            ImageProvider("hf_spaces", "black-forest-labs/FLUX.1-schnell", generate_hf_spaces),
+            ImageProvider("pollinations", "default", generate_pollinations),
+            ImageProvider("persona_svg", svg_path.stem, use_persona_svg),
         )
     )
