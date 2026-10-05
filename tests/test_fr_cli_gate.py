@@ -409,6 +409,80 @@ class TestMergedGate:
         check_conn.close()
         assert row[0] == "TYLER_APPROVED"
 
+    def test_parent_join_rejects_workspace_head_without_parent_repository_snapshot(
+        self, tmp_path, capsys
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        branch = "feature/FR-TEST-001"
+        workspace_head = "workspace-head"
+        child = {
+            "todo_id": "333-1",
+            "fr_id": "FR-TEST-001",
+            "state": "completed",
+            "validated": True,
+            "required_artifacts": [],
+            "artifacts": [],
+            "integrated_branch": branch,
+            "parent_head": workspace_head,
+            "child_base": workspace_head,
+            "repository": "ai-manifest",
+            "project": "👁AI-Manifest",
+            "parent_branch": branch,
+        }
+        acceptance_criteria = {
+            "parent_join": {"required_todos": ["333-1"], "children": [child]}
+        }
+        conn.execute(
+            "UPDATE feature_requests SET projects=?, branch=?, acceptance_criteria=? "
+            "WHERE id='FR-TEST-001'",
+            ("👁AI-Manifest", branch, json.dumps(acceptance_criteria, ensure_ascii=False)),
+        )
+        conn.executemany(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("FR-TEST-001", "2026-07-03T00:00:00Z", "test", "note", "PARENT_JOIN:REQUIRED"),
+                ("FR-TEST-001", "2026-07-03T00:02:00Z", "test", "note", "PARENT_JOIN:PASS"),
+            ],
+        )
+        evidence = {
+            "kind": "parent_join_evidence",
+            "evaluator": "parent_join_gates.evaluate_parent_join",
+            "evaluated_at": "2026-07-03T00:01:00Z",
+            "fr_id": "FR-TEST-001",
+            "parent_branch": branch,
+            "parent_head": workspace_head,
+            "required_todos": ["333-1"],
+            "children": [child],
+            "complete": True,
+            "blockers": [],
+        }
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label) VALUES (?, ?, ?, ?)",
+            (
+                "FR-TEST-001",
+                evidence["evaluated_at"],
+                "parent-join-evidence",
+                json.dumps(evidence, ensure_ascii=False),
+            ),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_parent_head_resolver", return_value=workspace_head
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "TYLER_APPROVED"))
+
+        assert exc_info.value.code != 0
+        assert "parent join is incomplete" in capsys.readouterr().err
+        check_conn = sqlite3.connect(str(db_path))
+        row = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()
+        check_conn.close()
+        assert row[0] == "ARCHITECTURE_REVIEW"
+
     def test_parent_join_valid_multi_repository_evidence_uses_each_repository_head(
         self, tmp_path
     ) -> None:
