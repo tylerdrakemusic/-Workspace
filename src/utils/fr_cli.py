@@ -252,6 +252,13 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
                 )
             except (OSError, RuntimeError, ValueError):
                 resolved_repositories = ()
+    if (
+        len(parent_repositories) == 1
+        and parent_repositories[0].project != "⊕Workspace"
+        and not repository_resolution_blocked
+        and len(resolved_repositories) == 1
+    ):
+        current_parent_head = resolved_repositories[0].parent_head
     evidence_rows = conn.execute(
         "SELECT ts, label FROM fr_artifacts "
         "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
