@@ -184,10 +184,17 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
         and _PARENT_JOIN_REQUIRED_RE.search(row["summary"] if hasattr(row, "keys") else row[1])
     )
     fr = conn.execute(
-        "SELECT branch, acceptance_criteria FROM feature_requests WHERE id=?", (fr_id,)
+        "SELECT branch, acceptance_criteria, projects FROM feature_requests WHERE id=?",
+        (fr_id,),
     ).fetchone()
     parent_branch = fr["branch"] if fr and hasattr(fr, "keys") else (fr[0] if fr else None)
     acceptance_criteria = fr["acceptance_criteria"] if fr and hasattr(fr, "keys") else (fr[1] if fr else None)
+    projects = fr["projects"] if fr and hasattr(fr, "keys") else (fr[2] if fr else None)
+    declared_non_workspace_projects = {
+        project.strip()
+        for project in (projects or "").split(",")
+        if project.strip() and project.strip() != "⊕Workspace"
+    }
     multi_repo_contract_declared = False
     try:
         contract = json.loads(acceptance_criteria or "{}")
@@ -229,7 +236,21 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
     if not current_parent_head:
         current_parent_head = None
     resolved_repositories: tuple[ParentRepositorySnapshot, ...] = ()
-    repository_resolution_blocked = multi_repo_contract_declared
+    repository_scope_blocked = bool(
+        declared_non_workspace_projects and not parent_repositories
+    )
+    if declared_non_workspace_projects and parent_repositories:
+        snapshot_projects = {
+            repository.project
+            for repository in parent_repositories
+            if repository.project != "⊕Workspace"
+        }
+        repository_scope_blocked = (
+            snapshot_projects != declared_non_workspace_projects
+        )
+    repository_resolution_blocked = (
+        repository_scope_blocked or multi_repo_contract_declared
+    )
     if parent_repositories:
         if _repository_parent_head_resolver is None:
             resolved_repositories = ()
@@ -246,12 +267,20 @@ def _parent_join_gate(conn, fr_id: str) -> bool:
                     )
                     for repository in parent_repositories
                 )
-                repository_resolution_blocked = (
+                repository_resolution_blocked = repository_scope_blocked or (
                     len(resolved_repositories) != len(parent_repositories)
                     or any(not repository.parent_head for repository in resolved_repositories)
                 )
             except (OSError, RuntimeError, ValueError):
                 resolved_repositories = ()
+                repository_resolution_blocked = True
+    if (
+        len(parent_repositories) == 1
+        and parent_repositories[0].project != "⊕Workspace"
+        and not repository_resolution_blocked
+        and len(resolved_repositories) == 1
+    ):
+        current_parent_head = resolved_repositories[0].parent_head
     evidence_rows = conn.execute(
         "SELECT ts, label FROM fr_artifacts "
         "WHERE fr_id=? AND artifact_type='parent-join-evidence' ORDER BY ts DESC",
