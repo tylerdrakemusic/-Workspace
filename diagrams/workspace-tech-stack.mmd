@@ -15,7 +15,7 @@ graph LR
     Supervisor --> ServiceConfig[portal_servers.json<br/>Trade Gate /health · Executive /health is live<br/>cache-bust]
     Supervisor --> WindowsProcess[netstat/taskkill fail closed<br/>latest 10 keep current · applyGeneration UI reload]
     ThinShims[PowerShell/VBS · desktop/protocol/restart<br/>dispatch only] --> Supervisor
-    PowerShell[PowerShell 7] --> ThinShims
+    PowerShell[PowerShell 7<br/>.NET ProtectedData DPAPI CurrentUser] --> ThinShims
     WindowsScript[Windows Script Host] --> ThinShims
     CapitalLoggingConsumers[Σ Capital consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalLoggingAdapter[Σ Capital utils.shared_logging adapter<br/>Capital default log path]
     CapitalLoggingAdapter --> BoundedLogging

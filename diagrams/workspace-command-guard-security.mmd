@@ -1,0 +1,64 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-architecture.mmd
+graph LR
+    subgraph Maintenance["Explicit maintenance flow"]
+        Caller[Operator]
+        Plaintext[Caller-supplied plaintext rules<br/>source remains caller-owned]
+        MaintenanceCLI[/deny-dangerous.ps1<br/>Maintenance mode/]
+        TargetExists{Protected file exists?}
+        OverwriteFlag{Explicit Overwrite?}
+        RefuseOverwrite[Refuse replacement]
+        Protect[.NET ProtectedData Protect<br/>CurrentUser]
+        Ciphertext[(tools/dangerous-patterns.dpapi<br/>local ignored ciphertext)]
+        Caller --> MaintenanceCLI
+        Plaintext -->|supplied path| MaintenanceCLI
+        MaintenanceCLI --> TargetExists
+        TargetExists -->|no| Protect
+        TargetExists -->|yes| OverwriteFlag
+        OverwriteFlag -->|no| RefuseOverwrite
+        OverwriteFlag -->|yes| Protect
+        Protect -->|writes encrypted bytes| Ciphertext
+    end
+    subgraph Runtime["Command evaluation flow"]
+        Command[Command input]
+        RuntimeCLI[/deny-dangerous.ps1<br/>Runtime mode/]
+        Unprotect[.NET ProtectedData Unprotect<br/>CurrentUser]
+        Memory[Decrypted UTF-8 rules<br/>process memory only]
+        Regex[.NET regex matching<br/>blank and comment lines skipped]
+        MatchDecision{Rule matches?}
+        Block[Generic block diagnostic<br/>matched rule omitted]
+        Allow[Command allowed]
+        Warning[Generic rules-unavailable warning<br/>command allowed]
+        Command --> RuntimeCLI
+        Ciphertext --> RuntimeCLI
+        RuntimeCLI --> Unprotect
+        Unprotect -->|success| Memory
+        Unprotect -->|missing or failure| Warning
+        Memory --> Regex
+        Regex --> MatchDecision
+        MatchDecision -->|yes| Block
+        MatchDecision -->|no| Allow
+    end
+    Limitation[CurrentUser discourages casual inspection on this account and machine<br/>does not isolate same-user agents or prevent bypass]
+    Protect -.-> Limitation
+    Unprotect -.-> Limitation
+
+    class Caller,MaintenanceCLI,RuntimeCLI,Command ws
+    class Plaintext ext
+    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation state
+    class Ciphertext db
+    class Memory,Regex,Block,Allow,Warning ws
+
+    subgraph Legend["Legend"]
+        direction LR
+        L1[Workspace guard]:::ws
+        L2[Caller-owned input]:::ext
+        L3[(Local protected file)]:::db
+        L4{Decision or boundary}:::state
+    end
+
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
+classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc

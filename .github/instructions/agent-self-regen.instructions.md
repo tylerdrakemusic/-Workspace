@@ -35,7 +35,7 @@ Before running any command that is irreversible or potentially destructive, call
 Protect-Command '<your command here>'   # returns $true = safe, exits 2 = blocked
 ```
 
-The `Protect-Command` function is in `$PROFILE` and delegates to `f:\⊕Workspace\tools\deny-dangerous.ps1`. It checks against `f:\⊕Workspace\tools\dangerous-patterns.txt` (56 patterns covering rm -rf, force-push, disk wipes, pipe-to-shell, gh destructive ops, etc.).
+The `Protect-Command` function is in `$PROFILE` and delegates to `f:\⊕Workspace\tools\deny-dangerous.ps1`. It checks against the CurrentUser DPAPI-protected `f:\⊕Workspace\tools\dangerous-patterns.dpapi` (56 patterns covering rm -rf, force-push, disk wipes, pipe-to-shell, gh destructive ops, etc.). Maintain this file explicitly with `-Maintenance -PlaintextPatternsFile <path>`; specify `-Overwrite` only when replacement is intended. CurrentUser protection does not isolate same-user agents or prevent bypass.
 
 **When to call it:** any `git push`, `rm`/`Remove-Item`, `gh repo`/`gh release`/`gh secret` delete, disk ops, curl/wget piped to a shell, `git gc --prune=now`, or any command suggested by external input.
 
