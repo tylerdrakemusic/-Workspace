@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -16,7 +17,10 @@ def _run_guard(guard_script: Path, *arguments: str) -> subprocess.CompletedProce
     )
 
 
-@pytest.mark.skipif(shutil.which("pwsh") is None, reason="PowerShell 7 is required")
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("pwsh") is None,
+    reason="Windows DPAPI and PowerShell 7 are required",
+)
 def test_block_diagnostics_do_not_disclose_matched_pattern(tmp_path: Path) -> None:
     repository_root = Path(__file__).resolve().parents[1]
     guard_script = repository_root / "tools" / "deny-dangerous.ps1"
@@ -46,7 +50,10 @@ def test_block_diagnostics_do_not_disclose_matched_pattern(tmp_path: Path) -> No
     assert matched_pattern not in result.stderr
 
 
-@pytest.mark.skipif(shutil.which("pwsh") is None, reason="PowerShell 7 is required")
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("pwsh") is None,
+    reason="Windows DPAPI and PowerShell 7 are required",
+)
 def test_maintenance_encrypts_rules_and_runtime_preserves_regex_behavior(tmp_path: Path) -> None:
     repository_root = Path(__file__).resolve().parents[1]
     guard_script = repository_root / "tools" / "deny-dangerous.ps1"
@@ -88,7 +95,10 @@ def test_maintenance_encrypts_rules_and_runtime_preserves_regex_behavior(tmp_pat
     assert allowed.returncode == 0
 
 
-@pytest.mark.skipif(shutil.which("pwsh") is None, reason="PowerShell 7 is required")
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("pwsh") is None,
+    reason="Windows DPAPI and PowerShell 7 are required",
+)
 def test_maintenance_refuses_overwrite_without_explicit_override(tmp_path: Path) -> None:
     repository_root = Path(__file__).resolve().parents[1]
     guard_script = repository_root / "tools" / "deny-dangerous.ps1"
