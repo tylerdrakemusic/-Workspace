@@ -176,10 +176,10 @@ def test_agent_contract_routes_blocking_voice_through_governed_streaming() -> No
     voice_contract = (
         repository_root / ".github" / "instructions" / "repository-voice.instructions.md"
     ).read_text(encoding="utf-8")
-    new_fr_prompt = (
-        repository_root / ".github" / "prompts" / "new-fr.prompt.md"
+    new_fr_skill = (
+        repository_root / ".github" / "skills" / "new-fr" / "SKILL.md"
     ).read_text(encoding="utf-8")
-    contract = f"{voice_contract}\n{new_fr_prompt}"
+    contract = f"{voice_contract}\n{new_fr_skill}"
 
     assert contract.index("start_streaming_tts") < contract.index("streaming_tts_status")
     assert "cancel_streaming_tts" in contract
