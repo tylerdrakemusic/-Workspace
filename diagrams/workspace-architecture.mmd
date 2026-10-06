@@ -1,6 +1,6 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% Derived views: workspace-architecture-detail.mmd, workspace-derived-backup-and-coordination.mmd,
-%%   workspace-derived-services.mmd, workspace-integrations.mmd
+%%   workspace-derived-services.mmd, workspace-integrations.mmd, workspace-command-guard-security.mmd
 graph TB
     subgraph Workspace["⊕ Workspace"]
         Portal[reports/portal.html<br/>synchronous portal shell<br/>quiesced restart · readiness-gated frame refresh]

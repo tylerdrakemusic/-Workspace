@@ -64,6 +64,9 @@ tmp/
 *.pem
 secrets.*
 
+# Windows DPAPI CurrentUser command-guard rules are machine/account-bound
+tools/dangerous-patterns.dpapi
+
 # IDE
 .vscode/
 .idea/

@@ -100,7 +100,7 @@ Human-readable policy: `f:\⊕Workspace\REPO_VISIBILITY.md`
 	it on claim, heartbeat, completion, failure, cancellation, stale recovery,
 	retry, and validated handoff. Do not infer completion from a coordination
 	event or from an unvalidated result.
-- **Terminal command guard (MANDATORY):** Before running any destructive or irreversible shell command, call `Protect-Command '<cmd>'` (defined in `$PROFILE`, backed by `f:\⊕Workspace\tools\deny-dangerous.ps1`). If it returns `$false` or exits 2, do NOT proceed — explain the block to the user. Covers: `rm -rf`, force-push, disk writes, `gh repo delete`, reflog destruction, pipe-to-shell downloads, and more. Cheap check; always worth it.
+- **Terminal command guard (MANDATORY):** Before running any destructive or irreversible shell command, call `Protect-Command '<cmd>'` (defined in `$PROFILE`, backed by `f:\⊕Workspace\tools\deny-dangerous.ps1` and the CurrentUser DPAPI-protected `f:\⊕Workspace\tools\dangerous-patterns.dpapi`). If it returns `$false` or exits 2, do NOT proceed — explain the block to the user. Covers: `rm -rf`, force-push, disk writes, `gh repo delete`, reflog destruction, pipe-to-shell downloads, and more. DPAPI CurrentUser discourages casual inspection only; it does not isolate same-user agents or prevent bypass.
 - **Portal left nav is high-level only** — do NOT add every new feature page as a portal sidebar entry. Embed feature sub-pages as tab-nav pills or routes inside their owning dashboard. Only top-level standalone dashboards belong in the sidebar. Ask Tyler before adding anything new to the portal left nav.
 
 <skills>
