@@ -4,6 +4,7 @@ model: claude-haiku-4-5
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\bdd-workflow.instructions.md -->
 <!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace TDD Agent — Light Tier

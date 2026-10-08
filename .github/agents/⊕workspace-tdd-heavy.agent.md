@@ -4,6 +4,7 @@ model: claude-opus-4-8
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\bdd-workflow.instructions.md -->
 <!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace TDD Agent — Heavy Tier

@@ -2,6 +2,7 @@
 description: "Use for git operations across the workspace — auto-committing uncommitted work, running test suites before commit, checking dirty status across all projects, managing branches, or setting up pre-commit hooks. Use for CI-like workflows: test → commit → report."
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\bdd-workflow.instructions.md -->
 
 # ⊕ Workspace CI Agent
 
