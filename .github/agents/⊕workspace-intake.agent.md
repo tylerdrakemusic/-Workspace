@@ -2,6 +2,7 @@
 description: "Use as the FIRST stop for any new feature request, bug fix, or chore that Tyler opens. Owns the feature request lifecycle: triage, scope confirmation, registry maintenance, and handoff to CI for branching."
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\bdd-workflow.instructions.md -->
 <!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 
 # ⊕ Workspace Intake Agent

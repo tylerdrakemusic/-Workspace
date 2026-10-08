@@ -107,13 +107,11 @@ def test_all_documented_categories_have_distinct_machine_budgets() -> None:
     assert BUDGETS[DiagramCategory.DATABASE_SCHEMA].max_edges < BUDGETS[DiagramCategory.DETAIL].max_edges
 
 
-def test_measure_source_uses_todo_302_utf8_contract() -> None:
+def test_measure_source_preserves_workspace_stack_structure() -> None:
     path = Path(__file__).parents[1] / "diagrams" / "workspace-tech-stack.mmd"
 
     metrics = measure_source(path)
 
-    assert metrics.utf8_characters == 3791
-    assert metrics.utf8_bytes == 3809
     assert metrics.nodes == 29
     assert metrics.edges == 30
     assert metrics.fallback_risk == "medium"

@@ -1,7 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
     Python[Python 3.11<br/>C:\\G\\python.exe] --> SQLCipher[sqlcipher3<br/>encrypted SQLite]
-    Python --> Pytest[pytest]
+    Python --> Pytest[pytest + pytest-bdd<br/>Given/When/Then feature scenarios]
     Python --> Flask[Flask<br/>portal servers]
     Python --> Playwright[playwright<br/>portal checks]
     Python --> Dotenv[python-dotenv]
@@ -20,7 +20,7 @@ graph LR
     CapitalLoggingConsumers[Σ Capital consumers<br/>watchlist · stale-OCO · reconciliation] --> CapitalLoggingAdapter[Σ Capital utils.shared_logging adapter<br/>Capital default log path]
     CapitalLoggingAdapter --> BoundedLogging
     CapitalLoggingBootstrap[Σ Capital pytest/direct scripts<br/>SIGMACAPITAL_WORKSPACE_SRC or checkout path] -.-> BoundedLogging
-    Python --> TestRunner[/tools/run_tests.py<br/>serial local/debug fallback · CI --parallel<br/>parallel policy excludes playwright and live/]
+    Python --> TestRunner[/tools/run_tests.py<br/>serial local/debug fallback · CI --parallel<br/>parallel policy excludes playwright and live · pytest-bdd in normal collection/]
     TestRunner --> Pytest
     Pytest --> Xdist[pytest-xdist<br/>CI workers via --parallel]
     Node[Node.js] --> Mmdc[mermaid-cli<br/>mmdc]
