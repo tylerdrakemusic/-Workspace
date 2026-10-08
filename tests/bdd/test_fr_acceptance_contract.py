@@ -75,7 +75,7 @@ def registered_fr_with_agreed_behavior_scenario(
 	return database_path, criteria
 
 
-@when("the scenario is recorded as acceptance criteria through the FR CLI")
+@when("the intake agent records the approved scenario through the FR CLI")
 def record_scenario_through_fr_cli(
 	fr_contract: tuple[Path, dict[str, object]],
 ) -> None:
@@ -91,11 +91,14 @@ def record_scenario_through_fr_cli(
 			argparse.Namespace(
 				fr_id="FR-TEST-001",
 				criteria_json=json.dumps(criteria),
+				agent="⊕workspace-intake",
+				event_type="decision",
+				event_summary="Approved scenarios persisted before implementation",
 			)
 		)
 
 
-@then("the ledger preserves its Given When Then values")
+@then("the ledger preserves its Given When Then values and intake provenance")
 def ledger_preserves_gwt_values(
 	fr_contract: tuple[Path, dict[str, object]],
 ) -> None:
@@ -106,7 +109,16 @@ def ledger_preserves_gwt_values(
 		"SELECT acceptance_criteria, state FROM feature_requests WHERE id=?",
 		("FR-TEST-001",),
 	).fetchone()
+	event = connection.execute(
+		"SELECT agent, event_type, summary FROM fr_events WHERE fr_id=?",
+		("FR-TEST-001",),
+	).fetchone()
 	connection.close()
 
 	assert json.loads(row["acceptance_criteria"]) == criteria
 	assert row["state"] == "OPEN"
+	assert tuple(event) == (
+		"⊕workspace-intake",
+		"decision",
+		"Approved scenarios persisted before implementation",
+	)

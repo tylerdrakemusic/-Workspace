@@ -473,9 +473,13 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         (
             args.fr_id,
             now,
-            "⊕workspace-ci",
-            "metadata-repair",
-            "Acceptance criteria repaired through canonical fr_cli.py command",
+            getattr(args, "agent", "⊕workspace-ci"),
+            getattr(args, "event_type", "metadata-repair"),
+            getattr(
+                args,
+                "event_summary",
+                "Acceptance criteria repaired through canonical fr_cli.py command",
+            ),
         ),
     )
     conn.commit()
@@ -836,6 +840,12 @@ def main() -> None:
     )
     p_ac.add_argument("fr_id")
     p_ac.add_argument("criteria_json")
+    p_ac.add_argument("--agent", default="⊕workspace-ci")
+    p_ac.add_argument("--event-type", default="metadata-repair")
+    p_ac.add_argument(
+        "--event-summary",
+        default="Acceptance criteria repaired through canonical fr_cli.py command",
+    )
 
     # set-parent-branch
     p_branch = sub.add_parser(

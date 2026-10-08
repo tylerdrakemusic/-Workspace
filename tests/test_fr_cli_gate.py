@@ -731,6 +731,37 @@ class TestMergedGate:
             "Acceptance criteria repaired through canonical fr_cli.py command",
         )
 
+    def test_set_acceptance_criteria_records_explicit_intake_decision(self, tmp_path) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        criteria = {"acceptance_criteria": ["approved behavior scenario"]}
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_now", return_value="2026-08-25T17:00:00Z"
+        ):
+            fr_cli.cmd_set_acceptance_criteria(
+                argparse.Namespace(
+                    fr_id="FR-TEST-001",
+                    criteria_json=json.dumps(criteria),
+                    agent="⊕workspace-intake",
+                    event_type="decision",
+                    event_summary="Approved scenarios persisted before implementation",
+                )
+            )
+
+        check_conn = sqlite3.connect(str(db_path))
+        event = check_conn.execute(
+            "SELECT agent, event_type, summary FROM fr_events WHERE fr_id=?",
+            ("FR-TEST-001",),
+        ).fetchone()
+        check_conn.close()
+
+        assert tuple(event) == (
+            "⊕workspace-intake",
+            "decision",
+            "Approved scenarios persisted before implementation",
+        )
+
     def test_set_acceptance_criteria_rejects_non_object_json(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)

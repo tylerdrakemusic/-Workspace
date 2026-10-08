@@ -41,9 +41,11 @@ context as notes. Ask for a title only when none was supplied.
 8. Register the FR in the database through `fr_cli.py open`. For a
    behavior-changing FR, persist the approved scenarios unchanged as its
    acceptance criteria through the canonical `fr_cli.py
-   set-acceptance-criteria` command before implementation is dispatched. The
-   database is the sole source of truth; do not create a Markdown file in
-   `.github/fr/`.
+   set-acceptance-criteria` command before implementation is dispatched. Pass
+   `--agent ⊕workspace-intake --event-type decision --event-summary` with a
+   concise approval-persistence statement so the ledger attributes the action
+   to intake rather than a metadata repair. The database is the sole source of
+   truth; do not create a Markdown file in `.github/fr/`.
 
 ## Blocking Approval Voice
 

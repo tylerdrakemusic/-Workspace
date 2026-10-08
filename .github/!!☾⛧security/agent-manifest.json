@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T06:33:02.673689+00:00",
+  "generated_at": "2026-10-08T12:59:02.094384+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -16,9 +16,9 @@
     ".github/agents/⊕workspace-intake.agent.md": "80269374787c8f21abfca29899544ff9be790fcf10041ed5183efb1f6f1e921b",
     ".github/agents/⊕workspace-overseer.agent.md": "4884fa18d598536578184d51dc84952dd34cd526e269f0d85f341e7996ce49a4",
     ".github/agents/⊕workspace-protector.agent.md": "0f61dee9ad74577ff26cdaafb52ee789f957c7b86e448b6ddd9ef80eb86953cb",
-    ".github/agents/⊕workspace-qa-heavy.agent.md": "46e32b8d73f4eb84224f453e15c07d3439f8b3d501f7ee544958bc31a46a10d4",
-    ".github/agents/⊕workspace-qa-light.agent.md": "61c455f303a2a65db65d82f1121d011d370262cf525f131a8d8912202bbf2573",
-    ".github/agents/⊕workspace-qa.agent.md": "e551d0bf5429015ccfd9770cfa87c905fd3d0544ac70368f880d97a3d645a215",
+    ".github/agents/⊕workspace-qa-heavy.agent.md": "d90b0d3a00f0bb8b89d49c8eb69305e2766de9568127714b5ec036931d6bde9e",
+    ".github/agents/⊕workspace-qa-light.agent.md": "8d8fd069445005f10b3017f76822d70b40a505780ea4aa7326eda77502fa780e",
+    ".github/agents/⊕workspace-qa.agent.md": "f58a99c7bb4708cfe98774a792735d924409f901d9bbde493de4df3dbe8f94d4",
     ".github/agents/⊕workspace-reviewer-heavy.agent.md": "e8f13a86bac12a452989e5de8d1f1b76965125947df6809161357a61a5d4edf3",
     ".github/agents/⊕workspace-reviewer-light.agent.md": "2347072c0649708f907b038dbad5a08489421907572cf2c0bb9eaf581711bdd4",
     ".github/agents/⊕workspace-reviewer.agent.md": "27c5db43dd93a677bcbda2331b05ac8a8adfe5bd704f0798c7bf883064bb4cfa",
@@ -56,7 +56,7 @@
     ".github/skills/interview-me/SKILL.md": "f1239ec43838a3bd7feb76995906162ea2c8c4f888480b4916da3e6c817045d1",
     ".github/skills/karpathy-guidelines/SKILL.md": "e2553e9b66299fbca399804d6c44dfa44b2384b979ca5bf8b933b4916bb3141b",
     ".github/skills/new-bfx/SKILL.md": "3dbdfa86c17a0cfecf1d72664f3c41bebb609ad0b14493878b34f2307b3a6773",
-    ".github/skills/new-fr/SKILL.md": "5909da2ef77089e29d7002b161144c1392ed32bea6f855fb4b3fa832f6fa71d7",
+    ".github/skills/new-fr/SKILL.md": "a79cfe16590a4cb761ecf88aeff76f8d5cf645aea44b8364d964abadfe2be59f",
     ".github/skills/observability-and-instrumentation/SKILL.md": "e931c70731aa67fa69d67493b9729fea2a13243953efce41802da8d0d6eefaf9",
     ".github/skills/perfect-scoped-td/SKILL.md": "7fc5000aba6c94c6fe4f81126ed328ff13c06f968dcf4250d38c93502e1ce8f9",
     ".github/skills/perfect-td/SKILL.md": "402cb9e2a0d026e546310cc1d89419cb63f4cd46fd0a8610ea1ae052ff7c1522",

@@ -4,6 +4,7 @@ model: gpt-5.3-codex
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
+<!-- inherits: f:\⊕Workspace\.github\instructions\bdd-workflow.instructions.md -->
 <!-- inherits: f:\⊕Workspace\.github\instructions\agent-self-regen.instructions.md -->
 <!-- inherits: f:\⊕Workspace\.github\instructions\playwright-server-preflight.instructions.md -->
 
