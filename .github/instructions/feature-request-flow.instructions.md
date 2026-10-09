@@ -78,8 +78,8 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 | State | Meaning | Owner |
 |-------|---------|-------|
 | `OPEN` | Tyler filed a request; not yet scoped | ⊕workspace-intake |
-| `TRIAGED` | Scope, affected projects, acceptance criteria recorded | ⊕workspace-intake |
-| `BRANCHED` | Isolated branch + worktree + draft PR created per repo. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
+| `TRIAGED` | Scope and proposed acceptance scenarios presented; awaiting Tyler's scope confirmation | ⊕workspace-intake |
+| `BRANCHED` | Isolated branch + worktree + draft PR created per repo after a recorded scope decision and, for behavior-changing FRs, persisted acceptance scenarios. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
 | `COMPLEXITY_ASSESSED` | Orchestrator runs `complexity_router.py` against the FR diff to select **light / standard / heavy** tier. Routes TDD, QA, and Review to the matching tiered agent. This is a protocol step, not a DB state — it happens within `IN_PROGRESS` setup. See **Complexity Assessment & Tier Routing** section below. | project orchestrator |
 | `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — after COMPLEXITY_ASSESSED, delegate to `⊕workspace-tdd-<tier>` (not the TDD skill directly). The tiered TDD agent loads and follows the full TDD skill protocol. | project orchestrator |
 | `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
@@ -304,25 +304,26 @@ gates.
 1. Tyler → ⊕workspace-intake: "Add X to projects A and B"
 2. ⊕workspace-intake: triage, open FR in `fr_ledgers.db` via `fr_cli.py open`, ask Tyler to confirm scope
 3. Tyler: "approved"  ← GATEWAY
-4. ⊕workspace-intake → ⊕workspace-ci: create branches + worktrees + draft PRs for A and B
-5. ⊕workspace-ci: records BRANCHED state, returns PR URLs
-6. ⊕workspace-intake → ⊕workspace-overseer: route implementation
-7. ⊕workspace-overseer → project orchestrators (A and B in parallel): implement
-8. Orchestrators: push commits to their branches; when done, mark PR ready
-9. ⊕workspace-overseer → ⊕workspace-reviewer: auto-review both PRs
-10. ⊕workspace-reviewer: posts review comments, sets AUTO_REVIEWED or CHANGES_REQUESTED
-11. ⊕workspace-ci: checks out the feature branch(es) locally in their worktree paths
+4. ⊕workspace-intake: record typed `SCOPE_APPROVED:` decision; persist approved Given/When/Then criteria while still TRIAGED when behavior changes; exempt requests skip criteria persistence
+5. ⊕workspace-intake → ⊕workspace-ci: create branches + worktrees + draft PRs for A and B
+6. ⊕workspace-ci: records BRANCHED state, returns PR URLs
+7. ⊕workspace-intake → ⊕workspace-overseer: route implementation
+8. ⊕workspace-overseer → project orchestrators (A and B in parallel): implement
+9. Orchestrators: push commits to their branches; when done, mark PR ready
+10. ⊕workspace-overseer → ⊕workspace-reviewer: auto-review both PRs
+11. ⊕workspace-reviewer: posts review comments, sets AUTO_REVIEWED or CHANGES_REQUESTED
+12. ⊕workspace-ci: checks out the feature branch(es) locally in their worktree paths
     so Tyler can run demos and inspect proof artifacts. Sets BRANCH_CHECKED_OUT.
-    Notifies Tyler: "Branch checked out at F:\worktrees\<fr-id>\<project> — ready to demo."
-12. Tyler: reviews the automated report AND the live feature  ← GATEWAY
-13. Tyler: "merge"  ← GATEWAY
-14. ⊕workspace-ci: merge PRs, delete branches + worktrees, update state via
+  Notifies Tyler: "Branch checked out at F:\worktrees\<fr-id>\<project> — ready to demo."
+13. Tyler: reviews the automated report AND the live feature  ← GATEWAY
+14. Tyler: "merge"  ← GATEWAY
+15. ⊕workspace-ci: merge PRs, delete branches + worktrees, update state via
     `fr_cli.py update-state <FR-ID> MERGED` and `fr_cli.py update-state <FR-ID> SOAKING`.
     Records `Merged at` in the FR record. FR remains visible on
     the portal FR panel with "Soaking for Xd Yh" badge.
-15. Tyler: exercises the feature on main for as long as he wants.
-16. Tyler: "signed off on FR-<ID>"  ← GATEWAY (post-soak)
-17. ⊕workspace-ci: updates state via `fr_cli.py update-state <FR-ID> SIGNED_OFF` and
+16. Tyler: exercises the feature on main for as long as he wants.
+17. Tyler: "signed off on FR-<ID>"  ← GATEWAY (post-soak)
+18. ⊕workspace-ci: updates state via `fr_cli.py update-state <FR-ID> SIGNED_OFF` and
     `fr_cli.py update-state <FR-ID> ARCHIVED`.
     FR drops off active portal panel; FR record persists in `fr_ledgers.db`.
 ```

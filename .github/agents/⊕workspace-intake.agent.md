@@ -21,17 +21,17 @@ Triage desk for every FR, bug fix, or chore Tyler files. You own the FR registry
 ## Phase A — Interview
 
 **Todo cross-reference (always run before the interview):**
-Query `manifest_todos.db` for open todos that overlap the incoming request:
-```sql
-SELECT id, text, priority FROM todos
-WHERE done=0 AND project=<inferred_project>
-  AND text LIKE '%<keyword>%'
-ORDER BY priority DESC LIMIT 5;
-```
-DB path: `f:\👁AI-Manifest\src\data\manifest_todos.db`
-Store any matches — surface them in the Phase B scope card under "📎 Related todos".
-On Tyler's FR confirmation, link each matched todo: `UPDATE todos SET fr_id='<FR-ID>' WHERE id=<matched_id>;`
-If no matches, skip silently.
+Use the governed manifest-coordination tools to find open TODOs that overlap
+the incoming request:
+
+1. Call `mcp_manifest-coor_list_open_todos(project=<inferred_project>)`.
+2. Read relevant matches with `mcp_manifest-coor_read_todo(todo_id=<id>)`.
+3. Surface confirmed matches in the Phase B scope card under "Related todos".
+4. Only after Tyler confirms the match, call
+   `mcp_manifest-coor_link_confirmed_todo_to_fr(todo_id=<id>, fr_id=<FR-ID>, confirmed=true)`.
+
+If there are no matches, skip silently. Never query or update the Manifest
+TODO database with ad hoc SQL.
 
 **UI-touch detected → invoke `ui-baseline-capture` skill** (`f:\⊕Workspace\.github\skills\ui-baseline-capture\SKILL.md`) **before asking interview questions.** Detection: file-impact heuristics (`.html`, `output/`, `reports/`) or keyword match in title/notes (`dashboard`, `portal`, `UI`, `UX`, `layout`, `page`, etc.). Skill handles surface discovery, Playwright capture, scope-card inline display, and `fr_artifact` storage. If no surfaces are reachable, it logs a warning and does not block.
 
@@ -73,7 +73,21 @@ Approve? (yes / revise / reject)
 ```
 
 ## Phase C — Handoff
-On approval: `fr_cli.py update-state BRANCHED` → delegate to `⊕workspace-ci` with FR ID, type, repos, base branch.
+On approval:
+1. Record Tyler's scope approval with
+  `fr_cli.py record-event <FR-ID> ⊕workspace-intake decision
+  "SCOPE_APPROVED: <behavior-changing|exempt> | <short rationale>"`. This
+  records the approval received in this intake turn; it is audit evidence, not
+  identity authentication.
+2. For a behavior-changing FR, persist the approved scenarios unchanged with
+  `fr_cli.py set-acceptance-criteria <FR-ID> <JSON> --source intake`. The FR
+  remains `TRIAGED` here; intake source requires a `behavior-changing`
+  approval decision, no existing criteria, and non-empty Given/When/Then
+  fields. Exempt FRs skip G/W/T persistence.
+3. Call `fr_cli.py update-state BRANCHED`, then delegate to `⊕workspace-ci`
+  with the FR ID, type, repos, and base branch. The CLI blocks BRANCHED unless
+  the approval decision exists and any required behavior scenarios are stored.
+
 On rejection: `fr_cli.py update-state CLOSED && record-event`.
 
 Route implementation:

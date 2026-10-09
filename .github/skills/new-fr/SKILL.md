@@ -38,14 +38,23 @@ context as notes. Ask for a title only when none was supplied.
    block. Ask: "Does this look right? Confirm, or tell me what to change."
 7. On amendments, update the draft and confirm it again. On confirmation,
    proceed to Phase B triage: ledger, registry, and cycle timer.
-8. Register the FR in the database through `fr_cli.py open`. For a
-   behavior-changing FR, persist the approved scenarios unchanged as its
-   acceptance criteria through the canonical `fr_cli.py
-   set-acceptance-criteria` command before implementation is dispatched. Pass
-   `--agent ⊕workspace-intake --event-type decision --event-summary` with a
-   concise approval-persistence statement so the ledger attributes the action
-   to intake rather than a metadata repair. The database is the sole source of
-   truth; do not create a Markdown file in `.github/fr/`.
+8. Register the FR in the database through `fr_cli.py open`, then move it to
+   `TRIAGED` and present the scope card. For a behavior-changing FR, after Tyler
+   approves scope and before moving to `BRANCHED`, persist the approved
+   scenarios unchanged. First record the approval as an intake `decision` event
+   with summary `SCOPE_APPROVED: behavior-changing | <rationale>` or
+   `SCOPE_APPROVED: exempt | <rationale>`. This records the approval received
+   in the intake turn; it is audit evidence, not identity authentication. For
+   behavior-changing FRs, call
+   `fr_cli.py set-acceptance-criteria <FR-ID> <JSON> --source intake` while
+   still `TRIAGED`. The CLI requires the latest intake decision to classify the
+   FR as behavior-changing, no existing criteria, and a non-empty
+   `acceptance_criteria` list of scenarios with non-empty `given`, `when`, and
+   `then` strings. Exempt FRs skip G/W/T persistence. Move to `BRANCHED` only
+   after the approval event and, for behavior-changing FRs, the criteria are
+   persisted. Use the default `repair` source only to correct existing
+   criteria. The database is the sole source of truth; do not create a
+   Markdown file in `.github/fr/`.
 
 ## Blocking Approval Voice
 

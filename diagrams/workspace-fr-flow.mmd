@@ -5,7 +5,7 @@
 %%   workspace-fr-flow-review-and-recycle.mmd (parent-join gate + recycled-light / bounded-fix rework).
 stateDiagram-v2
     [*] --> TRIAGED: Tyler opens FR
-    TRIAGED --> BRANCHED: Tyler approves scope after behavior classification
+    TRIAGED --> BRANCHED: approval event + criteria, or exempt
     BRANCHED --> COMPLEXITY_ASSESSED: complexity_router.py
     COMPLEXITY_ASSESSED --> MCP_FIRST: deterministic MCP-first invocation
     MCP_FIRST --> IN_PROGRESS: governed coordination MCP available
@@ -16,13 +16,9 @@ stateDiagram-v2
         Classify observable effect before scope approval.
         Behavior-changing FRs draft Given/When/Then scenarios
         before Tyler approves scope. Documentation, housekeeping,
-        and behavior-neutral refactors are exempt from this requirement.
-    end note
-
-    note right of BRANCHED
-        After scope approval, persist approved behavior scenarios
-        unchanged in canonical FR acceptance criteria before
-        implementation dispatch.
+        and behavior-neutral refactors are exempt. After approval,
+        record a typed SCOPE_APPROVED: decision. Persist approved
+        scenarios here only when behavior changes.
     end note
 
     state "Bounded TODO operational runtime" as TODO_RUNTIME

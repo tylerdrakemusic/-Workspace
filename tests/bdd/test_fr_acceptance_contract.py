@@ -35,90 +35,107 @@ fr_cli = _load_fr_cli()
 scenarios("fr_acceptance_contract.feature")
 
 
-@given("an open FR has an agreed behavior scenario", target_fixture="fr_contract")
+@given("scope approval is recorded for a triaged FR with an agreed behavior scenario", target_fixture="fr_contract")
 def registered_fr_with_agreed_behavior_scenario(
-	tmp_path: Path,
+    tmp_path: Path,
 ) -> tuple[Path, dict[str, object]]:
-	database_path = tmp_path / "fr.db"
-	connection = sqlite3.connect(str(database_path))
-	connection.executescript(
-		"""
-		CREATE TABLE feature_requests (
-			id TEXT PRIMARY KEY,
-			acceptance_criteria TEXT,
-			updated_at TEXT,
-			state TEXT
-		);
-		CREATE TABLE fr_events (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			fr_id TEXT NOT NULL,
-			ts TEXT NOT NULL,
-			agent TEXT NOT NULL,
-			event_type TEXT NOT NULL,
-			summary TEXT NOT NULL
-		);
-		INSERT INTO feature_requests (id, state)
-		VALUES ('FR-TEST-001', 'OPEN');
-		"""
-	)
-	connection.commit()
-	connection.close()
-	criteria: dict[str, object] = {
-		"acceptance_criteria": [
-			{
-				"given": "a user has an active session",
-				"when": "the user saves a changed preference",
-				"then": "the preference is available on the next visit",
-			}
-		]
-	}
-	return database_path, criteria
+    database_path = tmp_path / "fr.db"
+    connection = sqlite3.connect(str(database_path))
+    connection.executescript(
+        """
+        CREATE TABLE feature_requests (
+            id TEXT PRIMARY KEY,
+            acceptance_criteria TEXT,
+            updated_at TEXT,
+            state TEXT
+        );
+        CREATE TABLE fr_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fr_id TEXT NOT NULL,
+            ts TEXT NOT NULL,
+            agent TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            summary TEXT NOT NULL
+        );
+        INSERT INTO feature_requests (id, state)
+        VALUES ('FR-TEST-001', 'TRIAGED');
+        INSERT INTO fr_events (fr_id, ts, agent, event_type, summary)
+        VALUES (
+            'FR-TEST-001',
+            '2026-08-25T16:59:00Z',
+            '⊕workspace-intake',
+            'decision',
+            'SCOPE_APPROVED: behavior-changing | Tyler approved the scope card'
+        );
+        """
+    )
+    connection.commit()
+    connection.close()
+    criteria: dict[str, object] = {
+        "acceptance_criteria": [
+            {
+                "given": "a user has an active session",
+                "when": "the user saves a changed preference",
+                "then": "the preference is available on the next visit",
+            }
+        ]
+    }
+    return database_path, criteria
 
 
 @when("the intake agent records the approved scenario through the FR CLI")
 def record_scenario_through_fr_cli(
-	fr_contract: tuple[Path, dict[str, object]],
+    fr_contract: tuple[Path, dict[str, object]],
 ) -> None:
-	database_path, criteria = fr_contract
+    database_path, criteria = fr_contract
 
-	def open_test_ledger() -> sqlite3.Connection:
-		connection = sqlite3.connect(str(database_path))
-		connection.row_factory = sqlite3.Row
-		return connection
+    def open_test_ledger() -> sqlite3.Connection:
+        connection = sqlite3.connect(str(database_path))
+        connection.row_factory = sqlite3.Row
+        return connection
 
-	with patch.object(fr_cli, "_conn", side_effect=open_test_ledger):
-		fr_cli.cmd_set_acceptance_criteria(
-			argparse.Namespace(
-				fr_id="FR-TEST-001",
-				criteria_json=json.dumps(criteria),
-				agent="⊕workspace-intake",
-				event_type="decision",
-				event_summary="Approved scenarios persisted before implementation",
-			)
-		)
+    with patch.object(fr_cli, "_conn", side_effect=open_test_ledger):
+        fr_cli.cmd_set_acceptance_criteria(
+            argparse.Namespace(
+                fr_id="FR-TEST-001",
+                criteria_json=json.dumps(criteria),
+                source="intake",
+            )
+        )
 
 
 @then("the ledger preserves its Given When Then values and intake provenance")
 def ledger_preserves_gwt_values(
-	fr_contract: tuple[Path, dict[str, object]],
+    fr_contract: tuple[Path, dict[str, object]],
 ) -> None:
-	database_path, criteria = fr_contract
-	connection = sqlite3.connect(str(database_path))
-	connection.row_factory = sqlite3.Row
-	row = connection.execute(
-		"SELECT acceptance_criteria, state FROM feature_requests WHERE id=?",
-		("FR-TEST-001",),
-	).fetchone()
-	event = connection.execute(
-		"SELECT agent, event_type, summary FROM fr_events WHERE fr_id=?",
-		("FR-TEST-001",),
-	).fetchone()
-	connection.close()
+    database_path, criteria = fr_contract
+    connection = sqlite3.connect(str(database_path))
+    connection.row_factory = sqlite3.Row
+    row = connection.execute(
+        "SELECT acceptance_criteria, state FROM feature_requests WHERE id=?",
+        ("FR-TEST-001",),
+    ).fetchone()
+    approval = connection.execute(
+        "SELECT agent, event_type, summary FROM fr_events "
+        "WHERE fr_id=? AND event_type='decision'",
+        ("FR-TEST-001",),
+    ).fetchone()
+    event = connection.execute(
+        "SELECT agent, event_type, summary FROM fr_events "
+        "WHERE fr_id=? AND event_type='note'",
+        ("FR-TEST-001",),
+    ).fetchone()
+    connection.close()
 
-	assert json.loads(row["acceptance_criteria"]) == criteria
-	assert row["state"] == "OPEN"
-	assert tuple(event) == (
-		"⊕workspace-intake",
-		"decision",
-		"Approved scenarios persisted before implementation",
-	)
+    assert json.loads(row["acceptance_criteria"]) == criteria
+    assert row["state"] == "TRIAGED"
+    assert tuple(approval) == (
+        "⊕workspace-intake",
+        "decision",
+        "SCOPE_APPROVED: behavior-changing | Tyler approved the scope card",
+    )
+    assert tuple(event) == (
+        "⊕workspace-intake",
+        "note",
+        "Initial acceptance criteria recorded after scope approval; BRANCHED remains a separate state transition",
+    )

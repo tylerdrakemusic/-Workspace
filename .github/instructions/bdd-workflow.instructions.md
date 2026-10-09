@@ -7,7 +7,7 @@ Apply this workflow to feature requests processed by `.github/skills/new-fr/SKIL
 - Classify the request by its observable effect before presenting the scope draft.
 - For a behavior-changing feature request, write one or more explicit Given/When/Then scenarios before Tyler approves scope. Each scenario states the starting context, the user or system action, and an observable outcome. Ask about missing conditions or outcomes instead of guessing.
 - Preserve pure documentation, housekeeping, and behavior-neutral refactors as exemptions from the G/W/T requirement. For mixed requests, write scenarios for the behavior-changing parts only.
-- Include the scenarios in the scope draft and confirmation block. After scope approval and FR registration, preserve the approved scenarios unchanged in the canonical FR acceptance-criteria record before implementation is dispatched.
+- Include the scenarios in the scope draft and confirmation block. After scope approval and FR registration, record an intake `decision` event as `SCOPE_APPROVED: behavior-changing | <rationale>`, then preserve the approved scenarios unchanged in the canonical FR acceptance-criteria record before implementation is dispatched. Exempt requests use `SCOPE_APPROVED: exempt | <rationale>` and skip G/W/T persistence. The marker records the approval received in the intake turn; it is audit evidence, not identity authentication. The CLI permits `BRANCHED` only from `TRIAGED` with a valid approval classification, and requires stored scenarios for behavior-changing FRs.
 
 ## Implementation Contract
 
