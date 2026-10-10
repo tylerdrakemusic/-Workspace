@@ -103,6 +103,31 @@ def test_architecture_agent_inherits_known_instructions(agent_filename: str):
             f"{agent_filename} inherits unknown instruction file: {filename}"
 
 
+@pytest.mark.parametrize(
+    "agent_filename",
+    [
+        "⊕workspace-qa.agent.md",
+        "⊕workspace-qa-light.agent.md",
+        "⊕workspace-qa-heavy.agent.md",
+    ],
+)
+def test_qa_agents_inherit_bdd_workflow_instruction(agent_filename: str):
+    path = AGENTS_DIR / agent_filename
+    text = _read(path)
+
+    assert "bdd-workflow.instructions.md" in text
+
+
+def test_bdd_instruction_topology_includes_qa_tiers():
+    topology = (
+        Path(__file__).resolve().parents[1]
+        / "diagrams"
+        / "workspace-agent-topology-instructions.mmd"
+    ).read_text(encoding="utf-8")
+
+    assert "BDDFlow -.-> QA & QALight & QAHeavy" in topology
+
+
 def test_workspace_integrations_diagram_exists():
     diagrams_dir = Path(__file__).resolve().parents[1] / "diagrams"
     target = diagrams_dir / "workspace-integrations.mmd"

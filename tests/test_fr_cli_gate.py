@@ -731,6 +731,167 @@ class TestMergedGate:
             "Acceptance criteria repaired through canonical fr_cli.py command",
         )
 
+    def test_set_acceptance_criteria_records_intake_after_scope_approval(self, tmp_path) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        criteria = {
+            "acceptance_criteria": [
+                {
+                    "given": "the user is signed in",
+                    "when": "the user saves a preference",
+                    "then": "the preference is retained",
+                }
+            ]
+        }
+        conn.execute(
+            "UPDATE feature_requests SET state='TRIAGED', acceptance_criteria=NULL WHERE id=?",
+            ("FR-TEST-001",),
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "FR-TEST-001",
+                "2026-08-25T16:59:00Z",
+                "⊕workspace-intake",
+                "decision",
+                "SCOPE_APPROVED: behavior-changing | Tyler approved the scope card",
+            ),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
+            fr_cli, "_now", return_value="2026-08-25T17:00:00Z"
+        ):
+            fr_cli.cmd_set_acceptance_criteria(
+                argparse.Namespace(
+                    fr_id="FR-TEST-001",
+                    criteria_json=json.dumps(criteria),
+                    source="intake",
+                )
+            )
+
+        check_conn = sqlite3.connect(str(db_path))
+        events = check_conn.execute(
+            "SELECT agent, event_type, summary FROM fr_events WHERE fr_id=? ORDER BY id",
+            ("FR-TEST-001",),
+        ).fetchall()
+        state = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id=?", ("FR-TEST-001",)
+        ).fetchone()[0]
+        check_conn.close()
+
+        assert state == "TRIAGED"
+        assert tuple(events[-1]) == (
+            "⊕workspace-intake",
+            "note",
+            "Initial acceptance criteria recorded after scope approval; BRANCHED remains a separate state transition",
+        )
+
+
+    def test_set_acceptance_criteria_rejects_unapproved_triaged_scope(self, tmp_path) -> None:
+        conn = _make_conn(tmp_path / "fr.db")
+        conn.execute(
+            "UPDATE feature_requests SET state='TRIAGED', acceptance_criteria=NULL WHERE id=?",
+            ("FR-TEST-001",),
+        )
+        conn.commit()
+        criteria = {
+            "acceptance_criteria": [
+                {"given": "context", "when": "an action occurs", "then": "it is visible"}
+            ]
+        }
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_set_acceptance_criteria(
+                    argparse.Namespace(
+                        fr_id="FR-TEST-001",
+                        criteria_json=json.dumps(criteria),
+                        source="intake",
+                    )
+                )
+
+        assert exc_info.value.code == 2
+
+
+    def test_set_acceptance_criteria_rejects_intake_source_before_scope_approval(self, tmp_path) -> None:
+        conn = _make_conn(tmp_path / "fr.db")
+        conn.execute(
+            "UPDATE feature_requests SET state='OPEN', acceptance_criteria=NULL WHERE id=?",
+            ("FR-TEST-001",),
+        )
+        conn.commit()
+        criteria = {
+            "acceptance_criteria": [
+                {"given": "context", "when": "an action occurs", "then": "it is visible"}
+            ]
+        }
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_set_acceptance_criteria(
+                    argparse.Namespace(
+                        fr_id="FR-TEST-001",
+                        criteria_json=json.dumps(criteria),
+                        source="intake",
+                    )
+                )
+
+        assert exc_info.value.code == 2
+
+    @pytest.mark.parametrize(
+        "criteria",
+        [
+            {},
+            {"acceptance_criteria": []},
+            {"acceptance_criteria": ["not a GWT scenario"]},
+            {"acceptance_criteria": [{"given": "context", "when": "action", "then": " "}]},
+        ],
+    )
+    def test_set_acceptance_criteria_rejects_invalid_intake_scenarios(
+        self, tmp_path, capsys, criteria
+    ) -> None:
+        conn = _make_conn(tmp_path / "fr.db")
+        conn.execute(
+            "UPDATE feature_requests SET state='TRIAGED', acceptance_criteria=NULL WHERE id=?",
+            ("FR-TEST-001",),
+        )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_set_acceptance_criteria(
+                    argparse.Namespace(
+                        fr_id="FR-TEST-001",
+                        criteria_json=json.dumps(criteria),
+                        source="intake",
+                    )
+                )
+
+        assert exc_info.value.code == 2
+        assert "non-empty Given/When/Then scenarios" in capsys.readouterr().err
+
+    def test_set_acceptance_criteria_rejects_intake_source_after_triangulation(self, tmp_path) -> None:
+        conn = _make_conn(tmp_path / "fr.db")
+        criteria = {
+            "acceptance_criteria": [
+                {"given": "context", "when": "an action occurs", "then": "it is visible"}
+            ]
+        }
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_set_acceptance_criteria(
+                    argparse.Namespace(
+                        fr_id="FR-TEST-001",
+                        criteria_json=json.dumps(criteria),
+                        source="intake",
+                    )
+                )
+
+        assert exc_info.value.code == 2
+
     def test_set_acceptance_criteria_rejects_non_object_json(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
@@ -1127,3 +1288,87 @@ class TestMergedGate:
         ).fetchone()
         check_conn.close()
         assert row[0] == "REVIEW_REQUESTED"
+
+
+    def test_repair_source_cannot_create_initial_acceptance_criteria(self, tmp_path, capsys) -> None:
+        conn = _make_conn(tmp_path / "fr.db")
+        conn.execute(
+            "UPDATE feature_requests SET acceptance_criteria=NULL WHERE id=?",
+            ("FR-TEST-001",),
+        )
+        conn.commit()
+        criteria = {"acceptance_criteria": ["first write through repair"]}
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            with pytest.raises(SystemExit) as exc_info:
+                fr_cli.cmd_set_acceptance_criteria(
+                    argparse.Namespace(
+                        fr_id="FR-TEST-001",
+                        criteria_json=json.dumps(criteria),
+                        source="repair",
+                    )
+                )
+
+        assert exc_info.value.code == 2
+        assert "repair source can only replace existing acceptance criteria" in capsys.readouterr().err
+
+    @pytest.mark.parametrize(
+        ("approval_classification", "criteria_json", "expected_state"),
+        [
+            (None, None, None),
+            ("behavior-changing", None, None),
+            (
+                "behavior-changing",
+                json.dumps({"acceptance_criteria": ["not a GWT scenario"]}),
+                None,
+            ),
+            ("exempt", None, "BRANCHED"),
+            (
+                "behavior-changing",
+                json.dumps(
+                    {
+                        "acceptance_criteria": [
+                            {"given": "context", "when": "action", "then": "result"}
+                        ]
+                    }
+                ),
+                "BRANCHED",
+            ),
+        ],
+    )
+    def test_branched_transition_requires_scope_approval_and_criteria(
+        self, tmp_path, approval_classification, criteria_json, expected_state
+    ) -> None:
+        conn = _make_conn(tmp_path / "fr.db")
+        conn.execute(
+            "UPDATE feature_requests SET state='TRIAGED', acceptance_criteria=? WHERE id=?",
+            (criteria_json, "FR-TEST-001"),
+        )
+        if approval_classification:
+            conn.execute(
+                "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    "FR-TEST-001",
+                    "2026-08-25T16:59:00Z",
+                    "⊕workspace-intake",
+                    "decision",
+                    f"SCOPE_APPROVED: {approval_classification} | scope approved",
+                ),
+            )
+        conn.commit()
+
+        with patch.object(fr_cli, "_conn", return_value=conn):
+            if expected_state is None:
+                with pytest.raises(SystemExit) as exc_info:
+                    fr_cli.cmd_update_state(_state_args("FR-TEST-001", "BRANCHED"))
+                assert exc_info.value.code == 2
+            else:
+                fr_cli.cmd_update_state(_state_args("FR-TEST-001", "BRANCHED"))
+
+        check_conn = sqlite3.connect(str(tmp_path / "fr.db"))
+        actual_state = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()[0]
+        check_conn.close()
+        assert actual_state == (expected_state or "TRIAGED")

@@ -43,7 +43,7 @@
       "path": "diagrams/workspace-agent-topology-instructions.mmd",
       "kind": "architecture-detail",
       "renderer_risk": "low",
-      "fallback_risk": "low-medium",
+      "fallback_risk": "medium",
       "split_required": false,
       "lineage": {
         "parent": "diagrams/workspace-agent-topology.mmd",
@@ -150,7 +150,7 @@
       "path": "diagrams/workspace-fr-flow.mmd",
       "kind": "workflow",
       "renderer_risk": "low",
-      "fallback_risk": "low-medium",
+      "fallback_risk": "medium",
       "split_required": false,
       "lineage": {
         "parent": null,
@@ -224,7 +224,7 @@
       "path": "diagrams/workspace-tech-stack.mmd",
       "kind": "technology-stack",
       "renderer_risk": "low",
-      "fallback_risk": "low-medium",
+      "fallback_risk": "medium",
       "split_required": false,
       "lineage": {
         "parent": null,

@@ -155,6 +155,38 @@ def _conn():
     return get_connection()
 
 
+def _has_valid_gwt_acceptance_criteria(criteria: object) -> bool:
+    """Return whether every listed scenario has non-empty G/W/T strings."""
+    if not isinstance(criteria, dict):
+        return False
+    scenarios = criteria.get("acceptance_criteria")
+    return isinstance(scenarios, list) and bool(scenarios) and all(
+        isinstance(scenario, dict)
+        and all(
+            isinstance(scenario.get(field), str) and scenario[field].strip()
+            for field in ("given", "when", "then")
+        )
+        for scenario in scenarios
+    )
+
+def _scope_approval_classification(conn, fr_id: str) -> str | None:
+    """Return the latest intake scope-approval classification, if valid."""
+    row = conn.execute(
+        "SELECT summary FROM fr_events WHERE fr_id=? AND agent=? AND event_type=? "
+        "ORDER BY ts DESC, id DESC LIMIT 1",
+        (fr_id, "⊕workspace-intake", "decision"),
+    ).fetchone()
+    if not row:
+        return None
+    summary = row["summary"] if hasattr(row, "keys") else row[0]
+    if not isinstance(summary, str) or not summary.startswith("SCOPE_APPROVED:"):
+        return None
+    classification, separator, rationale = summary.partition(":")[2].strip().partition("|")
+    if not separator or not rationale.strip():
+        return None
+    classification = classification.strip().casefold()
+    return classification if classification in {"behavior-changing", "exempt"} else None
+
 def _has_architecture_review_pass(conn, fr_id: str) -> bool:
     """Return True if the FR's event log contains an ARCHITECTURE_REVIEW:PASS
     (or PASS_WITH_UPDATES) event, per the feature-request-flow state machine.
@@ -457,12 +489,45 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         print("[fr_cli] acceptance criteria JSON must be an object", file=sys.stderr)
         sys.exit(2)
 
+    source = getattr(args, "source", "repair")
+    if source not in {"intake", "repair"}:
+        print("[fr_cli] acceptance criteria source must be intake or repair", file=sys.stderr)
+        sys.exit(2)
+    if source == "intake" and not _has_valid_gwt_acceptance_criteria(criteria):
+        print(
+            "[fr_cli] intake acceptance criteria must contain non-empty Given/When/Then scenarios",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     conn = _conn()
-    fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
+    fr = conn.execute(
+        "SELECT id, state, acceptance_criteria FROM feature_requests WHERE id=?",
+        (args.fr_id,),
+    ).fetchone()
     if not fr:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
         conn.close()
         sys.exit(1)
+    if source == "intake" and fr["state"] != "TRIAGED":
+        print("[fr_cli] intake acceptance criteria can only be set after scope triage", file=sys.stderr)
+        conn.close()
+        sys.exit(2)
+    if source == "intake" and fr["acceptance_criteria"] is not None:
+        print("[fr_cli] intake acceptance criteria already exist; use repair source to replace them", file=sys.stderr)
+        conn.close()
+        sys.exit(2)
+    if source == "repair" and fr["acceptance_criteria"] is None:
+        print("[fr_cli] repair source can only replace existing acceptance criteria", file=sys.stderr)
+        conn.close()
+        sys.exit(2)
+    if source == "intake" and _scope_approval_classification(conn, args.fr_id) != "behavior-changing":
+        print(
+            "[fr_cli] intake acceptance criteria require a SCOPE_APPROVED: behavior-changing decision",
+            file=sys.stderr,
+        )
+        conn.close()
+        sys.exit(2)
     now = _now()
     conn.execute(
         "UPDATE feature_requests SET acceptance_criteria=?, updated_at=? WHERE id=?",
@@ -473,9 +538,13 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         (
             args.fr_id,
             now,
-            "⊕workspace-ci",
-            "metadata-repair",
-            "Acceptance criteria repaired through canonical fr_cli.py command",
+            "⊕workspace-intake" if source == "intake" else "⊕workspace-ci",
+            "note" if source == "intake" else "metadata-repair",
+            (
+                "Initial acceptance criteria recorded after scope approval; BRANCHED remains a separate state transition"
+                if source == "intake"
+                else "Acceptance criteria repaired through canonical fr_cli.py command"
+            ),
         ),
     )
     conn.commit()
@@ -537,11 +606,39 @@ def cmd_set_parent_branch(args: argparse.Namespace) -> None:
 
 def cmd_update_state(args: argparse.Namespace) -> None:
     conn = _conn()
-    fr = conn.execute("SELECT id FROM feature_requests WHERE id=?", (args.fr_id,)).fetchone()
+    fr = conn.execute(
+        "SELECT id, state FROM feature_requests WHERE id=?",
+        (args.fr_id,),
+    ).fetchone()
     if not fr:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
         conn.close()
         sys.exit(1)
+    if args.new_state.upper() == "BRANCHED":
+        approval_classification = _scope_approval_classification(conn, args.fr_id)
+        if fr["state"] != "TRIAGED" or approval_classification is None:
+            print(
+                "[fr_cli] BRANCHED requires a TRIAGED FR with a recorded SCOPE_APPROVED decision",
+                file=sys.stderr,
+            )
+            conn.close()
+            sys.exit(2)
+        if approval_classification == "behavior-changing":
+            criteria_row = conn.execute(
+                "SELECT acceptance_criteria FROM feature_requests WHERE id=?",
+                (args.fr_id,),
+            ).fetchone()
+            try:
+                criteria = json.loads(criteria_row["acceptance_criteria"] or "null")
+            except json.JSONDecodeError:
+                criteria = None
+            if not _has_valid_gwt_acceptance_criteria(criteria):
+                print(
+                    "[fr_cli] behavior-changing FRs require valid Given/When/Then scenarios before BRANCHED",
+                    file=sys.stderr,
+                )
+                conn.close()
+                sys.exit(2)
     gated_states = {
         "TYLER_APPROVED", "MERGED", "SOAKING", "SIGNED_OFF",
     }
@@ -836,6 +933,12 @@ def main() -> None:
     )
     p_ac.add_argument("fr_id")
     p_ac.add_argument("criteria_json")
+    p_ac.add_argument(
+        "--source",
+        choices=("intake", "repair"),
+        default="repair",
+        help="intake requires a TRIAGED FR with a SCOPE_APPROVED: behavior-changing decision",
+    )
 
     # set-parent-branch
     p_branch = sub.add_parser(

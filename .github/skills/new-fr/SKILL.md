@@ -15,7 +15,15 @@ context as notes. Ask for a title only when none was supplied.
    existing MCP capabilities and avoid ad hoc queries or scripts.
 2. Infer the feature type, affected projects, motivation, risk, dependencies,
    and out-of-scope boundaries from the request and project context.
-3. Cross-reference open TODOs with the governed manifest-coordination tools:
+3. Before presenting a scope draft, read
+   `.github/instructions/bdd-workflow.instructions.md` and classify whether
+   the request changes observable behavior. For behavior-changing FRs, write
+   explicit Given/When/Then acceptance scenarios and resolve missing context
+   or outcomes before asking Tyler to approve scope. Include the scenarios in
+   the complete FR draft and confirmation block. Pure documentation,
+   housekeeping, and behavior-neutral refactors are exempt; for mixed requests,
+   write scenarios for the behavior-changing parts only.
+4. Cross-reference open TODOs with the governed manifest-coordination tools:
    call `mcp_manifest-coor_list_open_todos(project=<inferred_project>)`, then
    `mcp_manifest-coor_read_todo(todo_id=<candidate_id>)` for relevant matches.
    Surface matches in the Phase B scope card under `Related todos`. Only after
@@ -23,15 +31,30 @@ context as notes. Ask for a title only when none was supplied.
    `mcp_manifest-coor_link_confirmed_todo_to_fr(todo_id=<matched_id>,
    fr_id=<FR-ID>, confirmed=true)`. Skip this silently when there are no
    matches. Never query or update the manifest database with SQL.
-4. Ask only about fields that cannot be inferred. If the request is vague or
+5. Ask only about fields that cannot be inferred. If the request is vague or
    medium/high risk, invoke the `grill-me` skill and ask one question at a
    time, offering a recommended answer for each.
-5. Present a complete FR draft with all fields filled in one confirmation
+6. Present a complete FR draft with all fields filled in one confirmation
    block. Ask: "Does this look right? Confirm, or tell me what to change."
-6. On amendments, update the draft and confirm it again. On confirmation,
+7. On amendments, update the draft and confirm it again. On confirmation,
    proceed to Phase B triage: ledger, registry, and cycle timer.
-7. Register the FR in the database through `fr_cli.py open`. The database is
-   the sole source of truth; do not create a Markdown file in `.github/fr/`.
+8. Register the FR in the database through `fr_cli.py open`, then move it to
+   `TRIAGED` and present the scope card. For a behavior-changing FR, after Tyler
+   approves scope and before moving to `BRANCHED`, persist the approved
+   scenarios unchanged. First record the approval as an intake `decision` event
+   with summary `SCOPE_APPROVED: behavior-changing | <rationale>` or
+   `SCOPE_APPROVED: exempt | <rationale>`. This records the approval received
+   in the intake turn; it is audit evidence, not identity authentication. For
+   behavior-changing FRs, call
+   `fr_cli.py set-acceptance-criteria <FR-ID> <JSON> --source intake` while
+   still `TRIAGED`. The CLI requires the latest intake decision to classify the
+   FR as behavior-changing, no existing criteria, and a non-empty
+   `acceptance_criteria` list of scenarios with non-empty `given`, `when`, and
+   `then` strings. Exempt FRs skip G/W/T persistence. Move to `BRANCHED` only
+   after the approval event and, for behavior-changing FRs, the criteria are
+   persisted. Use the default `repair` source only to correct existing
+   criteria. The database is the sole source of truth; do not create a
+   Markdown file in `.github/fr/`.
 
 ## Blocking Approval Voice
 

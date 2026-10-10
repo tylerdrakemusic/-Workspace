@@ -3,6 +3,7 @@
 graph LR
     subgraph INSTR["Shared Instructions · all agents inherit agent-self-regen"]
         FRFlow["feature-request-flow"]
+        BDDFlow["bdd-workflow"]
         HygBase["hygiene-base"]
         OrcClean["orchestrator-cleanup"]
         DbKeys["db-api-keys"]
@@ -18,6 +19,8 @@ graph LR
 
     %% ── Instruction inheritance (dashed) ──
     FRFlow -.-> Intake & Reviewer & ArchRev & ArchBeaut
+    BDDFlow -.-> Intake & CI & TDDLight & TDDStd & TDDHeavy
+    BDDFlow -.-> QA & QALight & QAHeavy
     HygBase -.-> Hygiene
     OrcClean -.-> LifeOrch & MusicOrch & QuantumOrch & CapitalOrch
     DbKeys -.-> Overseer & GenQEE & LifeOrch & QuantumOrch & ManifestOrch & CapitalOrch
@@ -29,6 +32,6 @@ graph LR
     QuantumBase -.-> QuantumOrch & QuantumResearch
 
     %% ── Class assignments ──
-    class FRFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
+    class FRFlow,BDDFlow,HygBase,OrcClean,DbKeys,PlayPreflight,LifeBase,HealthEval,MusicBase,QuantumBase instr
 
 classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
