@@ -128,6 +128,34 @@ def test_repository_parent_head_resolver_finds_nested_project_worktree(tmp_path:
         assert fr_cli._resolve_repository_parent_head(branch, "ΣCapital") == expected_head
 
 
+def test_repository_parent_head_resolver_skips_prunable_matching_branch(tmp_path: Path) -> None:
+    branch = "feature/FR-20261010-prunable-worktree"
+    project_root = tmp_path / "sigmacapital"
+    stale_path = project_root / ".worktrees" / "stale" / "capital"
+    live_path = project_root / ".worktrees" / "live" / "capital"
+    stale_path.mkdir(parents=True)
+    live_path.mkdir(parents=True)
+    stale_head = "1" * 40
+    live_head = "2" * 40
+    porcelain = "\n\n".join((
+        "\n".join((f"worktree {stale_path}", f"HEAD {stale_head}", f"branch refs/heads/{branch}", "prunable gitdir file points to missing directory")),
+        "\n".join((f"worktree {live_path}", f"HEAD {live_head}", f"branch refs/heads/{branch}")),
+    ))
+    calls: list[tuple[str, ...]] = []
+
+    def list_worktrees(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        calls.append(tuple(command))
+        return subprocess.CompletedProcess(command, 0, stdout=porcelain, stderr="")
+
+    with patch.dict(fr_cli.PROJECT_ROOTS, {"ΣCapital": project_root}), patch.object(
+        fr_cli.subprocess, "run", side_effect=list_worktrees
+    ):
+        resolved = fr_cli._resolve_repository_parent_head(branch, "ΣCapital")
+
+    assert resolved == live_head
+    assert calls == [("git", "-C", str(project_root), "worktree", "list", "--porcelain")]
+
+
 def _make_conn(db_path: Path) -> sqlite3.Connection:
     """File-backed sqlite3 connection with the FR ledger schema (unencrypted, test-only).
 

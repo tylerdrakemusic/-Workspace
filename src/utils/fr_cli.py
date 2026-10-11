@@ -109,6 +109,15 @@ def _resolve_repository_parent_head(parent_branch: str, project: str) -> str:
             if " " in line
             for key, value in (line.split(" ", 1),)
         }
+        worktree_path = fields.get("worktree")
+        if "prunable" in fields or not worktree_path:
+            continue
+        candidate_path = Path(worktree_path)
+        if not candidate_path.is_absolute():
+            candidate_path = project_root / candidate_path
+        if not candidate_path.is_dir():
+            continue
+
         branch_ref = fields.get("branch", "")
         head = fields.get("HEAD", "")
         if (
