@@ -89,57 +89,32 @@ def _resolve_parent_head(parent_branch: str) -> str:
 
 
 def _resolve_repository_parent_head(parent_branch: str, project: str) -> str:
-    """Resolve a project's parent head from trusted roots and worktrees."""
+    """Resolve a project's parent head from its registered Git worktrees."""
     project_root = PROJECT_ROOTS.get(project)
     if project_root is None:
         raise ValueError("unknown parent repository project")
-    candidates: list[Path] = []
-    if project == "⊕Workspace":
-        candidates.append(_REPOSITORY_ROOT)
-        candidates.append(_WORKSPACE_ROOT / "⊕Workspace")
-    else:
-        candidates.append(project_root)
-    worktrees_root = project_root / ".worktrees"
-    if worktrees_root.is_dir():
-        candidates.extend(sorted(path for path in worktrees_root.iterdir() if path.is_dir()))
-    shared_branch_root = _WORKSPACE_ROOT / ".worktrees" / parent_branch.replace("/", "-")
-    if project_root.parent == _WORKSPACE_ROOT.parent and shared_branch_root.is_dir():
-        def git_common_dir(path: Path) -> Path | None:
-            result = subprocess.run(
-                ["git", "-C", str(path), "rev-parse", "--git-common-dir"],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode != 0:
-                return None
-            common_dir = Path(result.stdout.strip())
-            if not common_dir.is_absolute():
-                common_dir = path / common_dir
-            return common_dir.resolve()
+    result = subprocess.run(
+        ["git", "-C", str(project_root), "worktree", "list", "--porcelain"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("unable to list repository worktrees")
 
-        project_common_dir = git_common_dir(project_root)
-        if project_common_dir is not None:
-            for candidate in sorted(path for path in shared_branch_root.iterdir() if path.is_dir()):
-                if git_common_dir(candidate) == project_common_dir:
-                    candidates.append(candidate)
-    for candidate in dict.fromkeys(candidates):
-        branch_result = subprocess.run(
-            ["git", "-C", str(candidate), "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if branch_result.returncode != 0 or branch_result.stdout.strip() != parent_branch:
-            continue
-        head_result = subprocess.run(
-            ["git", "-C", str(candidate), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        head = head_result.stdout.strip()
-        if head_result.returncode == 0 and re.fullmatch(r"[0-9a-fA-F]{40}", head):
+    for record in result.stdout.split("\n\n"):
+        fields = {
+            key: value
+            for line in record.splitlines()
+            if " " in line
+            for key, value in (line.split(" ", 1),)
+        }
+        branch_ref = fields.get("branch", "")
+        head = fields.get("HEAD", "")
+        if (
+            branch_ref == f"refs/heads/{parent_branch}"
+            and re.fullmatch(r"[0-9a-fA-F]{40}", head)
+        ):
             return head
     raise ValueError("checked-out repository branch does not match the FR parent branch")
 
