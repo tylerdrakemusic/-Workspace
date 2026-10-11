@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import sys
 from pathlib import Path
@@ -141,7 +142,12 @@ def test_backup_rejects_source_changed_during_copy_and_cleans_generation(
 
     def copy_then_source_changes(source_path: Path, destination_path: Path) -> None:
         original_copy(source_path, destination_path)
+        before_change = source_path.stat()
         source_path.write_bytes(b"encrypted-db-bytes-after-write")
+        os.utime(
+            source_path,
+            ns=(before_change.st_atime_ns, before_change.st_mtime_ns + 1_000_000_000),
+        )
 
     monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
     monkeypatch.setattr(database_backup_module, "_atomic_copy", copy_then_source_changes)
