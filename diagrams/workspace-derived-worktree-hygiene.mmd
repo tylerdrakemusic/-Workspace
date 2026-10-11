@@ -1,0 +1,43 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-architecture.mmd
+stateDiagram-v2
+    direction LR
+    [*] --> GitMetadataPrune
+    GitMetadataPrune: git worktree prune --verbose
+    GitMetadataPrune --> EnumerateCandidates: metadata prune complete
+    EnumerateCandidates: enumerate candidates except HEAD
+    EnumerateCandidates --> RegistryCheck: check each repository relative candidate
+    EnumerateCandidates --> [*]: no candidates
+    RegistryCheck: worktree_protection.py check
+    RegistryCheck --> FailClosed: nonzero, unparseable, missing, malformed, unreadable, aliased, or invalid registry
+    RegistryCheck --> CandidateIdentity: valid v1 registry at ignored .worktrees/worktree-protection.json
+    CandidateIdentity: resolve paths inside repository .worktrees and compare canonical identities
+    CandidateIdentity --> FailClosed: path escape or duplicate canonical identity
+    CandidateIdentity --> ProtectionDecision
+    ProtectionDecision --> ProtectedSkip: canonical identity is protected
+    ProtectedSkip: skip removal and report owner, purpose, review metadata
+    ProtectedSkip --> NextCandidate
+    ProtectionDecision --> EligibilityCheck: unprotected only
+    EligibilityCheck --> KeepCandidate: dirty, unmerged to main, or last commit within 7 days
+    EligibilityCheck --> FinalRecheck: clean, merged to main, last commit older than 7 days
+    FinalRecheck: rerun registry check immediately before removal
+    FinalRecheck --> FailClosed: error or status is not unprotected
+    FinalRecheck --> RemoveCandidate: status remains unprotected
+    RemoveCandidate: remove candidate worktree directory
+    RemoveCandidate --> NextCandidate
+    KeepCandidate --> NextCandidate
+    NextCandidate --> RegistryCheck: another candidate
+    NextCandidate --> [*]: no more candidates
+    FailClosed: stop removals for this repository and flag the issue
+    FailClosed --> [*]
+    note right of GitMetadataPrune
+        Git metadata only. This does not remove candidate directories
+        or replace the separate registry removal gate.
+    end note
+
+    class GitMetadataPrune,EnumerateCandidates,RegistryCheck,CandidateIdentity,ProtectionDecision,EligibilityCheck,FinalRecheck,RemoveCandidate ws
+    class ProtectedSkip,KeepCandidate,FailClosed state
+
+classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef state fill:#1a1a1a,stroke:#888888,color:#cccccc
