@@ -66,11 +66,34 @@ if ($remaining) {
 
 $projectRoot = $ProjectRoot
 $projectRoot = [IO.Path]::GetFullPath($projectRoot).TrimEnd('\')
-Set-Location -LiteralPath $projectRoot
-$env:PYTHONUTF8        = "1"
-$env:PYTHONIOENCODING  = "utf-8"
-$env:PYTHONPATH        = Join-Path $projectRoot "src"
-$env:TRADE_GATE_PORT = [string]$Port
-$env:TRADE_GATE_PROCESS_OWNER = "trade-gate-launcher"
-$env:TRADE_GATE_SOURCE_ENTRYPOINT = "src/utils/trade_gate.py"
-& "C:\G\python.exe" $sourceEntrypoint
+
+$workerEnvironmentNames = @(
+	"SIGMACAPITAL_WORKER_DEPLOYMENT_ROOT",
+	"SIGMACAPITAL_WORKER_STATUS_PATH",
+	"SIGMACAPITAL_WORKER_RESTART_ENABLED"
+)
+$previousWorkerEnvironment = @{}
+foreach ($name in $workerEnvironmentNames) {
+	$previousWorkerEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
+}
+
+try {
+	if ([IO.Path]::GetFileName($projectRoot).Equals((([char]0x03A3).ToString() + "Capital"), [StringComparison]::OrdinalIgnoreCase)) {
+		$env:SIGMACAPITAL_WORKER_DEPLOYMENT_ROOT = Join-Path $projectRoot ".worktrees\SigmaCapitalIntentWorker"
+		$env:SIGMACAPITAL_WORKER_STATUS_PATH = Join-Path (Join-Path $env:ProgramData "SigmaCapital") "worker-status.json"
+		$env:SIGMACAPITAL_WORKER_RESTART_ENABLED = "1"
+	}
+	Set-Location -LiteralPath $projectRoot
+	$env:PYTHONUTF8        = "1"
+	$env:PYTHONIOENCODING  = "utf-8"
+	$env:PYTHONPATH        = Join-Path $projectRoot "src"
+	$env:TRADE_GATE_PORT = [string]$Port
+	$env:TRADE_GATE_PROCESS_OWNER = "trade-gate-launcher"
+	$env:TRADE_GATE_SOURCE_ENTRYPOINT = "src/utils/trade_gate.py"
+	& "C:\G\python.exe" $sourceEntrypoint
+}
+finally {
+	foreach ($name in $workerEnvironmentNames) {
+		[Environment]::SetEnvironmentVariable($name, $previousWorkerEnvironment[$name], "Process")
+	}
+}
