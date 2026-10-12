@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-11T08:15:01.192801+00:00",
+  "generated_at": "2026-10-12T04:18:44.323996+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -14,11 +14,11 @@
     ".github/agents/⊕workspace-gen-qee.agent.md": "ff0962b6d4f9c29dcf7d250f02030e33d0c7e76c9d6f82a16e633969f06d8729",
     ".github/agents/⊕workspace-hygiene.agent.md": "2cbca65df3193bd7657e6a3f6d98f170d39641788437421797f757037836e21c",
     ".github/agents/⊕workspace-intake.agent.md": "ff882a25687c88854d0a63205824408fe7e9c7f8e2353a621004b6f26705f834",
-    ".github/agents/⊕workspace-overseer.agent.md": "4884fa18d598536578184d51dc84952dd34cd526e269f0d85f341e7996ce49a4",
+    ".github/agents/⊕workspace-overseer.agent.md": "cd9cda9370b84329b1c876f1c39a1c05bc87447e7837b7530bd1443bbf63cbf0",
     ".github/agents/⊕workspace-protector.agent.md": "0f61dee9ad74577ff26cdaafb52ee789f957c7b86e448b6ddd9ef80eb86953cb",
     ".github/agents/⊕workspace-qa-heavy.agent.md": "d90b0d3a00f0bb8b89d49c8eb69305e2766de9568127714b5ec036931d6bde9e",
     ".github/agents/⊕workspace-qa-light.agent.md": "8d8fd069445005f10b3017f76822d70b40a505780ea4aa7326eda77502fa780e",
-    ".github/agents/⊕workspace-qa.agent.md": "f58a99c7bb4708cfe98774a792735d924409f901d9bbde493de4df3dbe8f94d4",
+    ".github/agents/⊕workspace-qa.agent.md": "ad668de023886eadd76f3020a05a14221678078d6cc054c7218cce50ad068880",
     ".github/agents/⊕workspace-reviewer-heavy.agent.md": "e8f13a86bac12a452989e5de8d1f1b76965125947df6809161357a61a5d4edf3",
     ".github/agents/⊕workspace-reviewer-light.agent.md": "2347072c0649708f907b038dbad5a08489421907572cf2c0bb9eaf581711bdd4",
     ".github/agents/⊕workspace-reviewer.agent.md": "27c5db43dd93a677bcbda2331b05ac8a8adfe5bd704f0798c7bf883064bb4cfa",

@@ -153,20 +153,36 @@ def _create_or_update_scan_todo(issue_summary: str, fr_id: str | None = None) ->
                     ),
                 )
                 return int(row["id"])
-            cur = conn.execute(
-                "INSERT INTO todos (project, source, text, done, created_at, priority, autonomy_level, rationale, fr_id) VALUES (?,?,?,?,?,?,?,?,?)",
-                (
-                    SCAN_TODO_PROJECT,
-                    SCAN_TODO_SOURCE,
-                    SCAN_TODO_TEXT,
-                    0,
-                    now,
-                    SCAN_TODO_PRIORITY,
-                    SCAN_TODO_AUTONOMY,
-                    issue_summary,
-                    fr_id,
-                ),
-            )
+            try:
+                cur = conn.execute(
+                    "INSERT INTO todos (project, source, text, done, created_at, priority, autonomy_level, rationale, fr_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                    (
+                        SCAN_TODO_PROJECT,
+                        SCAN_TODO_SOURCE,
+                        SCAN_TODO_TEXT,
+                        0,
+                        now,
+                        SCAN_TODO_PRIORITY,
+                        SCAN_TODO_AUTONOMY,
+                        issue_summary,
+                        fr_id,
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                if (
+                    getattr(error, "sqlite_errorcode", None)
+                    != sqlite3.SQLITE_CONSTRAINT_UNIQUE
+                    or str(error)
+                    != "UNIQUE constraint failed: todos.project, todos.source, todos.text"
+                ):
+                    raise
+                completed_row = conn.execute(
+                    "SELECT id FROM todos WHERE done=1 AND project=? AND source=? AND text=?",
+                    (SCAN_TODO_PROJECT, SCAN_TODO_SOURCE, SCAN_TODO_TEXT),
+                ).fetchone()
+                if completed_row is None:
+                    raise
+                return int(completed_row["id"])
             return int(cur.lastrowid)
     except sqlite3.OperationalError:
         return None

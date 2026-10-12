@@ -84,6 +84,22 @@ class _TodoLifecyclePolicy:
     takeover_enabled: bool
 
 
+class FrCliExecutionError(RuntimeError):
+    """Base error for failures while running a canonical FR CLI operation."""
+
+
+class FrCliSetupError(FrCliExecutionError):
+    """The FR CLI subprocess could not be started."""
+
+
+class FrCliTimeoutError(FrCliExecutionError):
+    """The FR CLI subprocess exceeded its execution deadline."""
+
+
+class FrCliOperationError(FrCliExecutionError):
+    """The FR CLI started but exited with an operation failure."""
+
+
 def _load_todo_policy() -> _TodoLifecyclePolicy:
     policy = json.loads(_TODO_POLICY_PATH.read_text(encoding="utf-8"))
     required = {
@@ -151,14 +167,26 @@ def _run_fr_cli(operation: str, payload: dict[str, Any]) -> str:
         ]
     if operation == "fr.record_artifact" and payload.get("path"):
         args.extend(["--path", payload["path"]])
-    result = subprocess.run(  # nosec B603 — executable and arguments are fixed above
-        [sys.executable, str(FR_CLI_PATH), *args],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        check=True,
-        timeout=10,
-    )
+    try:
+        result = subprocess.run(  # nosec B603 — executable and arguments are fixed above
+            [sys.executable, str(FR_CLI_PATH), *args],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8",
+            check=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise FrCliTimeoutError(
+            f"FR CLI operation {operation!r} exceeded its deadline"
+        ) from error
+    except subprocess.CalledProcessError as error:
+        raise FrCliOperationError(
+            f"FR CLI operation {operation!r} exited with status {error.returncode}"
+        ) from error
+    except OSError as error:
+        raise FrCliSetupError("could not start the FR CLI subprocess") from error
     return result.stdout.strip()
 
 
