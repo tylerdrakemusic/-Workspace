@@ -1,9 +1,12 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
-%% is_derived_view=false
-%% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd, diagrams/workspace-derived-gmail-attachments.mmd
-%% Traceability.derived_views: diagrams/workspace-derived-services.mmd, diagrams/workspace-derived-backup-and-coordination.mmd, diagrams/workspace-derived-repository-voice.mmd
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-architecture.mmd
+%% Traceability.derived_views: diagrams/workspace-derived-repository-voice.mmd, diagrams/workspace-derived-gmail-attachments.mmd
 graph LR
-    Workspace[⊕ Workspace] --> GitHub[GitHub]
+    Workspace[⊕ Workspace<br/>.github/workflows/test.yml CI consumer] -->|pull_request: look up matching AI-Manifest head branch| GitHub[GitHub]
+    GitHub -->|matching producer PR branch resolves to immutable head SHA| Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
+    Manifest -->|fetch exact SHA, detached checkout, verify HEAD equals SHA| Workspace
+    GitHub -.->|missing producer branch: setup failure, no main fallback for PR| Workspace
     Workspace --> Mermaid[mermaid renderer<br/>repository-local manifests -> generated aggregate registry]
     Workspace --> Life[∞ Life]
     Workspace --> Music[❤ Music]
@@ -47,10 +50,12 @@ graph LR
     AggregateHandoff ==> QuantumValidator[⟨ψ⟩ Quantum real-data contract validator]
     QuantumValidator --> SufficiencyGate{Sufficiency gate}
     SufficiencyGate --> ExecutionDenied[Real-data execution denied]
-    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection,CapitalSerpApiReadiness,WorkspaceCoord ws
-    class Life,Music,Quantum,Manifest,Capital orch
-    class ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult orch
-    class AggregateHandoff,SufficiencyGate,ExecutionDenied,BrowserBoundary,SerpApiSmoke,CapitalDiscoveryDocs state
+    class Workspace,GmailAttachments,BoundedLogging,OverseerAlert,AIHealthWidget,AIHealthContract,ElevenLabsAdapter,DashboardPortal,BackupHealthEndpoint,BackupHealthInputs,BackupHealthProjection,WorkspaceCoord ws
+    class Life life
+    class Music music
+    class Quantum quantum
+    class Manifest,ManifestAlertCapability,ManifestBriefPortal,LocalPlayback,PlayAudioMCP,DirectPlayback,PlaybackResult manifest
+    class AggregateHandoff,SufficiencyGate,ExecutionDenied,BrowserBoundary,SerpApiSmoke state
     class GitHub,Mermaid,ElevenLabs,SerpApiGoogleFinance ext
     class WSDB,LifeDB,MusicDB,QDB,ManifestDB,CapitalDB,TTSQueue db
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
@@ -59,7 +64,6 @@ classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
-classDef orch     fill:#1a3a52,stroke:#4a9eff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc

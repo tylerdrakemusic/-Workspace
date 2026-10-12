@@ -40,13 +40,25 @@ graph LR
         MatchDecision -->|yes| Block
         MatchDecision -->|no| Allow
     end
+    subgraph PrewriteIntegrity["⊕ Pre-write integrity verification"]
+        PrewriteGate[⊕workspace-overseer invokes<br/>prewrite_security_gate.py]
+        ManifestVerifier[/update_manifest.py --verify/]
+        IntegrityBlock[Block write<br/>confirmed mismatch or source drift]
+        IntegrityWarnAllow[Warning, allow write<br/>operationally incomplete]
+        IntegrityAllow[Verification passed<br/>allow write]
+        PrewriteGate --> ManifestVerifier
+        ManifestVerifier -->|completed with mismatch or source drift| IntegrityBlock
+        ManifestVerifier -->|start failure, timeout, or incomplete result| IntegrityWarnAllow
+        ManifestVerifier -->|exit 0 with completion marker| IntegrityAllow
+    end
     Limitation[CurrentUser discourages casual inspection on this account and machine<br/>does not isolate same-user agents or prevent bypass]
     Protect -.-> Limitation
     Unprotect -.-> Limitation
 
     class Caller,MaintenanceCLI,RuntimeCLI,Command ws
+    class PrewriteGate,ManifestVerifier ws
     class Plaintext ext
-    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation state
+    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation,IntegrityBlock,IntegrityWarnAllow,IntegrityAllow state
     class Ciphertext db
     class Memory,Regex,Block,Allow,Warning ws
 
