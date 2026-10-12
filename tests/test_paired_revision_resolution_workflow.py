@@ -138,7 +138,7 @@ def test_checkout_uses_read_only_permissions_without_persisting_credentials() ->
     assert "persist-credentials: false" in checkout_step
 
 
-def test_peer_contract_requires_pr_branch_and_keeps_non_pr_main_revision() -> None:
+def test_peer_contract_selects_pr_head_or_unpaired_main() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
     assert "tylerdrakemusic/AI-Manifest" in workflow
@@ -147,8 +147,8 @@ def test_peer_contract_requires_pr_branch_and_keeps_non_pr_main_revision() -> No
     assert '"${GITHUB_HEAD_REF:-}"' in workflow
     assert '"refs/heads/${GITHUB_HEAD_REF}"' in workflow
     assert "refs/heads/main" in workflow
-    assert "No matching producer branch for PR head" in workflow
-    assert "main (fallback: no matching peer branch" not in workflow
+    assert 'summary_ref="main (unpaired consumer PR)"' in workflow
+    assert "using peer main because this PR is unpaired" in workflow
 
 
 def test_peer_setup_retries_fail_before_test_behavior_steps() -> None:
@@ -263,7 +263,7 @@ def test_pr_setup_fetches_exact_branch_sha_and_reports_provenance(tmp_path: Path
     assert behavior_ran
 
 
-def test_missing_pr_branch_fails_setup_without_default_branch_fallback(tmp_path: Path) -> None:
+def test_missing_pr_branch_uses_main_for_unpaired_consumer(tmp_path: Path) -> None:
     branch = "feature/peer-branch-absent"
     result, calls, summary, behavior_ran = _run_peer_setup(
         tmp_path,
@@ -272,15 +272,13 @@ def test_missing_pr_branch_fails_setup_without_default_branch_fallback(tmp_path:
         pr_found=False,
     )
 
-    assert result.returncode != 0
-    assert result.stderr.strip().endswith(
-        f"No matching producer branch for PR head: {branch}"
-    )
+    assert result.returncode == 0, result.stderr
     assert f"ls-remote https://github.com/{PEER_REPOSITORY}.git refs/heads/{branch}" in calls
-    assert not any(call.endswith("refs/heads/main") for call in calls)
-    assert not any(" fetch " in f" {call} " for call in calls)
-    assert not summary
-    assert not behavior_ran
+    assert f"ls-remote https://github.com/{PEER_REPOSITORY}.git refs/heads/main" in calls
+    assert any("fetch --depth=1" in call and call.endswith(MAIN_SHA) for call in calls)
+    assert "Selected ref: main (unpaired consumer PR)" in summary
+    assert f"Checked-out SHA: {MAIN_SHA}" in summary
+    assert behavior_ran
 
 
 def test_non_pr_setup_uses_main_and_reports_provenance(tmp_path: Path) -> None:

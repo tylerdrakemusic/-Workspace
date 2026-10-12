@@ -44,8 +44,8 @@ jobs:
                   summary_ref="$GITHUB_HEAD_REF"
                   peer_sha="${lookup_result%%$'\t'*}"
                 else
-                  echo "No matching producer branch for PR head: ${GITHUB_HEAD_REF}" >&2
-                  exit 1
+                  summary_ref="main (unpaired consumer PR)"
+                  echo "No matching producer branch for PR head: ${GITHUB_HEAD_REF}; using peer main because this PR is unpaired." >&2
                 fi
                 break
               fi

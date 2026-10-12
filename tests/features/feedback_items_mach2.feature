@@ -4,10 +4,10 @@ Feature: Cross-project CI uses the producer pull request revision
     When consumer CI resolves the producer peer revision
     Then it checks out the exact producer head before behavior tests
 
-  Scenario: Missing producer head fails setup without default branch fallback
-    Given the producer pull request branch is missing
+  Scenario: Missing producer branch is treated as an unpaired consumer PR
+    Given the consumer pull request has no matching producer branch
     When consumer CI resolves a missing producer branch
-    Then setup fails without checking out the producer default branch or running behavior tests
+    Then it uses peer main for the unpaired consumer PR
 
   Scenario: Concurrent QA proof writes remain serialized and readable
     Given an isolated QA run needs to record two proof artifacts

@@ -6,7 +6,7 @@ graph LR
     Workspace[⊕ Workspace<br/>.github/workflows/test.yml CI consumer] -->|pull_request: look up matching AI-Manifest head branch| GitHub[GitHub]
     GitHub -->|matching producer PR branch resolves to immutable head SHA| Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
     Manifest -->|fetch exact SHA, detached checkout, verify HEAD equals SHA| Workspace
-    GitHub -.->|missing producer branch: setup failure, no main fallback for PR| Workspace
+    GitHub -.->|no matching branch: unpaired PR, resolve peer main SHA; lookup errors fail setup| Manifest
     Workspace --> Mermaid[mermaid renderer<br/>repository-local manifests -> generated aggregate registry]
     Workspace --> Life[∞ Life]
     Workspace --> Music[❤ Music]

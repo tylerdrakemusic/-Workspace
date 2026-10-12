@@ -15,6 +15,7 @@ from tests.test_coordination_mcp_server import _run_fr_cli_child_with_open_serve
 from tests.test_paired_revision_resolution_workflow import (
     PEER_REPOSITORY,
     PR_SHA,
+    MAIN_SHA,
     _run_peer_setup,
 )
 from tests.test_agent_frontmatter_integrity import _prepare_scan_workspace, afi
@@ -64,7 +65,7 @@ def producer_peer_head_is_checked_out(
 
 
 @given(
-    "the producer pull request branch is missing",
+    "the consumer pull request has no matching producer branch",
     target_fixture="missing_producer_branch",
 )
 def missing_producer_branch() -> str:
@@ -87,21 +88,20 @@ def resolve_missing_producer_branch(
     )
 
 
-@then(
-    "setup fails without checking out the producer default branch or running behavior tests"
-)
-def missing_producer_branch_fails_before_behavior(
+@then("it uses peer main for the unpaired consumer PR")
+def missing_producer_branch_uses_unpaired_baseline(
     missing_producer_setup: tuple[subprocess.CompletedProcess[str], list[str], str, bool],
     missing_producer_branch: str,
 ) -> None:
     result, calls, summary, behavior_ran = missing_producer_setup
 
-    assert result.returncode != 0
-    assert f"No matching producer branch for PR head: {missing_producer_branch}" in result.stderr
-    assert not any(call.endswith("refs/heads/main") for call in calls)
-    assert not any(" fetch " in f" {call} " for call in calls)
-    assert not summary
-    assert not behavior_ran
+    assert result.returncode == 0, result.stderr
+    assert any(f"refs/heads/{missing_producer_branch}" in call for call in calls)
+    assert any(call.endswith("refs/heads/main") for call in calls)
+    assert f"-C ai-manifest-contract fetch --depth=1 https://github.com/{PEER_REPOSITORY}.git {MAIN_SHA}" in calls
+    assert "Selected ref: main (unpaired consumer PR)" in summary
+    assert f"Checked-out SHA: {MAIN_SHA}" in summary
+    assert behavior_ran
 
 
 @given("an isolated QA run needs to record two proof artifacts", target_fixture="qa_proof_run")
