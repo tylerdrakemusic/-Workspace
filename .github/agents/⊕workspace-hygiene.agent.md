@@ -68,8 +68,13 @@ Select-String -Path "<project>\tmp\*" -Pattern "SetEnvironmentVariable|PRAGMA ke
 ## Phase 1c — Stale Worktree Cleanup
 Worktrees live at `f:\⊕Workspace\.worktrees/{branch-slug}/`. Run:
 1. `cd f:\⊕Workspace && git worktree prune --verbose`
-2. For each worktree besides HEAD: check branch merged into `main` AND last commit >7d
-3. Auto-remove if both true; flag (don't remove) if unmerged + >30d old; never remove if uncommitted changes
+2. Enumerate every candidate worktree besides HEAD. Before considering any removal, run the registry check for every candidate:
+	`C:\G\python.exe f:\⊕Workspace\tools\worktree_protection.py --repo-root "<repo-root>" check "<candidate-repo-relative-path>"`
+	Candidate paths must be repository-relative, such as `.worktrees/{branch-slug}`.
+3. If any check exits nonzero, cannot be parsed as JSON, or reports `invalid_registry`, stop all worktree removals for that repository and flag the registry issue. This includes missing, malformed, or unsafe registries. Do not treat an invalid registry as an empty registry.
+4. For each valid result, skip candidates reported `protected` and include their owner, purpose, and review metadata in the report. Continue cleanup checks only for candidates reported `unprotected`: branch merged into `main` AND last commit >7d. Immediately before a planned removal, check that candidate again; remove only if it still reports `unprotected`. If that check fails or reports any other status, stop further removals for that repository and flag it. Never remove worktrees with uncommitted changes.
+
+The checker reads only the registry and candidate path metadata; it never reads worktree contents or moves/removes anything. `git worktree prune --verbose` above remains a Git metadata-only prune and is not a substitute for this removal gate.
 
 ## Phase 2 — Agent Infrastructure Hygiene
 

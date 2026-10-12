@@ -62,9 +62,8 @@ def test_repository_parent_head_resolver_reads_only_sigma_git_metadata(tmp_path:
         resolved_head = fr_cli._resolve_repository_parent_head(branch, "ΣCapital")
 
     assert resolved_head == expected_head
-    assert all(command[0] == "git" and command[3] in {"branch", "rev-parse"} for command in calls)
-    assert all(Path(command[2]).is_relative_to(project_root) for command in calls)
-    assert all("data" not in command[2].lower() and "secret" not in command[2].lower() for command in calls)
+    assert calls == [("git", "-C", str(project_root), "worktree", "list", "--porcelain")]
+    assert "data" not in calls[0][2].lower() and "secret" not in calls[0][2].lower()
 
 
 def test_repository_parent_head_resolver_finds_shared_workspace_worktree(tmp_path: Path) -> None:
@@ -98,6 +97,63 @@ def test_repository_parent_head_resolver_finds_shared_workspace_worktree(tmp_pat
         fr_cli, "_WORKSPACE_ROOT", workspace_root
     ):
         assert fr_cli._resolve_repository_parent_head(branch, "∞Life") == expected_head
+
+
+def test_repository_parent_head_resolver_finds_nested_project_worktree(tmp_path: Path) -> None:
+    branch = "feature/FR-20261010-nested-capital-worktree"
+    project_root = tmp_path / "sigmacapital"
+    nested_worktree = project_root / ".worktrees" / "FR-20261010" / "capital"
+    project_root.mkdir()
+    subprocess.run(["git", "-C", str(project_root), "init", "--quiet"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "config", "user.email", "test@example.com"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "config", "user.name", "Test User"], check=True)
+    (project_root / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(project_root), "add", "README.md"], check=True)
+    subprocess.run(["git", "-C", str(project_root), "commit", "--quiet", "-m", "fixture"], check=True)
+    nested_worktree.parent.mkdir(parents=True)
+    subprocess.run(
+        ["git", "-C", str(project_root), "worktree", "add", "-b", branch, str(nested_worktree)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    expected_head = subprocess.run(
+        ["git", "-C", str(nested_worktree), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    with patch.dict(fr_cli.PROJECT_ROOTS, {"ΣCapital": project_root}):
+        assert fr_cli._resolve_repository_parent_head(branch, "ΣCapital") == expected_head
+
+
+def test_repository_parent_head_resolver_skips_prunable_matching_branch(tmp_path: Path) -> None:
+    branch = "feature/FR-20261010-prunable-worktree"
+    project_root = tmp_path / "sigmacapital"
+    stale_path = project_root / ".worktrees" / "stale" / "capital"
+    live_path = project_root / ".worktrees" / "live" / "capital"
+    stale_path.mkdir(parents=True)
+    live_path.mkdir(parents=True)
+    stale_head = "1" * 40
+    live_head = "2" * 40
+    porcelain = "\n\n".join((
+        "\n".join((f"worktree {stale_path}", f"HEAD {stale_head}", f"branch refs/heads/{branch}", "prunable gitdir file points to missing directory")),
+        "\n".join((f"worktree {live_path}", f"HEAD {live_head}", f"branch refs/heads/{branch}")),
+    ))
+    calls: list[tuple[str, ...]] = []
+
+    def list_worktrees(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        calls.append(tuple(command))
+        return subprocess.CompletedProcess(command, 0, stdout=porcelain, stderr="")
+
+    with patch.dict(fr_cli.PROJECT_ROOTS, {"ΣCapital": project_root}), patch.object(
+        fr_cli.subprocess, "run", side_effect=list_worktrees
+    ):
+        resolved = fr_cli._resolve_repository_parent_head(branch, "ΣCapital")
+
+    assert resolved == live_head
+    assert calls == [("git", "-C", str(project_root), "worktree", "list", "--porcelain")]
 
 
 def _make_conn(db_path: Path) -> sqlite3.Connection:

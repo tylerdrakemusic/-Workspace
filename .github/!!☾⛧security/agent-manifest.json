@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T15:55:55.413500+00:00",
+  "generated_at": "2026-10-11T08:15:01.192801+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -12,7 +12,7 @@
     ".github/agents/⊕workspace-discovery.agent.md": "3cb3083c2fa53f6cdc3ab220354ea55cb6b754b2bc97027fb62e2ae7643c03df",
     ".github/agents/⊕workspace-doer.agent.md": "c4a2c25c25c7164e7fa4d0bda3b90fc694d318a1aba3cb908703c151ce459110",
     ".github/agents/⊕workspace-gen-qee.agent.md": "ff0962b6d4f9c29dcf7d250f02030e33d0c7e76c9d6f82a16e633969f06d8729",
-    ".github/agents/⊕workspace-hygiene.agent.md": "94dd76eceb7a0d00a1141999138779311bcb37afd0819d0b0f74b2fae13127ef",
+    ".github/agents/⊕workspace-hygiene.agent.md": "2cbca65df3193bd7657e6a3f6d98f170d39641788437421797f757037836e21c",
     ".github/agents/⊕workspace-intake.agent.md": "ff882a25687c88854d0a63205824408fe7e9c7f8e2353a621004b6f26705f834",
     ".github/agents/⊕workspace-overseer.agent.md": "4884fa18d598536578184d51dc84952dd34cd526e269f0d85f341e7996ce49a4",
     ".github/agents/⊕workspace-protector.agent.md": "0f61dee9ad74577ff26cdaafb52ee789f957c7b86e448b6ddd9ef80eb86953cb",

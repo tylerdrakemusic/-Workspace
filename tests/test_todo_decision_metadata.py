@@ -24,7 +24,14 @@ def _peer_contract_path() -> Path:
         return Path(configured_path)
 
     repo_root = Path(__file__).parents[1]
-    return repo_root.parents[2] / "👁AI-Manifest" / ".worktrees" / repo_root.name / "src" / "contracts" / "todo_decision_metadata.v1.json"
+    workspace_root = next(
+        (ancestor for ancestor in (repo_root, *repo_root.parents) if ancestor.name == "⊕Workspace"),
+        None,
+    )
+    if workspace_root is None:
+        raise RuntimeError(f"Could not find an ancestor named '⊕Workspace' from {repo_root}")
+
+    return workspace_root.parent / "👁AI-Manifest" / "src" / "contracts" / "todo_decision_metadata.v1.json"
 
 
 def test_workspace_validator_is_derived_from_versioned_contract() -> None:

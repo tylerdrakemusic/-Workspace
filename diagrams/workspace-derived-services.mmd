@@ -12,7 +12,7 @@ graph LR
     end
     subgraph Lifecycle["Configured service lifecycle"]
         Reclaim[fail-closed configured-port reclamation<br/>inspect · terminate · verify absent]
-        Launch[exact configured command<br/>shell=false]
+        Launch[tools/start_trade_gate.ps1<br/>exact configured command · shell=false<br/>worker deployment only · process-scoped settings<br/>deployment root and status path supplied by runtime configuration<br/>restart opt-in supplied by process configuration<br/>finally restores prior caller Process values]
         Readiness[HTTP readiness<br/>30-second attempt deadline]
         ManualRetry[manual per-service retry<br/>active generation · overlap returns 409]
     end
