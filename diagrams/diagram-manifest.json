@@ -59,7 +59,8 @@
       "lineage": {
         "parent": "diagrams/workspace-architecture.mmd",
         "derived_views": [
-          "diagrams/workspace-derived-decision-metadata-implementation.mmd"
+          "diagrams/workspace-derived-decision-metadata-implementation.mmd",
+          "diagrams/workspace-derived-proof-write-concurrency.mmd"
         ]
       }
     },
@@ -116,6 +117,17 @@
     },
     {
       "path": "diagrams/workspace-derived-decision-metadata-implementation.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-architecture-detail.mmd",
+        "derived_views": []
+      }
+    },
+    {
+      "path": "diagrams/workspace-derived-proof-write-concurrency.mmd",
       "kind": "architecture-detail",
       "renderer_risk": "low",
       "fallback_risk": "low-medium",

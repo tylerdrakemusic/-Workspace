@@ -138,7 +138,7 @@ def test_checkout_uses_read_only_permissions_without_persisting_credentials() ->
     assert "persist-credentials: false" in checkout_step
 
 
-def test_peer_contract_selects_pr_branch_or_explicit_main_fallback() -> None:
+def test_peer_contract_selects_pr_head_or_unpaired_main() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
     assert "tylerdrakemusic/AI-Manifest" in workflow
@@ -147,7 +147,8 @@ def test_peer_contract_selects_pr_branch_or_explicit_main_fallback() -> None:
     assert '"${GITHUB_HEAD_REF:-}"' in workflow
     assert '"refs/heads/${GITHUB_HEAD_REF}"' in workflow
     assert "refs/heads/main" in workflow
-    assert "main (fallback: no matching peer branch" in workflow
+    assert 'summary_ref="main (unpaired consumer PR)"' in workflow
+    assert "using peer main because this PR is unpaired" in workflow
 
 
 def test_peer_setup_retries_fail_before_test_behavior_steps() -> None:
@@ -262,7 +263,7 @@ def test_pr_setup_fetches_exact_branch_sha_and_reports_provenance(tmp_path: Path
     assert behavior_ran
 
 
-def test_missing_pr_branch_uses_main_and_reports_fallback(tmp_path: Path) -> None:
+def test_missing_pr_branch_uses_main_for_unpaired_consumer(tmp_path: Path) -> None:
     branch = "feature/peer-branch-absent"
     result, calls, summary, behavior_ran = _run_peer_setup(
         tmp_path,
@@ -274,11 +275,8 @@ def test_missing_pr_branch_uses_main_and_reports_fallback(tmp_path: Path) -> Non
     assert result.returncode == 0, result.stderr
     assert f"ls-remote https://github.com/{PEER_REPOSITORY}.git refs/heads/{branch}" in calls
     assert f"ls-remote https://github.com/{PEER_REPOSITORY}.git refs/heads/main" in calls
-    assert (
-        f"-C ai-manifest-contract fetch --depth=1 "
-        f"https://github.com/{PEER_REPOSITORY}.git {MAIN_SHA}"
-    ) in calls
-    assert f"Selected ref: main (fallback: no matching peer branch for {branch})" in summary
+    assert any("fetch --depth=1" in call and call.endswith(MAIN_SHA) for call in calls)
+    assert "Selected ref: main (unpaired consumer PR)" in summary
     assert f"Checked-out SHA: {MAIN_SHA}" in summary
     assert behavior_ran
 

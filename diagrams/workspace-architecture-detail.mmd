@@ -1,6 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
-%% is_derived_view=false
-%% Traceability.derived_views: diagrams/workspace-derived-decision-metadata-implementation.mmd
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-architecture.mmd
+%% Traceability.derived_views: diagrams/workspace-derived-decision-metadata-implementation.mmd, diagrams/workspace-derived-proof-write-concurrency.mmd
 graph TB
     subgraph Workspace["⊕ Workspace Feature Request Board boundary"]
         FRDashboard[tools/fr_dashboard.py<br/>Feature Request Board + cycle-time chart<br/>parse_ledger + collect_all; active/archive grouping]

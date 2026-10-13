@@ -44,7 +44,7 @@ C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-event <FR-ID> "⊕wor
 
 ## Execution
 
-Run each test step. Record each result immediately via `proof_cli.py`.
+Run each test step. Record each result immediately via `proof_cli.py`. Wait for each `proof_cli.py record` process to finish before starting the next; never launch proof writes concurrently. The CLI serializes writers across processes before opening SQLCipher.
 
 ### DB Query
 ```powershell

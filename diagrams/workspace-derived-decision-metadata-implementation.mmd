@@ -41,7 +41,10 @@ graph TB
     end
     TodoRuntime --> TodoPolicy
     TodoRuntime -->|coordinates| Coordination
-    TodoRuntime --> FRCLI
+    Coordination -->|fixed argv, stdin=DEVNULL, timeout=10s| FRCLI
+    Coordination -.->|setup failure: FrCliSetupError| TodoRuntime
+    Coordination -.->|timeout: FrCliTimeoutError| TodoRuntime
+    Coordination -.->|operation failure: FrCliOperationError| TodoRuntime
     TodoRuntime -->|decision assessment input| DecisionBoundary
     DecisionBoundary --> DecisionCurrent
     DecisionBoundary ==> DecisionHistory
@@ -76,7 +79,7 @@ graph TB
     class Life life
     class Music music
     class Quantum quantum
-    class Capital ws
+
     class QA,Architecture state
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

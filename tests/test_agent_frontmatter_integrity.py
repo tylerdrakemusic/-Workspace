@@ -27,11 +27,47 @@ def _init_manifest_db(path: Path) -> None:
                priority INTEGER NOT NULL DEFAULT 5,
                autonomy_level TEXT NOT NULL DEFAULT 'supervised',
                rationale TEXT,
-               fr_id TEXT
+               fr_id TEXT,
+               UNIQUE (project, source, text)
            )"""
     )
     conn.commit()
     conn.close()
+
+
+def _prepare_scan_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    workspace = tmp_path / "workspace"
+    agents_dir = workspace / ".github" / "agents"
+    instructions_dir = workspace / ".github" / "instructions"
+    agents_dir.mkdir(parents=True)
+    instructions_dir.mkdir(parents=True)
+
+    agent_file = agents_dir / "⊕workspace-example.agent.md"
+    agent_file.write_text(
+        "---\n"
+        "description: \"Example agent\"\n"
+        "applyTo: \".github/agents/*.agent.md\"\n"
+        "---\n"
+        "# Example agent\n",
+        encoding="utf-8",
+    )
+    instruction_file = instructions_dir / "hygiene-base.instructions.md"
+    instruction_file.write_text(
+        "---\napplyTo: \".github/agents/*.agent.md\"\n---\n# Hygiene base\n",
+        encoding="utf-8",
+    )
+
+    manifest_db = tmp_path / "manifest_todos.db"
+    _init_manifest_db(manifest_db)
+    monkeypatch.setattr(afi, "AGENT_DIRS", [agents_dir])
+    monkeypatch.setattr(afi, "INSTRUCTION_DIR", instructions_dir)
+    monkeypatch.setattr(afi, "MANIFEST_DB", manifest_db)
+    monkeypatch.setattr(
+        afi,
+        "_all_workspace_md_files",
+        lambda: [agent_file, instruction_file],
+    )
+    return manifest_db
 
 
 def test_frontmatter_parsing() -> None:
@@ -96,6 +132,67 @@ def test_run_agent_frontmatter_integrity_creates_scan_todo(tmp_path: Path, monke
     assert row[1] == "SCAN"
     assert row[2] == afi.SCAN_TODO_TEXT
     assert row[3] == "FR-TEST"
+
+
+def test_run_agent_frontmatter_integrity_reuses_identical_completed_scan_todo(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest_db = _prepare_scan_workspace(tmp_path, monkeypatch)
+    with sqlite3.connect(str(manifest_db)) as conn:
+        cursor = conn.execute(
+            "INSERT INTO todos (project, source, text, done, created_at, closed_at, fr_id) "
+            "VALUES (?, ?, ?, 1, ?, ?, ?)",
+            (
+                afi.SCAN_TODO_PROJECT,
+                afi.SCAN_TODO_SOURCE,
+                afi.SCAN_TODO_TEXT,
+                "2026-01-01T00:00:00+00:00",
+                "2026-01-02T00:00:00+00:00",
+                "FR-OLDER",
+            ),
+        )
+        completed_todo_id = cursor.lastrowid
+
+    result = afi.run_agent_frontmatter_integrity(fr_id="FR-TEST")
+
+    assert result["issues"] == 0
+    assert result["warnings"] == 1
+    assert result["todo_id"] == completed_todo_id
+    with sqlite3.connect(str(manifest_db)) as conn:
+        row = conn.execute(
+            "SELECT done, created_at, closed_at, fr_id FROM todos WHERE id=?",
+            (completed_todo_id,),
+        ).fetchone()
+        assert row == (1, "2026-01-01T00:00:00+00:00", "2026-01-02T00:00:00+00:00", "FR-OLDER")
+
+
+def test_run_agent_frontmatter_integrity_propagates_unrelated_integrity_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest_db = _prepare_scan_workspace(tmp_path, monkeypatch)
+    with sqlite3.connect(str(manifest_db)) as conn:
+        conn.execute(
+            "INSERT INTO todos (project, source, text, done, created_at) "
+            "VALUES (?, ?, ?, 1, ?)",
+            (
+                afi.SCAN_TODO_PROJECT,
+                afi.SCAN_TODO_SOURCE,
+                afi.SCAN_TODO_TEXT,
+                "2026-01-01T00:00:00+00:00",
+            ),
+        )
+        conn.execute(
+            """CREATE TRIGGER reject_scan_todo
+               BEFORE INSERT ON todos
+               BEGIN
+                   SELECT RAISE(ABORT, 'unrelated integrity failure');
+               END"""
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="unrelated integrity failure"):
+        afi.run_agent_frontmatter_integrity(fr_id="FR-TEST")
 
 
 def test_run_agent_frontmatter_integrity_reports_invalid_frontmatter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

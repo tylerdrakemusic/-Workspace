@@ -15,19 +15,25 @@ Usage:
 """
 
 import argparse
+import errno
 import hashlib
+import os
 import sys
 import time
 import uuid
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Iterator
 
 import sqlcipher3
 
 try:
+    from . import init_db as _init_db_module
     from .init_db import get_connection, init_db
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import init_db as _init_db_module
     from init_db import get_connection, init_db
 
 PROOF_TYPES = [
@@ -67,6 +73,44 @@ def _is_transient_database_lock(error: Exception) -> bool:
     )
 
 
+@contextmanager
+def _proof_record_lock() -> Iterator[None]:
+    lock_path = _init_db_module.DB_PATH.with_name(
+        f"{_init_db_module.DB_PATH.name}.proof.lock"
+    )
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as lock_file:
+        if os.name == "nt":
+            import msvcrt
+
+            lock_file.seek(0, os.SEEK_END)
+            if lock_file.tell() == 0:
+                lock_file.write(b"\0")
+                lock_file.flush()
+            while True:
+                lock_file.seek(0)
+                try:
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError as error:
+                    if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                        raise
+                    time.sleep(0.05)
+            try:
+                yield
+            finally:
+                lock_file.seek(0)
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
 # ── Commands ───────────────────────────────────────────────────
 
 def cmd_record(args) -> None:
@@ -79,57 +123,58 @@ def cmd_record(args) -> None:
     record_values = (
         args.run_id, args.agent, args.proof_type, args.description, args.path, artifact_hash,
     )
-    for attempt in range(1, _RECORD_MAX_ATTEMPTS + 1):
-        conn = None
-        try:
-            conn = _connect()
-            conn.execute(f"PRAGMA busy_timeout={_RECORD_BUSY_TIMEOUT_MS}")
-            existing = conn.execute(
-                """SELECT run_id, agent, proof_type, description, artifact_path, artifact_hash
-                   FROM proof_artifacts WHERE proof_id = ?""",
-                (proof_id,),
-            ).fetchone()
-            if existing is not None:
-                if tuple(existing) != record_values:
-                    raise RuntimeError("proof ID collision with a different artifact")
+    with _proof_record_lock():
+        for attempt in range(1, _RECORD_MAX_ATTEMPTS + 1):
+            conn = None
+            try:
+                conn = _connect()
+                conn.execute(f"PRAGMA busy_timeout={_RECORD_BUSY_TIMEOUT_MS}")
+                existing = conn.execute(
+                    """SELECT run_id, agent, proof_type, description, artifact_path, artifact_hash
+                       FROM proof_artifacts WHERE proof_id = ?""",
+                    (proof_id,),
+                ).fetchone()
+                if existing is not None:
+                    if tuple(existing) != record_values:
+                        raise RuntimeError("proof ID collision with a different artifact")
+                    conn.close()
+                    print(proof_id)
+                    return
+
+                conn.execute(
+                    """INSERT INTO proof_artifacts
+                       (proof_id, run_id, agent, proof_type, description, artifact_path, artifact_hash)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (proof_id, *record_values),
+                )
+                conn.commit()
                 conn.close()
                 print(proof_id)
                 return
-
-            conn.execute(
-                """INSERT INTO proof_artifacts
-                   (proof_id, run_id, agent, proof_type, description, artifact_path, artifact_hash)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (proof_id, *record_values),
-            )
-            conn.commit()
-            conn.close()
-            print(proof_id)
-            return
-        except Exception as error:
-            if conn is not None:
-                try:
-                    conn.rollback()
-                except Exception:
-                    pass
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-            if not _is_transient_database_lock(error):
-                raise
-            if attempt == _RECORD_MAX_ATTEMPTS:
+            except Exception as error:
+                if conn is not None:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                if not _is_transient_database_lock(error):
+                    raise
+                if attempt == _RECORD_MAX_ATTEMPTS:
+                    print(
+                        f"Proof record retries exhausted after {_RECORD_MAX_ATTEMPTS} attempts: {error}",
+                        file=sys.stderr,
+                    )
+                    raise SystemExit(1) from error
                 print(
-                    f"Proof record retries exhausted after {_RECORD_MAX_ATTEMPTS} attempts: {error}",
+                    f"Retrying proof record after transient database lock ({attempt}/{_RECORD_MAX_ATTEMPTS})",
                     file=sys.stderr,
+                    flush=True,
                 )
-                raise SystemExit(1) from error
-            print(
-                f"Retrying proof record after transient database lock ({attempt}/{_RECORD_MAX_ATTEMPTS})",
-                file=sys.stderr,
-                flush=True,
-            )
-            time.sleep(_RECORD_RETRY_DELAY_SECONDS * attempt)
+                time.sleep(_RECORD_RETRY_DELAY_SECONDS * attempt)
 
 
 def cmd_verify(args) -> None:

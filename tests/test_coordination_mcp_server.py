@@ -822,12 +822,66 @@ def test_fr_cli_subprocess_preserves_non_zero_failure(monkeypatch):
 
     monkeypatch.setattr(coordination_mcp_server.subprocess, "run", fake_run)
 
-    with pytest.raises(coordination_mcp_server.subprocess.CalledProcessError) as error:
+    with pytest.raises(coordination_mcp_server.FrCliOperationError) as error:
         coordination_mcp_server._run_fr_cli(
             "fr.get", {"fr_id": "FR-20260811-example"}
         )
 
-    assert error.value is expected
+    assert error.value.__cause__ is expected
+
+
+
+def _run_fr_cli_child_with_open_server_stdin(
+    tmp_path: Path,
+) -> tuple[int, str, str]:
+    cli_script = tmp_path / "stdin_probe.py"
+    cli_script.write_text(
+        "import sys\n"
+        "value = sys.stdin.read(1)\n"
+        "print('stdin-eof' if value == '' else 'stdin-data')\n",
+        encoding="utf-8",
+    )
+    helper_script = tmp_path / "invoke_fr_cli.py"
+    helper_script.write_text(
+        "import sys\n"
+        "from pathlib import Path\n"
+        "sys.path.insert(0, sys.argv[2])\n"
+        "from src.utils import coordination_mcp_server as server\n"
+        "server.FR_CLI_PATH = Path(sys.argv[1])\n"
+        "print(server._run_fr_cli('fr.get', {'fr_id': 'FR-TEST'}))\n",
+        encoding="utf-8",
+    )
+    workspace_root = Path(__file__).resolve().parents[1]
+    process = subprocess.Popen(
+        [sys.executable, str(helper_script), str(cli_script), str(workspace_root)],
+        cwd=workspace_root,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert process.stdin is not None
+    assert process.stdout is not None
+    assert process.stderr is not None
+
+    try:
+        try:
+            return_code = process.wait(timeout=12)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return_code = process.wait()
+        output = process.stdout.read()
+        error_output = process.stderr.read()
+        return return_code, output, error_output
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        process.stdin.close()
+        process.stdout.close()
+        process.stderr.close()
 
 
 @pytest.mark.parametrize("field", ["db", "sql"])
