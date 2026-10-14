@@ -10,7 +10,7 @@
       "skill_root": "skills/engineering",
       "provenance": "external-source",
       "source_policy": "optional",
-      "skills": ["tdd", "wayfinder", "prototype", "wizard"]
+      "skills": ["tdd", "prototype", "wizard"]
     },
     {
       "name": "mp-skills-productivity",
@@ -60,7 +60,6 @@
       "provenance": "external-source",
       "source_policy": "optional",
       "skills": [
-        "agent-orchestration/git-worktree",
         "thinking-and-docs/before-building",
         "thinking-and-docs/decisions"
       ]
@@ -73,8 +72,8 @@
       "source_path": "SKILL.md",
       "provenance": "external-source",
       "source_policy": "optional",
-      "pinned_commit": "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5",
-      "sha256": "14fc8a965b6e0a8dc100ba4dffeab55cb94bbac112abbde7e014d5c15a35c202",
+      "pinned_commit": "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8",
+      "sha256": "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad",
       "protected_overwrite": false,
       "skills": ["humanizer"]
     },

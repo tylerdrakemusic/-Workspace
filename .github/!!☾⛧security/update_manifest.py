@@ -64,6 +64,10 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
                     "provenance": provenance,
                     "source_policy": source_policy,
                     "pinned_commit": repo.get("pinned_commit", ""),
+                    "pinned_sha256": repo.get("sha256", ""),
+                    "pin_fields_present": (
+                        "pinned_commit" in repo or "sha256" in repo
+                    ),
                 }
             )
     return entries
@@ -234,15 +238,50 @@ def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillInteg
         target_key = item["manifest_key"]
         manifest_hash = manifest_files.get(target_key)
         target_hash = sha256_file(target) if target.exists() else None
-        source_hash = sha256_file(source) if source.exists() else None
-        pinned_source_matches = validate_pinned_source(
-            Path(item["repository_path"]), item["pinned_commit"]
+        pinned_commit = item["pinned_commit"]
+        pinned_sha256 = item["pinned_sha256"]
+        pin_configured = bool(
+            item["pin_fields_present"] or pinned_commit or pinned_sha256
         )
+        pin_pair_complete = (
+            pin_configured
+            and isinstance(pinned_commit, str)
+            and bool(pinned_commit.strip())
+            and isinstance(pinned_sha256, str)
+            and len(pinned_sha256) == 64
+            and all(
+                character in "0123456789abcdefABCDEF"
+                for character in pinned_sha256
+            )
+        )
+        if pin_pair_complete:
+            source_hash = pinned_git_blob_sha256(
+                Path(item["repository_path"]), source, pinned_commit
+            )
+            pinned_blob_matches = source_hash == pinned_sha256
+        elif pin_configured:
+            source_hash = None
+            pinned_blob_matches = False
+        else:
+            source_hash = sha256_file(source) if source.exists() else None
+            pinned_blob_matches = True
+        pinned_source_matches = validate_pinned_source(
+            Path(item["repository_path"]), pinned_commit
+        ) if pin_pair_complete else not pin_configured
 
-        if not pinned_source_matches:
+        if target_hash is None or manifest_hash is None:
             status = "integrity_failure"
-        elif target_hash is None or manifest_hash is None:
+        elif pin_configured and (
+            not pin_pair_complete
+            or not pinned_source_matches
+            or not pinned_blob_matches
+        ):
             status = "integrity_failure"
+        elif (
+            item["source_policy"] == "optional"
+            and not Path(item["repository_path"]).exists()
+        ):
+            status = "source_unavailable"
         elif source_hash is None and item["source_policy"] == "optional":
             status = "source_unavailable"
         elif source_hash is None:
@@ -276,17 +315,53 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def pinned_git_blob_sha256(
+    repository_path: Path, source_path: Path, pinned_commit: str
+) -> str | None:
+    """Return the SHA-256 of a source file at its pinned Git revision."""
+    if not pinned_commit or not (repository_path / ".git").exists():
+        return None
+    try:
+        source_relative_path = source_path.relative_to(repository_path).as_posix()
+    except ValueError:
+        return None
+
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository_path),
+                "cat-file",
+                "blob",
+                f"{pinned_commit}:{source_relative_path}",
+            ],
+            check=False,
+            capture_output=True,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    return hashlib.sha256(result.stdout).hexdigest()
+
+
 def validate_pinned_source(repository_path: Path, pinned_commit: str) -> bool:
     """Return whether an available git source is at its declared revision."""
-    if not pinned_commit or not (repository_path / ".git").exists():
+    if not pinned_commit:
         return True
-    result = subprocess.run(
-        ["git", "-C", str(repository_path), "rev-parse", "HEAD"],
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
+    if not (repository_path / ".git").exists():
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repository_path), "rev-parse", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+    except OSError:
+        return False
     return result.returncode == 0 and result.stdout.strip() == pinned_commit
 
 

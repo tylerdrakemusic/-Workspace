@@ -16,6 +16,8 @@ WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 HUMANIZER_PATH = WORKSPACE_ROOT / ".github" / "skills" / "humanizer" / "SKILL.md"
 EXPECTED_COMMIT = "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5"
 EXPECTED_SHA256 = "14fc8a965b6e0a8dc100ba4dffeab55cb94bbac112abbde7e014d5c15a35c202"
+EXPECTED_SYNC_COMMIT = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8"
+EXPECTED_SYNC_SHA256 = "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad"
 
 sys.path.insert(0, str(WORKSPACE_ROOT / ".github" / "!!☾⛧security"))
 
@@ -84,7 +86,8 @@ def test_humanizer_sync_entry_is_immutable_and_does_not_enable_protected_overwri
     mapping = next(repo for repo in config["repos"] if repo["name"] == "humanizer")
 
     assert mapping["remote"] == "https://github.com/blader/humanizer"
-    assert mapping["pinned_commit"] == EXPECTED_COMMIT
+    assert mapping["pinned_commit"] == EXPECTED_SYNC_COMMIT
+    assert mapping["sha256"] == EXPECTED_SYNC_SHA256
     assert mapping["source_path"] == "SKILL.md"
     assert mapping["skills"] == ["humanizer"]
     assert mapping["provenance"] == "external-source"

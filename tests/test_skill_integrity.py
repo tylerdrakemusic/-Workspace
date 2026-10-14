@@ -174,6 +174,212 @@ def test_source_match_is_authorized(tmp_path: Path) -> None:
     assert result.entries[0].target == str(target_file)
 
 
+def test_pinned_source_match_uses_commit_blob_with_crlf_worktree(tmp_path: Path) -> None:
+    config_path, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="pinned source\n",
+        target_text="pinned source\n",
+        manifest_text="pinned source\n",
+    )
+    target_file.write_bytes(b"pinned source\n")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"][".github/skills/example/SKILL.md"] = hashlib.sha256(
+        b"pinned source\n"
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    source_root = tmp_path / "source"
+    source_file = source_root / "skills" / "example" / "SKILL.md"
+    git = ["git", "-C", str(source_root)]
+    subprocess.run([*git, "init"], check=True, capture_output=True, text=True, encoding="utf-8")
+    subprocess.run([*git, "config", "core.autocrlf", "true"], check=True)
+    subprocess.run([*git, "config", "user.email", "test@example.com"], check=True)
+    subprocess.run([*git, "config", "user.name", "Test"], check=True)
+    subprocess.run(
+        [*git, "add", "skills/example/SKILL.md"], check=True, capture_output=True
+    )
+    subprocess.run(
+        [*git, "commit", "-m", "pinned source"], check=True, capture_output=True
+    )
+    pinned_commit = subprocess.run(
+        [*git, "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+    blob = subprocess.run(
+        [*git, "cat-file", "blob", f"{pinned_commit}:skills/example/SKILL.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    source_file.write_bytes(b"pinned source\r\n")
+    assert blob == b"pinned source\n"
+    assert source_file.read_bytes() == b"pinned source\r\n"
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["pinned_commit"] = pinned_commit
+    config["repos"][0]["sha256"] = hashlib.sha256(b"pinned source\n").hexdigest()
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert result.hard_findings == []
+    assert result.entries[0].status == "source_match"
+
+
+@pytest.mark.parametrize("failure", ["missing_blob", "bad_sha256", "git_unavailable"])
+def test_pinned_source_blob_failures_are_hard_findings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="pinned source\n",
+        target_text="pinned source\n",
+        manifest_text="pinned source\n",
+    )
+    source_root = tmp_path / "source"
+    git = ["git", "-C", str(source_root)]
+    subprocess.run([*git, "init"], check=True, capture_output=True, text=True, encoding="utf-8")
+    subprocess.run([*git, "config", "user.email", "test@example.com"], check=True)
+    subprocess.run([*git, "config", "user.name", "Test"], check=True)
+
+    if failure == "missing_blob":
+        other_source = source_root / "skills" / "other" / "SKILL.md"
+        other_source.parent.mkdir(parents=True)
+        other_source.write_bytes(b"different pinned path\n")
+        subprocess.run([*git, "add", "skills/other/SKILL.md"], check=True)
+    else:
+        subprocess.run([*git, "add", "skills/example/SKILL.md"], check=True)
+
+    subprocess.run([*git, "commit", "-m", "pinned source"], check=True, capture_output=True)
+    pinned_commit = subprocess.run(
+        [*git, "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["pinned_commit"] = pinned_commit
+    config["repos"][0]["sha256"] = (
+        "0" * 64
+        if failure == "bad_sha256"
+        else hashlib.sha256(b"pinned source\n").hexdigest()
+    )
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    if failure == "git_unavailable":
+        def fail_git(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+            raise FileNotFoundError("git executable missing")
+
+        monkeypatch.setattr(subprocess, "run", fail_git)
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.entries[0].status == "integrity_failure"
+
+
+def test_pinned_sha_without_commit_is_an_integrity_failure(tmp_path: Path) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="pinned source\n",
+        target_text="pinned source\n",
+        manifest_text="pinned source\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["sha256"] = hashlib.sha256(
+        b"pinned source\n"
+    ).hexdigest()
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.entries[0].status == "integrity_failure"
+
+
+@pytest.mark.parametrize(
+    "pin_fields",
+    [
+        pytest.param({"pinned_commit": "", "sha256": ""}, id="empty-pair"),
+        pytest.param({"pinned_commit": ""}, id="empty-commit"),
+        pytest.param({"sha256": ""}, id="empty-sha"),
+    ],
+)
+def test_explicit_empty_pin_fields_are_integrity_failures(
+    tmp_path: Path, pin_fields: dict[str, str]
+) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="pinned source\n",
+        target_text="pinned source\n",
+        manifest_text="pinned source\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0].update(pin_fields)
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.entries[0].status == "integrity_failure"
+
+
+def test_missing_optional_repository_with_pinned_source_is_an_integrity_failure(
+    tmp_path: Path,
+) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="pinned source\n",
+        target_text="pinned source\n",
+        manifest_text="pinned source\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["source_policy"] = "optional"
+    config["repos"][0]["path"] = str(tmp_path / "missing-source")
+    config["repos"][0]["pinned_commit"] = "a" * 40
+    config["repos"][0]["sha256"] = hashlib.sha256(
+        b"pinned source\n"
+    ).hexdigest()
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.entries[0].status == "integrity_failure"
+
+
+def test_malformed_pinned_commit_is_an_integrity_failure(tmp_path: Path) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="pinned source\n",
+        target_text="pinned source\n",
+        manifest_text="pinned source\n",
+    )
+    source_root = tmp_path / "source"
+    git = ["git", "-C", str(source_root)]
+    subprocess.run(
+        [*git, "init"], check=True, capture_output=True, text=True, encoding="utf-8"
+    )
+    subprocess.run([*git, "config", "user.email", "test@example.com"], check=True)
+    subprocess.run([*git, "config", "user.name", "Test"], check=True)
+    subprocess.run([*git, "add", "skills/example/SKILL.md"], check=True)
+    subprocess.run([*git, "commit", "-m", "pinned source"], check=True, capture_output=True)
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["pinned_commit"] = "not-a-commit"
+    config["repos"][0]["sha256"] = hashlib.sha256(
+        b"pinned source\n"
+    ).hexdigest()
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.entries[0].status == "integrity_failure"
+
+
 def test_local_customization_matching_manifest_is_preserved(tmp_path: Path) -> None:
     config_path, _, manifest_path = _write_skill_fixture(
         tmp_path,
