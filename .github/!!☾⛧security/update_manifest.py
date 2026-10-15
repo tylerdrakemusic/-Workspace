@@ -111,6 +111,32 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
                 f"Target for {item['source_repository']}",
             )
         )
+    try:
+        destination = Path(config["destination"]).resolve()
+        log_file = Path(config["log_file"]).resolve()
+    except (OSError, RuntimeError) as exc:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path could not be resolved: {config['log_file']}"
+        ) from exc
+    mapped_targets = {Path(item["target"]) for item in entries}
+    if log_file in mapped_targets:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path collides with a mapped skill target: {log_file}"
+        )
+    if log_file.exists():
+        for target in mapped_targets:
+            if target.exists() and os.path.samefile(log_file, target):
+                raise _SkillSyncPathViolation(
+                    f"Configured log file path aliases a mapped skill target: {log_file}"
+                )
+    try:
+        log_file.relative_to(destination)
+    except ValueError:
+        pass
+    else:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path is within the skill destination: {log_file}"
+        )
     return entries
 
 

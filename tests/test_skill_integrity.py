@@ -378,6 +378,84 @@ def test_sync_preflights_all_mappings_before_writing_any_target(
     assert not escaped_target.exists()
 
 
+@pytest.mark.parametrize("log_target", ["destination_subtree", "mapped_skill"])
+def test_sync_rejects_log_path_overlapping_destination_before_logging(
+    tmp_path: Path, log_target: str
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    config_path, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="approved source\n",
+        target_text="local customization\n",
+        manifest_text="local customization\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    destination = Path(config["destination"])
+    log_path = (
+        destination / "sync-logs" / "skill-sync.log"
+        if log_target == "destination_subtree"
+        else target_file
+    )
+    config["log_file"] = str(log_path)
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    run = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    output = run.stdout + run.stderr
+    assert run.returncode != 0, output
+    assert "log" in output.lower()
+    assert target_file.read_text(encoding="utf-8") == "local customization\n"
+    if log_target == "destination_subtree":
+        assert not log_path.parent.exists()
+
+
+def test_sync_preflight_rejects_external_hard_link_to_mapped_target_without_modifying_bytes(
+    tmp_path: Path,
+) -> None:
+    config_path, target_file, _ = _write_skill_fixture(
+        tmp_path,
+        source_text="approved source\n",
+        target_text="local customization\n",
+        manifest_text="local customization\n",
+    )
+    log_path = tmp_path / "external-skill-sync.log"
+    try:
+        os.link(target_file, log_path)
+    except OSError as exc:
+        unsupported = {errno.ENOSYS, errno.ENOTSUP, errno.EOPNOTSUPP}
+        if exc.errno in unsupported or getattr(exc, "winerror", None) in {1, 50}:
+            pytest.skip(f"Hard links are unsupported here: {exc}")
+        raise
+
+    assert os.path.samefile(target_file, log_path)
+    original_bytes = target_file.read_bytes()
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["log_file"] = str(log_path)
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="mapped skill target"):
+        update_manifest.preflight_sync_config(config_path)
+
+    assert target_file.read_bytes() == original_bytes
+
+
 @pytest.mark.parametrize("destination_preexists", [True, False])
 def test_pinned_sync_validates_later_hash_before_changing_destination(
     tmp_path: Path, destination_preexists: bool
