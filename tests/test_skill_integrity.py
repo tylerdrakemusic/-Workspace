@@ -426,6 +426,46 @@ def test_sync_rejects_log_path_overlapping_destination_before_logging(
         assert not log_path.parent.exists()
 
 
+def test_sync_preflight_rejects_log_ancestor_of_missing_destination_without_creating_paths(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    config_path = workspace / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    source_root = tmp_path / "source"
+    destination = workspace / "output" / "skills"
+    output_root = destination.parent
+    config = {
+        "destination": str(destination),
+        "log_file": str(output_root),
+        "repos": [
+            {
+                "name": "external-skills",
+                "path": str(source_root),
+                "remote": None,
+                "skill_root": "skills",
+                "provenance": "external-source",
+                "skills": ["example"],
+            }
+        ],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="log"):
+        update_manifest.preflight_sync_config(config_path)
+
+    assert not output_root.exists()
+    assert not destination.exists()
+
+    config["log_file"] = str(workspace / "logs" / "skill-sync.log")
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    plan = update_manifest.preflight_sync_config(config_path)
+
+    assert plan["destination"] == str(destination)
+    assert not (workspace / "logs").exists()
+
+
 def test_sync_preflight_rejects_external_hard_link_to_mapped_target_without_modifying_bytes(
     tmp_path: Path,
 ) -> None:

@@ -132,10 +132,17 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
     try:
         log_file.relative_to(destination)
     except ValueError:
-        pass
+        try:
+            destination.relative_to(log_file)
+        except ValueError:
+            pass
+        else:
+            raise _SkillSyncPathViolation(
+                f"Configured log file path overlaps the skill destination: {log_file}"
+            )
     else:
         raise _SkillSyncPathViolation(
-            f"Configured log file path is within the skill destination: {log_file}"
+            f"Configured log file path overlaps the skill destination: {log_file}"
         )
     return entries
 
