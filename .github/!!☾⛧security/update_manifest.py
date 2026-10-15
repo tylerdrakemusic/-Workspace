@@ -87,6 +87,13 @@ def _confined_path(path: Path, root: Path, description: str) -> Path:
 
 
 def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
+    workspace_root = Path(config["workspace_root"])
+    destination = _confined_path(
+        Path(config["destination"]), workspace_root, "Skill destination"
+    )
+    log_file = _confined_path(
+        Path(config["log_file"]), workspace_root, "Configured log file"
+    )
     entries = _skill_entries(config)
     for item in entries:
         repository_root = Path(item["repository_path"])
@@ -107,17 +114,10 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
         item["target"] = str(
             _confined_path(
                 Path(item["target"]),
-                Path(config["destination"]),
+                destination,
                 f"Target for {item['source_repository']}",
             )
         )
-    try:
-        destination = Path(config["destination"]).resolve()
-        log_file = Path(config["log_file"]).resolve()
-    except (OSError, RuntimeError) as exc:
-        raise _SkillSyncPathViolation(
-            f"Configured log file path could not be resolved: {config['log_file']}"
-        ) from exc
     mapped_targets = {Path(item["target"]) for item in entries}
     if log_file in mapped_targets:
         raise _SkillSyncPathViolation(

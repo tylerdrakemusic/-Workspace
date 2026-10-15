@@ -929,6 +929,76 @@ def test_integrity_preflights_later_mappings_before_reading_content(
     assert read_paths == []
 
 
+@pytest.mark.parametrize("redirected_setting", ["destination", "log_file"])
+def test_prewrite_security_gate_blocks_output_path_outside_workspace_before_writing(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    redirected_setting: str,
+) -> None:
+    workspace_root = tmp_path / "Workspace"
+    security_dir = workspace_root / ".github" / "!!☾⛧security"
+    security_dir.mkdir(parents=True)
+    destination = workspace_root / ".github" / "skills"
+    destination.mkdir(parents=True)
+    (workspace_root / ".github" / "agents").mkdir()
+    (workspace_root / ".github" / "instructions").mkdir()
+    (workspace_root / "tools").mkdir()
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py",
+        security_dir / "update_manifest.py",
+    )
+
+    source_root = tmp_path / "external-source-repository"
+    source_file = source_root / "skills" / "example" / "SKILL.md"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_text("matching source\n", encoding="utf-8")
+    target_file = destination / "example" / "SKILL.md"
+    target_file.parent.mkdir(parents=True)
+    target_file.write_text("matching source\n", encoding="utf-8")
+
+    manifest_path = security_dir / "agent-manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {"files": {".github/skills/example/SKILL.md": _sha256(target_file)}}
+        ),
+        encoding="utf-8",
+    )
+    outside_destination = tmp_path / "outside-destination" / "skills"
+    outside_log = tmp_path / "outside-log" / "skill-sync.log"
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config = {
+        "destination": str(
+            outside_destination if redirected_setting == "destination" else destination
+        ),
+        "log_file": str(
+            outside_log if redirected_setting == "log_file"
+            else workspace_root / "logs" / "skill-sync.log"
+        ),
+        "repos": [
+            {
+                "name": "external-skills",
+                "path": str(source_root),
+                "skill_root": "skills",
+                "skills": ["example"],
+            }
+        ],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    result = run_prewrite_security_gate(workspace_root)
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "SKILL SYNC PATH POLICY:" in captured.out
+    assert "outside configured root" in captured.out.lower()
+    if redirected_setting == "destination":
+        assert not outside_destination.exists()
+        assert target_file.read_text(encoding="utf-8") == "matching source\n"
+    else:
+        assert not outside_log.parent.exists()
+        assert target_file.read_text(encoding="utf-8") == "matching source\n"
+
+
 def test_prewrite_security_gate_blocks_skill_config_path_escape(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
