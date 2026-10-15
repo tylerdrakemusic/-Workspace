@@ -174,7 +174,10 @@ def test_source_match_is_authorized(tmp_path: Path) -> None:
     assert result.entries[0].target == str(target_file)
 
 
-def test_pinned_source_match_uses_commit_blob_with_crlf_worktree(tmp_path: Path) -> None:
+@pytest.mark.parametrize("uppercase_sha", [False, True], ids=["lowercase", "uppercase"])
+def test_pinned_source_match_uses_commit_blob_with_crlf_worktree(
+    tmp_path: Path, uppercase_sha: bool
+) -> None:
     config_path, target_file, manifest_path = _write_skill_fixture(
         tmp_path,
         source_text="pinned source\n",
@@ -218,7 +221,8 @@ def test_pinned_source_match_uses_commit_blob_with_crlf_worktree(tmp_path: Path)
 
     config = json.loads(config_path.read_text(encoding="utf-8"))
     config["repos"][0]["pinned_commit"] = pinned_commit
-    config["repos"][0]["sha256"] = hashlib.sha256(b"pinned source\n").hexdigest()
+    pinned_sha = hashlib.sha256(b"pinned source\n").hexdigest()
+    config["repos"][0]["sha256"] = pinned_sha.upper() if uppercase_sha else pinned_sha
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     result = verify_skill_integrity(config_path, manifest_path)

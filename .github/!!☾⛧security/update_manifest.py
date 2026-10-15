@@ -258,7 +258,7 @@ def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillInteg
             source_hash = pinned_git_blob_sha256(
                 Path(item["repository_path"]), source, pinned_commit
             )
-            pinned_blob_matches = source_hash == pinned_sha256
+            pinned_blob_matches = source_hash == pinned_sha256.lower()
         elif pin_configured:
             source_hash = None
             pinned_blob_matches = False
