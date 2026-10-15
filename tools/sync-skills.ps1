@@ -51,12 +51,18 @@ $repoRoot = if ($ManifestPath) {
 } else {
     $configRoot
 }
+$script:logReady = $false
+$script:logBuffer = [System.Collections.Generic.List[string]]::new()
 
 function Write-Log {
     param([string]$msg)
     $line = "[$timestamp] $msg"
     Write-Host $line
-    Add-Content -Path $logFile -Value $line -Encoding UTF8
+    if ($script:logReady) {
+        Add-Content -Path $logFile -Value $line -Encoding UTF8
+    } else {
+        $null = $script:logBuffer.Add($line)
+    }
 }
 
 function Resolve-PinnedSource {
@@ -117,8 +123,6 @@ function Remove-PinnedSource {
         Remove-Item -Recurse -Force $WorktreePath -ErrorAction SilentlyContinue
     }
 }
-
-New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
 
 Write-Log "=== skill-sync start ==="
 
@@ -181,6 +185,13 @@ try {
             })
         }
     }
+
+    New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
+    foreach ($line in $script:logBuffer) {
+        Add-Content -Path $logFile -Value $line -Encoding UTF8
+    }
+    $script:logBuffer.Clear()
+    $script:logReady = $true
 
     New-Item -ItemType Directory -Force -Path $destination | Out-Null
     foreach ($mapping in $syncPlan) {

@@ -496,7 +496,8 @@ def test_pinned_sync_validates_later_hash_before_changing_destination(
             "skills": ["later"],
         }
     )
-    config["log_file"] = str(tmp_path / "sync.log")
+    log_path = tmp_path / "external-logs" / "sync.log"
+    config["log_file"] = str(log_path)
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     run = subprocess.run(
@@ -520,6 +521,8 @@ def test_pinned_sync_validates_later_hash_before_changing_destination(
     output = run.stdout + run.stderr
     assert run.returncode != 0
     assert "pinned source hash mismatch for later-source" in output.lower()
+    assert not log_path.exists()
+    assert not log_path.parent.exists()
     if destination_preexists:
         assert first_target.read_text(encoding="utf-8") == "preserve first target\n"
     else:
