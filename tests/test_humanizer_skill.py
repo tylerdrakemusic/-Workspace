@@ -16,6 +16,7 @@ WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 HUMANIZER_PATH = WORKSPACE_ROOT / ".github" / "skills" / "humanizer" / "SKILL.md"
 EXPECTED_COMMIT = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8"
 EXPECTED_SHA256 = "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad"
+EXPECTED_VERSION = "3.1.0"
 EXPECTED_SYNC_COMMIT = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8"
 EXPECTED_SYNC_SHA256 = "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad"
 
@@ -42,14 +43,14 @@ def test_humanizer_is_cataloged_with_pinned_provenance_and_routing_boundary() ->
     ]
     assert entry["provenance"] == (
         "external-source; repository=https://github.com/blader/humanizer; "
-        f"commit={EXPECTED_COMMIT}; sha256={EXPECTED_SHA256}; license=MIT; version=2.11.2"
+        f"commit={EXPECTED_COMMIT}; sha256={EXPECTED_SHA256}; license=MIT; version={EXPECTED_VERSION}"
     )
     assert entry["provenance_details"] == {
         "repository": "https://github.com/blader/humanizer",
         "commit": EXPECTED_COMMIT,
         "sha256": EXPECTED_SHA256,
         "license": "MIT",
-        "version": "2.11.2",
+        "version": EXPECTED_VERSION,
     }
     assert "human-facing UI strings/copy only" in catalog["routing_boundaries"]["humanizer"]
     for excluded in (
@@ -84,6 +85,11 @@ def test_humanizer_sync_entry_is_immutable_and_does_not_enable_protected_overwri
     config = json.loads(
         (WORKSPACE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
     )
+    catalog = json.loads(
+        (WORKSPACE_ROOT / ".github" / "skills" / "skill-catalog.json").read_text(
+            encoding="utf-8"
+        )
+    )
     mapping = next(repo for repo in config["repos"] if repo["name"] == "humanizer")
 
     assert mapping["remote"] == "https://github.com/blader/humanizer"
@@ -94,6 +100,11 @@ def test_humanizer_sync_entry_is_immutable_and_does_not_enable_protected_overwri
     assert mapping["provenance"] == "external-source"
     assert mapping["source_policy"] == "optional"
     assert mapping["protected_overwrite"] is False
+
+    sync_record = next(item for item in catalog["external_sync"] if item["target"] == "humanizer")
+    assert sync_record["pinned_commit"] == EXPECTED_COMMIT
+    assert sync_record["sha256"] == EXPECTED_SHA256
+    assert sync_record["version"] == EXPECTED_VERSION
 
 
 def test_pinned_source_validation_detects_revision_drift() -> None:

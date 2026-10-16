@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-16T08:07:43.608821+00:00",
+  "generated_at": "2026-10-16T09:15:19.529077+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -64,7 +64,7 @@
     ".github/skills/prototype/SKILL.md": "ad67a04d7f5cbba64d0b7f257b9922b27453e9093dc711ba9663b3048e41152e",
     ".github/skills/scope-creep/SKILL.md": "8eff1da587b16781050b5f1c8fbeb41c6de1234a8fd152259932fbbdc327a5a3",
     ".github/skills/security-and-hardening/SKILL.md": "e3932b0ce169f4051055652e9616095f00f305ef5117b8e9e063989f70c67335",
-    ".github/skills/skill-catalog.json": "ec6059117fc01b92c2c1377cb2aa39ddd3fe402e880eb3563ba252711bf1f0bf",
+    ".github/skills/skill-catalog.json": "b732f2626b0ab7c8f039ddae88a1cb43797e5eb983915249fede970329d5cb6f",
     ".github/skills/spec-driven-development/SKILL.md": "061194bbf0997aae06171a3a4d1d881dfcbbe276d4361fba21aacfb18cd16cc8",
     ".github/skills/tdd/SKILL.md": "4bc06151a5d5c37af1ee5613dc07b67ecf18b2e22e6a26e8538a3a995a8aafca",
     ".github/skills/teach/SKILL.md": "99c077a05f66237c95392dc440974e9d144c1267309e978c7a18aaf065ce7fd3",
