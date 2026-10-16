@@ -683,6 +683,55 @@ def test_pinned_sync_validates_later_symlink_before_writing_earlier_mapping(
     _assert_no_temporary_git_worktrees(repo_root)
 
 
+def test_pinned_sync_preserves_dot_prefixed_source_path_with_windows_separators(
+    tmp_path: Path,
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    expected_content = "approved dot-prefixed pinned source\n"
+    config_path, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="working tree source\n",
+        target_text="old target\n",
+        manifest_text="old target\n",
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    repo = config["repos"][0]
+    repo_root = Path(repo["path"])
+    source_file = repo_root / ".hidden" / "release.v1" / "SKILL.md"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_text(expected_content, encoding="utf-8")
+    repo["skill_root"] = "."
+    repo["source_path"] = r".hidden\release.v1\SKILL.md"
+    repo["pinned_commit"] = _commit_git_repo(repo_root)
+    repo["sha256"] = _sha256(source_file)
+    config["log_file"] = str(tmp_path / "sync.log")
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    run = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveProtectedSync",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert target_file.read_text(encoding="utf-8") == expected_content
+    _assert_no_temporary_git_worktrees(repo_root)
+
+
 def test_pinned_sync_removes_materialized_worktree_after_success(tmp_path: Path) -> None:
     if shutil.which("pwsh") is None:
         pytest.skip("PowerShell is unavailable; Python contract tests remain portable")

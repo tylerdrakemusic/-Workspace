@@ -77,7 +77,7 @@ function Resolve-PinnedSource {
         throw "Pinned source is missing pinned_commit for $RepositoryPath"
     }
 
-    $gitPath = (Join-Path "." $SourceRelativePath).Replace("\", "/").TrimStart("./")
+    $gitPath = $SourceRelativePath.Replace("\", "/")
     & git -C $RepositoryPath cat-file -e "$PinnedCommit^{commit}" 2>$null
     if ($LASTEXITCODE -ne 0) {
         throw "Pinned commit $PinnedCommit is unavailable in $RepositoryPath"
