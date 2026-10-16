@@ -14,8 +14,11 @@ from skill_catalog import load_catalog, validate_catalog
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 HUMANIZER_PATH = WORKSPACE_ROOT / ".github" / "skills" / "humanizer" / "SKILL.md"
-EXPECTED_COMMIT = "e2e92e7b4b8229253ed5c8e81dc65463fdeddda5"
-EXPECTED_SHA256 = "14fc8a965b6e0a8dc100ba4dffeab55cb94bbac112abbde7e014d5c15a35c202"
+EXPECTED_COMMIT = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8"
+EXPECTED_SHA256 = "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad"
+EXPECTED_VERSION = "3.1.0"
+EXPECTED_SYNC_COMMIT = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8"
+EXPECTED_SYNC_SHA256 = "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad"
 
 sys.path.insert(0, str(WORKSPACE_ROOT / ".github" / "!!☾⛧security"))
 
@@ -40,14 +43,14 @@ def test_humanizer_is_cataloged_with_pinned_provenance_and_routing_boundary() ->
     ]
     assert entry["provenance"] == (
         "external-source; repository=https://github.com/blader/humanizer; "
-        f"commit={EXPECTED_COMMIT}; sha256={EXPECTED_SHA256}; license=MIT; version=2.11.2"
+        f"commit={EXPECTED_COMMIT}; sha256={EXPECTED_SHA256}; license=MIT; version={EXPECTED_VERSION}"
     )
     assert entry["provenance_details"] == {
         "repository": "https://github.com/blader/humanizer",
         "commit": EXPECTED_COMMIT,
         "sha256": EXPECTED_SHA256,
         "license": "MIT",
-        "version": "2.11.2",
+        "version": EXPECTED_VERSION,
     }
     assert "human-facing UI strings/copy only" in catalog["routing_boundaries"]["humanizer"]
     for excluded in (
@@ -74,22 +77,34 @@ def test_humanizer_source_is_byte_identical_to_declared_sha256() -> None:
     )
     entry = next(item for item in catalog["skills"] if item["name"] == "humanizer")
 
-    assert digest == entry["provenance_details"]["sha256"]
+    assert entry["provenance_details"]["sha256"] == EXPECTED_SHA256
+    assert digest == EXPECTED_SHA256
 
 
 def test_humanizer_sync_entry_is_immutable_and_does_not_enable_protected_overwrite() -> None:
     config = json.loads(
         (WORKSPACE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
     )
+    catalog = json.loads(
+        (WORKSPACE_ROOT / ".github" / "skills" / "skill-catalog.json").read_text(
+            encoding="utf-8"
+        )
+    )
     mapping = next(repo for repo in config["repos"] if repo["name"] == "humanizer")
 
     assert mapping["remote"] == "https://github.com/blader/humanizer"
-    assert mapping["pinned_commit"] == EXPECTED_COMMIT
+    assert mapping["pinned_commit"] == EXPECTED_SYNC_COMMIT
+    assert mapping["sha256"] == EXPECTED_SYNC_SHA256
     assert mapping["source_path"] == "SKILL.md"
     assert mapping["skills"] == ["humanizer"]
     assert mapping["provenance"] == "external-source"
     assert mapping["source_policy"] == "optional"
     assert mapping["protected_overwrite"] is False
+
+    sync_record = next(item for item in catalog["external_sync"] if item["target"] == "humanizer")
+    assert sync_record["pinned_commit"] == EXPECTED_COMMIT
+    assert sync_record["sha256"] == EXPECTED_SHA256
+    assert sync_record["version"] == EXPECTED_VERSION
 
 
 def test_pinned_source_validation_detects_revision_drift() -> None:

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12T04:18:44.323996+00:00",
+  "generated_at": "2026-10-16T09:15:19.529077+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -51,7 +51,7 @@
     ".github/skills/git-worktree/SKILL.md": "5f3b20700f973dac46f2148d7b21d96f21c42ecc3baf707ed01f6044ab4fbd3a",
     ".github/skills/grill-me/SKILL.md": "38cb51f2a0fd84374105b727e8ffe456a4a894cb2bf6400e18c5764a62d95843",
     ".github/skills/handoff/SKILL.md": "65e80725923677f128b1d3cf23397b4bf0cc8659cd408aaee5ab285d01aa54af",
-    ".github/skills/humanizer/SKILL.md": "5fd504ab8c910a4e59418fae143f6f7c6928822ffedf45fb525a9b3bb8d7a83b",
+    ".github/skills/humanizer/SKILL.md": "0612f1dfb1672b0ea9b97e139bf1f06cabe98d8b27424fe8ff01e1fb4cc99cad",
     ".github/skills/incremental-implementation/SKILL.md": "121152f32f80bee9a1efe5c91da89d9994db5b92839a7684006e2000c78b8c18",
     ".github/skills/interview-me/SKILL.md": "f1239ec43838a3bd7feb76995906162ea2c8c4f888480b4916da3e6c817045d1",
     ".github/skills/karpathy-guidelines/SKILL.md": "e2553e9b66299fbca399804d6c44dfa44b2384b979ca5bf8b933b4916bb3141b",
@@ -64,7 +64,7 @@
     ".github/skills/prototype/SKILL.md": "ad67a04d7f5cbba64d0b7f257b9922b27453e9093dc711ba9663b3048e41152e",
     ".github/skills/scope-creep/SKILL.md": "8eff1da587b16781050b5f1c8fbeb41c6de1234a8fd152259932fbbdc327a5a3",
     ".github/skills/security-and-hardening/SKILL.md": "e3932b0ce169f4051055652e9616095f00f305ef5117b8e9e063989f70c67335",
-    ".github/skills/skill-catalog.json": "d3cfa559e1ccfdcb910a6f5e5d33071eadf1420486b0a0c593ddbc3bd1af2894",
+    ".github/skills/skill-catalog.json": "b732f2626b0ab7c8f039ddae88a1cb43797e5eb983915249fede970329d5cb6f",
     ".github/skills/spec-driven-development/SKILL.md": "061194bbf0997aae06171a3a4d1d881dfcbbe276d4361fba21aacfb18cd16cc8",
     ".github/skills/tdd/SKILL.md": "4bc06151a5d5c37af1ee5613dc07b67ecf18b2e22e6a26e8538a3a995a8aafca",
     ".github/skills/teach/SKILL.md": "99c077a05f66237c95392dc440974e9d144c1267309e978c7a18aaf065ce7fd3",

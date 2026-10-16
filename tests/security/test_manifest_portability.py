@@ -106,10 +106,18 @@ def test_davidondrej_mappings_are_explicitly_optional() -> None:
 
     assert mapping["source_policy"] == "optional"
     assert mapping["skills"] == [
-        "agent-orchestration/git-worktree",
         "thinking-and-docs/before-building",
         "thinking-and-docs/decisions",
     ]
+
+
+def test_wayfinder_is_excluded_from_external_skill_sync() -> None:
+    config = json.loads(
+        (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
+    )
+    registered_skills = [skill for repo in config["repos"] for skill in repo["skills"]]
+
+    assert "wayfinder" not in registered_skills
 
 
 def test_all_external_mappings_are_explicitly_optional() -> None:
@@ -121,7 +129,7 @@ def test_all_external_mappings_are_explicitly_optional() -> None:
     assert all(repo["source_policy"] == "optional" for repo in config["repos"])
 
 
-def test_verify_allows_absent_external_sources_in_clean_checkout(
+def test_verify_blocks_missing_pinned_source_in_clean_checkout(
     tmp_path: Path, monkeypatch
 ) -> None:
     module = load_manifest_module()
@@ -132,6 +140,7 @@ def test_verify_allows_absent_external_sources_in_clean_checkout(
         "ADDYOSMANI_AGENT_SKILLS_ROOT",
         "ANDREJ_KARPATHY_SKILLS_ROOT",
         "DAVIDONDREJ_SKILLS_ROOT",
+        "BLADER_HUMANIZER_ROOT",
         "SUPERPOWERS_ROOT",
     ):
         monkeypatch.setenv(
@@ -168,6 +177,12 @@ def test_verify_allows_absent_external_sources_in_clean_checkout(
 
     result = module.verify_skill_integrity(config_path, manifest_path)
 
-    assert result.hard_findings == []
+    assert len(result.hard_findings) == 1
+    assert result.hard_findings[0].source_repository == "humanizer"
+    assert result.hard_findings[0].status == "integrity_failure"
     assert result.entries
-    assert {entry.status for entry in result.entries} == {"source_unavailable"}
+    unpinned_entries = [
+        entry for entry in result.entries if entry.source_repository != "humanizer"
+    ]
+    assert unpinned_entries
+    assert {entry.status for entry in unpinned_entries} == {"source_unavailable"}

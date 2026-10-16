@@ -391,7 +391,6 @@ def _prepare_integrity_project(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
                         "skills": ["example"],
                         "provenance": "external-source",
                         "source_policy": "required",
-                        "pinned_commit": "",
                     }
                 ],
             }
