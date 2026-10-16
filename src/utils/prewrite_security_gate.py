@@ -44,22 +44,21 @@ def run_prewrite_security_gate(repo_root: Path) -> int:
 
     verifier_completed = _VERIFIER_COMPLETE_MARKER in result.stdout
     confirmed_source_drift = _SOURCE_DRIFT_MARKER in result.stdout
-    if verifier_completed and (result.returncode == 2 or confirmed_source_drift):
+    if confirmed_source_drift or (verifier_completed and result.returncode == 2):
         print(
             "BLOCKED: canonical integrity verification found an unapproved mismatch.",
             file=sys.stderr,
         )
         return 1
 
-    if result.returncode == 0 and verifier_completed:
-        print("INTEGRITY_OK: canonical verifier passed.")
+    if not verifier_completed or result.returncode != 0:
+        print(
+            "WARNING: canonical integrity verification did not complete cleanly; allowing write",
+            file=sys.stderr,
+        )
         return 0
 
-    print(
-        f"WARNING: integrity verification was operationally incomplete "
-        f"(exit code {result.returncode}); allowing write",
-        file=sys.stderr,
-    )
+    print("INTEGRITY_OK: canonical verifier passed.")
     return 0
 
 

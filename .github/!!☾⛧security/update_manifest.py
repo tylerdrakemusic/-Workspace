@@ -37,10 +37,14 @@ class SkillIntegrityResult:
     hard_findings: list[SkillIntegrityEntry]
 
 
-def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
+class _SkillSyncPathViolation(ValueError):
+    pass
+
+
+def _skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
     destination = Path(config["destination"])
-    entries: list[dict[str, str]] = []
-    for repo in config["repos"]:
+    entries: list[dict[str, Any]] = []
+    for repo_index, repo in enumerate(config["repos"]):
         provenance = repo.get("provenance", "external-source")
         source_policy = repo.get("source_policy", "required")
         for skill in repo["skills"]:
@@ -54,6 +58,8 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
                     "target": str(target),
                     "manifest_key": f".github/skills/{skill}/SKILL.md",
                     "source_repository": repo["name"],
+                    "repo_index": repo_index,
+                    "skill": skill,
                     "repository_path": str(repo["path"]),
                     "provenance": provenance,
                     "source_policy": source_policy,
@@ -61,6 +67,121 @@ def _skill_entries(config: dict[str, Any]) -> list[dict[str, str]]:
                 }
             )
     return entries
+
+
+def _confined_path(path: Path, root: Path, description: str) -> Path:
+    try:
+        resolved_root = root.resolve()
+        resolved_path = path.resolve()
+    except (OSError, RuntimeError) as exc:
+        raise _SkillSyncPathViolation(
+            f"{description} path could not be resolved: {path}"
+        ) from exc
+    try:
+        resolved_path.relative_to(resolved_root)
+    except ValueError as exc:
+        raise _SkillSyncPathViolation(
+            f"{description} path resolves outside configured root: {resolved_path}"
+        ) from exc
+    return resolved_path
+
+
+def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
+    workspace_root = Path(config["workspace_root"])
+    destination = _confined_path(
+        Path(config["destination"]), workspace_root, "Skill destination"
+    )
+    log_file = _confined_path(
+        Path(config["log_file"]), workspace_root, "Configured log file"
+    )
+    entries = _skill_entries(config)
+    for item in entries:
+        repository_root = Path(item["repository_path"])
+        try:
+            repository_root = repository_root.resolve()
+        except (OSError, RuntimeError) as exc:
+            raise _SkillSyncPathViolation(
+                "Source repository root for "
+                f"{item['source_repository']} could not be resolved: {repository_root}"
+            ) from exc
+        source = _confined_path(
+            Path(item["source"]),
+            repository_root,
+            f"Source for {item['source_repository']}",
+        )
+        item["source"] = str(source)
+        item["source_relative_path"] = source.relative_to(repository_root).as_posix()
+        item["target"] = str(
+            _confined_path(
+                Path(item["target"]),
+                destination,
+                f"Target for {item['source_repository']}",
+            )
+        )
+    mapped_targets = {Path(item["target"]) for item in entries}
+    mapped_sources = {Path(item["source"]) for item in entries}
+    if log_file in mapped_targets:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path collides with a mapped skill target: {log_file}"
+        )
+    if log_file in mapped_sources:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path collides with a mapped skill source: {log_file}"
+        )
+    if log_file.exists():
+        for target in mapped_targets:
+            if target.exists() and os.path.samefile(log_file, target):
+                raise _SkillSyncPathViolation(
+                    f"Configured log file path aliases a mapped skill target: {log_file}"
+                )
+        for source in mapped_sources:
+            if source.exists() and os.path.samefile(log_file, source):
+                raise _SkillSyncPathViolation(
+                    f"Configured log file path aliases a mapped skill source: {log_file}"
+                )
+    try:
+        log_file.relative_to(destination)
+    except ValueError:
+        try:
+            destination.relative_to(log_file)
+        except ValueError:
+            pass
+        else:
+            raise _SkillSyncPathViolation(
+                f"Configured log file path overlaps the skill destination: {log_file}"
+            )
+    else:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path overlaps the skill destination: {log_file}"
+        )
+    return entries
+
+
+def preflight_sync_config(config_path: Path) -> dict[str, Any]:
+    """Return a resolved sync plan after validating every source and target."""
+    config = resolve_sync_config(config_path)
+    entries = _preflight_skill_entries(config)
+    resolved = dict(config)
+    resolved["workspace_root"] = str(config["workspace_root"])
+    resolved["destination"] = str(config["destination"])
+    resolved["log_file"] = str(config["log_file"])
+    resolved_repos: list[dict[str, Any]] = []
+    for repo_index, repo in enumerate(config["repos"]):
+        resolved_repo = dict(repo)
+        resolved_repo["path"] = str(repo["path"])
+        resolved_repo["mappings"] = [
+            {
+                "skill": item["skill"],
+                "source": item["source"],
+                "source_relative_path": item["source_relative_path"],
+                "target": item["target"],
+            }
+            for item in entries
+            if item["repo_index"] == repo_index
+        ]
+        resolved_repos.append(resolved_repo)
+    resolved["repos"] = resolved_repos
+    return resolved
 
 
 def _resolve_path(value: Any, root: Path) -> Path:
@@ -71,7 +192,12 @@ def _resolve_path(value: Any, root: Path) -> Path:
         else:
             value = value.get("relative", ".")
     path = Path(value)
-    return path.resolve() if path.is_absolute() else (root / path).resolve()
+    try:
+        return path.resolve() if path.is_absolute() else (root / path).resolve()
+    except (OSError, RuntimeError) as exc:
+        raise _SkillSyncPathViolation(
+            f"Configured path could not be resolved: {path}"
+        ) from exc
 
 
 def resolve_sync_config(config_path: Path) -> dict[str, Any]:
@@ -96,12 +222,13 @@ def resolve_sync_config(config_path: Path) -> dict[str, Any]:
 def verify_skill_integrity(config_path: Path, manifest_path: Path) -> SkillIntegrityResult:
     """Classify copied skills against their declared source and local baseline."""
     config = resolve_sync_config(config_path)
+    items = _preflight_skill_entries(config)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest_files = manifest.get("files", {})
     entries: list[SkillIntegrityEntry] = []
     hard_findings: list[SkillIntegrityEntry] = []
 
-    for item in _skill_entries(config):
+    for item in items:
         source = Path(item["source"])
         target = Path(item["target"])
         target_key = item["manifest_key"]
@@ -264,7 +391,11 @@ def verify_manifest(repo_root: Path | None = None) -> None:
         print(f"\n  {issues} integrity issue(s) found. Review before proceeding.")
 
     if skill_sync_config.exists():
-        skill_result = verify_skill_integrity(skill_sync_config, manifest_path)
+        try:
+            skill_result = verify_skill_integrity(skill_sync_config, manifest_path)
+        except _SkillSyncPathViolation as error:
+            print(f"\n  ❌ SKILL SYNC PATH POLICY: {error}")
+            sys.exit(2)
         for entry in skill_result.entries:
             if entry.status == "local_customization":
                 print(f"  ⚠️  SOURCE DRIFT (approval required): {entry.target}")
@@ -288,7 +419,22 @@ def verify_manifest(repo_root: Path | None = None) -> None:
 
 
 if __name__ == "__main__":
-    if "--update-files" in sys.argv:
+    if "--confine-path" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--confine-path", type=Path, required=True)
+        parser.add_argument("--root", type=Path, required=True)
+        args = parser.parse_args()
+        print(_confined_path(args.confine_path, args.root, "Source"))
+    elif "--preflight-sync-config" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--preflight-sync-config", type=Path, required=True)
+        args = parser.parse_args()
+        print(json.dumps(preflight_sync_config(args.preflight_sync_config), ensure_ascii=False))
+    elif "--update-files" in sys.argv:
         import argparse
 
         parser = argparse.ArgumentParser()
