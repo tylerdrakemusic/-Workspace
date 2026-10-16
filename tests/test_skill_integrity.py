@@ -496,6 +496,58 @@ def test_sync_preflight_rejects_external_hard_link_to_mapped_target_without_modi
     assert target_file.read_bytes() == original_bytes
 
 
+def test_sync_preflight_rejects_external_hard_link_to_mapped_source_under_workspace_root_without_modifying_bytes(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    config_path = workspace / "tools" / "skill-sync-config.json"
+    source_root = workspace / "source-repo"
+    source_file = source_root / "skills" / "example" / "SKILL.md"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_bytes(b"approved source bytes\n")
+
+    destination = workspace / ".github" / "skills"
+    log_path = workspace / "logs" / "skill-sync.log"
+    config_path.parent.mkdir(parents=True)
+    log_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": str(workspace),
+                "destination": str(destination),
+                "log_file": str(log_path),
+                "repos": [
+                    {
+                        "name": "workspace-skills",
+                        "path": str(source_root),
+                        "remote": None,
+                        "skill_root": "skills",
+                        "provenance": "external-source",
+                        "skills": ["example"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        os.link(source_file, log_path)
+    except OSError as exc:
+        unsupported = {errno.ENOSYS, errno.ENOTSUP, errno.EOPNOTSUPP}
+        if exc.errno in unsupported or getattr(exc, "winerror", None) in {1, 50}:
+            pytest.skip(f"Hard links are unsupported here: {exc}")
+        raise
+
+    assert os.path.samefile(source_file, log_path)
+    original_bytes = source_file.read_bytes()
+
+    with pytest.raises(ValueError, match="mapped skill source"):
+        update_manifest.preflight_sync_config(config_path)
+
+    assert source_file.read_bytes() == original_bytes
+
+
 @pytest.mark.parametrize("destination_preexists", [True, False])
 def test_pinned_sync_validates_later_hash_before_changing_destination(
     tmp_path: Path, destination_preexists: bool

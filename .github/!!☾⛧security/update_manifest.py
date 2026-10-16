@@ -119,15 +119,25 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
             )
         )
     mapped_targets = {Path(item["target"]) for item in entries}
+    mapped_sources = {Path(item["source"]) for item in entries}
     if log_file in mapped_targets:
         raise _SkillSyncPathViolation(
             f"Configured log file path collides with a mapped skill target: {log_file}"
+        )
+    if log_file in mapped_sources:
+        raise _SkillSyncPathViolation(
+            f"Configured log file path collides with a mapped skill source: {log_file}"
         )
     if log_file.exists():
         for target in mapped_targets:
             if target.exists() and os.path.samefile(log_file, target):
                 raise _SkillSyncPathViolation(
                     f"Configured log file path aliases a mapped skill target: {log_file}"
+                )
+        for source in mapped_sources:
+            if source.exists() and os.path.samefile(log_file, source):
+                raise _SkillSyncPathViolation(
+                    f"Configured log file path aliases a mapped skill source: {log_file}"
                 )
     try:
         log_file.relative_to(destination)
