@@ -1,6 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% is_derived_view=true
 %% Traceability.parent: diagrams/workspace-architecture.mmd
+%% Traceability.derived_views: diagrams/workspace-command-guard-skill-drift.mmd
 graph LR
     subgraph Maintenance["Explicit maintenance flow"]
         Caller[Operator]
@@ -43,20 +44,23 @@ graph LR
     subgraph PrewriteIntegrity["⊕ Pre-write integrity verification"]
         PrewriteGate[⊕workspace-overseer invokes<br/>prewrite_security_gate.py]
         ManifestVerifier[/update_manifest.py --verify/]
-        IntegrityBlock[Block write<br/>confirmed mismatch or source drift]
+        IntegrityBlock[Block write<br/>unresolved mismatch or hard-block finding]
         IntegrityWarnAllow[Warning, allow write<br/>operationally incomplete]
         IntegrityAllow[Verification passed<br/>allow write]
         PrewriteGate --> ManifestVerifier
-        ManifestVerifier -->|completed with mismatch or source drift| IntegrityBlock
+        ManifestVerifier -->|completed with mismatch or source drift| SkillDriftSummary
+        ManifestVerifier -->|"invalid pin or verifier-level hard-block finding"| IntegrityBlock
         ManifestVerifier -->|start failure, timeout, or incomplete result| IntegrityWarnAllow
         ManifestVerifier -->|exit 0 with completion marker| IntegrityAllow
     end
+    SkillDriftSummary[Reviewed skill updates, watched-file reconciliation, and quarantine<br/>see workspace-command-guard-skill-drift.mmd]
     Limitation[CurrentUser discourages casual inspection on this account and machine<br/>does not isolate same-user agents or prevent bypass]
     Protect -.-> Limitation
     Unprotect -.-> Limitation
 
     class Caller,MaintenanceCLI,RuntimeCLI,Command ws
     class PrewriteGate,ManifestVerifier ws
+    class SkillDriftSummary ws
     class Plaintext ext
     class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation,IntegrityBlock,IntegrityWarnAllow,IntegrityAllow state
     class Ciphertext db
@@ -70,7 +74,12 @@ graph LR
         L4{Decision or boundary}:::state
     end
 
-classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc

@@ -4,6 +4,9 @@
 
 param(
     [switch]$ApproveProtectedSync,
+    [switch]$ApproveReviewedUpdates,
+    [string[]]$ReviewedSkills,
+    [string]$ReviewRationale,
     [string]$ConfigPath,
     [string]$ManifestPath
 )
@@ -106,6 +109,20 @@ function Resolve-PinnedSource {
         throw "Pinned source path preflight failed: $($resolvedSource -join ' ')"
     }
     $sourcePath = ($resolvedSource -join [Environment]::NewLine).Trim()
+    $blobArgs = @(
+        "--write-pinned-git-blob",
+        $RepositoryPath,
+        $PinnedCommit,
+        $gitPath,
+        "--output",
+        $sourcePath,
+        "--root",
+        $worktreePath
+    )
+    $blobOutput = & $pythonExecutable $manifestUpdater @blobArgs 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Pinned Git blob materialization failed: $($blobOutput -join ' ')"
+    }
     if (-not (Test-Path $sourcePath -PathType Leaf)) {
         throw "Pinned source $gitPath was not materialized at commit $PinnedCommit"
     }
@@ -122,6 +139,208 @@ function Remove-PinnedSource {
         & git -C $RepositoryPath worktree remove --force $WorktreePath 2>$null | Out-Null
         Remove-Item -Recurse -Force $WorktreePath -ErrorAction SilentlyContinue
     }
+}
+
+function Invoke-ReviewedSkillSync {
+    if ([string]::IsNullOrWhiteSpace($ReviewRationale)) {
+        throw "Reviewed updates require a non-empty review rationale"
+    }
+    $selectedSkills = @($ReviewedSkills | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    if ($selectedSkills.Count -eq 0 -or $selectedSkills.Count -ne @($selectedSkills | Select-Object -Unique).Count) {
+        throw "Reviewed updates require unique named skills"
+    }
+    $expectedManifestPath = Join-Path $configRoot ".github\!!☾⛧security\agent-manifest.json"
+    $expectedConfigPath = Join-Path $configRoot "tools\skill-sync-config.json"
+    if (
+        [IO.Path]::GetFullPath($configPath) -ne [IO.Path]::GetFullPath($expectedConfigPath) -or
+        [IO.Path]::GetFullPath($manifestPath) -ne [IO.Path]::GetFullPath($expectedManifestPath) -or
+        [IO.Path]::GetFullPath($repoRoot) -ne [IO.Path]::GetFullPath($configRoot)
+    ) {
+        throw "Reviewed updates require the canonical sync config and agent manifest under the configured workspace"
+    }
+    $protectedConfigPath = $configRoot
+    foreach ($component in @("tools", "skill-sync-config.json")) {
+        $protectedConfigPath = Join-Path $protectedConfigPath $component
+        if (Test-Path -LiteralPath $protectedConfigPath) {
+            $configItem = Get-Item -LiteralPath $protectedConfigPath -Force
+            if ($configItem.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Reviewed sync config path contains a reparse point: $protectedConfigPath"
+            }
+        }
+    }
+    $protectedOutputPath = $configRoot
+    foreach ($component in @(".github", "!!☾⛧security", "agent-manifest.json")) {
+        $protectedOutputPath = Join-Path $protectedOutputPath $component
+        if (Test-Path -LiteralPath $protectedOutputPath) {
+            $outputItem = Get-Item -LiteralPath $protectedOutputPath -Force
+            if ($outputItem.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Reviewed manifest path contains a reparse point: $protectedOutputPath"
+            }
+        }
+    }
+
+    $rawConfig = Get-Content -Raw -Path $configPath | ConvertFrom-Json
+    $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
+    if ($null -eq $manifest.files) {
+        throw "Reviewed updates require an existing manifest files map"
+    }
+
+    $syncPlan = [System.Collections.Generic.List[object]]::new()
+    $pinnedSources = [System.Collections.Generic.List[object]]::new()
+    $configChanged = $false
+    try {
+        foreach ($skill in $selectedSkills) {
+            $reviewedMappings = [System.Collections.Generic.List[object]]::new()
+            foreach ($repo in $config.repos) {
+                if ($repo.provenance -ne "external-source") { continue }
+                foreach ($mapping in $repo.mappings) {
+                    if ($mapping.skill -ceq $skill) {
+                        $null = $reviewedMappings.Add([pscustomobject]@{ Repo = $repo; Mapping = $mapping })
+                    }
+                }
+            }
+            if ($reviewedMappings.Count -ne 1) {
+                throw "Reviewed skill '$skill' must name exactly one configured external-source mapping"
+            }
+
+            $repo = $reviewedMappings[0].Repo
+            $mapping = $reviewedMappings[0].Mapping
+            $rawRepos = @($rawConfig.repos | Where-Object { $_.name -ceq $repo.name })
+            if ($rawRepos.Count -ne 1) {
+                throw "Reviewed source repository '$($repo.name)' is ambiguous in the sync config"
+            }
+            $rawRepo = $rawRepos[0]
+            $hasCommit = $rawRepo.PSObject.Properties.Name -contains "pinned_commit"
+            $hasSha = $rawRepo.PSObject.Properties.Name -contains "sha256"
+            $source = $mapping.source
+            $newCommit = ""
+            $newHash = ""
+
+            if ($hasCommit -or $hasSha) {
+                if (-not $hasCommit -or -not $hasSha -or
+                    [string]::IsNullOrWhiteSpace($rawRepo.pinned_commit) -or
+                    [string]::IsNullOrWhiteSpace($rawRepo.sha256)) {
+                    throw "Reviewed pinned source '$($repo.name)' must have a complete existing pin pair"
+                }
+                if ($repo.mappings.Count -ne 1) {
+                    throw "Reviewed pinned repository '$($repo.name)' must map exactly one skill"
+                }
+
+                $commitOutput = & git -C $repo.path rev-parse --verify 'HEAD^{commit}' 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Unable to resolve reviewed candidate commit for $($repo.name): $($commitOutput -join ' ')"
+                }
+                $newCommit = ($commitOutput -join [Environment]::NewLine).Trim()
+                & git -C $repo.path merge-base --is-ancestor $rawRepo.pinned_commit $newCommit 2>$null
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Reviewed candidate commit $newCommit does not advance existing pin $($rawRepo.pinned_commit)"
+                }
+                $existingPinnedSource = Resolve-PinnedSource `
+                    $repo.path `
+                    $rawRepo.pinned_commit `
+                    $mapping.source_relative_path `
+                    $pinnedSources
+                $existingPinnedHash = (Get-FileHash -Path $existingPinnedSource.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+                if ($existingPinnedHash -ne ([string]$rawRepo.sha256).ToLowerInvariant()) {
+                    throw "Configured SHA-256 does not match the existing pinned Git blob SHA-256 for '$($repo.name)'"
+                }
+                $pinnedSource = Resolve-PinnedSource `
+                    $repo.path `
+                    $newCommit `
+                    $mapping.source_relative_path `
+                    $pinnedSources
+                $source = $pinnedSource.Path
+                $newHash = (Get-FileHash -Path $source -Algorithm SHA256).Hash.ToLowerInvariant()
+                $rawRepo.pinned_commit = $newCommit
+                $rawRepo.sha256 = $newHash
+                $configChanged = $true
+            }
+
+            if (-not (Test-Path $source -PathType Leaf)) {
+                throw "Reviewed source for '$skill' is missing: $source"
+            }
+            $directorySeparator = [IO.Path]::DirectorySeparatorChar
+            $alternateSeparator = [IO.Path]::AltDirectorySeparatorChar
+            $separatorChars = [char[]]@($directorySeparator, $alternateSeparator)
+            $rootPrefix = [IO.Path]::GetFullPath($repoRoot).TrimEnd($separatorChars) + $directorySeparator
+            $targetPath = [IO.Path]::GetFullPath($mapping.target)
+            $pathComparison = if ($directorySeparator -eq '\') {
+                [StringComparison]::OrdinalIgnoreCase
+            } else {
+                [StringComparison]::Ordinal
+            }
+            if (-not $targetPath.StartsWith($rootPrefix, $pathComparison)) {
+                throw "Reviewed target for '$skill' is outside the repository root"
+            }
+            $manifestKey = $targetPath.Substring($rootPrefix.Length).Replace('\', '/')
+            $manifestEntry = $manifest.files.PSObject.Properties[$manifestKey]
+            if ($null -eq $manifestEntry -or -not (Test-Path $targetPath -PathType Leaf)) {
+                throw "Reviewed target '$manifestKey' must already exist in both the manifest and workspace"
+            }
+            $installedHash = (Get-FileHash -Path $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($installedHash -ne ([string]$manifestEntry.Value).ToLowerInvariant()) {
+                throw "Reviewed target '$manifestKey' no longer matches its trusted manifest hash"
+            }
+
+            $null = $syncPlan.Add([pscustomobject]@{
+                Skill = $skill
+                RepositoryName = $repo.name
+                Source = $source
+                Target = $targetPath
+                ManifestKey = $manifestKey
+                OldCommit = [string]$repo.pinned_commit
+                NewCommit = $newCommit
+                OldHash = [string]$manifestEntry.Value
+                NewHash = if ($newHash) { $newHash } else { (Get-FileHash -Path $source -Algorithm SHA256).Hash.ToLowerInvariant() }
+            })
+        }
+
+        New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
+        foreach ($line in $script:logBuffer) {
+            Add-Content -Path $logFile -Value $line -Encoding UTF8
+        }
+        $script:logBuffer.Clear()
+        $script:logReady = $true
+
+        Write-Log "Reviewed skill update rationale: $($ReviewRationale.Trim())"
+        if ($configChanged) {
+            $configJson = ConvertTo-Json -InputObject $rawConfig -Depth 100
+            [IO.File]::WriteAllText(
+                $configPath,
+                $configJson + [Environment]::NewLine,
+                [Text.UTF8Encoding]::new($false)
+            )
+        }
+        foreach ($item in $syncPlan) {
+            Copy-Item $item.Source $item.Target -Force
+            Write-Log "Reviewed update: $($item.Skill); commit $($item.OldCommit) -> $($item.NewCommit); hash $($item.OldHash) -> $($item.NewHash)"
+        }
+
+        $manifestArgs = @("--update-files") + @($syncPlan | ForEach-Object { $_.Target }) + @("--manifest", $manifestPath, "--repo-root", $repoRoot)
+        $manifestOutput = & $pythonExecutable $manifestUpdater @manifestArgs 2>&1
+        $manifestExitCode = $LASTEXITCODE
+        $manifestOutput | ForEach-Object { Write-Log $_ }
+        if ($manifestExitCode -ne 0) {
+            throw "Reviewed skill manifest update failed"
+        }
+
+        $prewriteGate = Join-Path (Split-Path $scriptDir -Parent) "src\utils\prewrite_security_gate.py"
+        $gateOutput = & $pythonExecutable $prewriteGate --repo-root $repoRoot 2>&1
+        $gateExitCode = $LASTEXITCODE
+        $gateOutput | ForEach-Object { Write-Log $_ }
+        if ($gateExitCode -ne 0) {
+            throw "Reviewed skill update did not pass the prewrite security gate"
+        }
+    } finally {
+        foreach ($pinnedSource in $pinnedSources) {
+            Remove-PinnedSource $pinnedSource.RepositoryPath $pinnedSource.Worktree
+        }
+    }
+}
+
+if ($ApproveReviewedUpdates) {
+    Invoke-ReviewedSkillSync
+    exit 0
 }
 
 Write-Log "=== skill-sync start ==="

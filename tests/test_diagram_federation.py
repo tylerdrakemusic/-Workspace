@@ -105,6 +105,7 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
         "diagrams/workspace-scheduler-architecture-jobs.mmd",
         "diagrams/workspace-tech-stack.mmd",
         "diagrams/workspace-command-guard-security.mmd",
+        "diagrams/workspace-command-guard-skill-drift.mmd",
     }
 
 

@@ -1,0 +1,74 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-command-guard-security.mmd
+graph LR
+    subgraph PrewriteIntegrity["⊕ Pre-write integrity verification"]
+        PrewriteGate[prewrite_security_gate.py]
+        ManifestVerifier[/update_manifest.py --verify/]
+        IntegrityBlock[Block write<br/>unresolved mismatch or hard-block finding]
+        IntegrityAllow[Verification passed<br/>allow write]
+        PrewriteGate --> ManifestVerifier
+        ManifestVerifier -->|completed with mismatch or source drift| DriftReview
+        ManifestVerifier -->|"malformed or incomplete pinned_commit/sha256"| IntegrityBlock
+        ManifestVerifier -->|"SKILL SYNC PATH POLICY"| IntegrityBlock
+        ManifestVerifier -->|"exit 0 with completion marker, including source_update_quarantined"| IntegrityAllow
+    end
+    subgraph SkillDrift["Reviewed skill-drift remediation"]
+        direction LR
+        DriftReview[FR agent reviews exact old/new content<br/>against trusted source, manifest, and Git baseline]
+        FRHistory[(FR history<br/>concise verdict only, no full diff)]
+        ReviewClassification{Reviewed finding}
+        ReviewedExternalSync[/Selected reviewed sync/]
+        PinFieldsConfigured{pinned_commit or sha256 configured?}
+        PinPairValid{Complete valid pinned_commit + sha256 pair?}
+        PinBaselineCheck{Old pinned Git blob SHA-256 matches configured sha256?}
+        TrustedTargetHashCheck{Installed target hash matches trusted manifest hash?}
+        AdvanceExistingPin[Advance existing pin<br/>pinned_commit + sha256]
+        CopySelectedTarget[Copy selected target]
+        RefreshSelectedEntry[Refresh only the selected manifest entry]
+        ReconcileWatchedEntries[Reconcile exact manifest entries<br/>for watched path edit, add, or delete]
+        QuarantineEligibility{Installed target equals trusted manifest hash<br/>and FR does not name candidate?}
+        QuarantineCandidate[source_update_quarantined<br/>candidate remains uninstalled, trusted copy unchanged]
+        DriftReview -->|"record concise verdict, no full diff"| FRHistory
+        DriftReview --> ReviewClassification
+        ReviewClassification -->|"benign external update"| ReviewedExternalSync
+        ReviewedExternalSync --> PinFieldsConfigured
+        PinFieldsConfigured -->|"no pin fields, manifest baseline only, add no source pin"| TrustedTargetHashCheck
+        PinFieldsConfigured -->|"pin fields present"| PinPairValid
+        PinPairValid -->|"valid pair"| PinBaselineCheck
+        PinPairValid -->|"malformed or incomplete pinned_commit/sha256"| IntegrityBlock
+        PinBaselineCheck -->|"yes"| TrustedTargetHashCheck
+        PinBaselineCheck -->|"no, hard-block before write"| IntegrityBlock
+        TrustedTargetHashCheck -->|"no, installed target does not match trusted manifest hash"| IntegrityBlock
+        TrustedTargetHashCheck -->|"yes, existing pin"| AdvanceExistingPin
+        TrustedTargetHashCheck -->|"yes, unpinned external skill"| CopySelectedTarget
+        AdvanceExistingPin --> CopySelectedTarget
+        CopySelectedTarget --> RefreshSelectedEntry
+        RefreshSelectedEntry -->|"rerun verification"| PrewriteGate
+        ReviewClassification -->|"benign project-owned watched path edit, add, or delete"| ReconcileWatchedEntries
+        ReconcileWatchedEntries -->|"rerun verification"| PrewriteGate
+        ReviewClassification -->|"suspicious external candidate"| QuarantineEligibility
+        QuarantineEligibility -->|"yes"| QuarantineCandidate
+        QuarantineEligibility -->|"no, quarantine not allowed"| IntegrityBlock
+        QuarantineCandidate -->|"rerun prewrite_security_gate.py with --quarantine-external-skill <skill>"| PrewriteGate
+        ReviewClassification -->|"target tampering, suspicious project-owned change, or config/source/path change"| IntegrityBlock
+    end
+
+    class PrewriteGate,ManifestVerifier,DriftReview,ReviewedExternalSync,AdvanceExistingPin,CopySelectedTarget,RefreshSelectedEntry,ReconcileWatchedEntries,QuarantineCandidate ws
+    class FRHistory db
+    class IntegrityBlock,IntegrityAllow,ReviewClassification,PinFieldsConfigured,PinPairValid,PinBaselineCheck,TrustedTargetHashCheck,QuarantineEligibility state
+
+    subgraph Legend["Legend"]
+        direction LR
+        L1[Workspace guard]:::ws
+        L2[External source candidate]:::ext
+        L3[(FR history)]:::db
+        L4{Decision or boundary}:::state
+    end
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff

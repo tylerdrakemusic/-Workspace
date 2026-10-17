@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-16T09:15:19.529077+00:00",
+  "generated_at": "2026-10-17T00:31:44.387694+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -14,7 +14,7 @@
     ".github/agents/⊕workspace-gen-qee.agent.md": "ff0962b6d4f9c29dcf7d250f02030e33d0c7e76c9d6f82a16e633969f06d8729",
     ".github/agents/⊕workspace-hygiene.agent.md": "2cbca65df3193bd7657e6a3f6d98f170d39641788437421797f757037836e21c",
     ".github/agents/⊕workspace-intake.agent.md": "ff882a25687c88854d0a63205824408fe7e9c7f8e2353a621004b6f26705f834",
-    ".github/agents/⊕workspace-overseer.agent.md": "cd9cda9370b84329b1c876f1c39a1c05bc87447e7837b7530bd1443bbf63cbf0",
+    ".github/agents/⊕workspace-overseer.agent.md": "883c69337bfcaa7ae9cf905ac4ab9387a4ddc5c602359eb752bec10a0146b7a8",
     ".github/agents/⊕workspace-protector.agent.md": "0f61dee9ad74577ff26cdaafb52ee789f957c7b86e448b6ddd9ef80eb86953cb",
     ".github/agents/⊕workspace-qa-heavy.agent.md": "d90b0d3a00f0bb8b89d49c8eb69305e2766de9568127714b5ec036931d6bde9e",
     ".github/agents/⊕workspace-qa-light.agent.md": "8d8fd069445005f10b3017f76822d70b40a505780ea4aa7326eda77502fa780e",

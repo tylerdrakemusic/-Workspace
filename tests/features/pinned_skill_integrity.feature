@@ -24,3 +24,19 @@ Feature: Pinned skill source integrity
     Given a tracked agent prompt has an unapproved prompt-injection edit and the pinned skill source is valid
     When the full integrity verifier runs
     Then the agent manifest rejects the edit and the pinned source still reports source_match
+
+  Scenario: An explicitly reviewed update advances only the selected external skill
+    Given a configured external skill has an old pin and a benign newer Git revision
+    When the reviewed-update interface runs for the named skill with a rationale
+    Then only the named skill and its manifest entry advance, and the integrity gate allows the workspace
+
+  Scenario: A reviewed update hashes and installs raw Git blobs despite CRLF worktree attributes
+    Given a configured external skill has an LF Git blob and a CRLF worktree checkout
+    When the reviewed-update interface runs for the named skill with a rationale
+    Then only the named skill and its manifest entry advance, and the integrity gate allows the workspace
+
+  Scenario: An explicitly reviewed update rejects an invalid old pin hash before writing
+    Given a configured external skill has an old pin and a benign newer Git revision
+    And the configured old pin SHA does not match its pinned Git blob
+    When the reviewed-update interface runs for the named skill with a rationale
+    Then the reviewed update is rejected before changing config, target, or manifest
