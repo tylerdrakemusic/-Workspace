@@ -11,12 +11,18 @@ _VERIFIER_COMPLETE_MARKER = "=== Agent File Integrity Check ==="
 _SOURCE_DRIFT_MARKER = "SOURCE DRIFT (approval required)"
 
 
-def run_prewrite_security_gate(repo_root: Path) -> int:
+def run_prewrite_security_gate(
+    repo_root: Path,
+    quarantined_external_skills: list[str] | None = None,
+) -> int:
     """Return 1 for confirmed integrity findings, otherwise allow with operational warnings."""
     verifier = repo_root / ".github" / "!!☾⛧security" / "update_manifest.py"
+    command = [sys.executable, str(verifier), "--verify"]
+    for skill in quarantined_external_skills or []:
+        command.extend(["--quarantine-external-skill", skill])
     try:
         result = subprocess.run(
-            [sys.executable, str(verifier), "--verify"],
+            command,
             cwd=repo_root,
             capture_output=True,
             text=True,
@@ -69,8 +75,15 @@ def main() -> int:
         type=Path,
         default=Path(__file__).resolve().parents[2],
     )
+    parser.add_argument(
+        "--quarantine-external-skill",
+        action="append",
+        default=[],
+    )
     args = parser.parse_args()
-    return run_prewrite_security_gate(args.repo_root.resolve())
+    return run_prewrite_security_gate(
+        args.repo_root.resolve(), args.quarantine_external_skill
+    )
 
 
 if __name__ == "__main__":

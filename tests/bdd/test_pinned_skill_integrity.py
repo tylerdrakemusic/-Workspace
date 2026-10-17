@@ -416,8 +416,23 @@ def reviewed_skill_revision_with_old_pin(
         "new_commit": new_commit,
         "new_sha256": _sha256(new_blob),
         "manifest_files": manifest_files,
+        "reviewed_repo": dict(config["repos"][0]),
         "unrelated_repo": dict(config["repos"][1]),
     }
+
+
+@given("the configured old pin SHA does not match its pinned Git blob")
+def reviewed_update_with_invalid_old_pin_sha(
+    integrity_case: dict[str, Any],
+) -> None:
+    case = integrity_case["reviewed_update"]
+    config = json.loads(case["config_path"].read_text(encoding="utf-8"))
+    old_sha = config["repos"][0]["sha256"]
+    config["repos"][0]["sha256"] = ("0" if old_sha[0] != "0" else "1") + old_sha[1:]
+    case["config_path"].write_text(json.dumps(config), encoding="utf-8")
+    case["config_before_update"] = case["config_path"].read_bytes()
+    case["target_before_update"] = case["selected_target"].read_bytes()
+    case["manifest_before_update"] = case["manifest_path"].read_bytes()
 
 
 @when("the reviewed-update interface runs for the named skill with a rationale")
@@ -463,8 +478,10 @@ def reviewed_update_advances_only_named_skill(integrity_case: dict[str, Any]) ->
 
     config = json.loads(case["config_path"].read_text(encoding="utf-8"))
     reviewed_repo, unrelated_repo = config["repos"]
-    assert reviewed_repo["pinned_commit"] == case["new_commit"]
-    assert reviewed_repo["sha256"] == case["new_sha256"]
+    expected_reviewed_repo = dict(case["reviewed_repo"])
+    expected_reviewed_repo["pinned_commit"] = case["new_commit"]
+    expected_reviewed_repo["sha256"] = case["new_sha256"]
+    assert reviewed_repo == expected_reviewed_repo
     assert unrelated_repo == case["unrelated_repo"]
     assert "pinned_commit" not in unrelated_repo
     assert "sha256" not in unrelated_repo
@@ -485,3 +502,20 @@ def reviewed_update_advances_only_named_skill(integrity_case: dict[str, Any]) ->
         "source_match",
     ]
     assert run_prewrite_security_gate(case["workspace_root"]) == 0
+
+
+@then(
+    "the reviewed update is rejected before changing config, target, or manifest"
+)
+def reviewed_update_rejects_invalid_old_pin_sha(
+    integrity_case: dict[str, Any],
+) -> None:
+    case = integrity_case["reviewed_update"]
+    run = integrity_case["reviewed_update_run"]
+    assert run.returncode != 0, run.stdout + run.stderr
+    assert "does not match the existing pinned Git blob SHA-256" in (
+        run.stdout + run.stderr
+    )
+    assert case["config_path"].read_bytes() == case["config_before_update"]
+    assert case["selected_target"].read_bytes() == case["target_before_update"]
+    assert case["manifest_path"].read_bytes() == case["manifest_before_update"]
