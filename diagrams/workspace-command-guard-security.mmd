@@ -43,13 +43,43 @@ graph LR
     subgraph PrewriteIntegrity["⊕ Pre-write integrity verification"]
         PrewriteGate[⊕workspace-overseer invokes<br/>prewrite_security_gate.py]
         ManifestVerifier[/update_manifest.py --verify/]
-        IntegrityBlock[Block write<br/>confirmed mismatch or source drift]
+        IntegrityBlock[Block write<br/>unresolved mismatch or hard-block finding]
         IntegrityWarnAllow[Warning, allow write<br/>operationally incomplete]
         IntegrityAllow[Verification passed<br/>allow write]
         PrewriteGate --> ManifestVerifier
-        ManifestVerifier -->|completed with mismatch or source drift| IntegrityBlock
+        ManifestVerifier -->|completed with mismatch or source drift| DriftReview
+        ManifestVerifier -->|"invalid pin or verifier-level hard-block finding"| IntegrityBlock
         ManifestVerifier -->|start failure, timeout, or incomplete result| IntegrityWarnAllow
         ManifestVerifier -->|exit 0 with completion marker| IntegrityAllow
+    end
+    subgraph SkillDrift["Reviewed skill-drift remediation"]
+        direction LR
+        DriftReview[FR agent reviews exact old/new content<br/>against trusted source, manifest, and Git baseline]
+        FRHistory[(FR history<br/>concise verdict only, no full diff)]
+        ReviewClassification{Reviewed finding}
+        ReviewedExternalSync[/Selected reviewed sync/]
+        PinBaselineCheck{Old pinned blob SHA still matches?}
+        AdvanceExistingPin[Advance existing pin]
+        CopySelectedTarget[Copy selected target]
+        RefreshSelectedEntry[Refresh only the selected manifest entry]
+        ReconcileWatchedEntries[Reconcile exact manifest entries<br/>for watched path edit, add, or delete]
+        QuarantineEligibility{Installed copy equals trusted baseline<br/>and FR does not name candidate?}
+        QuarantineCandidate[Quarantine external candidate]
+        DriftReview -->|record concise verdict, no full diff| FRHistory
+        DriftReview --> ReviewClassification
+        ReviewClassification -->|benign external update| ReviewedExternalSync
+        ReviewedExternalSync --> PinBaselineCheck
+        PinBaselineCheck -->|yes| AdvanceExistingPin
+        PinBaselineCheck -->|no, hard-block before write| IntegrityBlock
+        AdvanceExistingPin --> CopySelectedTarget
+        CopySelectedTarget --> RefreshSelectedEntry
+        RefreshSelectedEntry -->|rerun verification| ManifestVerifier
+        ReviewClassification -->|benign project-owned watched path edit, add, or delete| ReconcileWatchedEntries
+        ReconcileWatchedEntries -->|rerun verification| ManifestVerifier
+        ReviewClassification -->|suspicious external candidate| QuarantineEligibility
+        QuarantineEligibility -->|yes| QuarantineCandidate
+        QuarantineEligibility -->|no, quarantine not allowed| IntegrityBlock
+        ReviewClassification -->|target tampering, suspicious project-owned change, or config/source/path change| IntegrityBlock
     end
     Limitation[CurrentUser discourages casual inspection on this account and machine<br/>does not isolate same-user agents or prevent bypass]
     Protect -.-> Limitation
@@ -57,9 +87,10 @@ graph LR
 
     class Caller,MaintenanceCLI,RuntimeCLI,Command ws
     class PrewriteGate,ManifestVerifier ws
+    class DriftReview,ReviewedExternalSync,AdvanceExistingPin,CopySelectedTarget,RefreshSelectedEntry,ReconcileWatchedEntries,QuarantineCandidate ws
     class Plaintext ext
-    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation,IntegrityBlock,IntegrityWarnAllow,IntegrityAllow state
-    class Ciphertext db
+    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation,IntegrityBlock,IntegrityWarnAllow,IntegrityAllow,ReviewClassification,PinBaselineCheck,QuarantineEligibility state
+    class Ciphertext,FRHistory db
     class Memory,Regex,Block,Allow,Warning ws
 
     subgraph Legend["Legend"]
