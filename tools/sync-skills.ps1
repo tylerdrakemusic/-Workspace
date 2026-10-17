@@ -245,9 +245,17 @@ function Invoke-ReviewedSkillSync {
             if (-not (Test-Path $source -PathType Leaf)) {
                 throw "Reviewed source for '$skill' is missing: $source"
             }
-            $rootPrefix = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\') + '\'
+            $directorySeparator = [IO.Path]::DirectorySeparatorChar
+            $alternateSeparator = [IO.Path]::AltDirectorySeparatorChar
+            $separatorChars = [char[]]@($directorySeparator, $alternateSeparator)
+            $rootPrefix = [IO.Path]::GetFullPath($repoRoot).TrimEnd($separatorChars) + $directorySeparator
             $targetPath = [IO.Path]::GetFullPath($mapping.target)
-            if (-not $targetPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            $pathComparison = if ($directorySeparator -eq '\') {
+                [StringComparison]::OrdinalIgnoreCase
+            } else {
+                [StringComparison]::Ordinal
+            }
+            if (-not $targetPath.StartsWith($rootPrefix, $pathComparison)) {
                 throw "Reviewed target for '$skill' is outside the repository root"
             }
             $manifestKey = $targetPath.Substring($rootPrefix.Length).Replace('\', '/')
