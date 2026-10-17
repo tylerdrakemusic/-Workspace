@@ -1,6 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% is_derived_view=true
 %% Traceability.parent: diagrams/workspace-architecture.mmd
+%% Traceability.derived_views: diagrams/workspace-command-guard-skill-drift.mmd
 graph LR
     subgraph Maintenance["Explicit maintenance flow"]
         Caller[Operator]
@@ -47,50 +48,22 @@ graph LR
         IntegrityWarnAllow[Warning, allow write<br/>operationally incomplete]
         IntegrityAllow[Verification passed<br/>allow write]
         PrewriteGate --> ManifestVerifier
-        ManifestVerifier -->|completed with mismatch or source drift| DriftReview
+        ManifestVerifier -->|completed with mismatch or source drift| SkillDriftSummary
         ManifestVerifier -->|"invalid pin or verifier-level hard-block finding"| IntegrityBlock
         ManifestVerifier -->|start failure, timeout, or incomplete result| IntegrityWarnAllow
         ManifestVerifier -->|exit 0 with completion marker| IntegrityAllow
     end
-    subgraph SkillDrift["Reviewed skill-drift remediation"]
-        direction LR
-        DriftReview[FR agent reviews exact old/new content<br/>against trusted source, manifest, and Git baseline]
-        FRHistory[(FR history<br/>concise verdict only, no full diff)]
-        ReviewClassification{Reviewed finding}
-        ReviewedExternalSync[/Selected reviewed sync/]
-        PinBaselineCheck{Old pinned blob SHA still matches?}
-        AdvanceExistingPin[Advance existing pin]
-        CopySelectedTarget[Copy selected target]
-        RefreshSelectedEntry[Refresh only the selected manifest entry]
-        ReconcileWatchedEntries[Reconcile exact manifest entries<br/>for watched path edit, add, or delete]
-        QuarantineEligibility{Installed copy equals trusted baseline<br/>and FR does not name candidate?}
-        QuarantineCandidate[Quarantine external candidate]
-        DriftReview -->|record concise verdict, no full diff| FRHistory
-        DriftReview --> ReviewClassification
-        ReviewClassification -->|benign external update| ReviewedExternalSync
-        ReviewedExternalSync --> PinBaselineCheck
-        PinBaselineCheck -->|yes| AdvanceExistingPin
-        PinBaselineCheck -->|no, hard-block before write| IntegrityBlock
-        AdvanceExistingPin --> CopySelectedTarget
-        CopySelectedTarget --> RefreshSelectedEntry
-        RefreshSelectedEntry -->|rerun verification| ManifestVerifier
-        ReviewClassification -->|benign project-owned watched path edit, add, or delete| ReconcileWatchedEntries
-        ReconcileWatchedEntries -->|rerun verification| ManifestVerifier
-        ReviewClassification -->|suspicious external candidate| QuarantineEligibility
-        QuarantineEligibility -->|yes| QuarantineCandidate
-        QuarantineEligibility -->|no, quarantine not allowed| IntegrityBlock
-        ReviewClassification -->|target tampering, suspicious project-owned change, or config/source/path change| IntegrityBlock
-    end
+    SkillDriftSummary[Reviewed skill updates, watched-file reconciliation, and quarantine<br/>see workspace-command-guard-skill-drift.mmd]
     Limitation[CurrentUser discourages casual inspection on this account and machine<br/>does not isolate same-user agents or prevent bypass]
     Protect -.-> Limitation
     Unprotect -.-> Limitation
 
     class Caller,MaintenanceCLI,RuntimeCLI,Command ws
     class PrewriteGate,ManifestVerifier ws
-    class DriftReview,ReviewedExternalSync,AdvanceExistingPin,CopySelectedTarget,RefreshSelectedEntry,ReconcileWatchedEntries,QuarantineCandidate ws
+    class SkillDriftSummary ws
     class Plaintext ext
-    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation,IntegrityBlock,IntegrityWarnAllow,IntegrityAllow,ReviewClassification,PinBaselineCheck,QuarantineEligibility state
-    class Ciphertext,FRHistory db
+    class Protect,Unprotect,TargetExists,OverwriteFlag,MatchDecision,RefuseOverwrite,Limitation,IntegrityBlock,IntegrityWarnAllow,IntegrityAllow state
+    class Ciphertext db
     class Memory,Regex,Block,Allow,Warning ws
 
     subgraph Legend["Legend"]
@@ -101,7 +74,12 @@ graph LR
         L4{Decision or boundary}:::state
     end
 
-classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
