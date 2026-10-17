@@ -144,10 +144,10 @@ class HuggingFaceImageClient:
                 negative_prompt=negative_prompt,
                 seed=seed if seed is not None else _quantum_seed(),
             )
-        except Exception as exc:
+        except Exception:
             raise HuggingFaceImageError(
-                f"Hugging Face Inference Providers error: {exc}"
-            ) from exc
+                "Hugging Face Inference Providers error; details redacted"
+            ) from None
 
         image_buffer = BytesIO()
         try:
