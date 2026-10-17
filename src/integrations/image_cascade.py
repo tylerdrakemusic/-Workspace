@@ -18,6 +18,7 @@ class ImageProvider:
     model: str
     generate: ImageGenerator
     accepts_negative_prompt: bool = False
+    route: str | None = None
 
 
 @dataclass(frozen=True)
@@ -37,23 +38,35 @@ class ImageGenerationResult:
     provider: str
     model: str
     diagnostics: tuple[ImageProviderDiagnostic, ...]
+    route: str | None = None
 
 
 class ImageGenerationError(RuntimeError):
     """Raised when every configured image provider fails."""
 
-    def __init__(self, diagnostics: tuple[ImageProviderDiagnostic, ...]) -> None:
+    def __init__(
+        self,
+        diagnostics: tuple[ImageProviderDiagnostic, ...],
+        *,
+        message: str = "All image providers failed",
+    ) -> None:
         self.diagnostics = diagnostics
-        super().__init__("All image providers failed")
+        super().__init__(message)
 
 
 class ImageGenerationCascade:
     """Try injected providers in order and return the first generated image."""
 
-    def __init__(self, providers: tuple[ImageProvider, ...]) -> None:
+    def __init__(
+        self,
+        providers: tuple[ImageProvider, ...],
+        *,
+        failure_message: str = "All image providers failed",
+    ) -> None:
         if not providers:
             raise ValueError("at least one image provider is required")
         self.providers = providers
+        self.failure_message = failure_message
 
     def generate(
         self,
@@ -84,8 +97,9 @@ class ImageGenerationCascade:
                 provider=provider.name,
                 model=provider.model,
                 diagnostics=tuple(diagnostics),
+                route=provider.route,
             )
-        raise ImageGenerationError(tuple(diagnostics))
+        raise ImageGenerationError(tuple(diagnostics), message=self.failure_message)
 
 
 def default_image_cascade() -> ImageGenerationCascade:
@@ -109,6 +123,66 @@ def default_image_cascade() -> ImageGenerationCascade:
             ImageProvider("huggingface", DEFAULT_MODEL_ID, generate_huggingface),
             ImageProvider("pollinations", "default", generate_pollinations),
         )
+    )
+
+
+TEE_IMAGE_OPENAI_ENABLED_ENV = "TEE_IMAGE_OPENAI_ENABLED"
+TEE_IMAGE_KREA_MODEL = "black-forest-labs/FLUX.1-Krea-dev"
+TEE_IMAGE_AUTHORIZATION_ALLOWLIST = frozenset(
+    {
+        ("fal-ai", TEE_IMAGE_KREA_MODEL, "fal-ai/flux/krea"),
+    }
+)
+
+
+def tee_image_cascade(*, image_size: str = "1024x1024") -> ImageGenerationCascade:
+    """Build the tee-only cascade from explicitly authorized provider routes."""
+    import os
+
+    from .dalle3.client import DEFAULT_MODEL as OPENAI_MODEL, DallE3Client
+    from .huggingface.client import HuggingFaceImageClient
+    from .pollinations.client import PollinationsClient
+
+    def generate_openai(prompt: str, *, output_dir: Path | None) -> Path:
+        return DallE3Client().generate_image(prompt, output_dir=output_dir)
+
+    def generate_fal_krea(prompt: str, *, output_dir: Path | None) -> Path:
+        return HuggingFaceImageClient().generate_image(
+            prompt, output_dir=output_dir, size=image_size
+        )
+
+    def generate_pollinations(prompt: str, *, output_dir: Path | None) -> Path:
+        return PollinationsClient().generate_image(prompt, output_dir=output_dir or ".")
+
+    configured_openai = os.environ.get(TEE_IMAGE_OPENAI_ENABLED_ENV, "")
+    openai_enabled = configured_openai.strip().lower() in {"1", "true", "yes", "on"}
+    ordered_routes = (
+        ImageProvider("openai", OPENAI_MODEL, generate_openai, route="openai/images/generations"),
+        ImageProvider(
+            "fal-ai",
+            TEE_IMAGE_KREA_MODEL,
+            generate_fal_krea,
+            route="fal-ai/flux/krea",
+        ),
+        ImageProvider(
+            "pollinations",
+            "default",
+            generate_pollinations,
+            route="pollinations/text-to-image",
+        ),
+    )
+    authorized_routes = tuple(
+        provider
+        for provider in ordered_routes
+        if (provider.name, provider.model, provider.route)
+        in TEE_IMAGE_AUTHORIZATION_ALLOWLIST
+        and (provider.name != "openai" or openai_enabled)
+    )
+    if not authorized_routes:
+        raise ImageGenerationError((), message="No authorized route remains")
+    return ImageGenerationCascade(
+        authorized_routes,
+        failure_message="No authorized route remains after authorized providers failed",
     )
 
 

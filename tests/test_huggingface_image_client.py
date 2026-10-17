@@ -217,8 +217,23 @@ def test_provider_error_raises(client: HuggingFaceImageClient, tmp_path: Path) -
         "text_to_image",
         side_effect=RuntimeError("provider unavailable"),
     ):
-        with pytest.raises(HuggingFaceImageError, match="provider unavailable"):
+        with pytest.raises(HuggingFaceImageError, match="details redacted"):
             client.generate_image("test", output_dir=tmp_path)
+
+
+def test_provider_error_never_exposes_the_api_token(
+    client: HuggingFaceImageClient, tmp_path: Path
+) -> None:
+    token = client._api_key
+    with patch.object(
+        client._client,
+        "text_to_image",
+        side_effect=RuntimeError(f"Authorization: Bearer {token}"),
+    ):
+        with pytest.raises(HuggingFaceImageError) as caught:
+            client.generate_image("test", output_dir=tmp_path)
+
+    assert token not in str(caught.value)
 
 
 def test_empty_response_raises(client: HuggingFaceImageClient, tmp_path: Path) -> None:
@@ -235,5 +250,5 @@ def test_inference_provider_error_raises(
         "text_to_image",
         side_effect=RuntimeError("connection refused"),
     ):
-        with pytest.raises(HuggingFaceImageError, match="Inference Providers error"):
+        with pytest.raises(HuggingFaceImageError, match="details redacted"):
             client.generate_image("test", output_dir=tmp_path)
