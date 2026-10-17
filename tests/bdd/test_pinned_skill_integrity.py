@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -309,3 +310,178 @@ def manifest_and_pinned_skill_checks_remain_enabled(
     assert "MODIFIED (hash changed)" in integrity_case["output"]
     assert integrity_case["agent_path"] in integrity_case["output"]
     assert f"SOURCE MATCH: {integrity_case['target_file']}" in integrity_case["output"]
+
+
+@given("a configured external skill has an old pin and a benign newer Git revision")
+def reviewed_skill_revision_with_old_pin(
+    tmp_path: Path, integrity_case: dict[str, Any]
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "reviewed-source"
+    source_file = source_root / "skills" / "reviewed" / "SKILL.md"
+    old_content = b"existing pinned skill\n"
+    new_content = b"benign reviewed skill revision\n"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_bytes(old_content)
+    old_commit = _commit_source(source_root, source_file)
+
+    source_file.write_bytes(new_content)
+    git = ["git", "-C", str(source_root)]
+    subprocess.run(
+        [*git, "add", "skills/reviewed/SKILL.md"], check=True, capture_output=True
+    )
+    subprocess.run(
+        [*git, "commit", "-m", "Benign reviewed skill revision"],
+        check=True,
+        capture_output=True,
+    )
+    new_commit = subprocess.run(
+        [*git, "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+    new_blob = subprocess.run(
+        [*git, "cat-file", "blob", f"{new_commit}:skills/reviewed/SKILL.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+    unrelated_root = tmp_path / "unpinned-source"
+    unrelated_source = unrelated_root / "skills" / "unrelated" / "SKILL.md"
+    unrelated_content = b"unchanged unpinned skill\n"
+    unrelated_source.parent.mkdir(parents=True)
+    unrelated_source.write_bytes(unrelated_content)
+
+    destination = workspace_root / ".github" / "skills"
+    selected_target = destination / "reviewed" / "SKILL.md"
+    unrelated_target = destination / "unrelated" / "SKILL.md"
+    selected_target.parent.mkdir(parents=True)
+    unrelated_target.parent.mkdir(parents=True)
+    selected_target.write_bytes(old_content)
+    unrelated_target.write_bytes(unrelated_content)
+
+    security_dir = workspace_root / ".github" / "!!\u263e\u26e7security"
+    security_dir.mkdir(parents=True)
+    (workspace_root / ".github" / "agents").mkdir()
+    (workspace_root / ".github" / "instructions").mkdir()
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!\u263e\u26e7security" / "update_manifest.py",
+        security_dir / "update_manifest.py",
+    )
+    manifest_path = security_dir / "agent-manifest.json"
+    manifest_files = {
+        ".github/skills/reviewed/SKILL.md": _sha256(old_content),
+        ".github/skills/unrelated/SKILL.md": _sha256(unrelated_content),
+    }
+    manifest_path.write_text(json.dumps({"files": manifest_files}), encoding="utf-8")
+
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config = {
+        "destination": ".github/skills",
+        "log_file": "logs/skill-sync.log",
+        "repos": [
+            {
+                "name": "reviewed-source",
+                "path": str(source_root),
+                "remote": None,
+                "skill_root": "skills",
+                "provenance": "external-source",
+                "source_policy": "required",
+                "pinned_commit": old_commit,
+                "sha256": _sha256(old_content),
+                "skills": ["reviewed"],
+            },
+            {
+                "name": "unpinned-source",
+                "path": str(unrelated_root),
+                "remote": None,
+                "skill_root": "skills",
+                "provenance": "external-source",
+                "source_policy": "required",
+                "skills": ["unrelated"],
+            },
+        ],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    integrity_case["reviewed_update"] = {
+        "workspace_root": workspace_root,
+        "config_path": config_path,
+        "manifest_path": manifest_path,
+        "selected_target": selected_target,
+        "unrelated_target": unrelated_target,
+        "new_content": new_content,
+        "new_commit": new_commit,
+        "new_sha256": _sha256(new_blob),
+        "manifest_files": manifest_files,
+        "unrelated_repo": dict(config["repos"][1]),
+    }
+
+
+@when("the reviewed-update interface runs for the named skill with a rationale")
+def run_reviewed_skill_update(integrity_case: dict[str, Any]) -> None:
+    if not shutil.which("pwsh"):
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    case = integrity_case["reviewed_update"]
+    environment = os.environ.copy()
+    environment["PYTHON_EXECUTABLE"] = sys.executable
+    environment["PYTHONUTF8"] = "1"
+    integrity_case["reviewed_update_run"] = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveReviewedUpdates",
+            "-ReviewedSkills",
+            "reviewed",
+            "-ReviewRationale",
+            "Reviewed the committed skill diff as a benign content update.",
+            "-ConfigPath",
+            str(case["config_path"]),
+            "-ManifestPath",
+            str(case["manifest_path"]),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=environment,
+    )
+
+
+@then(
+    "only the named skill and its manifest entry advance, and the integrity gate allows the workspace"
+)
+def reviewed_update_advances_only_named_skill(integrity_case: dict[str, Any]) -> None:
+    case = integrity_case["reviewed_update"]
+    run = integrity_case["reviewed_update_run"]
+    assert run.returncode == 0, run.stdout + run.stderr
+
+    config = json.loads(case["config_path"].read_text(encoding="utf-8"))
+    reviewed_repo, unrelated_repo = config["repos"]
+    assert reviewed_repo["pinned_commit"] == case["new_commit"]
+    assert reviewed_repo["sha256"] == case["new_sha256"]
+    assert unrelated_repo == case["unrelated_repo"]
+    assert "pinned_commit" not in unrelated_repo
+    assert "sha256" not in unrelated_repo
+    assert case["selected_target"].read_bytes() == case["new_content"]
+    assert case["unrelated_target"].read_bytes() == b"unchanged unpinned skill\n"
+
+    manifest_files = json.loads(
+        case["manifest_path"].read_text(encoding="utf-8")
+    )["files"]
+    expected_manifest_files = dict(case["manifest_files"])
+    expected_manifest_files[".github/skills/reviewed/SKILL.md"] = case["new_sha256"]
+    assert manifest_files == expected_manifest_files
+
+    verification = verify_skill_integrity(case["config_path"], case["manifest_path"])
+    assert verification.hard_findings == []
+    assert [entry.status for entry in verification.entries] == [
+        "source_match",
+        "source_match",
+    ]
+    assert run_prewrite_security_gate(case["workspace_root"]) == 0
