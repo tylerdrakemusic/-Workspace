@@ -30,6 +30,11 @@ Feature: Pinned skill source integrity
     When the reviewed-update interface runs for the named skill with a rationale
     Then only the named skill and its manifest entry advance, and the integrity gate allows the workspace
 
+  Scenario: A reviewed update hashes and installs raw Git blobs despite CRLF worktree attributes
+    Given a configured external skill has an LF Git blob and a CRLF worktree checkout
+    When the reviewed-update interface runs for the named skill with a rationale
+    Then only the named skill and its manifest entry advance, and the integrity gate allows the workspace
+
   Scenario: An explicitly reviewed update rejects an invalid old pin hash before writing
     Given a configured external skill has an old pin and a benign newer Git revision
     And the configured old pin SHA does not match its pinned Git blob

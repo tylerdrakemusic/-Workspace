@@ -33,6 +33,7 @@ def _commit_source(
     *,
     include_source: bool = True,
     autocrlf: bool = False,
+    extra_paths: tuple[Path, ...] = (),
 ) -> str:
     git = ["git", "-C", str(source_root)]
     subprocess.run([*git, "init"], check=True, capture_output=True)
@@ -48,6 +49,11 @@ def _commit_source(
         staged_file.write_bytes(b"different pinned path\n")
     relative_file = staged_file.relative_to(source_root).as_posix()
     subprocess.run([*git, "add", relative_file], check=True, capture_output=True)
+    for extra_path in extra_paths:
+        relative_extra_path = extra_path.relative_to(source_root).as_posix()
+        subprocess.run(
+            [*git, "add", relative_extra_path], check=True, capture_output=True
+        )
     subprocess.run(
         [*git, "commit", "-m", "pinned source"], check=True, capture_output=True
     )
@@ -419,6 +425,222 @@ def reviewed_skill_revision_with_old_pin(
         "reviewed_repo": dict(config["repos"][0]),
         "unrelated_repo": dict(config["repos"][1]),
     }
+
+
+@given("a configured external skill has an LF Git blob and a CRLF worktree checkout")
+def reviewed_skill_revision_with_crlf_worktree(
+    tmp_path: Path, integrity_case: dict[str, Any]
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "reviewed-source"
+    source_file = source_root / "skills" / "reviewed" / "SKILL.md"
+    attributes_file = source_root / ".gitattributes"
+    old_content = b"existing pinned skill\n"
+    new_content = b"benign reviewed skill revision\n"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_bytes(old_content)
+    attributes_file.write_bytes(b"skills/**/SKILL.md text eol=crlf\n")
+    old_commit = _commit_source(
+        source_root, source_file, extra_paths=(attributes_file,)
+    )
+
+    source_file.write_bytes(new_content)
+    git = ["git", "-C", str(source_root)]
+    subprocess.run(
+        [*git, "add", "skills/reviewed/SKILL.md"], check=True, capture_output=True
+    )
+    subprocess.run(
+        [*git, "commit", "-m", "Benign reviewed skill revision"],
+        check=True,
+        capture_output=True,
+    )
+    new_commit = subprocess.run(
+        [*git, "rev-parse", "HEAD^{commit}"],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+
+    blobs: dict[str, bytes] = {}
+    for revision, expected_content in (
+        (old_commit, old_content),
+        (new_commit, new_content),
+    ):
+        blob = subprocess.run(
+            [*git, "cat-file", "blob", f"{revision}:skills/reviewed/SKILL.md"],
+            check=True,
+            capture_output=True,
+        ).stdout
+        assert blob == expected_content
+        assert b"\r\n" not in blob
+        blobs[revision] = blob
+
+        checkout = tmp_path / f"checkout-{revision[:8]}"
+        subprocess.run(
+            [
+                *git,
+                "-c",
+                "core.autocrlf=false",
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                str(checkout),
+                revision,
+            ],
+            check=True,
+            capture_output=True,
+        )
+        try:
+            checkout_bytes = (
+                checkout / "skills" / "reviewed" / "SKILL.md"
+            ).read_bytes()
+            assert checkout_bytes == expected_content.replace(b"\n", b"\r\n")
+            assert checkout_bytes != blob
+        finally:
+            subprocess.run(
+                [*git, "worktree", "remove", "--force", str(checkout)],
+                check=True,
+                capture_output=True,
+            )
+
+    unrelated_root = tmp_path / "unpinned-source"
+    unrelated_source = unrelated_root / "skills" / "unrelated" / "SKILL.md"
+    unrelated_content = b"unchanged unpinned skill\n"
+    unrelated_source.parent.mkdir(parents=True)
+    unrelated_source.write_bytes(unrelated_content)
+
+    destination = workspace_root / ".github" / "skills"
+    selected_target = destination / "reviewed" / "SKILL.md"
+    unrelated_target = destination / "unrelated" / "SKILL.md"
+    selected_target.parent.mkdir(parents=True)
+    unrelated_target.parent.mkdir(parents=True)
+    selected_target.write_bytes(old_content)
+    unrelated_target.write_bytes(unrelated_content)
+
+    security_dir = workspace_root / ".github" / "!!\u263e\u26e7security"
+    security_dir.mkdir(parents=True)
+    (workspace_root / ".github" / "agents").mkdir()
+    (workspace_root / ".github" / "instructions").mkdir()
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!\u263e\u26e7security" / "update_manifest.py",
+        security_dir / "update_manifest.py",
+    )
+    manifest_path = security_dir / "agent-manifest.json"
+    manifest_files = {
+        ".github/skills/reviewed/SKILL.md": _sha256(old_content),
+        ".github/skills/unrelated/SKILL.md": _sha256(unrelated_content),
+    }
+    manifest_path.write_text(json.dumps({"files": manifest_files}), encoding="utf-8")
+
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config = {
+        "destination": ".github/skills",
+        "log_file": "logs/skill-sync.log",
+        "repos": [
+            {
+                "name": "reviewed-source",
+                "path": str(source_root),
+                "remote": None,
+                "skill_root": "skills",
+                "provenance": "external-source",
+                "source_policy": "required",
+                "pinned_commit": old_commit,
+                "sha256": _sha256(blobs[old_commit]),
+                "skills": ["reviewed"],
+            },
+            {
+                "name": "unpinned-source",
+                "path": str(unrelated_root),
+                "remote": None,
+                "skill_root": "skills",
+                "provenance": "external-source",
+                "source_policy": "required",
+                "skills": ["unrelated"],
+            },
+        ],
+    }
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    integrity_case["reviewed_update"] = {
+        "workspace_root": workspace_root,
+        "config_path": config_path,
+        "manifest_path": manifest_path,
+        "selected_target": selected_target,
+        "unrelated_target": unrelated_target,
+        "new_content": new_content,
+        "new_commit": new_commit,
+        "new_sha256": _sha256(blobs[new_commit]),
+        "manifest_files": manifest_files,
+        "reviewed_repo": dict(config["repos"][0]),
+        "unrelated_repo": dict(config["repos"][1]),
+    }
+
+
+@pytest.mark.parametrize(
+    ("source_relative_path", "output_outside_worktree", "expected_error"),
+    [
+        ("../outside/SKILL.md", False, "repository-relative"),
+        ("skills/example/SKILL.md", True, "outside configured root"),
+    ],
+)
+def test_raw_git_blob_writer_rejects_unconfined_paths(
+    tmp_path: Path,
+    source_relative_path: str,
+    output_outside_worktree: bool,
+    expected_error: str,
+) -> None:
+    source_root = tmp_path / "source"
+    source_file = source_root / "skills" / "example" / "SKILL.md"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_bytes(b"trusted skill\n")
+    commit = _commit_source(source_root, source_file)
+    worktree = tmp_path / "worktree"
+    git = ["git", "-C", str(source_root)]
+    subprocess.run(
+        [*git, "worktree", "add", "--detach", "--quiet", str(worktree), commit],
+        check=True,
+        capture_output=True,
+    )
+    output_path = (
+        tmp_path / "outside.bin"
+        if output_outside_worktree
+        else worktree / "skills" / "example" / "SKILL.md"
+    )
+    original_output = output_path.read_bytes() if output_path.exists() else None
+    helper = PROJECT_ROOT / ".github" / "!!\u263e\u26e7security" / "update_manifest.py"
+    try:
+        run = subprocess.run(
+            [
+                sys.executable,
+                str(helper),
+                "--write-pinned-git-blob",
+                str(source_root),
+                commit,
+                source_relative_path,
+                "--output",
+                str(output_path),
+                "--root",
+                str(worktree),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        assert run.returncode != 0
+        assert expected_error in run.stdout + run.stderr
+        if output_outside_worktree:
+            assert not output_path.exists()
+        else:
+            assert output_path.read_bytes() == original_output
+    finally:
+        subprocess.run(
+            [*git, "worktree", "remove", "--force", str(worktree)],
+            check=True,
+            capture_output=True,
+        )
 
 
 @given("the configured old pin SHA does not match its pinned Git blob")

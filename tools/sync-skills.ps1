@@ -109,6 +109,20 @@ function Resolve-PinnedSource {
         throw "Pinned source path preflight failed: $($resolvedSource -join ' ')"
     }
     $sourcePath = ($resolvedSource -join [Environment]::NewLine).Trim()
+    $blobArgs = @(
+        "--write-pinned-git-blob",
+        $RepositoryPath,
+        $PinnedCommit,
+        $gitPath,
+        "--output",
+        $sourcePath,
+        "--root",
+        $worktreePath
+    )
+    $blobOutput = & $pythonExecutable $manifestUpdater @blobArgs 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Pinned Git blob materialization failed: $($blobOutput -join ' ')"
+    }
     if (-not (Test-Path $sourcePath -PathType Leaf)) {
         throw "Pinned source $gitPath was not materialized at commit $PinnedCommit"
     }

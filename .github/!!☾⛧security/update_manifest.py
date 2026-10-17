@@ -8,7 +8,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 _GITHUB_DIR = Path(__file__).resolve().parent.parent  # f:\⊕Workspace\.github\
@@ -372,9 +372,36 @@ def pinned_git_blob_sha256(
         return None
     try:
         source_relative_path = source_path.relative_to(repository_path).as_posix()
-    except ValueError:
+        blob = _read_pinned_git_blob(
+            repository_path, pinned_commit, source_relative_path
+        )
+    except (OSError, ValueError):
         return None
+    if blob is None:
+        return None
+    return hashlib.sha256(blob).hexdigest()
 
+
+def _repository_relative_git_path(source_relative_path: str) -> str:
+    normalized = source_relative_path.replace("\\", "/")
+    posix_path = PurePosixPath(normalized)
+    windows_path = PureWindowsPath(source_relative_path)
+    if (
+        not normalized
+        or "\x00" in normalized
+        or posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or windows_path.drive
+        or any(part in {"", ".", ".."} for part in normalized.split("/"))
+    ):
+        raise ValueError("Pinned Git blob source path must be repository-relative")
+    return posix_path.as_posix()
+
+
+def _read_pinned_git_blob(
+    repository_path: Path, pinned_commit: str, source_relative_path: str
+) -> bytes | None:
+    relative_path = _repository_relative_git_path(source_relative_path)
     try:
         result = subprocess.run(
             [
@@ -383,7 +410,7 @@ def pinned_git_blob_sha256(
                 str(repository_path),
                 "cat-file",
                 "blob",
-                f"{pinned_commit}:{source_relative_path}",
+                f"{pinned_commit}:{relative_path}",
             ],
             check=False,
             capture_output=True,
@@ -392,7 +419,37 @@ def pinned_git_blob_sha256(
         return None
     if result.returncode != 0:
         return None
-    return hashlib.sha256(result.stdout).hexdigest()
+    return result.stdout
+
+
+def write_pinned_git_blob(
+    repository_path: Path,
+    pinned_commit: str,
+    source_relative_path: str,
+    output_path: Path,
+    worktree_root: Path,
+) -> str:
+    """Write raw pinned Git blob bytes to a file confined to a Git worktree."""
+    blob = _read_pinned_git_blob(
+        repository_path, pinned_commit, source_relative_path
+    )
+    if blob is None:
+        raise ValueError(
+            f"Pinned Git blob is unavailable: {pinned_commit}:{source_relative_path}"
+        )
+
+    root = worktree_root.resolve()
+    if not root.is_dir() or not (root / ".git").exists():
+        raise ValueError("Pinned blob output root must be a materialized Git worktree")
+    output = _confined_path(output_path, root, "Pinned blob output")
+    if output == root:
+        raise ValueError("Pinned blob output must be a file under the worktree root")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output = _confined_path(output, root, "Pinned blob output")
+    if output.is_dir():
+        raise ValueError(f"Pinned blob output is not a file: {output}")
+    output.write_bytes(blob)
+    return hashlib.sha256(blob).hexdigest()
 
 
 def validate_pinned_source(repository_path: Path, pinned_commit: str) -> bool:
@@ -661,7 +718,25 @@ def verify_manifest(
 
 
 if __name__ == "__main__":
-    if "--confine-path" in sys.argv:
+    if "--write-pinned-git-blob" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--write-pinned-git-blob",
+            nargs=3,
+            required=True,
+            metavar=("REPOSITORY", "COMMIT", "SOURCE_RELATIVE_PATH"),
+        )
+        parser.add_argument("--output", type=Path, required=True)
+        parser.add_argument("--root", type=Path, required=True)
+        args = parser.parse_args()
+        repository, commit, source_relative_path = args.write_pinned_git_blob
+        digest = write_pinned_git_blob(
+            Path(repository), commit, source_relative_path, args.output, args.root
+        )
+        print(digest)
+    elif "--confine-path" in sys.argv:
         import argparse
 
         parser = argparse.ArgumentParser()
