@@ -161,16 +161,18 @@ def _write_pinned_sync_fixture(
     subprocess.run(["git", "-C", str(source_root), "add", "SKILL.md"], check=True)
     subprocess.run(["git", "-C", str(source_root), "commit", "-m", "drift"], check=True, capture_output=True)
 
-    destination = tmp_path / "destination"
-    manifest_path = tmp_path / "manifest.json"
+    destination = tmp_path / ".github" / "skills"
+    manifest_path = tmp_path / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
     manifest_path.write_text(json.dumps({"files": {}}), encoding="utf-8")
-    config_path = tmp_path / "config.json"
+    config_path = tmp_path / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
     config_path.write_text(
         json.dumps(
             {
                 "workspace_root": {"relative": "."},
-                "destination": str(destination),
-                "log_file": str(tmp_path / "sync.log"),
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/sync.log"},
                 "repos": [
                     {
                         "name": "local-pinned",

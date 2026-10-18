@@ -4,6 +4,7 @@
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ WATCHED_DIRS = [
     _GITHUB_DIR / "agents",
     _GITHUB_DIR / "instructions",
     _GITHUB_DIR / "skills",
+    _GITHUB_DIR / "references",
 ]
 MANIFEST_PATH = _GITHUB_DIR / "!!☾⛧security" / "agent-manifest.json"
 EXTENSIONS = {".md", ".py", ".json", ".yaml", ".yml"}
@@ -94,13 +96,50 @@ def _confined_path(path: Path, root: Path, description: str) -> Path:
     return resolved_path
 
 
+def _is_symlink_or_reparse_point(path: Path) -> bool:
+    try:
+        file_stat = path.lstat()
+    except FileNotFoundError:
+        return False
+    if stat.S_ISLNK(file_stat.st_mode):
+        return True
+    reparse_point = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    return bool(getattr(file_stat, "st_file_attributes", 0) & reparse_point)
+
+
+def _assert_no_reparse_components(path: Path, root: Path, description: str) -> Path:
+    root_path = Path(os.path.abspath(root))
+    target_path = Path(os.path.abspath(path))
+    try:
+        relative_path = target_path.relative_to(root_path)
+    except ValueError as exc:
+        raise _SkillSyncPathViolation(
+            f"{description} path resolves outside configured root: {target_path}"
+        ) from exc
+
+    cursor = Path(target_path.anchor)
+    for component in (*root_path.relative_to(target_path.anchor).parts, *relative_path.parts):
+        cursor /= component
+        if _is_symlink_or_reparse_point(cursor):
+            raise _SkillSyncPathViolation(
+                f"{description} path contains a symlink or reparse point: {cursor}"
+            )
+    return target_path
+
+
 def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
     workspace_root = Path(config["workspace_root"])
-    destination = _confined_path(
-        Path(config["destination"]), workspace_root, "Skill destination"
+    destination_candidate = Path(config["destination"])
+    _assert_no_reparse_components(
+        destination_candidate, workspace_root, "Skill destination"
     )
+    destination = _confined_path(
+        destination_candidate, workspace_root, "Skill destination"
+    )
+    log_candidate = Path(config["log_file"])
+    _assert_no_reparse_components(log_candidate, workspace_root, "Configured log file")
     log_file = _confined_path(
-        Path(config["log_file"]), workspace_root, "Configured log file"
+        log_candidate, workspace_root, "Configured log file"
     )
     entries = _skill_entries(config)
     for item in entries:
@@ -119,9 +158,13 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
         )
         item["source"] = str(source)
         item["source_relative_path"] = source.relative_to(repository_root).as_posix()
+        target_candidate = Path(item["target"])
+        _assert_no_reparse_components(
+            target_candidate, destination, f"Target for {item['source_repository']}"
+        )
         item["target"] = str(
             _confined_path(
-                Path(item["target"]),
+                target_candidate,
                 destination,
                 f"Target for {item['source_repository']}",
             )
@@ -165,10 +208,135 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
     return entries
 
 
+def _preflight_resource_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
+    workspace_root = Path(config["workspace_root"]).resolve()
+    log_file = Path(config["log_file"]).resolve()
+    skill_entries = _preflight_skill_entries(config)
+    skill_targets = {Path(item["target"]) for item in skill_entries}
+    skill_reference_roots = {
+        (item["repo_index"], item["skill"]): Path(item["target"]).parent / "references"
+        for item in skill_entries
+    }
+    entries: list[dict[str, Any]] = []
+    seen_targets: set[Path] = set()
+    for repo_index, repo in enumerate(config["repos"]):
+        resources = repo.get("resources", [])
+        if not isinstance(resources, list):
+            raise _SkillSyncPathViolation(
+                f"Resources for {repo['name']} must be a list"
+            )
+        repository_root = Path(repo["path"]).resolve()
+        for resource in resources:
+            if not isinstance(resource, dict):
+                raise _SkillSyncPathViolation(
+                    f"Resource mapping for {repo['name']} must be an object"
+                )
+            skill = resource.get("skill")
+            if skill not in repo["skills"]:
+                raise _SkillSyncPathViolation(
+                    f"Resource owner {skill!r} is not mapped by {repo['name']}"
+                )
+            source_relative_path = _repository_relative_git_path(
+                str(resource.get("source_path", ""))
+            )
+            source = _confined_path(
+                repository_root / source_relative_path,
+                repository_root,
+                f"Resource source for {repo['name']}",
+            )
+            target_value = resource.get("target")
+            if not isinstance(target_value, str) or not target_value.strip():
+                raise _SkillSyncPathViolation(
+                    f"Resource target for {repo['name']} must be a non-empty path"
+                )
+            if ":" in target_value:
+                raise _SkillSyncPathViolation(
+                    f"Resource target must not use a drive or alternate data stream: {target_value}"
+                )
+            try:
+                target_relative_path = _repository_relative_git_path(target_value)
+            except ValueError as exc:
+                raise _SkillSyncPathViolation(
+                    f"Resource target must be workspace-relative without dot segments: {target_value}"
+                ) from exc
+            target_candidate = workspace_root / target_relative_path
+            _assert_no_reparse_components(
+                target_candidate, workspace_root, "Resource target"
+            )
+            target = _confined_path(
+                target_candidate,
+                workspace_root,
+                f"Resource target for {repo['name']}",
+            )
+            log_overlaps_resource = (
+                log_file == target
+                or log_file.is_relative_to(target)
+                or target.is_relative_to(log_file)
+            )
+            if log_file.exists() and target.exists():
+                log_overlaps_resource = log_overlaps_resource or os.path.samefile(
+                    log_file, target
+                )
+            if log_overlaps_resource:
+                raise _SkillSyncPathViolation(
+                    f"Configured log file path overlaps a pinned resource target: {target}"
+                )
+            allowed_roots = (
+                skill_reference_roots.get((repo_index, skill)),
+                workspace_root / ".github" / "references",
+            )
+            if (
+                target.suffix != ".md"
+                or not any(
+                    allowed_root is not None
+                    and target != allowed_root.resolve()
+                    and target.is_relative_to(allowed_root.resolve())
+                    for allowed_root in allowed_roots
+                )
+            ):
+                raise _SkillSyncPathViolation(
+                    f"Resource target must be a Markdown file under an allowed reference target root: {target}"
+                )
+            pinned_commit = resource.get("pinned_commit")
+            pinned_sha256 = resource.get("sha256")
+            if (
+                not isinstance(pinned_commit, str)
+                or not pinned_commit.strip()
+                or not isinstance(pinned_sha256, str)
+                or len(pinned_sha256) != 64
+                or any(character not in "0123456789abcdefABCDEF" for character in pinned_sha256)
+            ):
+                raise _SkillSyncPathViolation(
+                    f"Resource pin for {repo['name']} must include a commit and SHA-256"
+                )
+            if target in skill_targets or target in seen_targets:
+                raise _SkillSyncPathViolation(
+                    f"Resource target is mapped more than once: {target}"
+                )
+            seen_targets.add(target)
+            entries.append(
+                {
+                    "repo_index": repo_index,
+                    "skill": skill,
+                    "source": str(source),
+                    "source_relative_path": source_relative_path,
+                    "target": str(target),
+                    "manifest_key": target.relative_to(workspace_root).as_posix(),
+                    "repository_path": str(repository_root),
+                    "source_repository": repo["name"],
+                    "provenance": repo.get("provenance", "external-source"),
+                    "pinned_commit": pinned_commit,
+                    "pinned_sha256": pinned_sha256.lower(),
+                }
+            )
+    return entries
+
+
 def preflight_sync_config(config_path: Path) -> dict[str, Any]:
     """Return a resolved sync plan after validating every source and target."""
     config = resolve_sync_config(config_path)
     entries = _preflight_skill_entries(config)
+    resource_entries = _preflight_resource_entries(config)
     resolved = dict(config)
     resolved["workspace_root"] = str(config["workspace_root"])
     resolved["destination"] = str(config["destination"])
@@ -185,6 +353,18 @@ def preflight_sync_config(config_path: Path) -> dict[str, Any]:
                 "target": item["target"],
             }
             for item in entries
+            if item["repo_index"] == repo_index
+        ]
+        resolved_repo["resources"] = [
+            {
+                "skill": item["skill"],
+                "source": item["source"],
+                "source_relative_path": item["source_relative_path"],
+                "target": item["target"],
+                "pinned_commit": item["pinned_commit"],
+                "sha256": item["pinned_sha256"],
+            }
+            for item in resource_entries
             if item["repo_index"] == repo_index
         ]
         resolved_repos.append(resolved_repo)
@@ -210,6 +390,11 @@ def _resolve_path(value: Any, root: Path) -> Path:
 
 def resolve_sync_config(config_path: Path) -> dict[str, Any]:
     """Resolve a sync config relative to its checkout or explicit environment roots."""
+    config_path = Path(os.path.abspath(config_path))
+    config_workspace_root = config_path.parent.parent
+    _assert_no_reparse_components(
+        config_path, config_workspace_root, "Skill sync config"
+    )
     raw_config = json.loads(config_path.read_text(encoding="utf-8"))
     root_spec = raw_config.get("workspace_root", {"relative": "."})
     root = _resolve_path(root_spec, config_path.parent.parent)
@@ -353,6 +538,35 @@ def verify_skill_integrity(
         if status == "integrity_failure":
             hard_findings.append(entry)
 
+    for item in _preflight_resource_entries(config):
+        source = Path(item["source"])
+        target = Path(item["target"])
+        target_hash = sha256_file(target) if target.exists() else None
+        manifest_hash = manifest_files.get(item["manifest_key"])
+        source_hash = pinned_git_blob_sha256(
+            Path(item["repository_path"]), source, item["pinned_commit"]
+        )
+        if (
+            target_hash is not None
+            and manifest_hash is not None
+            and source_hash == item["pinned_sha256"]
+            and target_hash == manifest_hash
+            and target_hash == source_hash
+        ):
+            status = "source_match"
+        else:
+            status = "integrity_failure"
+        entry = SkillIntegrityEntry(
+            target=str(target),
+            source=str(source),
+            source_repository=item["source_repository"],
+            provenance=item["provenance"],
+            status=status,
+        )
+        entries.append(entry)
+        if status == "integrity_failure":
+            hard_findings.append(entry)
+
     return SkillIntegrityResult(entries=entries, hard_findings=hard_findings)
 
 
@@ -389,6 +603,7 @@ def _repository_relative_git_path(source_relative_path: str) -> str:
     if (
         not normalized
         or "\x00" in normalized
+        or ":" in normalized
         or posix_path.is_absolute()
         or windows_path.is_absolute()
         or windows_path.drive
@@ -478,11 +693,15 @@ def update_manifest_entries(
 ) -> None:
     """Update only the manifest hashes for the supplied existing files."""
     root = _repo_root(repo_root)
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    safe_manifest_path = _assert_no_reparse_components(
+        manifest_path, root, "Agent manifest"
+    )
+    manifest = json.loads(safe_manifest_path.read_text(encoding="utf-8"))
     files = manifest.setdefault("files", {})
 
     for path in paths:
-        resolved_path = path.resolve()
+        safe_path = _assert_no_reparse_components(path, root, "Manifest target")
+        resolved_path = safe_path.resolve()
         if not resolved_path.is_file():
             raise FileNotFoundError(resolved_path)
         key = _normalize_repo_key(str(resolved_path), root)
@@ -490,7 +709,7 @@ def update_manifest_entries(
 
     manifest["file_count"] = len(files)
     manifest["generated_at"] = datetime.now(timezone.utc).isoformat()
-    manifest_path.write_text(
+    safe_manifest_path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
@@ -530,8 +749,8 @@ def reconcile_reviewed_manifest_entries(
     cursor = root
     for component in canonical_manifest.relative_to(root).parts:
         cursor /= component
-        if cursor.is_symlink():
-            raise ValueError(f"Agent manifest path contains a symbolic link: {cursor}")
+        if _is_symlink_or_reparse_point(cursor):
+            raise ValueError(f"Agent manifest path contains a symlink or reparse point: {cursor}")
     manifest_file = _confined_path(requested_manifest, root, "Agent manifest")
     if manifest_file != canonical_manifest:
         raise ValueError("Reviewed reconciliation output must resolve to the agent manifest")
@@ -540,11 +759,17 @@ def reconcile_reviewed_manifest_entries(
 
     external_targets: set[Path] = set()
     sync_config_path = root / "tools" / "skill-sync-config.json"
+    _assert_no_reparse_components(
+        sync_config_path, root, "Skill sync config"
+    )
     if sync_config_path.exists():
         sync_config = resolve_sync_config(sync_config_path)
+        sync_entries = _preflight_skill_entries(sync_config) + _preflight_resource_entries(
+            sync_config
+        )
         external_targets = {
             Path(item["target"]).resolve()
-            for item in _preflight_skill_entries(sync_config)
+            for item in sync_entries
             if item["provenance"] == "external-source"
         }
 
@@ -559,8 +784,12 @@ def reconcile_reviewed_manifest_entries(
         ".github/agents": root / ".github" / "agents",
         ".github/instructions": root / ".github" / "instructions",
         ".github/skills": root / ".github" / "skills",
+        ".github/references": root / ".github" / "references",
     }
     for path in paths:
+        normalized_input = str(path).replace("\\", "/")
+        if any(part in {".", ".."} for part in normalized_input.split("/")):
+            raise ValueError(f"Reviewed path must not contain dot segments: {path}")
         candidate = path if path.is_absolute() else root / path
         lexical_path = Path(os.path.abspath(candidate))
         try:
@@ -581,8 +810,8 @@ def reconcile_reviewed_manifest_entries(
         cursor = root
         for component in lexical_relative.parts:
             cursor /= component
-            if cursor.is_symlink():
-                raise ValueError(f"Reviewed path contains a symbolic link: {key}")
+            if _is_symlink_or_reparse_point(cursor):
+                raise ValueError(f"Reviewed path contains a symlink or reparse point: {key}")
         try:
             resolved_path.relative_to(watched_root.resolve())
         except ValueError as exc:
@@ -623,12 +852,15 @@ def build_manifest(repo_root: Path | None = None) -> dict:
         root / ".github" / "agents",
         root / ".github" / "instructions",
         root / ".github" / "skills",
+        root / ".github" / "references",
     ]
     entries: dict[str, str] = {}
     for watched_dir in watched_dirs:
+        _assert_no_reparse_components(watched_dir, root, "Watched directory")
         if not watched_dir.exists():
             continue
         for path in sorted(watched_dir.rglob("*"), key=lambda item: item.as_posix()):
+            _assert_no_reparse_components(path, root, "Watched path")
             if path.is_file() and path.suffix in EXTENSIONS:
                 entries[path.relative_to(root).as_posix()] = sha256_file(path)
     return {
@@ -646,6 +878,16 @@ def verify_manifest(
     root = _repo_root(repo_root)
     manifest_path = root / ".github" / "!!☾⛧security" / "agent-manifest.json"
     skill_sync_config = root / "tools" / "skill-sync-config.json"
+    manifest_path = _assert_no_reparse_components(
+        manifest_path, root, "Agent manifest"
+    )
+    try:
+        _assert_no_reparse_components(
+            skill_sync_config, root, "Skill sync config"
+        )
+    except _SkillSyncPathViolation as error:
+        print(f"\n  ❌ SKILL SYNC PATH POLICY: {error}")
+        sys.exit(2)
     if not manifest_path.exists():
         print("❌ No manifest found. Run without --verify to create one.")
         sys.exit(1)
@@ -654,7 +896,11 @@ def verify_manifest(
     known = {
         _normalize_repo_key(key, root): digest for key, digest in manifest["files"].items()
     }
-    current = build_manifest(root)["files"]
+    try:
+        current = build_manifest(root)["files"]
+    except _SkillSyncPathViolation as error:
+        print(f"\n  ❌ MANIFEST PATH POLICY: {error}")
+        sys.exit(2)
 
     new_files = set(current) - set(known)
     missing = set(known) - set(current)
@@ -676,6 +922,15 @@ def verify_manifest(
     else:
         print(f"\n  {issues} integrity issue(s) found. Review before proceeding.")
 
+    has_synced_skill_or_resource = any(
+        path.startswith((".github/skills/", ".github/references/"))
+        for path in known
+    )
+    if not skill_sync_config.exists() and has_synced_skill_or_resource:
+        print(
+            "\n  ❌ SKILL SYNC PATH POLICY: manifest contains skill/resource entries but the canonical sync config is missing"
+        )
+        sys.exit(2)
     if skill_sync_config.exists():
         try:
             skill_result = verify_skill_integrity(

@@ -41,6 +41,22 @@
         "debugging-and-error-recovery",
         "documentation-and-adrs",
         "observability-and-instrumentation"
+      ],
+      "resources": [
+        {
+          "skill": "security-and-hardening",
+          "source_path": "skills/security-and-hardening/references/hardening-patterns.md",
+          "target": ".github/skills/security-and-hardening/references/hardening-patterns.md",
+          "pinned_commit": "aeac41d4d005999432bb7312f7ff06383a91d59d",
+          "sha256": "2e1b93a502b4cdb0258404441f3aab029b0cce4003fbbcc61af9a2de18bab9ab"
+        },
+        {
+          "skill": "security-and-hardening",
+          "source_path": "references/security-checklist.md",
+          "target": ".github/references/security-checklist.md",
+          "pinned_commit": "aeac41d4d005999432bb7312f7ff06383a91d59d",
+          "sha256": "37774056502fe8970dcd2fd27dca5fa31f2a55232649fc3056c89c3af7d62755"
+        }
       ]
     },
     {

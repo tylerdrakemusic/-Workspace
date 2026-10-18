@@ -6,8 +6,10 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -117,12 +119,13 @@ def _write_skill_fixture(
     source_file.parent.mkdir(parents=True)
     source_file.write_text(source_text, encoding="utf-8")
 
-    destination = tmp_path / "workspace" / ".github" / "skills"
+    workspace_root = tmp_path / "workspace"
+    destination = workspace_root / ".github" / "skills"
     target_file = destination / skill / "SKILL.md"
     target_file.parent.mkdir(parents=True)
     target_file.write_text(target_text, encoding="utf-8")
 
-    manifest_path = tmp_path / "workspace" / ".github" / "!!security" / "agent-manifest.json"
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
     manifest_path.parent.mkdir(parents=True)
     baseline_file = tmp_path / "manifest-baseline.md"
     baseline_file.write_text(manifest_text, encoding="utf-8")
@@ -138,11 +141,14 @@ def _write_skill_fixture(
         encoding="utf-8",
     )
 
-    config_path = tmp_path / "skill-sync-config.json"
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
     config_path.write_text(
         json.dumps(
             {
+                "workspace_root": {"relative": "."},
                 "destination": str(destination),
+                "log_file": {"relative": "logs/skill-sync.log"},
                 "repos": [
                     {
                         "name": repo_name,
@@ -238,6 +244,195 @@ def _write_quarantine_fixture(tmp_path: Path) -> tuple[Path, Path, Path, str, st
     return workspace_root, config_path, target_file, old_commit, new_commit
 
 
+def test_manifest_verification_fails_closed_on_watched_reparse_point(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    reference = workspace_root / ".github" / "references" / "external.md"
+    reference.parent.mkdir(parents=True)
+    reference.write_text("outside data\n", encoding="utf-8")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(json.dumps({"files": {}}), encoding="utf-8")
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == reference or original_check(path),
+    )
+
+    with pytest.raises(SystemExit) as exit_info:
+        update_manifest.verify_manifest(workspace_root)
+
+    assert exit_info.value.code == 2
+    assert "reparse point" in capsys.readouterr().out.lower()
+
+
+def test_manifest_verification_checks_dangling_watched_reparse_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(json.dumps({"files": {}}), encoding="utf-8")
+    dangling_root = workspace_root / ".github" / "references"
+    original_exists = Path.exists
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == dangling_root or original_check(path),
+    )
+    monkeypatch.setattr(
+        Path,
+        "exists",
+        lambda path: False if path == dangling_root else original_exists(path),
+    )
+
+    with pytest.raises(SystemExit) as exit_info:
+        update_manifest.verify_manifest(workspace_root)
+
+    assert exit_info.value.code == 2
+    assert "reparse point" in capsys.readouterr().out.lower()
+
+
+def test_reconciliation_rejects_dangling_sync_config_reparse_before_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    reference = repo_root / ".github" / "references" / "security-checklist.md"
+    reference.parent.mkdir(parents=True)
+    reference.write_text("approved reference\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps(
+            {"files": {".github/references/security-checklist.md": _sha256(reference)}}
+        ),
+        encoding="utf-8",
+    )
+    sync_config_path = repo_root / "tools" / "skill-sync-config.json"
+    sync_config_path.parent.mkdir(parents=True)
+    sync_config_path.write_text("dangling config placeholder", encoding="utf-8")
+    original_manifest = manifest_path.read_bytes()
+    original_exists = Path.exists
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == sync_config_path or original_check(path),
+    )
+    monkeypatch.setattr(
+        Path,
+        "exists",
+        lambda path: False if path == sync_config_path else original_exists(path),
+    )
+
+    with pytest.raises(ValueError, match="reparse point"):
+        update_manifest.reconcile_reviewed_manifest_entries(
+            manifest_path, [reference], repo_root=repo_root
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
+
+
+def test_manifest_verification_requires_config_for_tracked_skill_resources(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    skill_file = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    reference_file = workspace_root / ".github" / "references" / "security-checklist.md"
+    skill_file.parent.mkdir(parents=True)
+    reference_file.parent.mkdir(parents=True)
+    skill_file.write_text("skill\n", encoding="utf-8")
+    reference_file.write_text("reference\n", encoding="utf-8")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "files": {
+                    ".github/skills/example/SKILL.md": _sha256(skill_file),
+                    ".github/references/security-checklist.md": _sha256(reference_file),
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit) as exit_info:
+        update_manifest.verify_manifest(workspace_root)
+
+    assert exit_info.value.code == 2
+    assert "sync config is missing" in capsys.readouterr().out.lower()
+
+
+def test_manifest_verification_rejects_dangling_sync_config_reparse_before_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    target = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    target.parent.mkdir(parents=True)
+    target.write_text("skill\n", encoding="utf-8")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/skills/example/SKILL.md": _sha256(target)}}),
+        encoding="utf-8",
+    )
+    sync_config_path = workspace_root / "tools" / "skill-sync-config.json"
+    sync_config_path.parent.mkdir(parents=True)
+    original_exists = Path.exists
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == sync_config_path or original_check(path),
+    )
+    monkeypatch.setattr(
+        Path,
+        "exists",
+        lambda path: False if path == sync_config_path else original_exists(path),
+    )
+
+    with pytest.raises(SystemExit) as exit_info:
+        update_manifest.verify_manifest(workspace_root)
+
+    assert exit_info.value.code == 2
+    assert "reparse point" in capsys.readouterr().out.lower()
+
+
+def test_manifest_updates_reject_reparse_manifest_without_writing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="source\n",
+        target_text="source\n",
+        manifest_text="source\n",
+    )
+    original_manifest = manifest_path.read_bytes()
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == manifest_path or original_check(path),
+    )
+
+    with pytest.raises(ValueError, match="reparse point"):
+        update_manifest.update_manifest_entries(
+            manifest_path,
+            [target_file],
+            repo_root=tmp_path / "workspace",
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
+
+
 def _run_quarantine_gate(workspace_root: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
@@ -255,6 +450,46 @@ def _run_quarantine_gate(workspace_root: Path) -> subprocess.CompletedProcess[st
     )
 
 
+def test_sync_config_reparse_path_is_rejected_before_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, _, _ = _write_skill_fixture(
+        tmp_path,
+        source_text="source\n",
+        target_text="source\n",
+        manifest_text="source\n",
+    )
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == config_path or original_check(path),
+    )
+
+    with pytest.raises(ValueError, match="reparse point"):
+        update_manifest.resolve_sync_config(config_path)
+
+
+def test_skill_target_reparse_component_is_rejected_during_preflight(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, target_file, _ = _write_skill_fixture(
+        tmp_path,
+        source_text="source\n",
+        target_text="source\n",
+        manifest_text="source\n",
+    )
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == target_file or original_check(path),
+    )
+
+    with pytest.raises(ValueError, match="Target for .*reparse point"):
+        update_manifest.preflight_sync_config(config_path)
+
+
 def test_source_match_is_authorized(tmp_path: Path) -> None:
     config_path, target_file, manifest_path = _write_skill_fixture(
         tmp_path,
@@ -268,6 +503,580 @@ def test_source_match_is_authorized(tmp_path: Path) -> None:
     assert result.hard_findings == []
     assert result.entries[0].status == "source_match"
     assert result.entries[0].target == str(target_file)
+
+
+def test_pinned_resource_mapping_is_preflighted_and_verified(tmp_path: Path) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="skill source\n",
+        target_text="skill source\n",
+        manifest_text="skill source\n",
+    )
+    workspace_root = tmp_path / "workspace"
+    resource_source = tmp_path / "source" / "references" / "security-checklist.md"
+    resource_source.parent.mkdir(parents=True)
+    resource_source.write_bytes(b"pinned security checklist\n")
+    resource_target = workspace_root / ".github" / "references" / "security-checklist.md"
+    resource_target.parent.mkdir(parents=True)
+    resource_target.write_bytes(resource_source.read_bytes())
+    source_root = tmp_path / "source"
+    pinned_commit = _commit_git_repo(source_root)
+    pinned_blob = subprocess.run(
+        ["git", "-C", str(source_root), "cat-file", "blob", f"{pinned_commit}:references/security-checklist.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": str(workspace_root)}
+    config["repos"][0]["resources"] = [
+        {
+            "skill": "example",
+            "source_path": "references/security-checklist.md",
+            "target": ".github/references/security-checklist.md",
+            "pinned_commit": pinned_commit,
+            "sha256": hashlib.sha256(pinned_blob).hexdigest(),
+        }
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"][".github/references/security-checklist.md"] = _sha256(
+        resource_target
+    )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    later_source_file = source_root / "later-upstream-change.md"
+    later_source_file.write_text("unrelated upstream update\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "-C", str(source_root), "add", "later-upstream-change.md"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(source_root), "commit", "-m", "Unrelated later source change"],
+        check=True,
+        capture_output=True,
+    )
+
+    resolved = update_manifest.preflight_sync_config(config_path)
+    resource = resolved["repos"][0]["resources"][0]
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert resource["source"] == str(resource_source.resolve())
+    assert resource["target"] == str(resource_target.resolve())
+    assert resource["pinned_commit"] == pinned_commit
+    assert resource["sha256"] == hashlib.sha256(pinned_blob).hexdigest()
+    assert result.hard_findings == []
+    assert any(
+        entry.target == str(resource_target.resolve())
+        and entry.status == "source_match"
+        for entry in result.entries
+    )
+
+
+@pytest.mark.parametrize(
+    "resource_target",
+    [
+        ".github/agents/untrusted.agent.md",
+        ".github/references/security-checklist.MD",
+        ".github/skills/example/references/unused/../hardening-patterns.md",
+        ".github/references/security-checklist.md:payload.md",
+    ],
+    ids=[
+        "outside-reference-roots",
+        "uppercase-extension",
+        "dotdot-normalized",
+        "alternate-data-stream",
+    ],
+)
+def test_invalid_resource_target_is_rejected_without_writes(
+    tmp_path: Path, resource_target: str
+) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="skill source\n",
+        target_text="skill source\n",
+        manifest_text="skill source\n",
+    )
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "source"
+    resource_source = source_root / "references" / "security-checklist.md"
+    resource_source.parent.mkdir(parents=True)
+    resource_source.write_bytes(b"pinned security checklist\n")
+    pinned_commit = _commit_git_repo(source_root)
+    pinned_blob = subprocess.run(
+        ["git", "-C", str(source_root), "cat-file", "blob", f"{pinned_commit}:references/security-checklist.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": str(workspace_root)}
+    config["repos"][0]["resources"] = [
+        {
+            "skill": "example",
+            "source_path": "references/security-checklist.md",
+            "target": resource_target,
+            "pinned_commit": pinned_commit,
+            "sha256": hashlib.sha256(pinned_blob).hexdigest(),
+        }
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    original_manifest = manifest_path.read_bytes()
+    forbidden_target = workspace_root / resource_target
+
+    with pytest.raises(ValueError, match="target|reference|dot"):
+        update_manifest.preflight_sync_config(config_path)
+
+    assert not forbidden_target.exists()
+    assert manifest_path.read_bytes() == original_manifest
+
+
+def test_resource_target_symlink_component_is_rejected_without_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="skill source\n",
+        target_text="skill source\n",
+        manifest_text="skill source\n",
+    )
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "source"
+    resource_source = source_root / "references" / "security-checklist.md"
+    resource_source.parent.mkdir(parents=True)
+    resource_source.write_bytes(b"pinned security checklist\n")
+    pinned_commit = _commit_git_repo(source_root)
+    pinned_blob = subprocess.run(
+        ["git", "-C", str(source_root), "cat-file", "blob", f"{pinned_commit}:references/security-checklist.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+    skill_directory = workspace_root / ".github" / "skills" / "example"
+    skill_directory.mkdir(parents=True, exist_ok=True)
+    skill_reference_dir = skill_directory / "references"
+    resource_target = skill_reference_dir / "security-checklist.md"
+    shared_reference_dir = workspace_root / ".github" / "references"
+    shared_reference_dir.mkdir(parents=True)
+    external_target = shared_reference_dir / "security-checklist.md"
+    external_target.write_text("leave this file untouched\n", encoding="utf-8")
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": str(workspace_root)}
+    config["repos"][0]["resources"] = [
+        {
+            "skill": "example",
+            "source_path": "references/security-checklist.md",
+            "target": ".github/skills/example/references/security-checklist.md",
+            "pinned_commit": pinned_commit,
+            "sha256": hashlib.sha256(pinned_blob).hexdigest(),
+        }
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    original_manifest = manifest_path.read_bytes()
+    original_target = external_target.read_bytes()
+    original_lstat = Path.lstat
+
+    def lstat(path: Path) -> os.stat_result | SimpleNamespace:
+        if path == skill_reference_dir:
+            return SimpleNamespace(
+                st_mode=stat.S_IFDIR,
+                st_file_attributes=0x400,
+            )
+        return original_lstat(path)
+
+    monkeypatch.setattr(Path, "lstat", lstat)
+
+    with pytest.raises(ValueError, match="symlink|reparse"):
+        update_manifest.preflight_sync_config(config_path)
+
+    assert not resource_target.exists()
+    assert external_target.read_bytes() == original_target
+    assert manifest_path.read_bytes() == original_manifest
+
+
+@pytest.mark.parametrize("sync_mode", ["reviewed", "protected"])
+@pytest.mark.parametrize(
+    "target_state",
+    ["absent", "unmanifested", "manifested-custom", "manifested-pinned", "gate-failure"],
+)
+def test_skill_sync_installs_pinned_reference_resources(
+    tmp_path: Path, sync_mode: str, target_state: str
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+    if sync_mode == "protected" and target_state == "gate-failure":
+        pytest.skip("Protected sync does not run the post-sync prewrite gate")
+
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "external-source"
+    skill_source = source_root / "skills" / "example" / "SKILL.md"
+    resource_sources = {
+        "patterns": source_root / "skills" / "example" / "references" / "hardening-patterns.md",
+        "checklist": source_root / "references" / "security-checklist.md",
+    }
+    resource_targets = {
+        "patterns": ".github/skills/example/references/hardening-patterns.md",
+        "checklist": ".github/references/security-checklist.md",
+    }
+    skill_source.parent.mkdir(parents=True)
+    skill_source.write_bytes(b"reviewed skill source\n")
+    for name, source in resource_sources.items():
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_bytes(f"reviewed pinned {name} reference\n".encode())
+    pinned_commit = _commit_git_repo(source_root)
+    resources = []
+    for name, source in resource_sources.items():
+        relative_source = source.relative_to(source_root).as_posix()
+        pinned_blob = subprocess.run(
+            ["git", "-C", str(source_root), "cat-file", "blob", f"{pinned_commit}:{relative_source}"],
+            check=True,
+            capture_output=True,
+        ).stdout
+        resources.append(
+            {
+                "skill": "example",
+                "source_path": relative_source,
+                "target": resource_targets[name],
+                "pinned_commit": pinned_commit,
+                "sha256": hashlib.sha256(pinned_blob).hexdigest(),
+            }
+        )
+
+    skill_target = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    skill_target.parent.mkdir(parents=True)
+    skill_target.write_bytes(skill_source.read_bytes())
+    existing_resources: dict[str, bytes] = {}
+    existing_resource_mtimes: dict[str, int] = {}
+    if target_state not in {"absent", "gate-failure"}:
+        for name, source in resource_sources.items():
+            target = workspace_root / resource_targets[name]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            existing = (
+                source.read_bytes()
+                if target_state == "manifested-pinned"
+                else f"existing {name} customization\n".encode()
+            )
+            target.write_bytes(existing)
+            existing_resources[name] = existing
+            if target_state == "manifested-pinned":
+                existing_resource_mtimes[name] = target.stat().st_mtime_ns
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_files = {
+        ".github/skills/example/SKILL.md": _sha256(skill_target)
+    }
+    if target_state in {"manifested-custom", "manifested-pinned"}:
+        for name, content in existing_resources.items():
+            manifest_files[resource_targets[name]] = hashlib.sha256(content).hexdigest()
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "file_count": len(manifest_files),
+                "files": manifest_files,
+            }
+        ),
+        encoding="utf-8",
+    )
+    original_manifest = manifest_path.read_bytes()
+    original_skill = skill_target.read_bytes()
+    if target_state == "gate-failure":
+        unmanifested_agent = workspace_root / ".github" / "agents" / "unexpected.agent.md"
+        unmanifested_agent.parent.mkdir(parents=True)
+        unmanifested_agent.write_text("unmanifested test fixture\n", encoding="utf-8")
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [
+                    {
+                        "name": "external-source",
+                        "path": str(source_root),
+                        "remote": None,
+                        "skill_root": "skills",
+                        "provenance": "external-source",
+                        "source_policy": "required",
+                        "skills": ["example"],
+                        "resources": resources,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py",
+        manifest_path.parent / "update_manifest.py",
+    )
+
+    command = [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+    ]
+    if sync_mode == "reviewed":
+        command.extend(
+            [
+                "-ApproveReviewedUpdates",
+                "-ReviewedSkills",
+                "example",
+                "-ReviewRationale",
+                "Install pinned reference resources for the reviewed skill.",
+            ]
+        )
+    else:
+        command.append("-ApproveProtectedSync")
+    command.extend(["-ConfigPath", str(config_path), "-ManifestPath", str(manifest_path)])
+    result = subprocess.run(
+        command,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+
+    if target_state in {"unmanifested", "manifested-custom"}:
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert manifest_path.read_bytes() == original_manifest
+        for name, content in existing_resources.items():
+            assert (workspace_root / resource_targets[name]).read_bytes() == content
+        return
+
+    if target_state == "gate-failure":
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert manifest_path.read_bytes() == original_manifest
+        assert skill_target.read_bytes() == original_skill
+        assert all(not (workspace_root / path).exists() for path in resource_targets.values())
+        return
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))["files"]
+    for name, source in resource_sources.items():
+        target = workspace_root / resource_targets[name]
+        assert target.read_bytes() == source.read_bytes()
+        assert manifest[resource_targets[name]] == _sha256(target)
+        if target_state == "manifested-pinned":
+            assert target.stat().st_mtime_ns == existing_resource_mtimes[name]
+    integrity = verify_skill_integrity(config_path, manifest_path)
+    assert integrity.hard_findings == []
+    assert all(entry.status == "source_match" for entry in integrity.entries)
+
+
+def test_skill_sync_refuses_concurrent_writer_for_same_workspace(tmp_path: Path) -> None:
+    if os.name != "nt" or shutil.which("pwsh") is None:
+        pytest.skip("Named Windows mutex and PowerShell are required")
+
+    import ctypes
+
+    workspace_root = tmp_path / "workspace"
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(json.dumps({"files": {}}), encoding="utf-8")
+    normalized_root = str(workspace_root.resolve()).rstrip("\\/").lower()
+    lock_name = (
+        "Local\\WorkspaceSkillSync-"
+        + hashlib.sha256(normalized_root.encode("utf-8")).hexdigest().upper()
+    )
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
+    kernel32.CreateMutexW.restype = ctypes.c_void_p
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    mutex = kernel32.CreateMutexW(None, 0, lock_name)
+    assert mutex
+    assert kernel32.WaitForSingleObject(mutex, 0) == 0
+    original_manifest = manifest_path.read_bytes()
+    try:
+        result = subprocess.run(
+            [
+                "pwsh",
+                "-NoProfile",
+                "-File",
+                str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+                "-ApproveProtectedSync",
+                "-ConfigPath",
+                str(config_path),
+                "-ManifestPath",
+                str(manifest_path),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+        )
+        assert result.returncode != 0
+        assert "another skill sync is active" in (result.stdout + result.stderr).lower()
+        assert not (workspace_root / "logs" / "skill-sync.log").exists()
+        assert manifest_path.read_bytes() == original_manifest
+    finally:
+        kernel32.ReleaseMutex(mutex)
+        kernel32.CloseHandle(mutex)
+
+
+def test_sync_lock_is_acquired_before_source_pull(tmp_path: Path) -> None:
+    if os.name != "nt" or shutil.which("pwsh") is None:
+        pytest.skip("Named Windows mutex and PowerShell are required")
+
+    import ctypes
+
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    git_origin = ["git", "-C", str(origin)]
+    subprocess.run([*git_origin, "init", "--initial-branch=main"], check=True, capture_output=True)
+    subprocess.run([*git_origin, "config", "user.name", "Sync Test"], check=True)
+    subprocess.run([*git_origin, "config", "user.email", "sync-test@example.test"], check=True)
+    source_skill = origin / "skills" / "example" / "SKILL.md"
+    source_skill.parent.mkdir(parents=True)
+    source_skill.write_bytes(b"initial source\n")
+    subprocess.run([*git_origin, "add", "--all"], check=True)
+    subprocess.run([*git_origin, "commit", "-m", "Initial source"], check=True, capture_output=True)
+
+    source_checkout = tmp_path / "source-checkout"
+    subprocess.run(["git", "clone", str(origin), str(source_checkout)], check=True, capture_output=True)
+    checkout_skill = source_checkout / "skills" / "example" / "SKILL.md"
+    old_source_head = subprocess.run(
+        ["git", "-C", str(source_checkout), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+    original_source_bytes = checkout_skill.read_bytes()
+    source_skill.write_bytes(b"updated source\n")
+    subprocess.run([*git_origin, "add", "--all"], check=True)
+    subprocess.run([*git_origin, "commit", "-m", "Update source"], check=True, capture_output=True)
+
+    workspace_root = tmp_path / "workspace"
+    target = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"initial source\n")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    original_manifest = json.dumps(
+        {"files": {".github/skills/example/SKILL.md": _sha256(target)}}
+    ).encode("utf-8")
+    manifest_path.write_bytes(original_manifest)
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [
+                    {
+                        "name": "external-source",
+                        "path": str(source_checkout),
+                        "remote": str(origin),
+                        "skill_root": "skills",
+                        "provenance": "external-source",
+                        "source_policy": "required",
+                        "skills": ["example"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    normalized_root = str(workspace_root.resolve()).rstrip("\\/").lower()
+    lock_name = (
+        "Local\\WorkspaceSkillSync-"
+        + hashlib.sha256(normalized_root.encode("utf-8")).hexdigest().upper()
+    )
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
+    kernel32.CreateMutexW.restype = ctypes.c_void_p
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    mutex = kernel32.CreateMutexW(None, 0, lock_name)
+    assert mutex
+    assert kernel32.WaitForSingleObject(mutex, 0) == 0
+    try:
+        result = subprocess.run(
+            [
+                "pwsh",
+                "-NoProfile",
+                "-File",
+                str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+                "-ApproveProtectedSync",
+                "-ConfigPath",
+                str(config_path),
+                "-ManifestPath",
+                str(manifest_path),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+        )
+        current_source_head = subprocess.run(
+            ["git", "-C", str(source_checkout), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        ).stdout.strip()
+        assert result.returncode != 0
+        assert "another skill sync is active" in (result.stdout + result.stderr).lower()
+        assert current_source_head == old_source_head
+        assert checkout_skill.read_bytes() == original_source_bytes
+        assert target.read_bytes() == b"initial source\n"
+        assert manifest_path.read_bytes() == original_manifest
+        assert not (workspace_root / "logs" / "skill-sync.log").exists()
+    finally:
+        kernel32.ReleaseMutex(mutex)
+        kernel32.CloseHandle(mutex)
+
+    resumed = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveProtectedSync",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+    assert resumed.returncode == 0, resumed.stdout + resumed.stderr
+    assert checkout_skill.read_text(encoding="utf-8") == "updated source\n"
+    assert target.read_text(encoding="utf-8") == "updated source\n"
+    updated_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))["files"]
+    assert updated_manifest[".github/skills/example/SKILL.md"] == _sha256(target)
 
 
 @pytest.mark.parametrize("uppercase_sha", [False, True], ids=["lowercase", "uppercase"])
@@ -528,6 +1337,67 @@ def test_approved_sync_updates_only_the_affected_manifest_entry(tmp_path: Path) 
     result = verify_skill_integrity(config_path, manifest_path)
     assert result.hard_findings == []
     assert result.entries[0].status == "source_match"
+
+
+def test_reviewed_manifest_reconciliation_rejects_dot_segments_without_writes(
+    tmp_path: Path,
+) -> None:
+    repo_root = tmp_path / "workspace"
+    reference = repo_root / ".github" / "references" / "security-checklist.md"
+    reference.parent.mkdir(parents=True)
+    reference.write_text("approved reference\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "files": {
+                    ".github/references/security-checklist.md": _sha256(reference)
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    original_manifest = manifest_path.read_bytes()
+
+    with pytest.raises(ValueError, match="dot segments"):
+        update_manifest.reconcile_reviewed_manifest_entries(
+            manifest_path,
+            [Path(".github/references/unused/../security-checklist.md")],
+            repo_root=repo_root,
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
+
+
+def test_reviewed_manifest_reconciliation_rejects_reparse_components_without_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    agents_dir = repo_root / ".github" / "agents"
+    agents_dir.mkdir(parents=True)
+    agent_file = agents_dir / "reviewed.agent.md"
+    agent_file.write_text("reviewed agent\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/agents/reviewed.agent.md": "old-hash"}}),
+        encoding="utf-8",
+    )
+    original_manifest = manifest_path.read_bytes()
+    original_check = update_manifest._is_symlink_or_reparse_point
+    monkeypatch.setattr(
+        update_manifest,
+        "_is_symlink_or_reparse_point",
+        lambda path: path == agents_dir or original_check(path),
+    )
+
+    with pytest.raises(ValueError, match="reparse point"):
+        update_manifest.reconcile_reviewed_manifest_entries(
+            manifest_path, [agent_file], repo_root=repo_root
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
 
 
 def test_reviewed_manifest_reconciliation_changes_only_named_watched_paths(
@@ -824,8 +1694,194 @@ def test_reviewed_sync_updates_unpinned_external_skill_without_adding_pin(
     }
 
 
-def test_reviewed_sync_rejects_noncanonical_manifest_before_target_write(
+def test_reviewed_pin_update_rolls_back_after_postwrite_gate_failure(
     tmp_path: Path,
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    config_path, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="old source\n",
+        target_text="old source\n",
+        manifest_text="old source\n",
+    )
+    workspace_root = target_file.parents[3]
+    source_root = Path(json.loads(config_path.read_text(encoding="utf-8"))["repos"][0]["path"])
+    source_file = source_root / "skills" / "example" / "SKILL.md"
+    resource_source = source_root / "references" / "security-checklist.md"
+    resource_source.parent.mkdir(parents=True)
+    resource_source.write_bytes(b"pinned resource source\n")
+    old_commit = _commit_git_repo(source_root)
+    old_hash = _sha256(source_file)
+    resource_blob = subprocess.run(
+        ["git", "-C", str(source_root), "cat-file", "blob", f"{old_commit}:references/security-checklist.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    source_file.write_bytes(b"new reviewed source\n")
+    subprocess.run(
+        ["git", "-C", str(source_root), "add", "skills/example/SKILL.md"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(source_root), "commit", "-m", "Reviewed source update"],
+        check=True,
+        capture_output=True,
+    )
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": "."}
+    config["repos"][0]["pinned_commit"] = old_commit
+    config["repos"][0]["sha256"] = old_hash
+    config["repos"][0]["resources"] = [
+        {
+            "skill": "example",
+            "source_path": "references/security-checklist.md",
+            "target": ".github/references/security-checklist.md",
+            "pinned_commit": old_commit,
+            "sha256": hashlib.sha256(resource_blob).hexdigest(),
+        }
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    (workspace_root / ".github" / "agents").mkdir(parents=True, exist_ok=True)
+    (workspace_root / ".github" / "instructions").mkdir(parents=True, exist_ok=True)
+    (workspace_root / ".github" / "agents" / "unmanifested.agent.md").write_text(
+        "force postwrite gate failure\n", encoding="utf-8"
+    )
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py",
+        manifest_path.parent / "update_manifest.py",
+    )
+    original_target = target_file.read_bytes()
+    original_manifest = manifest_path.read_bytes()
+    original_config = config_path.read_bytes()
+    resource_target = workspace_root / ".github" / "references" / "security-checklist.md"
+
+    result = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveReviewedUpdates",
+            "-ReviewedSkills",
+            "example",
+            "-ReviewRationale",
+            "Roll back pins and files when postwrite verification fails.",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+
+    assert result.returncode != 0
+    assert target_file.read_bytes() == original_target
+    assert manifest_path.read_bytes() == original_manifest
+    assert config_path.read_bytes() == original_config
+    assert not resource_target.exists()
+
+
+def test_reviewed_sync_restores_config_when_manifest_rollback_fails(
+    tmp_path: Path,
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    config_path, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="old source\n",
+        target_text="old source\n",
+        manifest_text="old source\n",
+    )
+    workspace_root = target_file.parents[3]
+    source_root = Path(json.loads(config_path.read_text(encoding="utf-8"))["repos"][0]["path"])
+    source_file = source_root / "skills" / "example" / "SKILL.md"
+    old_commit = _commit_git_repo(source_root)
+    old_hash = _sha256(source_file)
+    source_file.write_bytes(b"new reviewed source\n")
+    subprocess.run(
+        ["git", "-C", str(source_root), "add", "skills/example/SKILL.md"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(source_root), "commit", "-m", "Reviewed source update"],
+        check=True,
+        capture_output=True,
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": "."}
+    config["repos"][0]["pinned_commit"] = old_commit
+    config["repos"][0]["sha256"] = old_hash
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    (workspace_root / ".github" / "agents").mkdir(parents=True, exist_ok=True)
+    (workspace_root / ".github" / "instructions").mkdir(parents=True, exist_ok=True)
+
+    updater_dir = manifest_path.parent
+    real_updater = updater_dir / "update_manifest.real.py"
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py",
+        real_updater,
+    )
+    (updater_dir / "update_manifest.py").write_text(
+        "from pathlib import Path\n"
+        "import runpy, sys\n"
+        "if '--update-files' in sys.argv:\n"
+        "    real = Path(__file__).with_name('update_manifest.real.py')\n"
+        "    sys.argv[0] = str(real)\n"
+        "    runpy.run_path(str(real), run_name='__main__')\n"
+        "else:\n"
+        "    manifest = Path(__file__).with_name('agent-manifest.json')\n"
+        "    manifest.replace(manifest.with_name('agent-manifest.backup'))\n"
+        "    manifest.mkdir()\n"
+        "    print('=== Agent File Integrity Check ===')\n"
+        "    sys.exit(2)\n",
+        encoding="utf-8",
+    )
+    original_target = target_file.read_bytes()
+    original_config = config_path.read_bytes()
+
+    result = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveReviewedUpdates",
+            "-ReviewedSkills",
+            "example",
+            "-ReviewRationale",
+            "Exercise independent config restoration after manifest rollback failure.",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+
+    assert result.returncode != 0
+    assert "rollback was incomplete" in (result.stdout + result.stderr).lower()
+    assert target_file.read_bytes() == original_target
+    assert config_path.read_bytes() == original_config
+    assert manifest_path.is_dir()
+
+
+@pytest.mark.parametrize("sync_mode", ["reviewed", "protected"])
+def test_skill_sync_rejects_noncanonical_manifest_before_target_write(
+    tmp_path: Path, sync_mode: str
 ) -> None:
     if shutil.which("pwsh") is None:
         pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
@@ -842,10 +1898,10 @@ def test_reviewed_sync_rejects_noncanonical_manifest_before_target_write(
     config["destination"] = {"relative": ".github/skills"}
     config["log_file"] = {"relative": "logs/skill-sync.log"}
     workspace_config = workspace_root / "tools" / "skill-sync-config.json"
-    workspace_config.parent.mkdir(parents=True)
+    workspace_config.parent.mkdir(parents=True, exist_ok=True)
     workspace_config.write_text(json.dumps(config), encoding="utf-8")
     canonical_dir = workspace_root / ".github" / "!!☾⛧security"
-    canonical_dir.mkdir(parents=True)
+    canonical_dir.mkdir(parents=True, exist_ok=True)
     canonical_manifest = canonical_dir / "agent-manifest.json"
     manifest = json.loads(fixture_manifest.read_text(encoding="utf-8"))
     manifest["files"] = {
@@ -864,22 +1920,34 @@ def test_reviewed_sync_rejects_noncanonical_manifest_before_target_write(
     original_config = workspace_config.read_bytes()
     original_alternate_manifest = alternate_manifest.read_bytes()
 
-    result = subprocess.run(
+    command = [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+    ]
+    if sync_mode == "reviewed":
+        command.extend(
+            [
+                "-ApproveReviewedUpdates",
+                "-ReviewedSkills",
+                "example",
+                "-ReviewRationale",
+                "Reviewed the skill diff as benign.",
+            ]
+        )
+    else:
+        command.append("-ApproveProtectedSync")
+    command.extend(
         [
-            "pwsh",
-            "-NoProfile",
-            "-File",
-            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
-            "-ApproveReviewedUpdates",
-            "-ReviewedSkills",
-            "example",
-            "-ReviewRationale",
-            "Reviewed the skill diff as benign.",
             "-ConfigPath",
             str(workspace_config),
             "-ManifestPath",
             str(alternate_manifest),
-        ],
+        ]
+    )
+    result = subprocess.run(
+        command,
         check=False,
         capture_output=True,
         text=True,
@@ -888,13 +1956,15 @@ def test_reviewed_sync_rejects_noncanonical_manifest_before_target_write(
     )
 
     assert result.returncode != 0
+    assert "canonical agent manifest path" in (result.stdout + result.stderr).lower()
     assert target_file.read_bytes() == original_target
     assert workspace_config.read_bytes() == original_config
     assert alternate_manifest.read_bytes() == original_alternate_manifest
 
 
-def test_reviewed_sync_rejects_noncanonical_config_before_target_write(
-    tmp_path: Path,
+@pytest.mark.parametrize("sync_mode", ["reviewed", "protected"])
+def test_skill_sync_rejects_noncanonical_config_before_target_write(
+    tmp_path: Path, sync_mode: str
 ) -> None:
     if shutil.which("pwsh") is None:
         pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
@@ -911,13 +1981,13 @@ def test_reviewed_sync_rejects_noncanonical_config_before_target_write(
     config["destination"] = {"relative": ".github/skills"}
     config["log_file"] = {"relative": "logs/skill-sync.log"}
     tools_dir = workspace_root / "tools"
-    tools_dir.mkdir(parents=True)
+    tools_dir.mkdir(parents=True, exist_ok=True)
     canonical_config = tools_dir / "skill-sync-config.json"
     canonical_config.write_text(json.dumps(config), encoding="utf-8")
     alternate_config = tools_dir / "alternate-skill-sync-config.json"
-    alternate_config.write_text(json.dumps(config), encoding="utf-8")
+    alternate_config.write_text("{ malformed alternate config", encoding="utf-8")
     canonical_dir = workspace_root / ".github" / "!!☾⛧security"
-    canonical_dir.mkdir(parents=True)
+    canonical_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = canonical_dir / "agent-manifest.json"
     manifest = json.loads(fixture_manifest.read_text(encoding="utf-8"))
     manifest["files"] = {
@@ -932,23 +2002,29 @@ def test_reviewed_sync_rejects_noncanonical_config_before_target_write(
     )
     original_target = target_file.read_bytes()
     original_config = alternate_config.read_bytes()
+    original_manifest = manifest_path.read_bytes()
 
+    command = [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+    ]
+    if sync_mode == "reviewed":
+        command.extend(
+            [
+                "-ApproveReviewedUpdates",
+                "-ReviewedSkills",
+                "example",
+                "-ReviewRationale",
+                "Reviewed the skill diff as benign.",
+            ]
+        )
+    else:
+        command.append("-ApproveProtectedSync")
+    command.extend(["-ConfigPath", str(alternate_config), "-ManifestPath", str(manifest_path)])
     result = subprocess.run(
-        [
-            "pwsh",
-            "-NoProfile",
-            "-File",
-            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
-            "-ApproveReviewedUpdates",
-            "-ReviewedSkills",
-            "example",
-            "-ReviewRationale",
-            "Reviewed the skill diff as benign.",
-            "-ConfigPath",
-            str(alternate_config),
-            "-ManifestPath",
-            str(manifest_path),
-        ],
+        command,
         check=False,
         capture_output=True,
         text=True,
@@ -957,8 +2033,10 @@ def test_reviewed_sync_rejects_noncanonical_config_before_target_write(
     )
 
     assert result.returncode != 0
+    assert "canonical skill sync config path" in (result.stdout + result.stderr).lower()
     assert target_file.read_bytes() == original_target
     assert alternate_config.read_bytes() == original_config
+    assert manifest_path.read_bytes() == original_manifest
 
 
 def test_reviewed_sync_rejects_a_candidate_older_than_the_existing_pin(
@@ -1044,7 +2122,7 @@ def test_sync_script_default_and_approved_flows(tmp_path: Path) -> None:
         manifest_text="local customization\n",
     )
     config = json.loads(config_path.read_text(encoding="utf-8"))
-    config["log_file"] = str(tmp_path / "sync.log")
+    config["log_file"] = str(config_path.parent.parent / "logs" / "sync.log")
     config_path.write_text(json.dumps(config), encoding="utf-8")
     script_path = PROJECT_ROOT / "tools" / "sync-skills.ps1"
 
@@ -1103,7 +2181,7 @@ def test_approved_sync_does_not_overwrite_non_external_mapping(tmp_path: Path) -
     )
     config = json.loads(config_path.read_text(encoding="utf-8"))
     config["repos"][0]["provenance"] = "workspace-managed"
-    config["log_file"] = str(tmp_path / "sync.log")
+    config["log_file"] = str(config_path.parent.parent / "logs" / "sync.log")
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     run = subprocess.run(
@@ -1144,7 +2222,7 @@ def test_sync_preflights_all_mappings_before_writing_any_target(
     repo = config["repos"][0]
     repo["skills"] = ["example", "../escape"]
     repo["source_path"] = "example/SKILL.md"
-    config["log_file"] = str(tmp_path / "sync.log")
+    config["log_file"] = str(config_path.parent.parent / "logs" / "sync.log")
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     run = subprocess.run(
@@ -1270,7 +2348,7 @@ def test_sync_preflight_rejects_external_hard_link_to_mapped_target_without_modi
         target_text="local customization\n",
         manifest_text="local customization\n",
     )
-    log_path = tmp_path / "external-skill-sync.log"
+    log_path = target_file.parents[3] / "external-skill-sync.log"
     try:
         os.link(target_file, log_path)
     except OSError as exc:
@@ -1383,7 +2461,7 @@ def test_pinned_sync_validates_later_hash_before_changing_destination(
             "skills": ["later"],
         }
     )
-    log_path = tmp_path / "external-logs" / "sync.log"
+    log_path = config_path.parent.parent / "external-logs" / "sync.log"
     config["log_file"] = str(log_path)
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
@@ -1449,7 +2527,7 @@ def test_pinned_sync_validates_later_symlink_before_writing_earlier_mapping(
     repo["skills"] = ["example", "later"]
     repo["pinned_commit"] = pinned_commit
     repo["sha256"] = _sha256(outside_source)
-    config["log_file"] = str(tmp_path / "sync.log")
+    config["log_file"] = str(config_path.parent.parent / "logs" / "sync.log")
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     run = subprocess.run(
@@ -1501,7 +2579,7 @@ def test_pinned_sync_preserves_dot_prefixed_source_path_with_windows_separators(
     repo["source_path"] = r".hidden\release.v1\SKILL.md"
     repo["pinned_commit"] = _commit_git_repo(repo_root)
     repo["sha256"] = _sha256(source_file)
-    config["log_file"] = str(tmp_path / "sync.log")
+    config["log_file"] = str(config_path.parent.parent / "logs" / "sync.log")
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     run = subprocess.run(
@@ -1543,7 +2621,7 @@ def test_pinned_sync_removes_materialized_worktree_after_success(tmp_path: Path)
     pinned_commit = _commit_git_repo(repo_root)
     repo["pinned_commit"] = pinned_commit
     repo["sha256"] = _sha256(repo_root / "skills" / "example" / "SKILL.md")
-    config["log_file"] = str(tmp_path / "sync.log")
+    config["log_file"] = str(config_path.parent.parent / "logs" / "sync.log")
     config_path.write_text(json.dumps(config), encoding="utf-8")
 
     run = subprocess.run(
@@ -1726,6 +2804,81 @@ def test_relocated_config_resolves_all_paths_from_checkout_root(tmp_path: Path) 
         for value in config.values()
         if isinstance(value, Path)
     )
+
+
+def test_resource_source_alternate_data_stream_is_rejected(tmp_path: Path) -> None:
+    config_path, _, _ = _write_skill_fixture(
+        tmp_path,
+        source_text="skill source\n",
+        target_text="skill source\n",
+        manifest_text="skill source\n",
+    )
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "source"
+    resource_source = source_root / "references" / "security-checklist.md"
+    resource_source.parent.mkdir(parents=True)
+    resource_source.write_bytes(b"pinned security checklist\n")
+    pinned_commit = _commit_git_repo(source_root)
+    pinned_blob = subprocess.run(
+        ["git", "-C", str(source_root), "cat-file", "blob", f"{pinned_commit}:references/security-checklist.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": str(workspace_root)}
+    config["repos"][0]["resources"] = [
+        {
+            "skill": "example",
+            "source_path": "references/security-checklist.md:payload",
+            "target": ".github/references/security-checklist.md",
+            "pinned_commit": pinned_commit,
+            "sha256": hashlib.sha256(pinned_blob).hexdigest(),
+        }
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="repository-relative"):
+        update_manifest.preflight_sync_config(config_path)
+
+
+def test_resource_target_cannot_alias_configured_sync_log(tmp_path: Path) -> None:
+    config_path, _, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="skill source\n",
+        target_text="skill source\n",
+        manifest_text="skill source\n",
+    )
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "source"
+    resource_source = source_root / "references" / "security-checklist.md"
+    resource_source.parent.mkdir(parents=True)
+    resource_source.write_bytes(b"pinned security checklist\n")
+    pinned_commit = _commit_git_repo(source_root)
+    pinned_blob = subprocess.run(
+        ["git", "-C", str(source_root), "cat-file", "blob", f"{pinned_commit}:references/security-checklist.md"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    target_relative = ".github/references/security-checklist.md"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["workspace_root"] = {"relative": "."}
+    config["log_file"] = target_relative
+    config["repos"][0]["resources"] = [
+        {
+            "skill": "example",
+            "source_path": "references/security-checklist.md",
+            "target": target_relative,
+            "pinned_commit": pinned_commit,
+            "sha256": hashlib.sha256(pinned_blob).hexdigest(),
+        }
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="log file.*resource target"):
+        update_manifest.preflight_sync_config(config_path)
+
+    assert not (workspace_root / target_relative).exists()
+    assert manifest_path.exists()
 
 
 def test_optional_missing_source_is_informational(tmp_path: Path) -> None:

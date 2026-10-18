@@ -25,7 +25,7 @@ def load_manifest_module():
 def test_manifest_keys_are_stable_across_checkout_roots(tmp_path: Path) -> None:
     module = load_manifest_module()
     clone_root = tmp_path / "clone"
-    for watched_dir in ("agents", "instructions", "skills"):
+    for watched_dir in ("agents", "instructions", "skills", "references"):
         shutil.copytree(
             WORKTREE_ROOT / ".github" / watched_dir,
             clone_root / ".github" / watched_dir,
@@ -42,12 +42,12 @@ def test_manifest_keys_are_stable_across_checkout_roots(tmp_path: Path) -> None:
     )
 
 
-def test_verify_normalizes_legacy_absolute_keys_without_external_skill_config(
-    tmp_path: Path, monkeypatch
+def test_verify_normalizes_legacy_absolute_keys_without_external_skill_mappings(
+    tmp_path: Path,
 ) -> None:
     module = load_manifest_module()
     clone_root = tmp_path / "clone"
-    for watched_dir in ("agents", "instructions", "skills"):
+    for watched_dir in ("agents", "instructions", "skills", "references"):
         shutil.copytree(
             WORKTREE_ROOT / ".github" / watched_dir,
             clone_root / ".github" / watched_dir,
@@ -64,11 +64,19 @@ def test_verify_normalizes_legacy_absolute_keys_without_external_skill_config(
         json.dumps({"files": legacy_files}, ensure_ascii=False), encoding="utf-8"
     )
 
-    external_config = tmp_path / "external-live" / "tools" / "skill-sync-config.json"
-    external_config.parent.mkdir(parents=True)
-    external_config.write_text("not clone config", encoding="utf-8")
-    monkeypatch.setattr(module, "SKILL_SYNC_CONFIG", external_config, raising=False)
-    assert not (clone_root / "tools" / "skill-sync-config.json").exists()
+    config_path = clone_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     module.verify_manifest(clone_root)
 
@@ -146,7 +154,7 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
         monkeypatch.setenv(
             environment_name, str(tmp_path / "missing-external" / environment_name)
         )
-    for watched_dir in ("agents", "instructions", "skills"):
+    for watched_dir in ("agents", "instructions", "skills", "references"):
         shutil.copytree(
             WORKTREE_ROOT / ".github" / watched_dir,
             clone_root / ".github" / watched_dir,
@@ -169,7 +177,11 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
         (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
     )
     config["repos"] = [
-        {**repo, "skills": [skill for skill in repo["skills"] if skill in manifest_skills]}
+        {
+            **repo,
+            "skills": [skill for skill in repo["skills"] if skill in manifest_skills],
+            "resources": [],
+        }
         for repo in config["repos"]
     ]
     config["repos"] = [repo for repo in config["repos"] if repo["skills"]]
