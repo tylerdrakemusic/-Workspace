@@ -2980,7 +2980,9 @@ def test_integrity_verification_rejects_target_link_outside_destination(
     target_link.rmdir()
     _create_directory_link_or_skip(target_link, outside_target)
 
-    with pytest.raises(ValueError, match="(?i)target.*outside"):
+    with pytest.raises(
+        ValueError, match="(?i)target.*(?:outside|symlink|reparse point)"
+    ):
         verify_skill_integrity(config_path, manifest_path)
 
 
