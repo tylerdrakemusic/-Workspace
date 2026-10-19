@@ -3,6 +3,9 @@
 %% Traceability.parent: diagrams/workspace-architecture.mmd
 %% Traceability.derived_views: diagrams/workspace-derived-repository-voice.mmd, diagrams/workspace-derived-gmail-attachments.mmd
 graph LR
+    Music -->|tee_image_cascade only| Workspace
+    Music -.->|"OpenAI tuple (openai, gpt-image-1, openai/images/generations), default off, enabled plus exact tuple allowlist required"| Workspace
+    Music -.->|"Fal tuple (fal-ai, black-forest-labs/FLUX.1-Krea-dev, fal-ai/flux/krea), exact allowlist. Pollinations tuple (pollinations, default, pollinations/text-to-image), model and license unverified, skipped"| Workspace
     Workspace[⊕ Workspace<br/>.github/workflows/test.yml CI consumer] -->|pull_request: look up matching AI-Manifest head branch| GitHub[GitHub]
     GitHub -->|matching producer PR branch resolves to immutable head SHA| Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
     Manifest -->|fetch exact SHA, detached checkout, verify HEAD equals SHA| Workspace
