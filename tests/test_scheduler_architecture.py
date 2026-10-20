@@ -27,6 +27,10 @@ def _portable_project_roots(tmp_path: Path) -> dict[str, Path]:
         evidence_file = project_root / evidence_path
         evidence_file.parent.mkdir(parents=True)
         evidence_file.write_text("fixture evidence\n", encoding="utf-8")
+        if project == "⟨ψ⟩Quantum":
+            policy_evidence = project_root / "src" / "config" / "execution_policy.json"
+            policy_evidence.parent.mkdir(parents=True, exist_ok=True)
+            policy_evidence.write_text("fixture policy evidence\n", encoding="utf-8")
         project_roots[project] = project_root
     return project_roots
 
@@ -51,6 +55,7 @@ def test_scheduler_architecture_reference_has_one_record_per_audited_job() -> No
         "QuantumCacheFill_Monthly",
         "ShorsMonthlyBench",
         "VQEMonthlyBench",
+        "QuantumBackendAvailabilityMonitor_Daily",
         "PolicyComplianceAudit_Daily",
         "AI_Manifest_Priority_Rescore",
         "⊕Workspace-DatabaseBackup",
@@ -72,11 +77,69 @@ def test_scheduler_architecture_reference_has_one_record_per_audited_job() -> No
         r"| Not observed; installer not executed | Reversible current-user task dispatches the existing supervisor; it does not own services. |"
     )
     assert expected_portal_record in inventory.splitlines()
-    assert inventory.count("| ") >= 19
+    assert inventory.count("| ") >= 20
     for job_name in expected_jobs:
         assert job_name in inventory
     assert "❤Music" in inventory
     assert "no-entry" in inventory
+
+
+def test_quantum_inventory_aligns_live_root_paths_and_documents_backend_monitor() -> None:
+    inventory = (REPO_ROOT / "docs" / "scheduler-architecture-inventory.md").read_text(
+        encoding="utf-8"
+    )
+    diagram = (REPO_ROOT / "diagrams" / "workspace-scheduler-architecture-jobs.mmd").read_text(
+        encoding="utf-8"
+    )
+    audit_path = REPO_ROOT / "docs" / "scheduler-live-audit-2026-10-20.md"
+    assert audit_path.is_file()
+    audit = audit_path.read_text(encoding="utf-8")
+
+    expected_live_tasks = {
+        "QuantumCacheFill_Monthly": "fill_cache.py",
+        "ShorsMonthlyBench": "run_shors_bench.py",
+        "VQEMonthlyBench": "run_vqe_bench.py",
+    }
+    for task_name, action_script in expected_live_tasks.items():
+        row = next(line for line in inventory.splitlines() if f"| {task_name} |" in line)
+        assert f"| {task_name} | `\\{task_name}` |" in row
+        assert action_script in row
+        assert "docs/scheduler-live-audit-2026-10-20.md" in row
+        assert f"\\{task_name}" in diagram
+
+    monitor = next(
+        line for line in inventory.splitlines()
+        if "QuantumBackendAvailabilityMonitor_Daily" in line
+    )
+    assert "`\\QuantumBackendAvailabilityMonitor_Daily`" in monitor
+    assert "07:45 UTC" in monitor
+    assert "tools/backend_availability_monitor.py" in monitor
+    assert "documented" in monitor
+    assert "docs/scheduler-live-audit-2026-10-20.md" in monitor
+    assert "IgnoreNew" in monitor
+    assert "Not observed" in monitor
+    assert "\\QuantumBackendAvailabilityMonitor_Daily" in diagram
+    assert "Source policy reference: Quantum PR #105" in audit
+    assert "af919dafbbfcbd1e271af6ec7f956af4c54df0dc" in audit
+    assert "schedule=daily 07:45 UTC" in audit
+    assert "multiple_instances=IgnoreNew" in audit
+    assert "QuantumBackendAvailabilityMonitor_Daily" in diagram
+    assert "documented · IgnoreNew" in diagram
+    assert "backend_availability_monitor.py" in diagram
+    assert "Observed at `2026-10-20T21:47:46Z`" in audit
+    assert "Task Name | Task Path | Action Script | MultipleInstances | State" in audit
+    assert "QuantumCacheFill_Monthly | `\\` | `fill_cache.py` | IgnoreNew | Ready" in audit
+    assert "ShorsMonthlyBench | `\\` | `run_shors_bench.py` | IgnoreNew | Ready" in audit
+    assert "VQEMonthlyBench | `\\` | `run_vqe_bench.py` | IgnoreNew | Ready" in audit
+    assert "QuantumBackendAvailabilityMonitor_Daily | not observed | not observed" in audit
+    assert "PR #105" in audit
+    assert "07:45 UTC" in audit
+    assert "Therefore TaskPath" in audit
+    assert "configured target, not a live observation" in audit
+    assert "schtasks.exe /TN" in audit
+    assert "tools/sync_scheduled_tasks.py" in audit
+    assert "not a live observation" in audit
+    assert "multiple_instances=IgnoreNew" in audit
 
 
 def test_scheduler_architecture_records_expose_job_identity_task_path_and_action() -> None:
