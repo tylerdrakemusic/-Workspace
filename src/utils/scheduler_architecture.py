@@ -40,6 +40,7 @@ AUDITED_JOB_NAMES = {
     "PositionRealization",
     "ProductionFillReconciliation",
     "ReconcileOrders",
+    "Workspace Portal Supervisor - AtLogOn",
 }
 
 
@@ -74,7 +75,7 @@ def validate_scheduler_architecture(
     expected_projects = set(project_roots)
     actual_projects = {record.project for record in records}
 
-    expected_record_count = 18 if expected_projects == CANONICAL_PROJECTS else len(expected_projects)
+    expected_record_count = 19 if expected_projects == CANONICAL_PROJECTS else len(expected_projects)
     if actual_projects != expected_projects or len(records) != expected_record_count:
         findings.append(
             Finding(
@@ -88,7 +89,7 @@ def validate_scheduler_architecture(
         findings.append(Finding("task_identity", "inventory contains duplicate task names"))
     if expected_projects == CANONICAL_PROJECTS:
         if set(task_names) != AUDITED_JOB_NAMES:
-            findings.append(Finding("task_identity", "inventory does not contain exactly the 17 audited jobs"))
+            findings.append(Finding("task_identity", "inventory does not contain exactly the 18 audited jobs"))
         music_records = [record for record in records if record.project == "❤Music"]
         if len(music_records) != 1 or music_records[0].status != "no-entry":
             findings.append(Finding("no_entry", "❤Music must have exactly one no-entry record"))
@@ -130,7 +131,7 @@ def validate_scheduler_architecture(
         if (
             project_token not in diagram_without_spaces
             or record.task_name.casefold() not in diagram.casefold()
-            or record.task_path.casefold() not in diagram.casefold()
+            or (record.status == "deployed" and record.task_path.casefold() not in diagram.casefold())
             or _diagram_token(record.command).casefold() not in diagram.casefold()
         ):
             findings.append(Finding("diagram_coverage", f"diagram does not cover {record.project} and {record.task_name}"))
@@ -171,8 +172,12 @@ def _read_records(inventory_path: Path) -> tuple[InventoryRecord, ...]:
 def _diagram_token(command: str) -> str:
     """Use a stable command token while allowing prose labels in the diagram."""
     normalized_command = command.replace("\\", "/")
-    path_match = re.search(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", normalized_command)
-    if path_match:
-        return path_match.group(0).rsplit("/", 1)[-1].lower()
+    path_matches = re.findall(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", normalized_command)
+    for path_match in path_matches:
+        filename = path_match.rsplit("/", 1)[-1]
+        if filename.casefold() not in {"python", "python.exe", "python3", "python3.exe", "py", "py.exe"}:
+            return filename.lower()
+    if path_matches:
+        return path_matches[0].rsplit("/", 1)[-1].lower()
     words = re.findall(r"[A-Za-z][A-Za-z0-9_.-]*", command)
     return words[0].lower() if words else "none"

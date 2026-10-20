@@ -62,8 +62,16 @@ def test_scheduler_architecture_reference_has_one_record_per_audited_job() -> No
         "PositionRealization",
         "ProductionFillReconciliation",
         "ReconcileOrders",
+        "Workspace Portal Supervisor - AtLogOn",
     }
 
+    expected_portal_record = (
+        r"| ⊕Workspace | Workspace Portal Supervisor - AtLogOn | `\Workspace Portal Supervisor - AtLogOn` "
+        r"| At each current-user logon | `C:\G\python.exe tools/portal_supervisor.py --no-open` "
+        r"| ⊕Workspace current user | documented | `docs/portal-supervisor-architecture.md` "
+        r"| Not observed; installer not executed | Reversible current-user task dispatches the existing supervisor; it does not own services. |"
+    )
+    assert expected_portal_record in inventory.splitlines()
     assert inventory.count("| ") >= 19
     for job_name in expected_jobs:
         assert job_name in inventory
@@ -133,6 +141,10 @@ def test_scheduler_architecture_rejects_windows_absolute_and_traversal_evidence(
 
 def test_diagram_token_uses_command_filename_instead_of_tools_directory() -> None:
     assert _diagram_token(r"tools\register_hygiene_task.ps1") == "register_hygiene_task.ps1"
+
+
+def test_diagram_token_skips_python_interpreter_path() -> None:
+    assert _diagram_token(r"C:\G\python.exe tools\portal_supervisor.py --no-open") == "portal_supervisor.py"
 
 
 def test_scheduler_architecture_requires_command_filename_in_diagram(tmp_path: Path) -> None:

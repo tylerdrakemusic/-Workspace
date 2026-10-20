@@ -706,6 +706,7 @@ def _render_server_sidebar(servers: list[dict]) -> str:
         f'<div class="server-row" data-service="{name}">'
             f'<span class="server-dot" id="{dot_id}"></span>'
             f'<span class="server-name">{name} :{port}</span>'
+          f'<span class="server-state" aria-live="polite" hidden></span>'
         f'<button class="server-launch server-retry" data-service="{name}" '
         f'onclick="retryService(this.dataset.service)" aria-label="Retry {name}" '
         f'title="Retry {name}" hidden>&#8635;</button>'
@@ -956,6 +957,8 @@ def render_portal(manifest: dict) -> str:
   .server-dot.up {{ background: var(--success); }}
   .server-dot.down {{ background: #ef4444; }}
   .server-name {{ flex: 1; min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+  .server-state {{ color: #fbbf24; font-size: 0.62rem; font-weight: 700; flex-shrink: 0; }}
+  .server-state[hidden] {{ display: none; }}
   .server-launch {{
     background: none; border: 1px solid var(--border); border-radius: 4px;
     color: var(--muted); font-size: 0.62rem; padding: 0.1rem 0.35rem;
@@ -1267,8 +1270,14 @@ def render_portal(manifest: dict) -> str:
           if (!state || !dot || !row || !retry) return;
           dot.classList.toggle('up', state.readiness === 'ready');
           dot.classList.toggle('down', state.readiness === 'failed');
+          const stateLabel = row.querySelector('.server-state');
+          if (stateLabel) {{
+            stateLabel.textContent = state.attention ? "Attention" : "";
+            stateLabel.hidden = !state.attention;
+          }}
           retry.hidden = false;
-          const diagnostic = `${{service.name}}: ${{state.readiness}} (attempt ${{state.attempt}})`;
+          const readinessLabel = state.attention ? "Attention" : state.readiness;
+          const diagnostic = `${{service.name}}: ${{readinessLabel}} (attempt ${{state.attempt}})`;
           row.title = state.error || diagnostic;
           row.setAttribute('aria-label', state.error ? `${{diagnostic}}. ${{state.error}}` : diagnostic);
           reconcileManagedFrame(service, state, generation);

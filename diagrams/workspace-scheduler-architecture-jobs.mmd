@@ -52,6 +52,8 @@ graph LR
         Workspace5 --> Workspace5Command[/verify_proof_health.py/]:::ws
         Workspace6([SkillSyncNightly\ndeployed]):::deployed --> WorkspaceProject
         Workspace6 --> Workspace6Command[/sync_skills.ps1/]:::ws
+        Workspace7([Workspace Portal Supervisor - AtLogOn\ndocumented]):::documented --> WorkspaceProject
+        Workspace7 --> Workspace7Command[/tools/portal_supervisor.py --no-open/]:::ws
     end
     subgraph Capital["Σ Capital"]
         CapitalProject[Σ Capital project]:::capital
@@ -69,5 +71,6 @@ graph LR
     classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
     classDef ws fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
     classDef capital fill:#3a3020,stroke:#d4c050,color:#f8f0c0
+    classDef documented fill:#243d30,stroke:#6ad4b4,color:#d0f8ee
     classDef deployed fill:#203a52,stroke:#6ab4d4,color:#d0ecf8
     classDef noentry fill:#303030,stroke:#888888,color:#cccccc

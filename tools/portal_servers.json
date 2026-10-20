@@ -101,6 +101,19 @@
                         "readiness_url":  "http://127.0.0.1:7475/health",
                         "accepted_statuses":  [200, 302],
                         "enabled":  true
+                    },
+                    {
+                        "name":  "Workout",
+                        "port":  8770,
+                        "project":  "∞Life",
+                        "cmd":  "C:\\G\\python.exe f:\\∞Life\\tools\\workout_server.py --port 8770",
+                        "working_directory":  "f:\\∞Life",
+                        "readiness_url":  "http://127.0.0.1:8770/health",
+                        "accepted_statuses":  [200],
+                        "monitor_health":  true,
+                        "require_managed_owner":  true,
+                        "log_output":  false,
+                        "enabled":  true
                     }
                 ]
 }

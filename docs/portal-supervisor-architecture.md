@@ -16,12 +16,13 @@ The supervisor binds only to `127.0.0.1:8790`. This loopback listener is the tru
 | [`reports/portal.html`](../reports/portal.html) | Browser UI that reads authoritative state and sends control requests to the resident supervisor |
 | [`tools/launch_portal.ps1`](../tools/launch_portal.ps1) and [`open_portal.ps1`](../open_portal.ps1) | Thin compatibility entry points that invoke Python and forward `--no-open` |
 | [`tools/register_portal_protocol.ps1`](../tools/register_portal_protocol.ps1) | Reversible staging and HKCU registration for the `portal://` protocol and desktop shims |
+| [`tools/register_portal_logon_task.ps1`](../tools/register_portal_logon_task.ps1) | Creates or removes the single current-user AtLogOn dispatcher task after the supervisor's portable identity check |
 
 `portal_servers.json` is the service inventory and launch contract. The supervisor rejects an enabled service missing `name`, `port`, `cmd`, `working_directory`, `readiness_url`, or `accepted_statuses`. The `enabled` flag controls inclusion. The optional `iframe_cache_bust` field is consumed during portal generation and defaults to cache-bust-compatible behavior when omitted.
 
 ## Launch And Single Instance Flow
 
-1. A manual, PowerShell, VBS, desktop, or `portal://` entry point invokes `portal_supervisor.py`.
+1. A manual, PowerShell, VBS, desktop, `portal://`, or current-user AtLogOn entry point invokes `portal_supervisor.py`.
 2. The dispatcher probes `GET http://127.0.0.1:8790/api/state` with a bounded timeout.
 3. If a supervisor is active, the dispatcher sends `POST /api/focus` unless `--no-open` was requested. It does not create another launch generation or restart service processes.
 4. If no supervisor is active, the dispatcher reclaims port `8790` and starts a detached resident Python process only after reclamation succeeds. A `netstat` failure, `taskkill` failure, or surviving listener aborts startup rather than adopting an unknown process.
@@ -93,6 +94,10 @@ Some applications treat unknown query parameters as state. Those services set `i
 `register_portal_protocol.ps1` stages protocol and desktop launchers under `%LOCALAPPDATA%\WorkspacePortal`, an ASCII-safe path for Windows shell handling. The staged PowerShell scripts invoke the canonical Python supervisor. VBS files hide the console window and delegate to those scripts or directly to the supervisor. The HKCU `portal://` command points to the staged protocol VBS shim.
 
 Before overwriting an existing staged file, registration copies it to a timestamped `.backup-<timestamp>` sibling. Rollback is an operator action: copy each selected backup over its staged original, then restore or remove the HKCU protocol registration as appropriate. Staging changes the launch indirection only. It does not transfer service ownership away from `portal_supervisor.py`.
+
+`register_portal_logon_task.ps1` registers one task named `Workspace Portal Supervisor - AtLogOn` in the current user's root task folder. The task has one current-user logon trigger and one action: `C:\G\python.exe <workspace-root>\tools\portal_supervisor.py --no-open`. Its principal uses the current user's SID, `InteractiveToken`, and `LeastPrivilege`; it stores no credentials and uses `IgnoreNew` for overlapping task instances. The task invokes the existing dispatcher once. If the resident portal is active, `--no-open` avoids another start and returns without browser focus; otherwise, the dispatcher starts the existing resident supervisor. Enabled services remain exclusively owned by that supervisor; there are no per-service startup tasks.
+
+The installer obtains its XML and identity policy from the portable task-plan and operation CLI in `portal_supervisor.py`. Registering an exact existing task is a no-op. A same-name task with a different action, principal, trigger, or multiple-instance policy is rejected without being overwritten. Rollback is the explicit `-Action Unregister` operation; it removes only a task whose exported identity still matches the intended plan, and otherwise fails closed. The BDD contract tests exercise the plan and decisions through the supervisor CLI on all pytest platforms; they do not invoke Task Scheduler or alter machine startup state.
 
 ## Architectural Constraints
 

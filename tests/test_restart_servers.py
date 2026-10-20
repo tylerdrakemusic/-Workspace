@@ -1289,6 +1289,7 @@ def test_resident_binds_and_opens_before_hanging_optional_regeneration() -> None
     supervisor = SimpleNamespace(
         new_generation=lambda: events.append("generation") or "generation-1",
         restart_all=lambda generation=None: events.append(f"restart:{generation}"),
+        monitor_services=lambda: None,
     )
 
     try:
