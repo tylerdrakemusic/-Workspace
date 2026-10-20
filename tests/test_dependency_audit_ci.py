@@ -19,6 +19,19 @@ def test_mcp_dependency_excludes_the_known_vulnerable_release() -> None:
     assert str(requirement.specifier) == "<2,>=1.30.0"
 
 
+def test_pillow_dependency_excludes_the_advisory_affected_release() -> None:
+    requirement_lines = REQUIREMENTS_PATH.read_text(encoding="utf-8").splitlines()
+    requirement = next(
+        Requirement(line.strip())
+        for line in requirement_lines
+        if line.strip().lower().startswith("pillow")
+    )
+
+    assert not requirement.specifier.contains("12.3.0")
+    assert requirement.specifier.contains("13.0.0")
+    assert str(requirement.specifier) == "<14.0,>=13.0.0"
+
+
 def test_ci_runs_pip_audit_with_strict_any_finding_gate() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
