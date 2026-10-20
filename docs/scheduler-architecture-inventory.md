@@ -44,9 +44,13 @@ the diagram and this inventory.
 | ⊕Workspace | Workspace-PerfRegressionAlerter | `\⊕Workspace\Workspace-PerfRegressionAlerter` | Daily | `tools/perf_regression_alerter.py` | ⊕Workspace maintenance | deployed | `docs/scheduler-live-audit-2026-09-01.md` | Audit found task; result not collected | Live registration observed. |
 | ⊕Workspace | ProofHealthVerifier | `\⊕Workspace\ProofHealthVerifier` | Daily | `tools/verify_proof_health.py` | ⊕Workspace maintenance | deployed | `docs/scheduler-live-audit-2026-09-01.md` | Audit found task; result not collected | Live registration observed. |
 | ⊕Workspace | SkillSyncNightly | `\⊕Workspace\SkillSyncNightly` | Nightly | `tools/sync_skills.ps1` | ⊕Workspace maintenance | deployed | `docs/scheduler-live-audit-2026-09-01.md` | Audit found task; result not collected | Live registration observed; external skill files remain governed. |
+| ⊕Workspace | Workspace Portal Supervisor - AtLogOn | `\Workspace Portal Supervisor - AtLogOn` | At each current-user logon | `C:\G\python.exe tools/portal_supervisor.py --no-open` | ⊕Workspace current user | documented | `docs/portal-supervisor-architecture.md` | Not observed; installer not executed | Reversible current-user task dispatches the existing supervisor; it does not own services. |
 | ΣCapital | PositionRealization | `\ΣCapital\PositionRealization` | Daily | `tools/run_position_realization.py` | ΣCapital maintenance | deployed | `docs/scheduler-live-audit-2026-09-01.md` | Audit found task; result not collected | Live registration observed; account data intentionally omitted. |
 | ΣCapital | ProductionFillReconciliation | `\ΣCapital\ProductionFillReconciliation` | Daily | `tools/reconcile_production_fills.py` | ΣCapital maintenance | deployed | `docs/scheduler-live-audit-2026-09-01.md` | Audit found task; result not collected | Live registration observed; account data intentionally omitted. |
 | ΣCapital | ReconcileOrders | `\ΣCapital\ReconcileOrders` | Daily | `tools/reconcile_orders.py` | ΣCapital maintenance | deployed | `docs/scheduler-live-audit-2026-09-01.md` | Audit found task; result not collected | Live registration observed; account data intentionally omitted. |
+
+The inventory contains 18 audited jobs and one Music no-entry record, for 19
+records total.
 
 ## Diagram and Maintenance
 
