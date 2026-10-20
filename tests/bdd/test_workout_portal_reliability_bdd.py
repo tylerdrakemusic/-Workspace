@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -52,9 +53,9 @@ def _test_workout_service() -> dict[str, object]:
 
 def _build_supervisor(
     tmp_path: Path,
-    readiness,
+    readiness: Callable[..., tuple[bool, str | None]],
     *,
-    now=lambda: 1000.0,
+    now: Callable[[], float] = lambda: 1000.0,
     launch_records: list[dict[str, object]] | None = None,
     reclaim_records: list[tuple[int, dict[str, object]]] | None = None,
 ) -> PortalSupervisor:
@@ -372,7 +373,10 @@ def attention_is_user_visible_and_clears(attention_context: dict[str, object]) -
 
 
 @given("a Workout service is running under the portal supervisor", target_fixture="api_context")
-def running_service_api_context(tmp_path: Path, request) -> dict[str, object]:
+def running_service_api_context(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+) -> dict[str, object]:
     launches: list[dict[str, object]] = []
     supervisor = _build_supervisor(
         tmp_path,
