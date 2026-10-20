@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import ctypes
 import hmac
 import json
@@ -19,8 +21,9 @@ import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from ctypes import wintypes
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Callable
+from xml.etree import ElementTree as ET
 from urllib.error import HTTPError
 from urllib.parse import unquote, urlparse
 from urllib.request import Request, urlopen
@@ -43,6 +46,9 @@ SERVICE_PROBE_TIMEOUT_SECONDS = 3
 SERVICE_RECOVERY_BASE_DELAY_SECONDS = 30
 SERVICE_RECOVERY_MAX_DELAY_SECONDS = 300
 SERVICE_ATTENTION_FAILURE_THRESHOLD = 3
+LOGON_TASK_NAME = "Workspace Portal Supervisor - AtLogOn"
+TASK_SCHEDULER_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
+TASK_PYTHON_PATH = r"C:\G\python.exe"
 
 
 class ConfigurationError(ValueError):
@@ -240,6 +246,149 @@ def dispatch_launch(
         return "focused"
     start_resident()
     return "started"
+
+
+def build_logon_task_plan(workspace_root: str | Path, user_sid: str) -> dict[str, object]:
+    """Build the portable, credential-free current-user logon task contract."""
+    if not re.fullmatch(r"S-1-\d+(?:-\d+)+", user_sid):
+        raise ValueError("user_sid must be a Windows SID")
+    root_path = PureWindowsPath(str(workspace_root))
+    if not root_path.is_absolute():
+        raise ValueError("workspace_root must be an absolute Windows path")
+    if len(root_path.parts) >= 3 and root_path.parts[-2].casefold() == ".worktrees":
+        root_path = PureWindowsPath(*root_path.parts[:-2])
+
+    supervisor_path = root_path / "tools" / "portal_supervisor.py"
+    action = {
+        "command": TASK_PYTHON_PATH,
+        "arguments": f'"{supervisor_path}" --no-open',
+        "working_directory": str(root_path),
+    }
+    trigger = {"type": "Logon", "user_id": user_sid, "enabled": True}
+    principal = {
+        "user_id": user_sid,
+        "logon_type": "InteractiveToken",
+        "run_level": "LeastPrivilege",
+    }
+    settings = {"multiple_instances_policy": "IgnoreNew"}
+
+    task = ET.Element(f"{{{TASK_SCHEDULER_NAMESPACE}}}Task", {"version": "1.2"})
+    registration = ET.SubElement(task, f"{{{TASK_SCHEDULER_NAMESPACE}}}RegistrationInfo")
+    ET.SubElement(registration, f"{{{TASK_SCHEDULER_NAMESPACE}}}Description").text = (
+        "Dispatch the Workspace portal supervisor at current-user logon."
+    )
+    triggers = ET.SubElement(task, f"{{{TASK_SCHEDULER_NAMESPACE}}}Triggers")
+    logon_trigger = ET.SubElement(triggers, f"{{{TASK_SCHEDULER_NAMESPACE}}}LogonTrigger")
+    ET.SubElement(logon_trigger, f"{{{TASK_SCHEDULER_NAMESPACE}}}Enabled").text = "true"
+    ET.SubElement(logon_trigger, f"{{{TASK_SCHEDULER_NAMESPACE}}}UserId").text = user_sid
+    principals = ET.SubElement(task, f"{{{TASK_SCHEDULER_NAMESPACE}}}Principals")
+    task_principal = ET.SubElement(
+        principals,
+        f"{{{TASK_SCHEDULER_NAMESPACE}}}Principal",
+        {"id": "Author"},
+    )
+    ET.SubElement(task_principal, f"{{{TASK_SCHEDULER_NAMESPACE}}}UserId").text = user_sid
+    ET.SubElement(task_principal, f"{{{TASK_SCHEDULER_NAMESPACE}}}LogonType").text = (
+        principal["logon_type"]
+    )
+    ET.SubElement(task_principal, f"{{{TASK_SCHEDULER_NAMESPACE}}}RunLevel").text = (
+        principal["run_level"]
+    )
+    task_settings = ET.SubElement(task, f"{{{TASK_SCHEDULER_NAMESPACE}}}Settings")
+    ET.SubElement(
+        task_settings,
+        f"{{{TASK_SCHEDULER_NAMESPACE}}}MultipleInstancesPolicy",
+    ).text = settings["multiple_instances_policy"]
+    ET.SubElement(task_settings, f"{{{TASK_SCHEDULER_NAMESPACE}}}Enabled").text = "true"
+    actions = ET.SubElement(
+        task,
+        f"{{{TASK_SCHEDULER_NAMESPACE}}}Actions",
+        {"Context": "Author"},
+    )
+    execute = ET.SubElement(actions, f"{{{TASK_SCHEDULER_NAMESPACE}}}Exec")
+    ET.SubElement(execute, f"{{{TASK_SCHEDULER_NAMESPACE}}}Command").text = action["command"]
+    ET.SubElement(execute, f"{{{TASK_SCHEDULER_NAMESPACE}}}Arguments").text = action["arguments"]
+    ET.SubElement(
+        execute,
+        f"{{{TASK_SCHEDULER_NAMESPACE}}}WorkingDirectory",
+    ).text = action["working_directory"]
+
+    return {
+        "task_name": LOGON_TASK_NAME,
+        "task_path": "\\",
+        "action": action,
+        "trigger": trigger,
+        "principal": principal,
+        "settings": settings,
+        "stores_credentials": False,
+        "task_xml": ET.tostring(task, encoding="unicode"),
+    }
+
+
+def task_xml_matches_identity(task_xml: str, plan: dict[str, object]) -> bool:
+    """Check the action, principal, trigger, and instance policy of a task XML export."""
+    namespace = {"task": TASK_SCHEDULER_NAMESPACE}
+    try:
+        root = ET.fromstring(task_xml)
+        actions = root.findall("task:Actions/task:Exec", namespace)
+        action_containers = root.findall("task:Actions", namespace)
+        principals = root.findall("task:Principals/task:Principal", namespace)
+        triggers = root.find("task:Triggers", namespace)
+        trigger_children = list(triggers) if triggers is not None else []
+        task_settings = root.find("task:Settings", namespace)
+        action = plan["action"]
+        principal = plan["principal"]
+        trigger = plan["trigger"]
+        settings = plan["settings"]
+        return (
+            root.tag == f"{{{TASK_SCHEDULER_NAMESPACE}}}Task"
+            and len(action_containers) == 1
+            and len(action_containers[0]) == 1
+            and len(actions) == 1
+            and actions[0].findtext("task:Command", namespaces=namespace)
+            == action["command"]
+            and actions[0].findtext("task:Arguments", namespaces=namespace)
+            == action["arguments"]
+            and actions[0].findtext("task:WorkingDirectory", namespaces=namespace)
+            == action["working_directory"]
+            and len(principals) == 1
+            and principals[0].findtext("task:UserId", namespaces=namespace)
+            == principal["user_id"]
+            and principals[0].findtext("task:LogonType", namespaces=namespace)
+            == principal["logon_type"]
+            and principals[0].findtext("task:RunLevel", namespaces=namespace)
+            == principal["run_level"]
+            and len(trigger_children) == 1
+            and trigger_children[0].tag
+            == f"{{{TASK_SCHEDULER_NAMESPACE}}}LogonTrigger"
+            and trigger_children[0].findtext("task:UserId", namespaces=namespace)
+            == trigger["user_id"]
+            and trigger_children[0].findtext("task:Enabled", namespaces=namespace)
+            == "true"
+            and task_settings is not None
+            and task_settings.findtext("task:Enabled", namespaces=namespace) == "true"
+            and task_settings.findtext(
+                "task:MultipleInstancesPolicy", namespaces=namespace
+            )
+            == settings["multiple_instances_policy"]
+        )
+    except (AttributeError, ET.ParseError, TypeError):
+        return False
+
+
+def logon_task_operation(
+    operation: str,
+    existing_task_xml: str | None,
+    plan: dict[str, object],
+) -> str:
+    """Resolve a safe registration or rollback action without changing machine state."""
+    if operation not in {"register", "unregister"}:
+        raise ValueError("operation must be register or unregister")
+    if existing_task_xml is None:
+        return "register" if operation == "register" else "noop"
+    if not task_xml_matches_identity(existing_task_xml, plan):
+        raise ValueError("existing scheduled task identity does not match the intended task")
+    return "noop" if operation == "register" else "unregister"
 
 
 def _supervisor_active() -> bool:
@@ -1085,8 +1234,47 @@ def main() -> None:
     parser.add_argument("--no-open", action="store_true", help="do not open or focus a browser tab")
     parser.add_argument("--restart-all", action="store_true", help="restart all configured services")
     parser.add_argument("--restart-master", action="store_true", help="restart the resident supervisor")
+    task_cli = parser.add_mutually_exclusive_group()
+    task_cli.add_argument(
+        "--logon-task-plan",
+        action="store_true",
+        help="print the current-user logon task plan as JSON",
+    )
+    task_cli.add_argument(
+        "--logon-task-operation",
+        choices=("register", "unregister"),
+        help="resolve a safe task registration or rollback operation",
+    )
+    parser.add_argument("--user-sid", help="current user's Windows SID for task planning")
+    parser.add_argument(
+        "--workspace-root",
+        default=str(PROJECT_ROOT),
+        help="absolute Workspace checkout path for task planning",
+    )
+    parser.add_argument(
+        "--task-xml-base64",
+        help="base64-encoded exported task XML, if the named task exists",
+    )
     parser.add_argument("--generation", help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+    if args.logon_task_plan or args.logon_task_operation:
+        if not args.user_sid:
+            parser.error("--user-sid is required for logon task operations")
+        try:
+            plan = build_logon_task_plan(args.workspace_root, args.user_sid)
+            if args.logon_task_plan:
+                print(json.dumps(plan, ensure_ascii=False))
+                return
+            task_xml = (
+                base64.b64decode(args.task_xml_base64, validate=True).decode("utf-8-sig")
+                if args.task_xml_base64 is not None
+                else None
+            )
+            print(logon_task_operation(args.logon_task_operation, task_xml, plan))
+        except (binascii.Error, UnicodeDecodeError, ValueError) as exc:
+            parser.error(str(exc))
+        return
 
     if not args.serve:
         if args.restart_master and _supervisor_active():

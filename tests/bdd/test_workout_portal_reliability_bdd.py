@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import base64
 import http.client
 import json
 import subprocess
 import sys
 import threading
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-from pytest_bdd import given, scenarios, then, when
+from pytest_bdd import given, parsers, scenarios, then, when
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
@@ -528,3 +530,369 @@ def verify_background_monitor_registration(resident_context: dict[str, object]) 
 @then("health monitoring is bound to that same supervisor instance")
 def monitor_uses_existing_supervisor(resident_context: dict[str, object]) -> None:
     assert resident_context["monitor_owner"] is resident_context["supervisor"]
+
+
+def _build_logon_task_plan(workspace_root: str, user_sid: str) -> dict[str, object]:
+    builder = getattr(portal_supervisor, "build_logon_task_plan", None)
+    assert callable(builder), "the supervisor must expose a portable logon task-plan builder"
+    return builder(workspace_root=workspace_root, user_sid=user_sid)
+
+
+def _task_identity_matches(task_xml: str, plan: dict[str, object]) -> bool:
+    matcher = getattr(portal_supervisor, "task_xml_matches_identity", None)
+    assert callable(matcher), "the supervisor must expose a portable task identity check"
+    return bool(matcher(task_xml, plan))
+
+
+def _task_operation(
+    operation: str,
+    task_xml: str | None,
+    plan: dict[str, object],
+) -> str:
+    arguments = [
+        sys.executable,
+        str(portal_supervisor.SUPERVISOR_SCRIPT_PATH),
+        "--logon-task-operation",
+        operation,
+        "--user-sid",
+        str(plan["principal"]["user_id"]),
+        "--workspace-root",
+        str(plan["action"]["working_directory"]),
+    ]
+    if task_xml is not None:
+        arguments.extend(
+            [
+                "--task-xml-base64",
+                base64.b64encode(task_xml.encode("utf-8")).decode("ascii"),
+            ]
+        )
+    result = subprocess.run(
+        arguments,
+        cwd=str(WORKSPACE_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if result.returncode != 0:
+        expected_rejection = (
+            "existing scheduled task identity does not match the intended task"
+        )
+        if result.returncode == 2 and expected_rejection in result.stderr:
+            raise ValueError(expected_rejection)
+        raise AssertionError(f"task operation CLI failed: {result.stderr}")
+    return result.stdout.strip()
+
+
+@given("a Workspace root and current-user SID", target_fixture="logon_plan_context")
+def logon_plan_context() -> dict[str, str]:
+    return {
+        "workspace_root": r"F:\Workspace with spaces\⊕Workspace",
+        "user_sid": "S-1-5-21-1000-2000-3000-1001",
+    }
+
+
+@given(
+    "a Workspace feature-worktree root and current-user SID",
+    target_fixture="logon_plan_context",
+)
+def logon_worktree_context() -> dict[str, str]:
+    return {
+        "workspace_root": r"F:\⊕Workspace\.worktrees\feature-workout",
+        "user_sid": "S-1-5-21-1000-2000-3000-1001",
+    }
+
+
+@when("I build the current-user logon task plan", target_fixture="logon_plan")
+def build_current_user_logon_plan(
+    logon_plan_context: dict[str, str],
+) -> dict[str, object]:
+    return _build_logon_task_plan(
+        logon_plan_context["workspace_root"], logon_plan_context["user_sid"]
+    )
+
+
+@when(
+    "I request the task plan from the supervisor CLI",
+    target_fixture="installer_task_plan",
+)
+def request_task_plan_from_cli(
+    logon_plan_context: dict[str, str],
+) -> dict[str, object]:
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(portal_supervisor.SUPERVISOR_SCRIPT_PATH),
+            "--logon-task-plan",
+            "--user-sid",
+            logon_plan_context["user_sid"],
+            "--workspace-root",
+            logon_plan_context["workspace_root"],
+        ],
+        cwd=str(WORKSPACE_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    return json.loads(result.stdout)
+
+
+@then("the CLI returns the same current-user logon contract")
+def cli_returns_current_user_logon_contract(
+    installer_task_plan: dict[str, object],
+    logon_plan_context: dict[str, str],
+) -> None:
+    sid = logon_plan_context["user_sid"]
+    assert installer_task_plan["action"]["command"] == r"C:\G\python.exe"
+    assert installer_task_plan["action"]["arguments"] == (
+        f'"{logon_plan_context["workspace_root"]}\\tools\\portal_supervisor.py" --no-open'
+    )
+    assert installer_task_plan["principal"]["user_id"] == sid
+    assert installer_task_plan["trigger"]["user_id"] == sid
+    assert installer_task_plan["settings"]["multiple_instances_policy"] == "IgnoreNew"
+    assert installer_task_plan["stores_credentials"] is False
+
+
+@then("the task invokes the existing supervisor dispatcher once")
+def logon_plan_dispatches_existing_supervisor(logon_plan: dict[str, object]) -> None:
+    action = logon_plan["action"]
+    assert action["command"] == r"C:\G\python.exe"
+    assert action["arguments"] == (
+        '"F:\\Workspace with spaces\\⊕Workspace\\tools\\portal_supervisor.py" --no-open'
+    )
+    assert action["working_directory"] == r"F:\Workspace with spaces\⊕Workspace"
+    root = ET.fromstring(logon_plan["task_xml"])
+    namespace = {"task": "http://schemas.microsoft.com/windows/2004/02/mit/task"}
+    actions = root.findall("task:Actions/task:Exec", namespace)
+    assert len(actions) == 1
+    assert actions[0].findtext("task:Command", namespaces=namespace) == r"C:\G\python.exe"
+
+
+@then("the task uses the current user's interactive least-privilege principal")
+def logon_plan_uses_interactive_current_user(logon_plan: dict[str, object]) -> None:
+    sid = "S-1-5-21-1000-2000-3000-1001"
+    assert logon_plan["trigger"] == {"type": "Logon", "user_id": sid, "enabled": True}
+    assert logon_plan["principal"] == {
+        "user_id": sid,
+        "logon_type": "InteractiveToken",
+        "run_level": "LeastPrivilege",
+    }
+
+
+@then("the task targets the primary Workspace checkout, not the disposable worktree")
+def logon_plan_uses_primary_workspace_root(logon_plan: dict[str, object]) -> None:
+    action = logon_plan["action"]
+    assert action["working_directory"] == r"F:\⊕Workspace"
+    assert action["arguments"] == (
+        r'"F:\⊕Workspace\tools\portal_supervisor.py" --no-open'
+    )
+
+
+@then("duplicate task instances are ignored without stored credentials")
+def logon_plan_ignores_duplicates_without_credentials(
+    logon_plan: dict[str, object],
+) -> None:
+    assert logon_plan["settings"]["multiple_instances_policy"] == "IgnoreNew"
+    assert logon_plan["stores_credentials"] is False
+    assert "Password" not in logon_plan["task_xml"]
+
+
+@given("the intended current-user logon task", target_fixture="task_identity_context")
+def intended_current_user_logon_task() -> dict[str, object]:
+    plan = _build_logon_task_plan(
+        r"F:\Workspace with spaces\⊕Workspace", "S-1-5-21-1000-2000-3000-1001"
+    )
+    return {"plan": plan, "task_xml": plan["task_xml"]}
+
+
+@when("I verify its exported scheduled-task definition")
+def verify_exact_task_identity(task_identity_context: dict[str, object]) -> None:
+    task_identity_context["matches"] = _task_identity_matches(
+        task_identity_context["task_xml"], task_identity_context["plan"]
+    )
+
+
+@when(parsers.parse("the existing task is evaluated for {operation}"))
+def evaluate_existing_task_operation(
+    operation: str,
+    task_identity_context: dict[str, object],
+) -> None:
+    normalized_operation = "register" if operation == "registration" else "unregister"
+    task_identity_context["decision"] = _task_operation(
+        normalized_operation,
+        task_identity_context["task_xml"],
+        task_identity_context["plan"],
+    )
+
+
+@given("a planned current-user logon task", target_fixture="task_operation_context")
+def planned_current_user_logon_task() -> dict[str, object]:
+    plan = _build_logon_task_plan(
+        r"F:\Workspace with spaces\⊕Workspace", "S-1-5-21-1000-2000-3000-1001"
+    )
+    return {"plan": plan}
+
+
+@when(parsers.parse("a missing task is evaluated for {operation}"))
+def evaluate_missing_task_operation(
+    operation: str,
+    task_operation_context: dict[str, object],
+) -> None:
+    normalized_operation = "register" if operation == "registration" else "unregister"
+    task_operation_context["decision"] = _task_operation(
+        normalized_operation, None, task_operation_context["plan"]
+    )
+
+
+@then(parsers.parse('the installer decision is "{expected}"'))
+def installer_decision_is(
+    expected: str,
+    request: pytest.FixtureRequest,
+) -> None:
+    context_fixture = next(
+        name
+        for name in ("task_identity_context", "task_operation_context")
+        if name in request.fixturenames
+    )
+    context = request.getfixturevalue(context_fixture)
+    assert context["decision"] == expected
+
+
+@when(
+    parsers.parse("the exported task has a different {identity}"),
+    target_fixture="task_identity_context",
+)
+def change_task_identity(
+    identity: str,
+    task_identity_context: dict[str, object],
+) -> dict[str, object]:
+    namespace_uri = "http://schemas.microsoft.com/windows/2004/02/mit/task"
+    namespace = {"task": namespace_uri}
+    root = ET.fromstring(task_identity_context["task_xml"])
+    if identity == "action":
+        root.find("task:Actions/task:Exec/task:Command", namespace).text = r"C:\Other\python.exe"
+    elif identity == "principal":
+        root.find("task:Principals/task:Principal/task:UserId", namespace).text = "S-1-5-21-9999"
+    elif identity == "trigger":
+        root.find("task:Triggers/task:LogonTrigger", namespace).tag = (
+            f"{{{namespace_uri}}}TimeTrigger"
+        )
+    else:
+        root.find("task:Settings/task:MultipleInstancesPolicy", namespace).text = "Parallel"
+    task_identity_context["task_xml"] = ET.tostring(root, encoding="unicode")
+    task_identity_context["matches"] = _task_identity_matches(
+        task_identity_context["task_xml"], task_identity_context["plan"]
+    )
+    return task_identity_context
+
+
+@when(
+    "the exported task is disabled",
+    target_fixture="task_identity_context",
+)
+def disable_exported_task(
+    task_identity_context: dict[str, object],
+) -> dict[str, object]:
+    namespace = {"task": "http://schemas.microsoft.com/windows/2004/02/mit/task"}
+    root = ET.fromstring(task_identity_context["task_xml"])
+    root.find("task:Settings/task:Enabled", namespace).text = "false"
+    task_identity_context["task_xml"] = ET.tostring(root, encoding="unicode")
+    task_identity_context["matches"] = _task_identity_matches(
+        task_identity_context["task_xml"], task_identity_context["plan"]
+    )
+    return task_identity_context
+
+
+@when(
+    parsers.parse("an existing task has a different {identity} during {operation}"),
+    target_fixture="task_identity_context",
+)
+def evaluate_mismatched_task_operation(
+    identity: str,
+    operation: str,
+    task_identity_context: dict[str, object],
+) -> dict[str, object]:
+    namespace_uri = "http://schemas.microsoft.com/windows/2004/02/mit/task"
+    namespace = {"task": namespace_uri}
+    root = ET.fromstring(task_identity_context["task_xml"])
+    if identity == "action":
+        root.find("task:Actions/task:Exec/task:Command", namespace).text = r"C:\Other\python.exe"
+    elif identity == "principal":
+        root.find("task:Principals/task:Principal/task:UserId", namespace).text = "S-1-5-21-9999"
+    elif identity == "trigger":
+        root.find("task:Triggers/task:LogonTrigger", namespace).tag = (
+            f"{{{namespace_uri}}}TimeTrigger"
+        )
+    else:
+        root.find("task:Settings/task:MultipleInstancesPolicy", namespace).text = "Parallel"
+    altered_xml = ET.tostring(root, encoding="unicode")
+    task_identity_context["original_xml"] = task_identity_context["task_xml"]
+    task_identity_context["altered_xml"] = altered_xml
+    normalized_operation = "register" if operation == "registration" else "unregister"
+    try:
+        task_identity_context["decision"] = _task_operation(
+            normalized_operation,
+            altered_xml,
+            task_identity_context["plan"],
+        )
+    except ValueError:
+        task_identity_context["decision"] = "rejected"
+    return task_identity_context
+
+
+@then("the installer rejects the existing task without changing its definition")
+def mismatched_task_is_rejected_without_rewrite(
+    task_identity_context: dict[str, object],
+) -> None:
+    assert task_identity_context["decision"] == "rejected"
+    assert task_identity_context["task_xml"] == task_identity_context["original_xml"]
+    assert task_identity_context["altered_xml"] != task_identity_context["original_xml"]
+
+
+@then("the task identity matches the intended plan")
+def exact_task_identity_matches(task_identity_context: dict[str, object]) -> None:
+    assert task_identity_context["matches"] is True
+
+
+@then("the task identity does not match the intended plan")
+def changed_task_identity_is_rejected(task_identity_context: dict[str, object]) -> None:
+    assert task_identity_context["matches"] is False
+
+
+@given(
+    "a logon dispatcher whose resident supervisor is inactive",
+    target_fixture="logon_dispatch_context",
+)
+def inactive_logon_dispatcher() -> dict[str, object]:
+    return {"active": False, "starts": 0, "focuses": 0, "results": []}
+
+
+@when("the same automatic start is dispatched twice")
+def dispatch_automatic_start_twice(logon_dispatch_context: dict[str, object]) -> None:
+    context = logon_dispatch_context
+
+    def start_resident() -> None:
+        context["starts"] += 1
+        context["active"] = True
+
+    for _ in range(2):
+        context["results"].append(
+            portal_supervisor.dispatch_launch(
+                lambda: context["active"],
+                lambda: None,
+                start_resident,
+            )
+        )
+
+
+@then("the duplicate invocation does not start or focus another process")
+def duplicate_automatic_start_is_noop(
+    logon_dispatch_context: dict[str, object],
+) -> None:
+    assert logon_dispatch_context["results"] == ["started", "focused"]
+    assert logon_dispatch_context["starts"] == 1
+    assert logon_dispatch_context["focuses"] == 0
