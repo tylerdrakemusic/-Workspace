@@ -3,7 +3,7 @@
 %% command detail. Audited task paths are retained as safe metadata; live XML and host
 %% paths are excluded.
 %% \∞Life\InfiniteLife-NightlySync | \∞Life\InfiniteLife_Withings_Token_Watcher
-%% \⟨ψ⟩Quantum\QuantumCacheDepletionGuard_Daily | \⟨ψ⟩Quantum\QuantumCacheFill_Monthly | \⟨ψ⟩Quantum\ShorsMonthlyBench | \⟨ψ⟩Quantum\VQEMonthlyBench | \⟨ψ⟩Quantum\PolicyComplianceAudit_Daily
+%% \⟨ψ⟩Quantum\QuantumCacheDepletionGuard_Daily | \QuantumCacheFill_Monthly | \ShorsMonthlyBench | \VQEMonthlyBench | \⟨ψ⟩Quantum\PolicyComplianceAudit_Daily | \QuantumBackendAvailabilityMonitor_Daily
 %% \👁AI-Manifest\AI_Manifest_Priority_Rescore
 %% \⊕Workspace\⊕Workspace-DatabaseBackup | \⊕Workspace\⊕Workspace-SecurityScan | \⊕Workspace\WorkspaceHygiene | \⊕Workspace\Workspace-PerfRegressionAlerter | \⊕Workspace\ProofHealthVerifier | \⊕Workspace\SkillSyncNightly
 %% \ΣCapital\PositionRealization | \ΣCapital\ProductionFillReconciliation | \ΣCapital\ReconcileOrders
@@ -27,11 +27,13 @@ graph LR
         Quantum2([QuantumCacheFill_Monthly\ndeployed]):::deployed --> QuantumProject
         Quantum2 --> Quantum2Command[/fill_cache.py/]:::quantum
         Quantum3([ShorsMonthlyBench\ndeployed]):::deployed --> QuantumProject
-        Quantum3 --> Quantum3Command[/run_shors_monthly.py/]:::quantum
+        Quantum3 --> Quantum3Command[/run_shors_bench.py/]:::quantum
         Quantum4([VQEMonthlyBench\ndeployed]):::deployed --> QuantumProject
-        Quantum4 --> Quantum4Command[/run_vqe_monthly.py/]:::quantum
+        Quantum4 --> Quantum4Command[/run_vqe_bench.py/]:::quantum
         Quantum5([PolicyComplianceAudit_Daily\ndeployed]):::deployed --> QuantumProject
         Quantum5 --> Quantum5Command[/policy_compliance_audit.py/]:::quantum
+        Quantum6([QuantumBackendAvailabilityMonitor_Daily\ndocumented · IgnoreNew · daily 07:45 UTC]):::documented --> QuantumProject
+        Quantum6 --> Quantum6Command[/backend_availability_monitor.py/]:::quantum
     end
     subgraph Manifest["👁 AI-Manifest"]
         ManifestProject[👁 AI-Manifest project]:::manifest

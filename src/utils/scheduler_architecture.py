@@ -29,6 +29,7 @@ AUDITED_JOB_NAMES = {
     "QuantumCacheFill_Monthly",
     "ShorsMonthlyBench",
     "VQEMonthlyBench",
+    "QuantumBackendAvailabilityMonitor_Daily",
     "PolicyComplianceAudit_Daily",
     "AI_Manifest_Priority_Rescore",
     "⊕Workspace-DatabaseBackup",
@@ -75,7 +76,7 @@ def validate_scheduler_architecture(
     expected_projects = set(project_roots)
     actual_projects = {record.project for record in records}
 
-    expected_record_count = 19 if expected_projects == CANONICAL_PROJECTS else len(expected_projects)
+    expected_record_count = 20 if expected_projects == CANONICAL_PROJECTS else len(expected_projects)
     if actual_projects != expected_projects or len(records) != expected_record_count:
         findings.append(
             Finding(
@@ -89,7 +90,7 @@ def validate_scheduler_architecture(
         findings.append(Finding("task_identity", "inventory contains duplicate task names"))
     if expected_projects == CANONICAL_PROJECTS:
         if set(task_names) != AUDITED_JOB_NAMES:
-            findings.append(Finding("task_identity", "inventory does not contain exactly the 18 audited jobs"))
+            findings.append(Finding("task_identity", "inventory does not contain exactly the 19 audited jobs"))
         music_records = [record for record in records if record.project == "❤Music"]
         if len(music_records) != 1 or music_records[0].status != "no-entry":
             findings.append(Finding("no_entry", "❤Music must have exactly one no-entry record"))
