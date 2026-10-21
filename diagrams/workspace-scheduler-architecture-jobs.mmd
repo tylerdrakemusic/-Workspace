@@ -32,7 +32,7 @@ graph LR
         Quantum4 --> Quantum4Command[/run_vqe_bench.py/]:::quantum
         Quantum5([PolicyComplianceAudit_Daily\ndeployed]):::deployed --> QuantumProject
         Quantum5 --> Quantum5Command[/policy_compliance_audit.py/]:::quantum
-        Quantum6([QuantumBackendAvailabilityMonitor_Daily\ndocumented · IgnoreNew]):::documented --> QuantumProject
+        Quantum6([QuantumBackendAvailabilityMonitor_Daily\ndocumented · IgnoreNew · daily 07:45 UTC]):::documented --> QuantumProject
         Quantum6 --> Quantum6Command[/backend_availability_monitor.py/]:::quantum
     end
     subgraph Manifest["👁 AI-Manifest"]

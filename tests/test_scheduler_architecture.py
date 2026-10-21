@@ -125,6 +125,7 @@ def test_quantum_inventory_aligns_live_root_paths_and_documents_backend_monitor(
     assert "multiple_instances=IgnoreNew" in audit
     assert "QuantumBackendAvailabilityMonitor_Daily" in diagram
     assert "documented · IgnoreNew" in diagram
+    assert "daily 07:45 UTC" in diagram
     assert "backend_availability_monitor.py" in diagram
     assert "Observed at `2026-10-20T21:47:46Z`" in audit
     assert "Task Name | Task Path | Action Script | MultipleInstances | State" in audit
