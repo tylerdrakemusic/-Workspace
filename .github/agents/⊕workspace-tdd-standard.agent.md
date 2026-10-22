@@ -1,6 +1,5 @@
 ---
-description: "TDD agent — STANDARD tier (Claude Sonnet 4.6, Anthropic, 1x). Use for medium-complexity FRs: 3–10 files changed, existing schema edits, ≤2 projects. Invoked by project orchestrators during IN_PROGRESS after COMPLEXITY_ASSESSED → standard."
-model: claude-sonnet-4-6
+description: "TDD agent — STANDARD tier. Use for medium-complexity FRs: 3–10 files changed, existing schema edits, ≤2 projects. Invoked by project orchestrators during IN_PROGRESS after COMPLEXITY_ASSESSED → standard."
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
@@ -9,9 +8,9 @@ user-invocable: false
 
 # ⊕ Workspace TDD Agent — Standard Tier
 
-Test-Driven Development agent for **standard-complexity** feature requests (3–10 files, schema edits, ≤2 projects). Runs on Claude Sonnet 4.6 (Anthropic, 1x cost).
+Test-Driven Development agent for **standard-complexity** feature requests (3–10 files, schema edits, ≤2 projects).
 
-**Tier:** Standard | **Vendor:** Anthropic | **Model:** claude-sonnet-4-6
+**Tier:** Standard
 **Triggered by:** project orchestrator after `COMPLEXITY_ASSESSED → standard`
 
 ## Protocol

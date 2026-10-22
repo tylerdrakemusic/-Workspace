@@ -40,7 +40,7 @@ Playwright tests (`tests/test_portal_playwright.py`): tests hitting `http://loca
 `git status` per project → count modified/untracked/staged → estimate commit groups → summarize.
 
 ## 4. Branch + Worktree Management
-**Rule:** one code-changing session = one branch = one worktree = one draft PR.
+**Rule:** one code-changing session = one branch = one worktree; create one draft PR per affected repo when permissions allow.
 **Location:** `f:\⊕Workspace\.worktrees/{branch-slug}/` (gitignored, VS Code-excluded)
 > **Deprecated:** Legacy external paths (`f:\worktrees\`, `f:\<project>-worktrees\`) are deprecated — always use `.worktrees/` inside the repo root.
 
@@ -54,11 +54,34 @@ git branch -d <branch>
 **Batch SOP:** batch all `git worktree add` calls in one terminal session for a single IDE approval gate.
 **Branch names:** `feature/<fr-id>` · `fix/<fr-id>` · `chore/<fr-id>` · optional `/<agent>` suffix
 
+### Draft PR and Permission Fallback
+After the approved branch/worktree is ready, create a draft PR early when the
+repository permits it so remote CI can run alongside local validation. If PR
+creation fails for permissions, record the specific failure in the FR ledger
+and report it to the overseer; do not work around the permission boundary or
+block local tests, functional QA, architecture review, or local automated
+review. The reviewer must label any result local-only until the PR exists. A
+missing PR prevents final PR-set approval and merge, but does not prevent those
+local gates from completing.
+
+### Aggregate Approval Handoff
+Tyler's single `TYLER_APPROVED` decision covers the complete linked PR set and
+authorizes CI to merge without a second per-repository approval. Before merging
+each repository PR, independently verify that its required checks are green
+and the FR cost gate has a valid `estimated` or `unavailable` outcome with the
+required source (and unavailable reason). Merge only eligible PRs under the
+existing approval. A red or pending check, incomplete cost outcome, missing PR,
+or permission failure leaves that PR unmerged and is reported as a blocker.
+`fr_cli.py update-state <FR-ID> MERGED` must be run only from
+`TYLER_APPROVED`; it also enforces parent-join, architecture, and cost gates.
+The final approval does not replace the earlier scope approval or later
+post-soak signoff.
+
 ## 5. Merge + Conflict Resolution
 1. Fetch + rebase session branch before review/merge
 2. Two overlapping PRs: designate base, rebase follower, resolve in follower only
 3. Re-run targeted tests after conflict resolution
-4. Merge through PR after CI checks pass; then remove branch/worktree
+4. Under the single aggregate `TYLER_APPROVED` decision, merge each linked PR only after that repository's required checks and the FR cost gate pass; then remove its branch/worktree
 5. **On merge:** close FR cycle timer + update FR state:
    ```powershell
    $env:PYTHONUTF8="1"

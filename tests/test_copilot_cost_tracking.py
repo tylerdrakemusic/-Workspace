@@ -308,6 +308,7 @@ def test_cli_get_displays_unavailable_cost_reason_and_finalization(monkeypatch, 
 
 def test_merge_transition_blocks_null_cost_status(monkeypatch) -> None:
     conn = _cost_conn()
+    conn.execute("UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-1'")
     conn.execute(
         "INSERT INTO fr_events VALUES ('FR-1', '2026-08-08T00:00:00Z', 'reviewer', "
         "'review', 'ARCHITECTURE_REVIEW:PASS', NULL, NULL)"
@@ -324,13 +325,13 @@ def test_merge_transition_blocks_null_cost_status(monkeypatch) -> None:
         )
 
     assert exc_info.value.code != 0
-    assert conn.execute("SELECT state FROM feature_requests WHERE id='FR-1'").fetchone()[0] == "IN_PROGRESS"
+    assert conn.execute("SELECT state FROM feature_requests WHERE id='FR-1'").fetchone()[0] == "TYLER_APPROVED"
 
 
 def test_merge_transition_allows_explicit_unavailable_cost(monkeypatch) -> None:
     conn = _cost_conn()
     conn.execute(
-        "UPDATE feature_requests SET cost_status='unavailable', cost_source='operator', "
+        "UPDATE feature_requests SET state='TYLER_APPROVED', cost_status='unavailable', cost_source='operator', "
         "cost_reconciliation_status='Telemetry unavailable; operator confirmed' WHERE id='FR-1'"
     )
     conn.execute(
@@ -352,6 +353,7 @@ def test_merge_transition_allows_explicit_unavailable_cost(monkeypatch) -> None:
 
 def test_merge_transition_finalizes_cost_when_usage_is_supplied(monkeypatch, capsys) -> None:
     conn = _cost_conn()
+    conn.execute("UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-1'")
     capture_baseline(conn, "FR-1", "claude-sonnet-4-6", {"input_tokens": 100})
     conn.execute(
         "INSERT INTO fr_events VALUES ('FR-1', '2026-08-08T00:00:00Z', 'reviewer', "
@@ -381,6 +383,7 @@ def test_async_merge_does_not_finalize_from_supplied_usage_without_reconciliatio
     monkeypatch, capsys
 ) -> None:
     conn = _cost_conn()
+    conn.execute("UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-1'")
     capture_baseline(conn, "FR-1", "claude-sonnet-4-6", {"input_tokens": 100})
     conn.execute(
         "INSERT INTO fr_events VALUES ('FR-1', '2026-08-08T00:00:00Z', 'reviewer', "
@@ -406,5 +409,5 @@ def test_async_merge_does_not_finalize_from_supplied_usage_without_reconciliatio
     row = conn.execute(
         "SELECT state, cost_status, cost_source FROM feature_requests WHERE id='FR-1'"
     ).fetchone()
-    assert tuple(row) == ("IN_PROGRESS", "pending", None)
+    assert tuple(row) == ("TYLER_APPROVED", "pending", None)
     assert "reconciliation" in capsys.readouterr().out.lower()

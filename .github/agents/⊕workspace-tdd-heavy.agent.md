@@ -1,6 +1,5 @@
 ---
-description: "TDD agent — HEAVY tier (Claude Opus 4.8, Anthropic, 15x). Use for complex FRs: 10+ files, new DB schema, new agents/integrations, multi-repo, or security-sensitive (health data, auth, secrets). Invoked by project orchestrators during IN_PROGRESS after COMPLEXITY_ASSESSED → heavy."
-model: claude-opus-4-8
+description: "TDD agent — HEAVY tier. Use for complex FRs: 10+ files, new DB schema, new agents/integrations, multi-repo, or security-sensitive (health data, auth, secrets). Invoked by project orchestrators during IN_PROGRESS after COMPLEXITY_ASSESSED → heavy."
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
@@ -9,9 +8,9 @@ user-invocable: false
 
 # ⊕ Workspace TDD Agent — Heavy Tier
 
-Test-Driven Development agent for **high-complexity** feature requests (10+ files, new schema, new agents/integrations, multi-repo, security-sensitive). Runs on Claude Opus 4.8 (Anthropic, 15x cost).
+Test-Driven Development agent for **high-complexity** feature requests (10+ files, new schema, new agents/integrations, multi-repo, security-sensitive).
 
-**Tier:** Heavy | **Vendor:** Anthropic | **Model:** claude-opus-4-8
+**Tier:** Heavy
 **Triggered by:** project orchestrator after `COMPLEXITY_ASSESSED → heavy`
 
 ## Protocol
@@ -42,7 +41,3 @@ Repeat until all acceptance criteria are satisfied.
   $env:PYTHONUTF8="1"
   C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py record-artifact <FR-ID> test_pass "TDD: <test-file>" --path "<path>"
   ```
-
-## Cost Awareness
-
-Heavy tier runs at 15x cost. Reserve for genuinely complex changes. If during implementation the scope turns out simpler than assessed, notify the orchestrator — but do NOT switch mid-run.
