@@ -1,13 +1,7 @@
-"""
-complexity_router.py — FR complexity assessment for tiered model routing.
+"""Assess FR complexity and select a role tier for TDD, QA, and review.
 
-Used by orchestrators and the overseer to select the correct model tier
-(light / standard / heavy) before delegating TDD, QA, and Review work.
-
-Tiers map to the following model matrix:
-  light    (0.33x)  — Claude Haiku 4.5   / GPT-5.4 mini   / Gemini 3 Flash
-  standard (1x)     — Claude Sonnet 4.6  / GPT-5.3-Codex  / Gemini 2.5 Pro
-  heavy    (premium)— Claude Opus 4.8    / GPT-5.5        / Gemini 3.1 Pro
+The result is one of light, standard, or heavy. The host selects the runtime
+model; this module does not bind a provider, model ID, or cost multiplier.
 """
 from __future__ import annotations
 
@@ -187,7 +181,13 @@ def format_routing_event(decision: RoutingDecision) -> str:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Assess FR complexity tier")
+    parser = argparse.ArgumentParser(
+        description="Assess FR complexity tier",
+        epilog=(
+            "Agent contract: prints a tier only; persist routing evidence with "
+            "fr_cli.py record-event."
+        ),
+    )
     parser.add_argument("--files", type=int, default=1, help="Number of files changed")
     parser.add_argument("--new-schema", action="store_true")
     parser.add_argument("--new-agents", action="store_true")

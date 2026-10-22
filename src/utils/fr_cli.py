@@ -36,7 +36,7 @@ from parent_join_gates import (
     ParentRepositorySnapshot,
     evaluate_parent_join,
 )
-from workspace_discovery import PROJECT_ROOTS
+from workspace_discovery import PROJECT_ROOTS, PROJECT_SIGILS
 
 ACTIVE_STATES = {
     "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS",
@@ -91,6 +91,14 @@ def _resolve_parent_head(parent_branch: str) -> str:
 def _resolve_repository_parent_head(parent_branch: str, project: str) -> str:
     """Resolve a project's parent head from its registered Git worktrees."""
     project_root = PROJECT_ROOTS.get(project)
+    if project_root is None:
+        project_identifier = project.casefold()
+        for canonical_name, root in PROJECT_ROOTS.items():
+            sigil = PROJECT_SIGILS.get(canonical_name, "")
+            project_slug = canonical_name[len(sigil):].casefold().replace("-", "_")
+            if project_identifier == project_slug:
+                project_root = root
+                break
     if project_root is None:
         raise ValueError("unknown parent repository project")
     result = subprocess.run(
@@ -598,6 +606,14 @@ def cmd_update_state(args: argparse.Namespace) -> None:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
         conn.close()
         sys.exit(1)
+    if args.new_state.upper() == "MERGED" and fr["state"] != "TYLER_APPROVED":
+        print(
+            f"[fr_cli] BLOCKED: cannot transition {args.fr_id} to MERGED — "
+            "the linked PR set requires final TYLER_APPROVED state first.",
+            file=sys.stderr,
+        )
+        conn.close()
+        sys.exit(1)
     if args.new_state.upper() == "BRANCHED":
         approval_classification = _scope_approval_classification(conn, args.fr_id)
         if fr["state"] != "TRIAGED" or approval_classification is None:
@@ -886,7 +902,12 @@ def cmd_get(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="FR ledger CLI — open, record, update, list FRs in fr_ledgers.db"
+        description="FR ledger CLI — open, record, update, list FRs in fr_ledgers.db",
+        epilog=(
+            "Agent contract: canonical FR ledger interface. Read with get/list; "
+            "record-event and record-artifact append evidence. Only intake/CI "
+            "create or transition FRs; never write the ledger database directly."
+        ),
     )
     sub = parser.add_subparsers(dest="cmd")
 

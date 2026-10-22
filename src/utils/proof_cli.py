@@ -363,7 +363,13 @@ def cmd_summary(args) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="⊕ Proof-in-the-Pudding CLI")
+    parser = argparse.ArgumentParser(
+        description="⊕ Proof-in-the-Pudding CLI",
+        epilog=(
+            "Agent contract: attach evidence to a perf run and verify it before "
+            "the QA handoff. This CLI does not change FR state."
+        ),
+    )
     sub = parser.add_subparsers(dest="command")
 
     # record

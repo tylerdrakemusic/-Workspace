@@ -22,7 +22,10 @@ context as notes. Ask for a title only when none was supplied.
    or outcomes before asking Tyler to approve scope. Include the scenarios in
    the complete FR draft and confirmation block. Pure documentation,
    housekeeping, and behavior-neutral refactors are exempt; for mixed requests,
-   write scenarios for the behavior-changing parts only.
+   write scenarios for the behavior-changing parts only. Preserve all approved
+   outcomes; `bdd-workflow.instructions.md` defines executable coverage for
+   deterministic behavior and structured QA evidence for agent-only behavior
+   with no deterministic runtime.
 4. Cross-reference open TODOs with the governed manifest-coordination tools:
    call `mcp_manifest-coor_list_open_todos(project=<inferred_project>)`, then
    `mcp_manifest-coor_read_todo(todo_id=<candidate_id>)` for relevant matches.

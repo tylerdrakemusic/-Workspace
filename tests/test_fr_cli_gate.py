@@ -368,7 +368,105 @@ def test_cost_reconcile_unavailable_requires_source_and_reason(tmp_path) -> None
         )
 
 
+@pytest.mark.parametrize(
+    ("project_slug", "canonical_project"),
+    [
+        ("workspace", "⊕Workspace"),
+        ("life", "∞Life"),
+        ("music", "❤Music"),
+        ("quantum", "⟨ψ⟩Quantum"),
+        ("ai_manifest", "👁AI-Manifest"),
+        ("capital", "ΣCapital"),
+    ],
+)
+def test_repository_parent_head_resolver_accepts_project_slugs(
+    tmp_path: Path, project_slug: str, canonical_project: str
+) -> None:
+    branch_name = "feature/FR-20261020-project-slug-resolution"
+    repository_root = tmp_path / project_slug
+    worktrees_root = repository_root / ".worktrees"
+    worktree = worktrees_root / "feature"
+    repository_root.mkdir()
+    subprocess.run(["git", "-C", str(repository_root), "init", "--quiet"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repository_root), "config", "user.email", "test@example.com"],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository_root), "config", "user.name", "Test User"],
+        check=True,
+    )
+    (repository_root / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repository_root), "add", "README.md"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repository_root), "commit", "--quiet", "-m", "fixture"],
+        check=True,
+    )
+    worktrees_root.mkdir()
+    subprocess.run(
+        ["git", "-C", str(repository_root), "worktree", "add", "-b", branch_name, str(worktree)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    expected_head = subprocess.run(
+        ["git", "-C", str(worktree), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    with patch.dict(fr_cli.PROJECT_ROOTS, {canonical_project: repository_root}):
+        assert fr_cli._resolve_repository_parent_head(branch_name, project_slug) == expected_head
+
+
 class TestMergedGate:
+    def test_cli_rejects_merge_without_final_tyler_approval(
+        self, tmp_path, monkeypatch, capsys
+    ) -> None:
+        db_path = tmp_path / "fr.db"
+        conn = _make_conn(db_path)
+        conn.execute(
+            "UPDATE feature_requests SET state='AUTO_REVIEWED' WHERE id='FR-TEST-001'"
+        )
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "FR-TEST-001",
+                "2026-07-03T00:00:00Z",
+                "test",
+                "note",
+                "ARCHITECTURE_REVIEW:PASS",
+            ),
+        )
+        conn.commit()
+        conn.close()
+
+        def open_test_ledger() -> sqlite3.Connection:
+            connection = sqlite3.connect(str(db_path))
+            connection.row_factory = sqlite3.Row
+            return connection
+
+        monkeypatch.setattr(fr_cli, "_conn", open_test_ledger)
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["fr_cli.py", "update-state", "FR-TEST-001", "MERGED"],
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            fr_cli.main()
+
+        assert exc_info.value.code != 0
+        assert "TYLER_APPROVED" in capsys.readouterr().err
+        check_conn = sqlite3.connect(str(db_path))
+        state = check_conn.execute(
+            "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
+        ).fetchone()[0]
+        check_conn.close()
+        assert state == "AUTO_REVIEWED"
+
     def test_parent_join_single_project_uses_repository_head_when_workspace_head_is_unavailable(
         self, tmp_path
     ) -> None:
@@ -1243,6 +1341,11 @@ class TestMergedGate:
     ) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
+        initial_state = "TYLER_APPROVED" if new_state == "MERGED" else "ARCHITECTURE_REVIEW"
+        conn.execute(
+            "UPDATE feature_requests SET state=? WHERE id='FR-TEST-001'",
+            (initial_state,),
+        )
         conn.execute(
             "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
             "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', 'test', 'note', "
@@ -1260,11 +1363,15 @@ class TestMergedGate:
             "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
         ).fetchone()
         check_conn.close()
-        assert row[0] == "ARCHITECTURE_REVIEW"
+        assert row[0] == initial_state
 
     def test_merged_blocked_without_architecture_review_pass(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
+        conn.execute(
+            "UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-TEST-001'"
+        )
+        conn.commit()
         with patch.object(fr_cli, "_conn", return_value=conn):
             with pytest.raises(SystemExit) as exc_info:
                 fr_cli.cmd_update_state(_state_args("FR-TEST-001", "MERGED"))
@@ -1277,11 +1384,14 @@ class TestMergedGate:
             "SELECT state FROM feature_requests WHERE id='FR-TEST-001'"
         ).fetchone()
         check_conn.close()
-        assert row[0] == "ARCHITECTURE_REVIEW"  # unchanged
+        assert row[0] == "TYLER_APPROVED"  # unchanged
 
     def test_merged_allowed_with_architecture_review_pass(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
+        conn.execute(
+            "UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-TEST-001'"
+        )
         conn.execute(
             "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
             "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', "
@@ -1302,6 +1412,9 @@ class TestMergedGate:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
         conn.execute(
+            "UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-TEST-001'"
+        )
+        conn.execute(
             "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
             "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', "
             "'⊕workspace-architecture-reviewer', 'note', 'ARCHITECTURE_REVIEW:PASS_WITH_UPDATES — diagrams refreshed')"
@@ -1320,6 +1433,9 @@ class TestMergedGate:
     def test_merged_blocked_with_only_fail_event(self, tmp_path, capsys) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
+        conn.execute(
+            "UPDATE feature_requests SET state='TYLER_APPROVED' WHERE id='FR-TEST-001'"
+        )
         conn.execute(
             "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
             "VALUES ('FR-TEST-001', '2026-07-03T00:00:00Z', "
