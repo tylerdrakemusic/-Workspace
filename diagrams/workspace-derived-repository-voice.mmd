@@ -17,8 +17,13 @@ graph LR
     end
     ExplicitAuthorization{explicit authorization<br/>repository_voice_authorized}
     StableDecisionID[stable decision ID<br/>retry deduplication]
+    StreamDecisionID[stable decision ID<br/>stream attempt identity]
     BoundedTimeout[bounded timeout]
     TTSQueue[(tts_queue<br/>durable queue)]
+    StreamStart[start_streaming_tts<br/>bounded local PCM session]
+    StreamStatus[streaming_tts_status<br/>bounded status checks]
+    StreamCleanup[cancel_streaming_tts<br/>cancel session and clean up]
+    StreamComplete[stream completed]
     FailOpenText[fail-open text result<br/>workflow result unchanged]
     FailOpenDiagnostics[fail-open diagnostics<br/>voice_status and voice_error]
 
@@ -28,6 +33,14 @@ graph LR
     ExplicitAuthorization -->|unauthorized| FailOpenText
     RepositoryVoiceInjection --> RepositoryVoiceBridge
     RepositoryVoiceBridge --> SubmitRepositoryVoice
+    RepositoryVoiceInjection -.->|optional streaming path after authorization| StreamDecisionID
+    StreamDecisionID --> StreamStart
+    StreamStart -->|session ID| StreamStatus
+    StreamStatus -->|poll within bounded window| StreamStatus
+    StreamStatus -->|completed| StreamComplete
+    StreamStart -->|start failure| FailOpenText
+    StreamStatus -->|cancel, error, or deadline| StreamCleanup
+    StreamCleanup --> FailOpenText
     ManifestMCP --> SubmitRepositoryVoice
     ManifestMCP --> RepositoryVoiceStatus
     SubmitRepositoryVoice ==> TTSQueue
@@ -41,10 +54,10 @@ graph LR
     RepositoryVoiceStatus -.->|status semantics| FailOpenDiagnostics
 
     class OverseerEntry,CIEntry ws
-    class ManifestMCP,SubmitRepositoryVoice,RepositoryVoiceStatus,RepositoryVoiceInjection,RepositoryVoiceBridge,VoiceWorker manifest
+    class ManifestMCP,SubmitRepositoryVoice,RepositoryVoiceStatus,RepositoryVoiceInjection,RepositoryVoiceBridge,VoiceWorker,StreamStart,StreamStatus,StreamCleanup,StreamComplete manifest
     class VoiceProvider ext
     class ExplicitAuthorization,BoundedTimeout,FailOpenText,FailOpenDiagnostics state
-    class StableDecisionID ws
+    class StableDecisionID,StreamDecisionID ws
     class TTSQueue db
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

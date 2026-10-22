@@ -32,10 +32,11 @@ graph LR
     AIHealthContract --> ElevenLabsAdapter[Workspace ElevenLabs readiness adapter<br/>authenticated · non-generative · bounded retry]
     ElevenLabsAdapter --> ElevenLabs[ElevenLabs /v1/user]
     Workspace --> GmailAttachments[workspace-derived-gmail-attachments]
-    Workspace --> OverseerAlert[⊕ governed repository voice bridge]
-    OverseerAlert ==> ManifestAlertCapability[👁 governed_repository.py]
+    Workspace --> OverseerAlert[⊕ governed repository voice bridge<br/>explicit authorization; fail-open text]
+    OverseerAlert ==>|authorized capability only| ManifestAlertCapability[👁 RepositoryVoiceInjection<br/>governed_repository.py]
     ManifestAlertCapability ==> TTSQueue[(tts_queue)]
     TTSQueue -.->|asynchronous queue worker output| LocalPlayback[👁 injected/local Windows playback]
+    ManifestAlertCapability -.->|optional stream: stable decision ID, start_streaming_tts, bounded streaming_tts_status, cancel_streaming_tts on failure; text fail-open| Workspace
     Manifest --> PlayAudioMCP[👁 play_audio_file MCP registration]
     PlayAudioMCP -->|guarded filename, size, duration| DirectPlayback[👁 Windows MCI: play &lt;alias&gt; wait]
     DirectPlayback -->|finally alias cleanup| PlaybackResult[structured playback result]

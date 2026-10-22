@@ -6,7 +6,7 @@
 stateDiagram-v2
     [*] --> TRIAGED: Tyler opens FR
     TRIAGED --> BRANCHED: approval event + criteria, or exempt
-    BRANCHED --> COMPLEXITY_ASSESSED: complexity_router.py
+    BRANCHED --> COMPLEXITY_ASSESSED: try one draft PR per affected repository; record permission denial and continue locally
     COMPLEXITY_ASSESSED --> MCP_FIRST: deterministic MCP-first invocation
     MCP_FIRST --> IN_PROGRESS: governed coordination MCP available
     MCP_FIRST --> LOCAL_FALLBACK: MCP unavailable
@@ -28,7 +28,7 @@ stateDiagram-v2
     state "Trusted repository branch/head resolution" as REPOSITORY_HEAD_RESOLUTION
     state "Recompute against current repository heads" as CURRENT_HEAD_RECOMPUTE
     state "Diagram remediation" as DIAGRAM_REMEDIATION
-
+    state "Per-repository PR checks and cost gates" as COST_GATE
     IN_PROGRESS --> TODO_RUNTIME: operational TODO execution
     TODO_RUNTIME --> IN_PROGRESS: required children, artifacts, current parent head validated
     IN_PROGRESS --> FR_COORDINATION: FR anchor admits executable TODO 333
@@ -45,19 +45,26 @@ stateDiagram-v2
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
     ARCHITECTURE_REVIEW --> DIAGRAM_REMEDIATION: STALE/MISSING → reject
     DIAGRAM_REMEDIATION --> ARCHITECTURE_REVIEW: beautifier updates → re-verify
-    ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES
+    ARCHITECTURE_REVIEW --> REVIEW_REQUESTED: PASS / PASS_WITH_UPDATES, PR exists
     REVIEW_REQUESTED --> AUTO_REVIEWED: ⊕workspace-reviewer
-    AUTO_REVIEWED --> TYLER_APPROVED: Tyler approves PR
-    TYLER_APPROVED --> COST_GATE: ⊕workspace-ci validates cost outcome
-    COST_GATE --> COST_ESTIMATED: estimated
-    COST_GATE --> COST_UNAVAILABLE: unavailable + reason/source recorded
-    COST_GATE --> MERGE_BLOCKED: NULL or pending
-    COST_ESTIMATED --> MERGED: ⊕workspace-ci merges
-    COST_UNAVAILABLE --> MERGED: ⊕workspace-ci merges
-    MERGE_BLOCKED --> COST_GATE: outcome recorded
+    AUTO_REVIEWED --> COST_GATE: complete linked PR set has review evidence and green checks
+    COST_GATE --> COST_ESTIMATED: every repository has an estimate
+    COST_GATE --> COST_UNAVAILABLE: each unavailable outcome has per-repository reason/source
+    COST_GATE --> MERGE_BLOCKED: any repository check fails or cost is NULL or pending
+    COST_ESTIMATED --> TYLER_APPROVED: one final approval for the complete reviewed linked PR set
+    COST_UNAVAILABLE --> TYLER_APPROVED: one final approval for the complete reviewed linked PR set
+    TYLER_APPROVED --> MERGED: merge linked PRs, no second approval
+    MERGE_BLOCKED --> COST_GATE: record each repository outcome
     MERGED --> SOAKING: post-merge soak window
     SOAKING --> SIGNED_OFF: signoff verified
     SIGNED_OFF --> [*]
+
+    note right of ARCHITECTURE_REVIEW
+        If draft PR creation is denied, continue local tests, QA,
+        architecture review, and local review; record the blocker.
+        Do not claim GitHub review or remote CI without an existing PR.
+        Final approval waits for every linked PR and review evidence.
+    end note
 
     note right of FUNCTIONAL_QA
         Parent-join evidence is required before

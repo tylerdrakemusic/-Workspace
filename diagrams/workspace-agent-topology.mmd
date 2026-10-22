@@ -5,7 +5,11 @@
 %% Derived views: workspace-agent-topology-workspace-tier.mmd, workspace-agent-topology-projects.mmd, workspace-agent-topology-instructions.mmd
 graph LR
     Tyler([Tyler]) --> Overseer(["⊕workspace-overseer"]):::ws
-    Overseer --> WSTier[["⊕ Workspace agent tier<br/>see workspace-tier view"]]:::ws
+    Overseer -->|routes by role tier| WSTier[["⊕ Workspace agent tier<br/>role-tier routing; see workspace-tier view"]]:::ws
+    WSTier --> AgentExecution[Selected agent execution<br/>no agent model pins or cost multipliers]:::ws
+    ExecutionHost[Agent execution host<br/>selects model/provider]:::ws --> AgentExecution
+    AgentExecution -->|review role when selected| AutoReviewer(["⊕workspace-reviewer<br/>automated reviewer"]):::ws
+    AutoReviewer -->|posts structured textual decision| GitHubComment[GitHub COMMENT<br/>decision in comment body<br/>not native APPROVE/REQUEST_CHANGES]:::ext
     Overseer --> LifeOrch(["∞life-orchestrator"]):::life & MusicOrch(["❤music-orchestrator"]):::music & QuantumOrch(["⟨ψ⟩quantum-orchestrator"]):::quantum & ManifestOrch(["👁ai-manifest-orchestrator"]):::manifest & CapitalOrch(["Σcapital-orchestrator"]):::capital
     LifeOrch --> Rosters[["Project agent rosters<br/>see projects view"]]:::ws
     MusicOrch --> Rosters
@@ -24,3 +28,4 @@ classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef instr    fill:#1a1a1a,stroke:#888,color:#aaa
+classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
