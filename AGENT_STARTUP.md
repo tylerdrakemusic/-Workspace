@@ -34,6 +34,27 @@ that contain `AGENT_STARTUP.md`: `∞Life`, `❤Music`, `⟨ψ⟩Quantum`,
 - `tests/` - workspace utility tests. Use temporary or in-memory fixtures and
   never modify production databases.
 
+### Agent-Facing Workflow CLI Contracts
+
+Run `C:\G\python.exe src\utils\<cli>.py --help` for current syntax:
+
+- `fr_cli.py`: canonical FR ledger. `get`/`list` read; `record-event` and
+  `record-artifact` append; intake/CI own FR creation and state transitions.
+  Never write the ledger database directly.
+- `proof_cli.py`: records and verifies evidence against performance run IDs;
+  proof does not change FR state.
+- `perf_cli.py`: owns performance timing records. Return its run ID to the
+  caller, which records FR linkage through `fr_cli.py`.
+- `feedback_cli.py`: records findings; `apply` changes feedback status only
+  and does not edit source files.
+- `complexity_router.py`: assesses tier/routing only; persist routing evidence
+  with `fr_cli.py record-event`.
+- TODO lifecycle: use the governed manifest/coordinator MCP contract, not a
+  CLI or direct database write.
+
+A nonzero CLI exit means the operation failed. Preserve its diagnostic, do not
+bypass the owning interface, and do not blindly retry an append-only write.
+
 ## Verified Operational Locations
 
 - MCP status lookup: `src/utils/mcp_status.py`; server definitions: `MCP_REGISTRY.md`.

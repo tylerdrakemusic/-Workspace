@@ -115,7 +115,13 @@ def cmd_auto_apply_trivial(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="⊕Workspace agent feedback CLI")
+    parser = argparse.ArgumentParser(
+        description="⊕Workspace agent feedback CLI",
+        epilog=(
+            "Agent contract: log appends findings; apply changes feedback status "
+            "only and does not edit source."
+        ),
+    )
     sub = parser.add_subparsers(dest="cmd")
 
     p_log = sub.add_parser("log", help="Log a new feedback finding")

@@ -85,7 +85,18 @@ multi-project, contract-changing, or otherwise ineligible work is rejected
 from the bypass and follows normal light recycling gates.
 
 ## Feature Request Flow
-Full state machine in `feature-request-flow.instructions.md`. Tyler's gateways: **open FR → approve scope → approve merge → post-soak signoff**. Agent-to-agent between gates.
+Full state machine in `feature-request-flow.instructions.md`. Tyler's gateways:
+**open FR → approve scope → approve the complete linked PR set → post-soak
+signoff**. After scope approval and `BRANCHED`, proceed through local gates
+without adding operator checkpoints.
+
+### Autonomous Local Gates
+- Confirm scope approval, `BRANCHED`, and the explicit technical prerequisites. Do not block on unrelated FR business states.
+- Start implementation in affected project worktrees, then run each project's normal test suite, functional QA, architecture review, and automated review in order.
+- Ask `⊕workspace-ci` to create draft PRs early when repository permissions allow so remote CI can run in parallel. If PR creation is denied, record the concrete permission failure and continue local tests, QA, architecture review, and local automated review. Label results local-only; never claim a GitHub review or remote CI result without a PR.
+- Repair findings that are feasible within approved scope, then rerun the affected tests and gates. Keep approved acceptance scenarios unchanged. Record review-added behavior separately with its tests and evidence.
+- Escalate new paid-service needs, repository permission failures that prevent required delivery, safety/privacy decisions, and irreducible blockers. Keep the text request authoritative. For an actual blocking decision requiring Tyler input, follow the stable-ID, bounded AI-Manifest MCP voice sequence in `repository-voice.instructions.md`; voice failure is fail-open. Never use voice for status narration or call ElevenLabs directly.
+- Once every linked PR has passed local gates and review, present one consolidated final approval request covering the complete PR set. CI may merge each eligible repository PR under that approval only after its own required checks and cost gate pass. Scope approval and post-soak signoff remain separate.
 
 For FRs decomposed into child TODOs, require the serialized parent join before
 routing or recording `TYLER_APPROVED`, `MERGED`, `SOAKING`, or `SIGNED_OFF`.

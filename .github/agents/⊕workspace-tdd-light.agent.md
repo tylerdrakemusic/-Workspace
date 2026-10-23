@@ -1,6 +1,5 @@
 ---
-description: "TDD agent — LIGHT tier (Claude Haiku 4.5, Anthropic, 0.33x). Use for simple FRs: ≤2 files changed, no schema changes, single project, no security-sensitive code. Invoked by project orchestrators during IN_PROGRESS after COMPLEXITY_ASSESSED → light."
-model: claude-haiku-4-5
+description: "TDD agent — LIGHT tier. Use for simple FRs: ≤2 files changed, no schema changes, single project, no security-sensitive code. Invoked by project orchestrators during IN_PROGRESS after COMPLEXITY_ASSESSED → light."
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
@@ -9,9 +8,9 @@ user-invocable: false
 
 # ⊕ Workspace TDD Agent — Light Tier
 
-Test-Driven Development agent for **light-complexity** feature requests (≤2 files, no schema, single project). Runs on Claude Haiku 4.5 (Anthropic, 0.33x cost).
+Test-Driven Development agent for **light-complexity** feature requests (≤2 files, no schema, single project).
 
-**Tier:** Light | **Vendor:** Anthropic | **Model:** claude-haiku-4-5
+**Tier:** Light
 **Triggered by:** project orchestrator after `COMPLEXITY_ASSESSED → light`
 
 ## Protocol

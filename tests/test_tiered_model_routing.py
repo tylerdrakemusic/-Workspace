@@ -1,11 +1,4 @@
-"""Tests for FR-20260529-tiered-model-routing.
-
-Verifies:
-  1. All 9 tiered pipeline agents exist with correct model: frontmatter
-  2. Existing ⊕workspace-qa and ⊕workspace-reviewer are pinned to standard-tier models
-  3. COMPLEXITY_ASSESSED routing table appears in feature-request-flow.instructions.md
-  4. complexity_router.py routes FR signals to the correct tier
-"""
+"""Tests role-tier routing without pinning the host-selected model."""
 from __future__ import annotations
 
 import re
@@ -17,22 +10,18 @@ AGENTS_DIR = Path(__file__).resolve().parents[1] / ".github" / "agents"
 INSTRUCTIONS_DIR = Path(__file__).resolve().parents[1] / ".github" / "instructions"
 SRC_UTILS = Path(__file__).resolve().parents[1] / "src" / "utils"
 
-# ── model matrix ─────────────────────────────────────────────────────────────
-# Maps each agent filename → expected value of the model: frontmatter field.
-TIERED_AGENT_MODELS: dict[str, str] = {
-    # TDD agents (Anthropic)
-    "⊕workspace-tdd-light.agent.md": "claude-haiku-4-5",
-    "⊕workspace-tdd-standard.agent.md": "claude-sonnet-4-6",
-    "⊕workspace-tdd-heavy.agent.md": "claude-opus-4-8",
-    # QA agents (OpenAI) — existing file becomes standard
-    "⊕workspace-qa-light.agent.md": "gpt-5.4-mini",
-    "⊕workspace-qa.agent.md": "gpt-5.3-codex",
-    "⊕workspace-qa-heavy.agent.md": "gpt-5.5",
-    # Review agents (Google) — existing file becomes standard
-    "⊕workspace-reviewer-light.agent.md": "gemini-3-flash",
-    "⊕workspace-reviewer.agent.md": "gemini-2.5-pro",
-    "⊕workspace-reviewer-heavy.agent.md": "gemini-3.1-pro",
-}
+TIERED_AGENT_FILES = (
+    "⊕workspace-tdd-light.agent.md",
+    "⊕workspace-tdd-standard.agent.md",
+    "⊕workspace-tdd-heavy.agent.md",
+    "⊕workspace-qa-light.agent.md",
+    "⊕workspace-qa.agent.md",
+    "⊕workspace-qa-heavy.agent.md",
+    "⊕workspace-reviewer-light.agent.md",
+    "⊕workspace-reviewer.agent.md",
+    "⊕workspace-reviewer-heavy.agent.md",
+    "⊕workspace-architecture-reviewer-light.agent.md",
+)
 
 
 def _read(path: Path) -> str:
@@ -49,30 +38,94 @@ def _frontmatter(text: str) -> str:
     return text[3:end].strip()
 
 
-# ── AC1/AC2: agent files exist with correct model: frontmatter ────────────────
+def _pinned_frontmatter_fields(frontmatter: str) -> list[str]:
+    fields: list[str] = []
+    for line in frontmatter.splitlines():
+        match = re.match(r"^(?:([A-Za-z_][A-Za-z0-9_-]*)|\"([^\"]+)\"|'([^']+)')\s*:", line)
+        if match is None:
+            continue
 
-@pytest.mark.parametrize("filename,expected_model", list(TIERED_AGENT_MODELS.items()))
-def test_tiered_agent_exists(filename: str, expected_model: str) -> None:
+        field_name = next(value for value in match.groups() if value is not None)
+        normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", field_name)
+        normalized = normalized.replace("-", "_").casefold()
+        parts = set(normalized.split("_"))
+        is_model_or_provider_pin = normalized in {"model", "provider"} or (
+            parts.intersection({"model", "provider"})
+            and parts.intersection({"id", "pin", "selection"})
+        )
+        is_cost_pin = normalized == "cost" or (
+            "cost" in parts and parts.intersection({"pin", "multiplier"})
+        )
+        is_model_cost_multiplier = "multiplier" in parts and parts.intersection(
+            {"model", "provider", "cost"}
+        )
+        if is_model_or_provider_pin or is_cost_pin or is_model_cost_multiplier:
+            fields.append(field_name)
+    return fields
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    (
+        "model",
+        "provider",
+        "cost",
+        "model_multiplier",
+        "cost_multiplier",
+        "model_cost_multiplier",
+        "cost_model_multiplier",
+        "token_cost_multiplier",
+        "model_id",
+        "provider_id",
+        "model_pin",
+        "provider_pin",
+        "cost_pin",
+    ),
+)
+def test_frontmatter_pin_detector_finds_host_selection_fields(field_name: str) -> None:
+    assert _pinned_frontmatter_fields(f"{field_name}: pinned-value") == [field_name]
+
+
+def test_frontmatter_pin_detector_ignores_nested_role_metadata() -> None:
+    frontmatter = "role_tier: light\nmodel_tier: reasoning\nruntime:\n  model: inherited\n  cost_multiplier: inherited"
+
+    assert _pinned_frontmatter_fields(frontmatter) == []
+
+
+# ── Agent metadata stays host-selected while tier roles remain explicit ────────
+
+@pytest.mark.parametrize("filename", TIERED_AGENT_FILES)
+def test_tiered_agent_exists(filename: str) -> None:
     path = AGENTS_DIR / filename
     assert path.exists(), f"Missing tiered agent file: {path}"
 
 
-@pytest.mark.parametrize("filename,expected_model", list(TIERED_AGENT_MODELS.items()))
-def test_tiered_agent_has_model_frontmatter(filename: str, expected_model: str) -> None:
+@pytest.mark.parametrize("filename", TIERED_AGENT_FILES)
+def test_tiered_agent_leaves_model_selection_to_the_host(filename: str) -> None:
     path = AGENTS_DIR / filename
     text = _read(path)
     fm = _frontmatter(text)
     assert fm, f"No YAML frontmatter in {filename}"
-    match = re.search(r"^model:\s*(.+)\s*$", fm, re.MULTILINE)
-    assert match, f"{filename} frontmatter missing 'model:' field"
-    actual = match.group(1).strip().strip('"').strip("'")
-    assert actual == expected_model, (
-        f"{filename}: expected model '{expected_model}', got '{actual}'"
-    )
+    assert _pinned_frontmatter_fields(fm) == [], filename
 
 
-@pytest.mark.parametrize("filename,expected_model", list(TIERED_AGENT_MODELS.items()))
-def test_tiered_agent_has_description(filename: str, expected_model: str) -> None:
+def test_all_workspace_agent_definitions_leave_model_selection_to_the_host() -> None:
+    agent_files = sorted(AGENTS_DIR.rglob("*.agent.md"))
+    assert agent_files, f"No agent definitions found under {AGENTS_DIR}"
+
+    violations = {
+        str(path.relative_to(AGENTS_DIR)): _pinned_frontmatter_fields(
+            _frontmatter(_read(path))
+        )
+        for path in agent_files
+        if _pinned_frontmatter_fields(_frontmatter(_read(path)))
+    }
+
+    assert not violations, f"Agent frontmatter contains host-selection pins: {violations}"
+
+
+@pytest.mark.parametrize("filename", TIERED_AGENT_FILES)
+def test_tiered_agent_has_description(filename: str) -> None:
     path = AGENTS_DIR / filename
     text = _read(path)
     fm = _frontmatter(text)
@@ -336,7 +389,8 @@ def test_light_architecture_reviewer_preserves_standard_hard_gates() -> None:
     path = AGENTS_DIR / "⊕workspace-architecture-reviewer-light.agent.md"
     assert path.exists()
     text = _read(path)
-    assert "model: claude-haiku-4-5" in text
+    assert not re.search(r"^model\s*:", _frontmatter(text), re.MULTILINE)
+    assert "LIGHT tier" in text
     assert "STALE" in text and "MISSING" in text
     assert "do not modify any `.mmd` file" in text.lower()
     assert "hard gates" in text.lower()

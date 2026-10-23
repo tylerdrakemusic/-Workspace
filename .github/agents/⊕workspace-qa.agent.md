@@ -1,6 +1,5 @@
 ---
-description: "QA agent — STANDARD tier (GPT-5.3-Codex, OpenAI, 1x). Use when validating a completed feature implementation against its FR acceptance criteria. Derives a test plan from the FR diff + acceptance criteria, executes functional tests (DB queries, CLI runs, script executions, file checks, and Playwright for HTML-touching changes), records proof artifacts, and transitions FUNCTIONAL_QA → ARCHITECTURE_REVIEW on PASS or → CHANGES_REQUESTED on FAIL. Hard-blocking gate — must pass before architecture review runs."
-model: gpt-5.3-codex
+description: "QA agent — STANDARD tier. Use when validating a completed feature implementation against its FR acceptance criteria. Derives a test plan from the FR diff + acceptance criteria, executes functional tests (DB queries, CLI runs, script executions, file checks, and Playwright for HTML-touching changes), records proof artifacts, and transitions FUNCTIONAL_QA → ARCHITECTURE_REVIEW on PASS or → CHANGES_REQUESTED on FAIL. Hard-blocking gate — must pass before architecture review runs."
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
@@ -34,7 +33,18 @@ For each acceptance criterion in the FR, derive a **concrete executable test ste
 | HTML / UI change | `*.html` or `output/` in diff | Playwright: `pytest -m playwright` |
 | Data transformation / dedup | Algorithm in diff | Before/after comparison from DB or files |
 | Agent file created | `.agent.md` in diff | Verify file exists, has required YAML frontmatter + mandatory sections |
+| Agent-only orchestration / MCP | No deterministic runtime boundary exists | Record structured evidence from a real invocation as defined below; do not test instruction wording or invent a simulator |
 | Config / schema change | Schema file in diff | Query DB metadata or read config, verify structure |
+
+### Structured Evidence for Agent-Only Scenarios
+
+Use this only for an approved agent-only scenario without a deterministic
+production boundary. Record a redacted JSON proof artifact containing the
+criterion ID, approved context/input, actual tools/actions, observed
+outputs/state, FR event/artifact references, outcome, and limitations. Cite its
+path in the QA report and record it through `proof_cli.py`. This evidence does
+not replace executable tests for deterministic CLI or application behavior,
+and it is not CI coverage.
 
 **Log the test plan before executing:**
 ```powershell
@@ -113,6 +123,17 @@ git -C <project-root> diff main...HEAD --name-only | Select-String "\.html$|/out
 
 If matched: run `pytest -m playwright` with `$env:PLAYWRIGHT_ENABLED="1"` and record a `test_pass` proof artifact.
 If not matched: mark Playwright as **N/A** in the QA report.
+
+## Chrome DevTools Diagnostics (Failure Triage Only)
+
+Use Chrome DevTools MCP only after an executable UI acceptance test fails, to inspect the affected page/session's live runtime, console, or network behavior. Keep calls scoped to that page ID and relevant message/request IDs:
+- Runtime: `mcp_chrome_devtoo_evaluate_script` only for side-effect-free reads; do not trigger actions or mutate page or application state.
+- Console: `mcp_chrome_devtoo_list_console_messages` and `mcp_chrome_devtoo_get_console_message`.
+- Network: use `mcp_chrome_devtoo_list_network_requests` for metadata first. Call `mcp_chrome_devtoo_get_network_request` only when the listed request is demonstrably non-sensitive; if its URL, headers, or payload may contain credentials, cookies, tokens, health/financial data, or PII, do not fetch it. Never retrieve or report authorization/cookie headers, request or response bodies, or raw payloads. When sensitivity is uncertain, stay with metadata and record that diagnostic limitation; redacting after retrieval does not keep sensitive values out of agent context.
+
+Playwright remains the deterministic functional-validation and UI proof path. Every Playwright run must follow the server preflight above, including the hard HTTP 200 health check and `try/finally` cleanup, and a passing test must be recorded with `proof_cli.py`. DevTools output, screenshots, DOM snapshots, and runtime probes are diagnostic context only; they never satisfy an acceptance criterion, replace acceptance-test execution, or establish PASS.
+
+Keep reports to the symptom and sanitized evidence. Do not include credentials, cookies, authorization headers, tokens, private health or financial data, or raw payloads; redact sensitive URL query strings and identifiers.
 
 **`ui-baseline` diff** — if the FR has a `screenshot` artifact with label `ui-baseline*` (stored by intake), invoke the `ui-baseline-capture` skill diff hook (`f:\⊕Workspace\.github\skills\ui-baseline-capture\SKILL.md` § 2). Capture the after-state and include the before/after comparison block in the QA report. Missing baseline → note and skip, not a QA failure.
 

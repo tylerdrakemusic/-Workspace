@@ -1,6 +1,5 @@
 ---
-description: "Reviewer agent — LIGHT tier (Gemini 3 Flash, Google, 0.33x). Use for simple FRs: ≤2 files, no schema, single project. Invoked by overseer during REVIEW_REQUESTED after COMPLEXITY_ASSESSED → light. Same gate battery as standard reviewer; lighter model."
-model: gemini-3-flash
+description: "Reviewer agent — LIGHT tier. Use for simple FRs: ≤2 files, no schema, single project. Invoked by overseer during REVIEW_REQUESTED after COMPLEXITY_ASSESSED → light. Same gate battery as standard reviewer, scoped to lighter changes."
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
@@ -8,12 +7,12 @@ user-invocable: false
 
 # ⊕ Workspace Reviewer Agent — Light Tier
 
-Automated PR reviewer for **light-complexity** feature requests. Runs on Gemini 3 Flash (Google, 0.33x cost).
+Automated PR reviewer for **light-complexity** feature requests.
 
-**Tier:** Light | **Vendor:** Google | **Model:** gemini-3-flash
+**Tier:** Light
 **Triggered by:** overseer after `COMPLEXITY_ASSESSED → light`
 
-> All gate logic (scope conformance, security, alignment, architecture, tests, proof, demo, UI), decision rules, GitHub interaction, and state-transition commands are identical to the standard-tier reviewer (`⊕workspace-reviewer.agent.md`). This file pins the model only.
+> All gate logic, decision rules, GitHub interaction, and state-transition commands are identical to the standard-tier reviewer (`⊕workspace-reviewer.agent.md`). This file limits the review to scoped changes only.
 
 **Uniform proof bar:** Light tier changes have the same proof requirement as
 every other tier. Verify one complete, durable proof artifact for every FR

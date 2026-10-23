@@ -9,9 +9,9 @@ exactly where Tyler acts as the human gateway.
 
 ## Ground Truth
 
-- **Each project is its own GitHub repository.** The five projects (∞Life,
-  ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace) are separate repos under
-  `tylerdrakemusic/*` on GitHub. `f:\` itself is NOT a single repo.
+- **Each project is its own GitHub repository.** All six projects (∞Life,
+  ❤Music, ⟨ψ⟩Quantum, 👁AI-Manifest, ⊕Workspace, ΣCapital) are separate repos
+  under `tylerdrakemusic/*` on GitHub. `f:\` itself is NOT a single repo.
 - **A feature request (FR) is scoped to one or more projects.** Multi-project FRs
   produce **one PR per affected repo**, tracked by a parent FR record.
 - **One code-changing session = one branch = one worktree = one draft PR.**
@@ -79,7 +79,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 |-------|---------|-------|
 | `OPEN` | Tyler filed a request; not yet scoped | ⊕workspace-intake |
 | `TRIAGED` | Scope and proposed acceptance scenarios presented; awaiting Tyler's scope confirmation | ⊕workspace-intake |
-| `BRANCHED` | Isolated branch + worktree + draft PR created per repo after a recorded scope decision and, for behavior-changing FRs, persisted acceptance scenarios. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
+| `BRANCHED` | Isolated branch + worktree created per repo after a recorded scope decision and, for behavior-changing FRs, persisted acceptance scenarios. CI attempts an early draft PR when permissions allow; a recorded permission failure does not block local implementation or review. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
 | `COMPLEXITY_ASSESSED` | Orchestrator runs `complexity_router.py` against the FR diff to select **light / standard / heavy** tier. Routes TDD, QA, and Review to the matching tiered agent. This is a protocol step, not a DB state — it happens within `IN_PROGRESS` setup. See **Complexity Assessment & Tier Routing** section below. | project orchestrator |
 | `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — after COMPLEXITY_ASSESSED, delegate to `⊕workspace-tdd-<tier>` (not the TDD skill directly). The tiered TDD agent loads and follows the full TDD skill protocol. | project orchestrator |
 | `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
@@ -88,7 +88,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 | `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof). Required `test` status check must be green before merge can be attempted. | ⊕workspace-reviewer |
 | `BRANCH_CHECKED_OUT` | Feature branch checked out locally so Tyler can demo/inspect before approving | ⊕workspace-ci |
 | `CHANGES_REQUESTED` | Auto-review or Tyler requested fixes | ⊕workspace-reviewer / Tyler |
-| `TYLER_APPROVED` | Tyler approved the PR | Tyler |
+| `TYLER_APPROVED` | Tyler gave one final approval for the linked PR set; CI may merge each eligible repository PR only after its required checks and cost gate pass. | Tyler |
 | `MERGED` | PR merged to default branch; cycle timer closed | ⊕workspace-ci |
 | `SOAKING` | Feature is live on main, awaiting Tyler's post-merge "confirmed in solution" signoff. FR is still visible in the portal FR panel so Tyler can exercise the feature before accepting it. | Tyler (gate) / ⊕workspace-ci (transition recorder) |
 | `SIGNED_OFF` | Tyler confirmed the feature is present and working on main. Final human gateway. | Tyler |
@@ -124,7 +124,7 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
   (public repos) or fail review (∞Life).
 - `--no-verify` on ∞Life pushes requires Tyler's explicit per-task approval.
 
-## Tyler's Gateways (ONLY places humans act)
+## Tyler's Gateways and CI Handoff
 
 
 1. **Open** — Tyler files the FR in plain language (chat, or a GitHub issue).
@@ -133,11 +133,13 @@ Python 3.11, 10-min timeout). The required status check is named **`test`**.
 
 2. **Approve scope** — After `TRIAGED`, Tyler confirms scope + acceptance
    criteria before any branch is cut. *Agents MUST wait here.*
-3. **Approve PR** — After `AUTO_REVIEWED` passes AND the branch has been
-   checked out locally (`BRANCH_CHECKED_OUT`), Tyler reviews the automated
-   report **plus the live running feature** and either approves or requests changes.
-4. **Approve merge** — Tyler initiates the merge (or authorizes the CI agent
-   to merge on his behalf for a specific FR).
+3. **Approve the linked PR set** — After `AUTO_REVIEWED` passes and the
+  branches have been checked out locally (`BRANCH_CHECKED_OUT`), Tyler reviews
+    the automated report **plus the live running feature** and either gives
+    final approval for the linked PR set or requests changes.
+4. **CI merge handoff** — The approval in step 3 authorizes CI to merge each
+    eligible repository PR only after its required checks and cost gate pass;
+    no second merge approval is requested.
 5. **Post-soak signoff** — After `MERGED` the FR enters `SOAKING`. The feature
    is live on `main`; Tyler exercises it in the real solution for as long as
    he wants. When he is satisfied the feature is actually present and working
@@ -228,6 +230,73 @@ Summary: intake starts `perf_cli` run on FR open; every state transition adds an
 4. Max concurrent `IN_PROGRESS` FRs: **3** (matches agent fan-out cap).
    Additional FRs sit in `TRIAGED` queue.
 
+Repository cardinality is explicit: a single-repository FR gets one branch and
+one PR in that repository; a multi-repository FR gets one branch and one PR per
+affected repository. The final approval covers the complete linked PR set;
+required checks and cost gates remain per repository.
+
+## Technical Readiness Contract
+
+Business lifecycle states are not technical prerequisites. In particular,
+`SOAKING` is a post-merge business signoff state and is **not a technical
+blocker**: an unrelated FR in `SOAKING`, or merely appearing in `list --active`,
+does not prevent implementation from starting.
+
+Only an explicit technical prerequisite identified in approved scope or
+canonical FR/TODO dependency evidence, a same-repository branch/worktree
+conflict on overlapping files, or a failed required gate blocks the affected
+work. A blocker must name its prerequisite or conflict and the work it blocks;
+do not infer one from another FR's state, priority, project, or soak period.
+Scope approval remains required before branching. A failed gate blocks only
+the progression that gate owns, not unrelated work.
+
+The parent-join rule remains a separate finality gate: missing required child
+TODO evidence blocks `TYLER_APPROVED`, `MERGED`, `SOAKING`, and `SIGNED_OFF` as
+defined above, but does not block implementation or the technical review states
+that the parent-join contract explicitly permits.
+
+## Autonomous Local Progression
+
+After scope approval is persisted and the FR reaches `BRANCHED`, the
+coordinator checks only the technical prerequisites described above. Once they
+are satisfied, implementation proceeds through the normal project test suite,
+functional QA, architecture review, and automated review without additional
+operator checkpoints. A failed required gate blocks only the work that depends
+on it.
+
+Create a draft PR early enough for remote CI to run alongside local validation
+when repository permissions allow it. A PR-creation permission failure is
+recorded and escalated, but does not stop local tests, QA, architecture review,
+or local automated review. Without a PR, report local review results as local;
+do not claim a GitHub review or a remote CI result.
+
+Repair findings that are feasible and within approved scope, then rerun the
+affected checks and review. Keep the accepted `acceptance_criteria` unchanged.
+When a review finding adds behavior beyond those scenarios, record that added
+behavior separately and attach its tests and evidence; do not silently amend the
+approved scenarios.
+
+Escalate a genuinely blocking decision involving new paid services, repository
+permissions, safety or privacy, or an irreducible blocker. The text request is
+authoritative. Optional repository voice is permitted only for such a decision:
+use a stable decision ID, call the injected AI-Manifest MCP
+`start_streaming_tts`, poll `streaming_tts_status` within its bound, and call
+`cancel_streaming_tts` on timeout, cancellation, or interrupted cleanup. Voice
+failure is fail-open and never changes workflow state. Do not use direct
+ElevenLabs calls, audio artifacts, arbitrary MCP/SQL, ordinary status narration,
+or the durable voice queue. See `repository-voice.instructions.md`.
+
+## Final PR-Set Approval
+
+After all linked PRs pass local implementation, normal tests, functional QA,
+architecture review, and automated review, Tyler's one final approval covers
+the complete linked PR set. Persist it as `TYLER_APPROVED`; that state
+authorizes CI to merge each eligible repository PR after that repository's
+required checks and the FR cost gate pass. CI must not request a second merge
+approval. A failed or pending check or cost gate keeps that repository PR
+ineligible and is reported without weakening the gate. Scope approval before
+branching and post-soak signoff after merge remain separate required gates.
+
 ## Branch Naming
 
 ```
@@ -305,25 +374,38 @@ gates.
 2. ⊕workspace-intake: triage, open FR in `fr_ledgers.db` via `fr_cli.py open`, ask Tyler to confirm scope
 3. Tyler: "approved"  ← GATEWAY
 4. ⊕workspace-intake: record typed `SCOPE_APPROVED:` decision; persist approved Given/When/Then criteria while still TRIAGED when behavior changes; exempt requests skip criteria persistence
-5. ⊕workspace-intake → ⊕workspace-ci: create branches + worktrees + draft PRs for A and B
-6. ⊕workspace-ci: records BRANCHED state, returns PR URLs
+5. ⊕workspace-intake → ⊕workspace-ci: create branches + worktrees and attempt
+  early draft PRs when repository permissions allow. Record and escalate a
+  permission failure without blocking local validation.
+6. ⊕workspace-ci: records BRANCHED state and returns available PR URLs plus
+  any explicit permission blocker
 7. ⊕workspace-intake → ⊕workspace-overseer: route implementation
 8. ⊕workspace-overseer → project orchestrators (A and B in parallel): implement
-9. Orchestrators: push commits to their branches; when done, mark PR ready
-10. ⊕workspace-overseer → ⊕workspace-reviewer: auto-review both PRs
-11. ⊕workspace-reviewer: posts review comments, sets AUTO_REVIEWED or CHANGES_REQUESTED
-12. ⊕workspace-ci: checks out the feature branch(es) locally in their worktree paths
+9. Orchestrators: run each project's normal test suite, then complete
+   functional QA and architecture review without routine operator checkpoints.
+10. ⊕workspace-overseer: route automated review after local gates pass; if a
+  draft PR is unavailable, route local-only review and report it as such.
+11. Orchestrators: repair feasible in-scope findings, preserve approved
+  scenarios, record review-added behavior separately with tests/evidence, and
+  rerun affected gates until they pass or a defined blocker remains.
+12. ⊕workspace-reviewer: record review results; use GitHub review only when a
+  PR exists. Set AUTO_REVIEWED or CHANGES_REQUESTED only for an existing PR
+  with matching proof; local-only review is reported as such.
+13. ⊕workspace-ci: checks out the feature branch(es) locally in their worktree paths
     so Tyler can run demos and inspect proof artifacts. Sets BRANCH_CHECKED_OUT.
   Notifies Tyler: "Branch checked out at F:\worktrees\<fr-id>\<project> — ready to demo."
-13. Tyler: reviews the automated report AND the live feature  ← GATEWAY
-14. Tyler: "merge"  ← GATEWAY
-15. ⊕workspace-ci: merge PRs, delete branches + worktrees, update state via
+14. Tyler: reviews the automated report AND the live feature, then gives one
+    final approval for the linked PR set  ← GATEWAY
+15. ⊕workspace-ci: waits for each repository's required checks and cost gate,
+    then merges each eligible PR under the step-14 approval. No second merge
+    approval is requested.
+16. ⊕workspace-ci: records merge time and updates state via
     `fr_cli.py update-state <FR-ID> MERGED` and `fr_cli.py update-state <FR-ID> SOAKING`.
     Records `Merged at` in the FR record. FR remains visible on
     the portal FR panel with "Soaking for Xd Yh" badge.
-16. Tyler: exercises the feature on main for as long as he wants.
-17. Tyler: "signed off on FR-<ID>"  ← GATEWAY (post-soak)
-18. ⊕workspace-ci: updates state via `fr_cli.py update-state <FR-ID> SIGNED_OFF` and
+17. Tyler: exercises the feature on main for as long as he wants.
+18. Tyler: "signed off on FR-<ID>"  ← GATEWAY (post-soak)
+19. ⊕workspace-ci: updates state via `fr_cli.py update-state <FR-ID> SIGNED_OFF` and
     `fr_cli.py update-state <FR-ID> ARCHIVED`.
     FR drops off active portal panel; FR record persists in `fr_ledgers.db`.
 ```
@@ -366,7 +448,7 @@ stale-only inventory without successful preflight, unverifiable benchmark
 evidence, and failed provider-health gates are fail-closed conditions. Scoped
 overrides must carry a reason and must not edit agent YAML frontmatter.
 
-Before starting implementation (`IN_PROGRESS`), the project orchestrator **must** assess the FR's complexity and select the appropriate model tier. This ensures TDD, QA, and Review agents run on models matched to the task's difficulty and cost budget.
+Before starting implementation (`IN_PROGRESS`), the project orchestrator **must** assess the FR's complexity and select the appropriate role tier. The tier determines the TDD, QA, and review responsibilities; the host selects the runtime model and provider.
 
 ### Tier Selection
 
@@ -393,13 +475,13 @@ C:\G\python.exe f:\⊕Workspace\src\utils\complexity_router.py `
 
 Any single heavy signal → **heavy**. All light conditions met → **light**. Otherwise → **standard**.
 
-### Model Matrix
+### Role-Tier Routing
 
-| Tier | Cost | TDD agent (Anthropic) | QA agent (OpenAI) | Review agent (Google) |
-|------|------|-----------------------|-------------------|-----------------------|
-| **light** | 0.33x | `⊕workspace-tdd-light` (Claude Haiku 4.5) | `⊕workspace-qa-light` (GPT-5.4 mini) | `⊕workspace-reviewer-light` (Gemini 3 Flash) |
-| **standard** | 1x | `⊕workspace-tdd-standard` (Claude Sonnet 4.6) | `⊕workspace-qa` (GPT-5.3-Codex) | `⊕workspace-reviewer` (Gemini 2.5 Pro) |
-| **heavy** | premium | `⊕workspace-tdd-heavy` (Claude Opus 4.8) | `⊕workspace-qa-heavy` (GPT-5.5) | `⊕workspace-reviewer-heavy` (Gemini 3.1 Pro) |
+| Tier | TDD role | QA role | Review role |
+|------|----------|---------|-------------|
+| **light** | `⊕workspace-tdd-light` | `⊕workspace-qa-light` | `⊕workspace-reviewer-light` |
+| **standard** | `⊕workspace-tdd-standard` | `⊕workspace-qa` | `⊕workspace-reviewer` |
+| **heavy** | `⊕workspace-tdd-heavy` | `⊕workspace-qa-heavy` | `⊕workspace-reviewer-heavy` |
 
 ### Routing Protocol
 

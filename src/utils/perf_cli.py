@@ -116,7 +116,13 @@ def cmd_list() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="⊕Workspace perf CLI")
+    parser = argparse.ArgumentParser(
+        description="⊕Workspace perf CLI",
+        epilog=(
+            "Agent contract: start/end own timing records; report/list inspect "
+            "them. Record FR linkage through fr_cli.py."
+        ),
+    )
     sub = parser.add_subparsers(dest="cmd")
 
     p_start = sub.add_parser("start")

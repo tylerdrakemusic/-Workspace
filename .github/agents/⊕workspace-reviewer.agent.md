@@ -1,6 +1,5 @@
 ---
-description: "Reviewer agent — STANDARD tier (Gemini 2.5 Pro, Google, 1x). Use to run an automated PR review for any feature request that has reached REVIEW_REQUESTED state. Combines alignment, security, test results, and proof-in-the-pudding artifacts into a single review comment. Posts APPROVE / REQUEST_CHANGES / COMMENT back to GitHub. Runs before Tyler's final approval gateway."
-model: gemini-2.5-pro
+description: "Reviewer agent — STANDARD tier. Use to run an automated PR review for any feature request that has reached REVIEW_REQUESTED state. Combines alignment, security, test results, and proof-in-the-pudding artifacts into a single structured COMMENT with a textual decision. Runs before Tyler's final approval gateway."
 user-invocable: false
 ---
 <!-- inherits: f:\⊕Workspace\.github\instructions\feature-request-flow.instructions.md -->
@@ -43,6 +42,23 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 **Gate 7: UI Validation (HARD BLOCK when HTML in diff)** — if any `*.html` or `output/**` modified, a Playwright proof artifact (`test_pass` or `command_output`) recorded by `⊕workspace-qa` must exist in `proof_cli.py`. Playwright execution is `⊕workspace-qa`'s responsibility — do not re-run it here. If proof artifact absent → REQUEST_CHANGES: "Gate 7 failed — Playwright proof missing; re-run `⊕workspace-qa`." Gate is N/A if no HTML in diff.
 
+## Local Review When PR Creation Is Blocked
+
+If repository permissions prevent a PR from existing, do not stop local review.
+Review that repository's feature-branch diff against its base using the same
+scope, security, alignment, architecture, test, QA, proof, demo, and UI gates.
+Write a local review report, record the permission failure and report artifact
+in the FR ledger, and return feasible in-scope findings to the overseer for
+repair and re-review. For a multi-repository FR, review available PRs normally
+and review only the unavailable repositories locally.
+
+Label every such result local-only. Do not post a GitHub review, claim remote CI
+passed, or record the FR as `AUTO_REVIEWED` for an unavailable PR. Continue
+local QA/review while the permission blocker is escalated. The final approval
+request must wait until the complete linked PR set exists and has review
+evidence; local review does not authorize merging or replace a required remote
+check.
+
 ## Decision Logic
 - All gates pass → `APPROVE`
 - Any HIGH security finding OR failing test OR scope drift OR missing proof → `REQUEST_CHANGES`
@@ -50,7 +66,13 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 - Minor nits only → `COMMENT`, Tyler decides
 
 ## GitHub Interaction
-`mcp_github_pull_request_review_write` with `event`: `APPROVE` | `REQUEST_CHANGES` | `COMMENT`. Post ONE top-level review per PR.
+The GitHub MCP authenticates as the PR author for these repositories, so GitHub
+rejects native `APPROVE` and `REQUEST_CHANGES` reviews on that author's own PR.
+Always call `mcp_github_pull_request_review_write` with `event: COMMENT` and put
+the verdict in the review body as `**Decision:** APPROVE | REQUEST_CHANGES |
+COMMENT`. The structured verdict and canonical FR state transition are
+authoritative; never rely on GitHub's native review state. Post ONE top-level
+review per PR.
 
 ## Review Comment Template
 ```markdown

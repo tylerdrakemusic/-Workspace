@@ -12,11 +12,12 @@ Apply this workflow to feature requests processed by `.github/skills/new-fr/SKIL
 ## Implementation Contract
 
 - Treat every approved Given/When/Then scenario as an implementation contract. Do not weaken, omit, or silently reinterpret an approved outcome.
-- For each behavior-changing FR, implement its approved scenarios as executable `.feature` scenarios under `tests/features/`, with pytest-bdd step bindings under `tests/bdd/`.
-- Bind steps to the real production behavior at a user- or system-visible boundary. Isolate databases and external effects. Tests exercise behavior, never instruction wording or a fabricated intake classifier.
-- Run the ordinary project pytest command. Every required feature scenario must be discovered and pass in that run before `FUNCTIONAL_QA`.
+- For deterministic production behavior, implement the approved scenario as an executable `.feature` under `tests/features/` with pytest-bdd bindings under `tests/bdd/`. Bind steps to the real user- or system-visible boundary, isolate databases and external effects, and include the scenario in the ordinary pytest/CI collection path.
+- Some approved scenarios describe agent-only orchestration or MCP behavior for which the repository has no deterministic runtime boundary. For those scenarios only, do not invent a fake classifier, simulator, or instruction-text test. QA may instead record structured evidence from an actual workflow invocation: criterion ID, approved context/input, actual tools/actions, sanitized observable outputs/state, FR event/artifact references, outcome, and limitations.
+- Keep deterministic tests and agent-only evidence distinct. A structured QA artifact cannot substitute for an executable test where production behavior has a real deterministic boundary, and it cannot be described as a CI result.
+- Run the ordinary project pytest command. Every required executable feature scenario must be discovered and pass in that run before `FUNCTIONAL_QA`; each agent-only scenario must have its structured real-invocation evidence recorded during QA.
 - Extend project test configuration only when a focused executable scenario demonstrates a discovery gap. Keep BDD scenarios in the normal pytest/CI collection path.
 
 ## CI Contract
 
-CI validates BDD scenarios through the project's normal pytest suite. A separate command that runs feature files outside normal collection does not satisfy this gate.
+CI validates deterministic BDD scenarios through the project's normal pytest suite. A separate command that runs feature files outside normal collection does not satisfy this gate. Agent-only structured QA evidence is recorded as QA proof and is not represented as automated CI coverage.
