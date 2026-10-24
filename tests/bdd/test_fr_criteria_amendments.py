@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from pytest_bdd import given, scenarios, then, when
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -109,7 +110,7 @@ def active_fr_with_approved_criteria_amendment(tmp_path: Path) -> dict[str, obje
             (
                 "FR-TEST-001",
                 "2026-10-22T00:01:30Z",
-                "Tyler",
+                "⊕workspace-intake",
                 "decision",
                 approval_summary,
             ),
@@ -200,7 +201,7 @@ def verify_criteria_amendment_snapshot(
     assert json.loads(snapshots[0]["content"]) == amendment_case["old_criteria"]
     assert snapshots[0]["content_hash"] == amendment_case["current_hash"]
     assert snapshots[0]["created_at"] == "2026-10-22T00:02:00Z"
-    assert snapshots[0]["approver"] == "Tyler"
+    assert snapshots[0]["approver"] == "⊕workspace-intake"
     assert snapshots[0]["event_id"] == 3
     assert snapshots[0]["rationale"] == amendment_case["rationale"]
 
@@ -518,25 +519,7 @@ def verify_terminal_amendments_are_refused(
 
 @given("a new current criteria version", target_fixture="versioned_amendment_case")
 def successfully_amended_fr(tmp_path: Path) -> dict[str, object]:
-    case = active_fr_with_approved_criteria_amendment(tmp_path)
-    assert _run_cli(case, _amendment_arguments(case)) == 0
-    assert _run_cli(
-        case,
-        [
-            "record-event",
-            "FR-TEST-001",
-            "⊕workspace-intake",
-            "decision",
-            "SCOPE_APPROVED: behavior-changing | fresh approval for version 2",
-        ],
-    ) == 0
-    with sqlite3.connect(str(case["database_path"])) as connection:
-        current = connection.execute(
-            "SELECT criteria_version, criteria_hash FROM feature_requests WHERE id=?",
-            ("FR-TEST-001",),
-        ).fetchone()
-    case["current_version"] = current[0]
-    case["current_hash"] = current[1]
+    case = _new_current_version_case(tmp_path, "successful-amendment")
     case["old_hash"] = _criteria_hash(case["old_criteria"])
     return case
 
@@ -663,15 +646,15 @@ def triaged_fr_for_intake_and_repair(tmp_path: Path) -> dict[str, object]:
             {"given": "an approved intake scope", "when": "the FR is registered", "then": "the GWT criteria are stored"}
         ]
     }
-    case["repair_criteria"] = {
-        "acceptance_criteria": [
-            {"given": "a corrected intake scope", "when": "the FR is repaired", "then": "the corrected GWT criteria are stored"}
-        ]
-    }
+    case["repair_criteria"] = dict(case["intake_criteria"])
     with sqlite3.connect(str(case["database_path"])) as connection:
         connection.execute(
             "UPDATE feature_requests SET state='TRIAGED', acceptance_criteria=NULL, "
             "criteria_version=0, criteria_hash=NULL WHERE id=?",
+            ("FR-TEST-001",),
+        )
+        connection.execute(
+            "DELETE FROM fr_events WHERE fr_id=? AND summary LIKE 'SCOPE_AMENDMENT_APPROVED:%'",
             ("FR-TEST-001",),
         )
     return case
@@ -743,3 +726,249 @@ def verify_intake_and_repair_compatibility(intake_repair_case: dict[str, object]
         "note",
         "Initial acceptance criteria recorded after scope approval; BRANCHED remains a separate state transition",
     )
+
+
+def _new_current_version_case(tmp_path: Path, name: str) -> dict[str, object]:
+    case = _new_amendment_case(tmp_path, name)
+    assert _run_cli(case, _amendment_arguments(case)) == 0
+    assert _run_cli(
+        case,
+        [
+            "record-event",
+            "FR-TEST-001",
+            "⊕workspace-intake",
+            "decision",
+            "SCOPE_APPROVED: behavior-changing | fresh approval for version 2",
+        ],
+    ) == 0
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        current = connection.execute(
+            "SELECT criteria_version, criteria_hash FROM feature_requests WHERE id=?",
+            ("FR-TEST-001",),
+        ).fetchone()
+    case["current_version"], case["current_hash"] = current
+    case["old_hash"] = _criteria_hash(case["old_criteria"])
+    return case
+
+
+def test_amendment_rejects_approval_from_non_intake_actor(tmp_path: Path) -> None:
+    case = _new_amendment_case(tmp_path, "non-intake-approval")
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        connection.execute(
+            "UPDATE fr_events SET agent=? WHERE fr_id=? AND summary LIKE 'SCOPE_AMENDMENT_APPROVED:%'",
+            ("Tyler", "FR-TEST-001"),
+        )
+
+    before = _ledger_snapshot(case)
+    exit_code = _run_cli(case, _amendment_arguments(case))
+
+    assert exit_code != 0
+    assert _ledger_snapshot(case) == before
+
+
+def test_repair_allows_correction_when_gwt_scenarios_are_unchanged(
+    tmp_path: Path,
+) -> None:
+    case = _new_amendment_case(tmp_path, "correction-only-repair")
+    stored_representation = json.dumps(
+        case["old_criteria"], ensure_ascii=False, indent=2
+    )
+    normalized_representation = json.dumps(
+        case["old_criteria"],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    assert stored_representation != normalized_representation
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        connection.execute(
+            "UPDATE feature_requests SET acceptance_criteria=? WHERE id=?",
+            (stored_representation, "FR-TEST-001"),
+        )
+
+    exit_code = _run_cli(
+        case,
+        [
+            "set-acceptance-criteria",
+            "FR-TEST-001",
+            normalized_representation,
+            "--source",
+            "repair",
+        ],
+    )
+
+    assert exit_code == 0
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        current = connection.execute(
+            "SELECT acceptance_criteria, criteria_version FROM feature_requests WHERE id=?",
+            ("FR-TEST-001",),
+        ).fetchone()
+    assert json.loads(current[0]) == case["old_criteria"]
+    assert current[1] == 1
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "remove_required_todos",
+        "alter_required_todos",
+        "remove_unknown_metadata",
+        "alter_unknown_metadata",
+    ),
+)
+def test_repair_rejects_semantic_changes_outside_gwt(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    mutation: str,
+) -> None:
+    case = _new_amendment_case(tmp_path, f"repair-{mutation}")
+    current = json.loads(json.dumps(case["old_criteria"], ensure_ascii=False))
+    current["unknown_metadata"] = {"policy": "preserve"}
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        connection.execute(
+            "UPDATE feature_requests SET acceptance_criteria=?, criteria_hash=? WHERE id=?",
+            (
+                json.dumps(current, ensure_ascii=False),
+                _criteria_hash(current),
+                "FR-TEST-001",
+            ),
+        )
+
+    changed = json.loads(json.dumps(current, ensure_ascii=False))
+    if mutation == "remove_required_todos":
+        changed["parent_join"].pop("required_todos")
+    elif mutation == "alter_required_todos":
+        changed["parent_join"]["required_todos"] = ["todo-2"]
+    elif mutation == "remove_unknown_metadata":
+        changed.pop("unknown_metadata")
+    else:
+        changed["unknown_metadata"]["policy"] = "changed"
+    before = _ledger_snapshot(case)
+
+    exit_code = _run_cli(
+        case,
+        [
+            "set-acceptance-criteria",
+            "FR-TEST-001",
+            json.dumps(changed, ensure_ascii=False),
+            "--source",
+            "repair",
+        ],
+    )
+
+    assert exit_code != 0
+    assert "amend-acceptance-criteria" in capsys.readouterr().err
+    assert _ledger_snapshot(case) == before
+
+
+def test_repair_rejects_gwt_changes_and_directs_to_amendment(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    case = _new_amendment_case(tmp_path, "behavior-changing-repair")
+    changed = {
+        **case["old_criteria"],
+        "acceptance_criteria": [
+            {"given": "a changed scope", "when": "repair runs", "then": "behavior changes"}
+        ],
+    }
+    before = _ledger_snapshot(case)
+
+    exit_code = _run_cli(
+        case,
+        [
+            "set-acceptance-criteria",
+            "FR-TEST-001",
+            json.dumps(changed, ensure_ascii=False),
+            "--source",
+            "repair",
+        ],
+    )
+
+    assert exit_code != 0
+    assert "amend-acceptance-criteria" in capsys.readouterr().err
+    assert _ledger_snapshot(case) == before
+
+
+def test_repair_cannot_introduce_gwt_scenarios_on_legacy_criteria(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    case = _new_amendment_case(tmp_path, "legacy-gwt-repair")
+    legacy_criteria = {"parent_join": {"required_todos": ["todo-1"]}}
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        connection.execute(
+            "UPDATE feature_requests SET acceptance_criteria=? WHERE id=?",
+            (json.dumps(legacy_criteria), "FR-TEST-001"),
+        )
+    before = _ledger_snapshot(case)
+
+    exit_code = _run_cli(
+        case,
+        [
+            "set-acceptance-criteria",
+            "FR-TEST-001",
+            json.dumps(case["proposed_criteria"], ensure_ascii=False),
+            "--source",
+            "repair",
+        ],
+    )
+
+    assert exit_code != 0
+    assert "amend-acceptance-criteria" in capsys.readouterr().err
+    assert _ledger_snapshot(case) == before
+
+
+@pytest.mark.parametrize(
+    "missing_type",
+    (
+        "implementation-evidence",
+        "functional-qa-evidence",
+        "architecture-review-evidence",
+        "automated-review-evidence",
+    ),
+)
+def test_tyler_approved_requires_each_current_version_artifact(
+    tmp_path: Path, missing_type: str
+) -> None:
+    case = _new_current_version_case(tmp_path, f"missing-{missing_type}")
+    required_evidence = (
+        ("implementation-evidence", "IMPLEMENTATION:PASS"),
+        ("functional-qa-evidence", "FUNCTIONAL_QA:PASS"),
+        ("architecture-review-evidence", "ARCHITECTURE_REVIEW:PASS"),
+        ("automated-review-evidence", "AUTO_REVIEW:PASS"),
+    )
+    for artifact_type, label in required_evidence:
+        if artifact_type != missing_type:
+            assert _record_criteria_artifact(
+                case,
+                artifact_type,
+                label,
+                version=case["current_version"],
+                criteria_hash=str(case["current_hash"]),
+            ) == 0
+
+    exit_code = _run_cli(case, ["update-state", "FR-TEST-001", "TYLER_APPROVED"])
+
+    assert exit_code != 0
+    assert _ledger_snapshot(case)[0] == "TRIAGED"
+
+
+def test_tyler_approved_accepts_all_current_version_artifacts(tmp_path: Path) -> None:
+    case = _new_current_version_case(tmp_path, "complete-current-evidence")
+    for artifact_type, label in (
+        ("implementation-evidence", "IMPLEMENTATION:PASS"),
+        ("functional-qa-evidence", "FUNCTIONAL_QA:PASS"),
+        ("architecture-review-evidence", "ARCHITECTURE_REVIEW:PASS"),
+        ("automated-review-evidence", "AUTO_REVIEW:PASS"),
+    ):
+        assert _record_criteria_artifact(
+            case,
+            artifact_type,
+            label,
+            version=case["current_version"],
+            criteria_hash=str(case["current_hash"]),
+        ) == 0
+
+    exit_code = _run_cli(case, ["update-state", "FR-TEST-001", "TYLER_APPROVED"])
+
+    assert exit_code == 0
+    assert _ledger_snapshot(case)[0] == "TYLER_APPROVED"

@@ -574,6 +574,22 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         print("[fr_cli] repair source can only replace existing acceptance criteria", file=sys.stderr)
         conn.close()
         sys.exit(2)
+    if source == "repair":
+        try:
+            current_criteria = json.loads(fr["acceptance_criteria"] or "null")
+        except json.JSONDecodeError:
+            current_criteria = None
+        if (
+            not isinstance(current_criteria, dict)
+            or criteria_content_hash(current_criteria) != criteria_content_hash(criteria)
+        ):
+            print(
+                "[fr_cli] repair source is correction-only; semantic criteria changes "
+                "must use amend-acceptance-criteria",
+                file=sys.stderr,
+            )
+            conn.close()
+            sys.exit(2)
     if source == "intake" and _scope_approval_classification(conn, args.fr_id) != "behavior-changing":
         print(
             "[fr_cli] intake acceptance criteria require a SCOPE_APPROVED: behavior-changing decision",
@@ -699,7 +715,7 @@ def cmd_amend_acceptance_criteria(args: argparse.Namespace) -> None:
     if (
         approval is None
         or not approval_match
-        or not approval["agent"].strip()
+        or approval["agent"] != "⊕workspace-intake"
         or int(approval_match.group(1)) != args.expected_version
         or approval_match.group(2) != expected_hash
         or approval_match.group(3).strip() != rationale
@@ -888,6 +904,12 @@ def cmd_update_state(args: argparse.Namespace) -> None:
         "FUNCTIONAL_QA": ("implementation-evidence", "functional-qa-evidence"),
         "REVIEW_REQUESTED": ("architecture-review-evidence",),
         "AUTO_REVIEWED": ("automated-review-evidence",),
+        "TYLER_APPROVED": (
+            "implementation-evidence",
+            "functional-qa-evidence",
+            "architecture-review-evidence",
+            "automated-review-evidence",
+        ),
     }.get(args.new_state.upper(), ())
     if required_criteria_evidence and not _has_all_current_criteria_evidence(
         conn, args.fr_id, required_criteria_evidence

@@ -855,7 +855,11 @@ class TestMergedGate:
     def test_set_acceptance_criteria_updates_field_and_records_audit_event(self, tmp_path) -> None:
         db_path = tmp_path / "fr.db"
         conn = _make_conn(db_path)
-        criteria = {"acceptance_criteria": ["criterion one", "criterion two"]}
+        stored_criteria = conn.execute(
+            "SELECT acceptance_criteria FROM feature_requests WHERE id=?",
+            ("FR-TEST-001",),
+        ).fetchone()[0]
+        criteria = json.loads(stored_criteria)
 
         with patch.object(fr_cli, "_conn", return_value=conn), patch.object(
             fr_cli, "_now", return_value="2026-08-25T17:00:00Z"
