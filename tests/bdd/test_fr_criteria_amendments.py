@@ -728,6 +728,78 @@ def verify_intake_and_repair_compatibility(intake_repair_case: dict[str, object]
     )
 
 
+def test_intake_rejects_missing_criteria_when_version_history_exists(
+    tmp_path: Path,
+) -> None:
+    case = _new_amendment_case(
+        tmp_path, "intake-reentry-with-history", state="TRIAGED"
+    )
+    database_path = case["database_path"]
+    proposed_criteria = case["proposed_criteria"]
+    with sqlite3.connect(str(database_path)) as connection:
+        connection.execute(
+            "UPDATE feature_requests SET acceptance_criteria=NULL, "
+            "criteria_version=2, criteria_hash=? WHERE id=?",
+            ("f" * 64, "FR-TEST-001"),
+        )
+        connection.execute(
+            "INSERT INTO fr_criteria_history "
+            "(fr_id, version, content, content_hash, created_at, approver, event_id, rationale) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                "FR-TEST-001",
+                1,
+                json.dumps(case["old_criteria"], ensure_ascii=False),
+                case["current_hash"],
+                "2026-10-22T00:02:00Z",
+                "⊕workspace-intake",
+                3,
+                "prior approved amendment",
+            ),
+        )
+        connection.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "FR-TEST-001",
+                "2026-10-22T00:03:00Z",
+                "⊕workspace-intake",
+                "decision",
+                "SCOPE_APPROVED: behavior-changing | fresh re-entry approval",
+            ),
+        )
+
+    def snapshot() -> tuple[tuple[object, ...], tuple[tuple[object, ...], ...]]:
+        with sqlite3.connect(str(database_path)) as connection:
+            current = connection.execute(
+                "SELECT acceptance_criteria, criteria_version, criteria_hash "
+                "FROM feature_requests WHERE id=?",
+                ("FR-TEST-001",),
+            ).fetchone()
+            history = connection.execute(
+                "SELECT version, content, content_hash, created_at, approver, event_id, rationale "
+                "FROM fr_criteria_history WHERE fr_id=? ORDER BY version",
+                ("FR-TEST-001",),
+            ).fetchall()
+        return current, tuple(history)
+
+    before = snapshot()
+    exit_code = _run_cli(
+        case,
+        [
+            "set-acceptance-criteria",
+            "FR-TEST-001",
+            json.dumps(proposed_criteria, ensure_ascii=False),
+            "--source",
+            "intake",
+        ],
+    )
+    after = snapshot()
+
+    assert exit_code != 0
+    assert after == before
+
+
 def _new_current_version_case(tmp_path: Path, name: str) -> dict[str, object]:
     case = _new_amendment_case(tmp_path, name)
     assert _run_cli(case, _amendment_arguments(case)) == 0

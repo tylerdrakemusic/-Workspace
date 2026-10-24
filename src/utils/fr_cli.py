@@ -570,6 +570,22 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         print("[fr_cli] intake acceptance criteria already exist; use repair source to replace them", file=sys.stderr)
         conn.close()
         sys.exit(2)
+    if source == "intake":
+        current_version = fr["criteria_version"] if "criteria_version" in fr.keys() else 0
+        history_table = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='fr_criteria_history'"
+        ).fetchone()
+        has_history = history_table is not None and conn.execute(
+            "SELECT 1 FROM fr_criteria_history WHERE fr_id=? LIMIT 1",
+            (args.fr_id,),
+        ).fetchone() is not None
+        if current_version not in (None, 0) or has_history:
+            print(
+                "[fr_cli] intake acceptance criteria cannot be re-entered after a criteria version or history exists",
+                file=sys.stderr,
+            )
+            conn.close()
+            sys.exit(2)
     if source == "repair" and fr["acceptance_criteria"] is None:
         print("[fr_cli] repair source can only replace existing acceptance criteria", file=sys.stderr)
         conn.close()
