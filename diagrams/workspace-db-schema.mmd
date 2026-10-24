@@ -91,6 +91,52 @@ erDiagram
         text created_at
     }
 
+    %% FR criteria are stored in the separate fr_ledgers.db database.
+    %% Source: src/utils/init_fr_db.py and src/utils/migrate_fr_criteria_versions.py
+    FEATURE_REQUESTS ||--o{ FR_EVENTS : records
+    FEATURE_REQUESTS ||--o{ FR_ARTIFACTS : records
+    FEATURE_REQUESTS ||--o{ FR_CRITERIA_HISTORY : versions
+    FR_EVENTS ||--o{ FR_CRITERIA_HISTORY : approves
+    FEATURE_REQUESTS {
+        text id PK
+        text state
+        text acceptance_criteria "current JSON"
+        integer criteria_version "NOT NULL DEFAULT 0"
+        text criteria_hash "nullable SHA-256"
+    }
+    FR_EVENTS {
+        integer id PK
+        text fr_id FK
+        text ts
+        text agent
+        text event_type
+        text summary
+        text details
+        text next_action
+    }
+    FR_ARTIFACTS {
+        integer id PK
+        text fr_id FK
+        text ts
+        text artifact_type
+        text label
+        text path_or_url
+        integer criteria_version "nullable evidence binding"
+        text criteria_hash "nullable evidence binding"
+    }
+    %% UNIQUE(fr_id, version); database triggers reject UPDATE and DELETE.
+    FR_CRITERIA_HISTORY {
+        integer id PK
+        text fr_id FK
+        integer version "UNIQUE with fr_id"
+        text content
+        text content_hash
+        text created_at
+        text approver
+        integer event_id FK
+        text rationale
+    }
+
     %% Decision metadata: current JSON is replaced atomically; history is append-only.
     TODOS ||--o{ TODO_DECISION_METADATA_HISTORY : assessments
     TODOS {

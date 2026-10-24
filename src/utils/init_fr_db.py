@@ -136,6 +136,8 @@ def init_db() -> None:
     _migrate_target_quarter(conn)
     from migrate_fr_cost import migrate as _migrate_cost  # noqa: E402
     _migrate_cost(conn)
+    from migrate_fr_criteria_versions import migrate as _migrate_criteria_versions  # noqa: E402
+    _migrate_criteria_versions(conn)
 
     conn.close()
 

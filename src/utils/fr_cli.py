@@ -28,6 +28,7 @@ from typing import Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from init_fr_db import get_connection, init_db
+from migrate_fr_criteria_versions import criteria_content_hash
 from fr_cost_lifecycle import capture_baseline, finalize_cost, reconcile_cost
 from copilot_cost import DEFAULT_SNAPSHOT_PATH, refresh_pricing
 from parent_join_gates import (
@@ -49,6 +50,14 @@ ACTIVE_STATES = {
 _ARCH_REVIEW_PASS_RE = re.compile(
     r"ARCHITECTURE_REVIEW\s*[:\-]?\s*(PASS_WITH_UPDATES|PASS)\b", re.IGNORECASE
 )
+_AMENDMENT_APPROVAL_RE = re.compile(
+    r"^SCOPE_AMENDMENT_APPROVED:\s*version=(\d+)\s+hash=([0-9a-f]{64})\s*\|\s*(.+)$"
+)
+_AMENDABLE_STATES = {
+    "OPEN", "TRIAGED", "BRANCHED", "IN_PROGRESS", "FUNCTIONAL_QA",
+    "ARCHITECTURE_REVIEW", "REVIEW_REQUESTED", "AUTO_REVIEWED",
+    "BRANCH_CHECKED_OUT", "CHANGES_REQUESTED", "TYLER_APPROVED",
+}
 _PARENT_JOIN_REQUIRED_RE = re.compile(r"PARENT_JOIN\s*[:\-]?\s*REQUIRED\b", re.IGNORECASE)
 _PARENT_JOIN_PASS_RE = re.compile(
     r"PARENT_JOIN\s*[:\-]?\s*(PASS|COMPLETE)\b", re.IGNORECASE
@@ -189,8 +198,52 @@ def _has_architecture_review_pass(conn, fr_id: str) -> bool:
     for row in rows:
         summary = row["summary"] if hasattr(row, "keys") else row[0]
         if summary and _ARCH_REVIEW_PASS_RE.search(summary):
-            return True
+            return _has_current_criteria_evidence(
+                conn, fr_id, "architecture-review-evidence", _ARCH_REVIEW_PASS_RE
+            )
     return False
+
+
+_CRITERIA_EVIDENCE = {
+    "implementation-evidence": re.compile(r"^IMPLEMENTATION:PASS\b", re.IGNORECASE),
+    "functional-qa-evidence": re.compile(r"^FUNCTIONAL_QA:PASS\b", re.IGNORECASE),
+    "architecture-review-evidence": _ARCH_REVIEW_PASS_RE,
+    "automated-review-evidence": re.compile(r"^AUTO_REVIEW:PASS\b", re.IGNORECASE),
+}
+
+
+def _has_current_criteria_evidence(
+    conn, fr_id: str, artifact_type: str, label_pattern: re.Pattern[str]
+) -> bool:
+    columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(feature_requests)")
+    }
+    if not {"criteria_version", "criteria_hash"}.issubset(columns):
+        return True
+    fr = conn.execute(
+        "SELECT criteria_version, criteria_hash FROM feature_requests WHERE id=?",
+        (fr_id,),
+    ).fetchone()
+    if not fr or not fr["criteria_version"] or fr["criteria_version"] <= 1:
+        return True
+    artifact_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(fr_artifacts)")
+    }
+    if not {"criteria_version", "criteria_hash"}.issubset(artifact_columns):
+        return False
+    rows = conn.execute(
+        "SELECT label FROM fr_artifacts WHERE fr_id=? AND artifact_type=? "
+        "AND criteria_version=? AND criteria_hash=?",
+        (fr_id, artifact_type, fr["criteria_version"], fr["criteria_hash"]),
+    ).fetchall()
+    return any(label_pattern.search(row["label"] or "") for row in rows)
+
+
+def _has_all_current_criteria_evidence(conn, fr_id: str, artifact_types: tuple[str, ...]) -> bool:
+    return all(
+        _has_current_criteria_evidence(conn, fr_id, artifact_type, _CRITERIA_EVIDENCE[artifact_type])
+        for artifact_type in artifact_types
+    )
 
 
 def _parent_join_gate(conn, fr_id: str) -> bool:
@@ -493,8 +546,16 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         sys.exit(2)
 
     conn = _conn()
+    feature_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(feature_requests)")
+    }
+    criteria_identity_columns = {"criteria_version", "criteria_hash"}.issubset(
+        feature_columns
+    )
+    identity_select = ", criteria_version, criteria_hash" if criteria_identity_columns else ""
     fr = conn.execute(
-        "SELECT id, state, acceptance_criteria FROM feature_requests WHERE id=?",
+        "SELECT id, state, acceptance_criteria" + identity_select
+        + " FROM feature_requests WHERE id=?",
         (args.fr_id,),
     ).fetchone()
     if not fr:
@@ -509,10 +570,42 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         print("[fr_cli] intake acceptance criteria already exist; use repair source to replace them", file=sys.stderr)
         conn.close()
         sys.exit(2)
+    if source == "intake":
+        current_version = fr["criteria_version"] if "criteria_version" in fr.keys() else 0
+        history_table = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='fr_criteria_history'"
+        ).fetchone()
+        has_history = history_table is not None and conn.execute(
+            "SELECT 1 FROM fr_criteria_history WHERE fr_id=? LIMIT 1",
+            (args.fr_id,),
+        ).fetchone() is not None
+        if current_version not in (None, 0) or has_history:
+            print(
+                "[fr_cli] intake acceptance criteria cannot be re-entered after a criteria version or history exists",
+                file=sys.stderr,
+            )
+            conn.close()
+            sys.exit(2)
     if source == "repair" and fr["acceptance_criteria"] is None:
         print("[fr_cli] repair source can only replace existing acceptance criteria", file=sys.stderr)
         conn.close()
         sys.exit(2)
+    if source == "repair":
+        try:
+            current_criteria = json.loads(fr["acceptance_criteria"] or "null")
+        except json.JSONDecodeError:
+            current_criteria = None
+        if (
+            not isinstance(current_criteria, dict)
+            or criteria_content_hash(current_criteria) != criteria_content_hash(criteria)
+        ):
+            print(
+                "[fr_cli] repair source is correction-only; semantic criteria changes "
+                "must use amend-acceptance-criteria",
+                file=sys.stderr,
+            )
+            conn.close()
+            sys.exit(2)
     if source == "intake" and _scope_approval_classification(conn, args.fr_id) != "behavior-changing":
         print(
             "[fr_cli] intake acceptance criteria require a SCOPE_APPROVED: behavior-changing decision",
@@ -521,10 +614,26 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
         conn.close()
         sys.exit(2)
     now = _now()
-    conn.execute(
-        "UPDATE feature_requests SET acceptance_criteria=?, updated_at=? WHERE id=?",
-        (json.dumps(criteria, ensure_ascii=False), now, args.fr_id),
-    )
+    serialized_criteria = json.dumps(criteria, ensure_ascii=False)
+    if "criteria_version" in fr.keys() and "criteria_hash" in fr.keys():
+        current_version = fr["criteria_version"] or 0
+        version = 1 if current_version < 1 else current_version
+        conn.execute(
+            "UPDATE feature_requests SET acceptance_criteria=?, criteria_version=?, criteria_hash=?, "
+            "updated_at=? WHERE id=?",
+            (
+                serialized_criteria,
+                version,
+                criteria_content_hash(criteria),
+                now,
+                args.fr_id,
+            ),
+        )
+    else:
+        conn.execute(
+            "UPDATE feature_requests SET acceptance_criteria=?, updated_at=? WHERE id=?",
+            (serialized_criteria, now, args.fr_id),
+        )
     conn.execute(
         "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?,?,?,?,?)",
         (
@@ -542,6 +651,159 @@ def cmd_set_acceptance_criteria(args: argparse.Namespace) -> None:
     conn.commit()
     conn.close()
     print(f"[fr_cli] acceptance criteria updated → {args.fr_id}")
+
+
+def _reject_criteria_amendment(
+    conn, message: str, exit_code: int = 2
+) -> None:
+    conn.rollback()
+    conn.close()
+    print(f"[fr_cli] {message}", file=sys.stderr)
+    sys.exit(exit_code)
+
+
+def cmd_amend_acceptance_criteria(args: argparse.Namespace) -> None:
+    try:
+        proposed = json.loads(args.criteria_json)
+    except json.JSONDecodeError as exc:
+        print(f"[fr_cli] invalid acceptance criteria JSON: {exc}", file=sys.stderr)
+        sys.exit(2)
+    if (
+        not isinstance(proposed, dict)
+        or set(proposed) != {"acceptance_criteria"}
+        or not _has_valid_gwt_acceptance_criteria(proposed)
+    ):
+        print(
+            "[fr_cli] amendment must contain only non-empty Given/When/Then acceptance criteria",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    rationale = args.rationale.strip()
+    expected_hash = args.expected_hash.lower()
+    if args.expected_version < 1 or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+        print("[fr_cli] expected criteria version/hash is malformed", file=sys.stderr)
+        sys.exit(2)
+    if not rationale:
+        print("[fr_cli] amendment rationale must not be empty", file=sys.stderr)
+        sys.exit(2)
+
+    conn = _conn()
+    conn.execute("BEGIN IMMEDIATE")
+    fr = conn.execute(
+        "SELECT id, state, acceptance_criteria, criteria_version, criteria_hash "
+        "FROM feature_requests WHERE id=?",
+        (args.fr_id,),
+    ).fetchone()
+    if not fr:
+        _reject_criteria_amendment(conn, f"FR not found: {args.fr_id}", 1)
+    state = str(fr["state"]).upper()
+    if state not in _AMENDABLE_STATES:
+        _reject_criteria_amendment(
+            conn, f"criteria amendments are not allowed from FR state {state}"
+        )
+    try:
+        current_criteria = json.loads(fr["acceptance_criteria"] or "null")
+    except json.JSONDecodeError:
+        current_criteria = None
+    if not _has_valid_gwt_acceptance_criteria(current_criteria):
+        _reject_criteria_amendment(
+            conn, "current acceptance criteria must contain non-empty Given/When/Then scenarios"
+        )
+
+    current_version = fr["criteria_version"]
+    current_hash = criteria_content_hash(current_criteria)
+    if (
+        current_version != args.expected_version
+        or fr["criteria_hash"] != current_hash
+        or current_hash != expected_hash
+    ):
+        _reject_criteria_amendment(
+            conn, "expected criteria version/hash does not match the current criteria"
+        )
+
+    approval = conn.execute(
+        "SELECT id, agent, summary FROM fr_events WHERE fr_id=? AND event_type='decision' "
+        "ORDER BY ts DESC, id DESC LIMIT 1",
+        (args.fr_id,),
+    ).fetchone()
+    approval_match = _AMENDMENT_APPROVAL_RE.fullmatch(approval["summary"] or "") if approval else None
+    if (
+        approval is None
+        or not approval_match
+        or approval["agent"] != "⊕workspace-intake"
+        or int(approval_match.group(1)) != args.expected_version
+        or approval_match.group(2) != expected_hash
+        or approval_match.group(3).strip() != rationale
+    ):
+        _reject_criteria_amendment(
+            conn,
+            "latest decision must be a matching SCOPE_AMENDMENT_APPROVED with version, hash, and rationale",
+        )
+
+    updated_criteria = dict(current_criteria)
+    updated_criteria["acceptance_criteria"] = proposed["acceptance_criteria"]
+    updated_content = json.dumps(updated_criteria, ensure_ascii=False)
+    updated_hash = criteria_content_hash(updated_criteria)
+    updated_version = current_version + 1
+    now = _now()
+    conn.execute(
+        "INSERT INTO fr_criteria_history "
+        "(fr_id, version, content, content_hash, created_at, approver, event_id, rationale) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            args.fr_id,
+            current_version,
+            fr["acceptance_criteria"],
+            current_hash,
+            now,
+            approval["agent"],
+            approval["id"],
+            rationale,
+        ),
+    )
+    cursor = conn.execute(
+        "UPDATE feature_requests SET acceptance_criteria=?, criteria_version=?, criteria_hash=?, "
+        "state='TRIAGED', updated_at=? WHERE id=? AND criteria_version=? AND criteria_hash=?",
+        (
+            updated_content,
+            updated_version,
+            updated_hash,
+            now,
+            args.fr_id,
+            current_version,
+            current_hash,
+        ),
+    )
+    if cursor.rowcount != 1:
+        _reject_criteria_amendment(
+            conn, "criteria changed during amendment; retry with the current version/hash"
+        )
+    conn.execute(
+        "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?, ?, ?, ?, ?)",
+        (
+            args.fr_id,
+            now,
+            "⊕workspace-intake",
+            "decision",
+            f"SCOPE_AMENDMENT_APPLIED: version={current_version} -> {updated_version}; "
+            f"approval_event_id={approval['id']} | {rationale}",
+        ),
+    )
+    if state != "TRIAGED":
+        conn.execute(
+            "INSERT INTO fr_events (fr_id, ts, agent, event_type, summary) VALUES (?, ?, ?, ?, ?)",
+            (
+                args.fr_id,
+                now,
+                "⊕workspace-intake",
+                "state-transition",
+                f"{state} -> TRIAGED after criteria amendment to version {updated_version}",
+            ),
+        )
+    conn.commit()
+    conn.close()
+    print(f"[fr_cli] acceptance criteria amended → {args.fr_id} (version {updated_version})")
 
 
 def cmd_set_parent_branch(args: argparse.Namespace) -> None:
@@ -654,6 +916,26 @@ def cmd_update_state(args: argparse.Namespace) -> None:
         )
         conn.close()
         sys.exit(1)
+    required_criteria_evidence = {
+        "FUNCTIONAL_QA": ("implementation-evidence", "functional-qa-evidence"),
+        "REVIEW_REQUESTED": ("architecture-review-evidence",),
+        "AUTO_REVIEWED": ("automated-review-evidence",),
+        "TYLER_APPROVED": (
+            "implementation-evidence",
+            "functional-qa-evidence",
+            "architecture-review-evidence",
+            "automated-review-evidence",
+        ),
+    }.get(args.new_state.upper(), ())
+    if required_criteria_evidence and not _has_all_current_criteria_evidence(
+        conn, args.fr_id, required_criteria_evidence
+    ):
+        conn.close()
+        print(
+            f"[fr_cli] BLOCKED: {args.new_state.upper()} requires evidence bound to the current criteria version/hash",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     now = _now()
     if args.new_state.upper() == "MERGED" and getattr(args, "cost_model", None) and getattr(args, "cost_usage_json", None):
         usage = _parse_usage(args.cost_usage_json)
@@ -712,11 +994,45 @@ def cmd_record_artifact(args: argparse.Namespace) -> None:
         print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
         conn.close()
         sys.exit(1)
+    criteria_version = getattr(args, "criteria_version", None)
+    criteria_hash = getattr(args, "criteria_hash", None)
+    if (criteria_version is None) != (criteria_hash is None):
+        conn.close()
+        print("[fr_cli] criteria evidence requires both version and hash", file=sys.stderr)
+        sys.exit(2)
     now = _now()
-    conn.execute(
-        "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label, path_or_url) VALUES (?,?,?,?,?)",
-        (args.fr_id, now, args.artifact_type, args.label, getattr(args, "path", None)),
-    )
+    if criteria_version is not None:
+        current = conn.execute(
+            "SELECT criteria_version, criteria_hash FROM feature_requests WHERE id=?",
+            (args.fr_id,),
+        ).fetchone()
+        if (
+            not current
+            or current["criteria_version"] != criteria_version
+            or current["criteria_hash"] != criteria_hash.lower()
+        ):
+            conn.close()
+            print("[fr_cli] artifact criteria version/hash does not match the current FR criteria", file=sys.stderr)
+            sys.exit(2)
+        conn.execute(
+            "INSERT INTO fr_artifacts "
+            "(fr_id, ts, artifact_type, label, path_or_url, criteria_version, criteria_hash) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                args.fr_id,
+                now,
+                args.artifact_type,
+                args.label,
+                getattr(args, "path", None),
+                criteria_version,
+                criteria_hash.lower(),
+            ),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO fr_artifacts (fr_id, ts, artifact_type, label, path_or_url) VALUES (?,?,?,?,?)",
+            (args.fr_id, now, args.artifact_type, args.label, getattr(args, "path", None)),
+        )
     conn.execute("UPDATE feature_requests SET updated_at=? WHERE id=?", (now, args.fr_id))
     conn.commit()
     conn.close()
@@ -898,6 +1214,36 @@ def cmd_get(args: argparse.Namespace) -> None:
             )
 
 
+def cmd_criteria_history(args: argparse.Namespace) -> None:
+    conn = _conn()
+    fr = conn.execute(
+        "SELECT acceptance_criteria, criteria_version, criteria_hash "
+        "FROM feature_requests WHERE id=?",
+        (args.fr_id,),
+    ).fetchone()
+    if not fr:
+        print(f"[fr_cli] FR not found: {args.fr_id}", file=sys.stderr)
+        conn.close()
+        sys.exit(1)
+    history = conn.execute(
+        "SELECT version, content, content_hash, created_at, approver, event_id, rationale "
+        "FROM fr_criteria_history WHERE fr_id=? ORDER BY version",
+        (args.fr_id,),
+    ).fetchall()
+    print(f"Current criteria version: {fr['criteria_version']}")
+    print(f"Current criteria hash: {fr['criteria_hash']}")
+    print(f"Current criteria: {fr['acceptance_criteria']}")
+    print(f"Criteria history ({len(history)}):")
+    for snapshot in history:
+        print(
+            f"  version={snapshot['version']} hash={snapshot['content_hash']} "
+            f"created_at={snapshot['created_at']} approver={snapshot['approver']} "
+            f"event_id={snapshot['event_id']} rationale={snapshot['rationale']}"
+        )
+        print(f"    content={snapshot['content']}")
+    conn.close()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -945,6 +1291,16 @@ def main() -> None:
         help="intake requires a TRIAGED FR with a SCOPE_APPROVED: behavior-changing decision",
     )
 
+    p_amend = sub.add_parser(
+        "amend-acceptance-criteria",
+        help="Amend GWT criteria after a recorded approval and matching version/hash",
+    )
+    p_amend.add_argument("fr_id")
+    p_amend.add_argument("criteria_json")
+    p_amend.add_argument("--expected-version", required=True, type=int)
+    p_amend.add_argument("--expected-hash", required=True)
+    p_amend.add_argument("--rationale", required=True)
+
     # set-parent-branch
     p_branch = sub.add_parser(
         "set-parent-branch", help="Backfill parent branch metadata without a state transition"
@@ -975,6 +1331,8 @@ def main() -> None:
     p_art.add_argument("artifact_type")
     p_art.add_argument("label")
     p_art.add_argument("--path", default=None)
+    p_art.add_argument("--criteria-version", dest="criteria_version", type=int, default=None)
+    p_art.add_argument("--criteria-hash", dest="criteria_hash", default=None)
 
     # cost lifecycle
     p_base = sub.add_parser("cost-baseline", help="Capture the current-session AI usage baseline")
@@ -1013,6 +1371,11 @@ def main() -> None:
     p_get = sub.add_parser("get", help="Show full FR detail including events")
     p_get.add_argument("fr_id")
 
+    p_history = sub.add_parser(
+        "criteria-history", help="Show current criteria identity and immutable prior versions"
+    )
+    p_history.add_argument("fr_id")
+
     args = parser.parse_args()
     if not args.cmd:
         parser.print_help()
@@ -1022,6 +1385,7 @@ def main() -> None:
         "open": cmd_open,
         "record-event": cmd_record_event,
         "set-acceptance-criteria": cmd_set_acceptance_criteria,
+        "amend-acceptance-criteria": cmd_amend_acceptance_criteria,
         "set-parent-branch": cmd_set_parent_branch,
         "update-state": cmd_update_state,
         "record-artifact": cmd_record_artifact,
@@ -1032,6 +1396,7 @@ def main() -> None:
         "close": cmd_close,
         "list": cmd_list,
         "get": cmd_get,
+        "criteria-history": cmd_criteria_history,
     }
     dispatch[args.cmd](args)
 
