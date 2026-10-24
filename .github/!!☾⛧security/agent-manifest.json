@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-24T02:40:58.112951+00:00",
+  "generated_at": "2026-10-22T14:55:25.983042+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -68,7 +68,7 @@
     ".github/skills/spec-driven-development/SKILL.md": "061194bbf0997aae06171a3a4d1d881dfcbbe276d4361fba21aacfb18cd16cc8",
     ".github/skills/tdd/SKILL.md": "4bc06151a5d5c37af1ee5613dc07b67ecf18b2e22e6a26e8538a3a995a8aafca",
     ".github/skills/teach/SKILL.md": "99c077a05f66237c95392dc440974e9d144c1267309e978c7a18aaf065ce7fd3",
-    ".github/skills/test-driven-development/SKILL.md": "64b03fce4aee5a97a93160cea8111f3ba13a17b7c001db4bd5836d67fd10705d",
+    ".github/skills/test-driven-development/SKILL.md": "fad42344223013a560fb3f2a9ad40509c5ea569595bab7f064dbf13149e9c53f",
     ".github/skills/thinking-and-docs/before-building/SKILL.md": "bd61c644579d9951512e57b5a51096fdc4a27d6915a9eb6f3dad745205dfe1ce",
     ".github/skills/thinking-and-docs/decisions/SKILL.md": "f62504f361558732105385fc5d46352100a26d6c93212e074cf2e499b2b79dfd",
     ".github/skills/to-questionnaire/SKILL.md": "65d8f34c1e8089119ec07d1b22e5ede592ebacadbf4d2e76de7007af2450414d",
