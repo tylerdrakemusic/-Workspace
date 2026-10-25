@@ -17,6 +17,8 @@ graph LR
     ManifestOrch --> Rosters
     CapitalOrch --> Rosters
     Overseer -.->|inherits| Instr[["Shared + project-base instructions<br/>see instructions view"]]:::instr
+    LifeWorkoutPlanner(["∞life-workout-planner"]):::life
+    LifeOrch -->|routes workout planning| LifeWorkoutPlanner
 
     class Tyler tyler
 
