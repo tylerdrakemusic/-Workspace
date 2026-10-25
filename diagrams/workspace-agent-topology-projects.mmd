@@ -10,6 +10,7 @@ graph LR
         LifeDA(["∞life-data-analytics"])
         LifeResearch(["∞life-research"])
         LifeRisk(["∞life-risk"])
+        LifeWorkoutPlanner(["∞life-workout-planner"])
     end
 
     subgraph MUSIC["❤Music"]
@@ -39,13 +40,13 @@ graph LR
     Overseer --> LifeOrch & MusicOrch & QuantumOrch & ManifestOrch & CapitalOrch
 
     %% ── Project routing ──
-    LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk
+    LifeOrch --> LifeBrainstorm & LifeBudget & LifeDA & LifeResearch & LifeRisk & LifeWorkoutPlanner
     MusicOrch --> MusicCatalog & MusicPerf & MusicProd & MusicSig & MusicGuitarTech
     QuantumOrch --> QuantumResearch
     CapitalOrch --> CapitalResearch
 
     %% ── Class assignments ──
-    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk life
+    class LifeOrch,LifeBrainstorm,LifeBudget,LifeDA,LifeResearch,LifeRisk,LifeWorkoutPlanner life
     class MusicOrch,MusicCatalog,MusicPerf,MusicProd,MusicSig,MusicGuitarTech music
     class QuantumOrch,QuantumResearch quantum
     class ManifestOrch manifest
