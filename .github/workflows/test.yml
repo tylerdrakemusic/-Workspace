@@ -112,121 +112,48 @@ jobs:
           pip install pytest
 
       - name: Install pinned Ruff for advisory checks
+        env:
+          RUFF_ADVISORY_LOCAL_DIR: tmp/ruff-advisory-local/${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          if python -m pip install ruff==0.17.2; then
-            echo "Pinned Ruff installed."
+          install_status=1
+          if mkdir -p "$RUFF_ADVISORY_LOCAL_DIR"; then
+            if python -m pip install --disable-pip-version-check ruff==0.17.2 \
+                > "$RUFF_ADVISORY_LOCAL_DIR/ruff-install.stdout.txt" 2> "$RUFF_ADVISORY_LOCAL_DIR/ruff-install.stderr.txt"; then
+              install_status=0
+              echo "Pinned Ruff installed."
+            else
+              install_status=$?
+              echo "Pinned Ruff install failed; the advisory report will show a generic tool error." >&2
+            fi
           else
-            echo "Ruff installation failed; the advisory report will record the tool error." >&2
+            echo "Ruff installation skipped; local advisory output is unavailable." >&2
           fi
+          if [[ -d "$RUFF_ADVISORY_LOCAL_DIR" ]]; then
+            printf '%s\n' "$install_status" > "$RUFF_ADVISORY_LOCAL_DIR/ruff-install.exit-code" || echo "Could not persist Ruff install status locally." >&2
+          fi
+          printf 'RUFF_INSTALL_EXIT_CODE=%s\n' "$install_status" >> "$GITHUB_ENV" || echo "Could not export Ruff install status; CI remains advisory." >&2
 
       - name: Run advisory Ruff checks
         if: always()
+        env:
+          RUFF_ADVISORY_LOCAL_DIR: tmp/ruff-advisory-local/${{ github.run_id }}-${{ github.run_attempt }}
+          RUFF_ADVISORY_CI_DIR: tmp/ruff-advisory-ci/${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          python - <<'PY' || echo "Advisory report generation failed; CI remains advisory." >&2
-          import hashlib
-          import json
-          import os
-          import re
-          import subprocess
-          import sys
-          import time
-          from pathlib import Path
-
-          output_dir = Path("tmp/ruff-advisory")
-          output_dir.mkdir(parents=True, exist_ok=True)
-
-          def run(command):
-              try:
-                  result = subprocess.run(command, capture_output=True, text=True, check=False)
-                  return {
-                      "returncode": result.returncode,
-                      "stdout": result.stdout,
-                      "stderr": result.stderr,
-                  }
-              except OSError as error:
-                  return {"returncode": None, "stdout": "", "stderr": str(error)}
-
-          ruff_command = [sys.executable, "-m", "ruff"]
-          version_result = run(ruff_command + ["--version"])
-          started = time.perf_counter()
-          check_result = run(ruff_command + ["check", "--output-format=json", "."])
-          format_result = run(ruff_command + ["format", "--check", "--diff", "."])
-          elapsed_seconds = round(time.perf_counter() - started, 3)
-
-          try:
-            check_data = json.loads(check_result["stdout"])
-            check_findings = len(check_data) if isinstance(check_data, list) else None
-          except json.JSONDecodeError:
-            check_findings = None
-
-          format_output = format_result["stdout"] + format_result["stderr"]
-          format_match = re.search(r"(?m)^(\d+) files? would be reformatted\b", format_output)
-          format_findings = (
-              int(format_match.group(1))
-              if format_match
-              else 0 if format_result["returncode"] == 0 else None
-          )
-          config_path = Path("ruff.toml")
-          config_sha256 = hashlib.sha256(config_path.read_bytes()).hexdigest()
-          commit_result = run(["git", "rev-parse", "HEAD"])
-          report = {
-              "fr_id": "FR-20261025-ruff-advisory-lint-rollout",
-              "repository": os.environ.get("GITHUB_REPOSITORY", "local"),
-              "commit": commit_result["stdout"].strip() or "unavailable",
-              "ruff_version": version_result["stdout"].strip() or "unavailable",
-              "config": {"path": str(config_path), "sha256": config_sha256},
-              "scan_scope": (
-                  "All non-ignored Python .py files under the repository root; "
-                  "Ruff defaults and ruff.toml exclude environments, caches, .worktrees, "
-                  "tmp, and output. Non-Python files, including databases, are not scanned."
-              ),
-              "elapsed_seconds": elapsed_seconds,
-              "finding_counts": {
-                  "ruff_check": check_findings,
-                  "ruff_format": format_findings,
-              },
-              "command_exit_codes": {
-                  "ruff_check": check_result["returncode"],
-                  "ruff_format_check": format_result["returncode"],
-              },
-              "tool_errors": {
-                  "ruff_version": version_result["stderr"].strip() or None,
-                  "ruff_check": check_result["stderr"].strip() or None,
-                  "ruff_format": format_result["stderr"].strip() or None,
-              },
-          }
-
-          (output_dir / "ruff-check.json").write_text(
-              check_result["stdout"], encoding="utf-8"
-          )
-          (output_dir / "ruff-format.txt").write_text(format_output, encoding="utf-8")
-          (output_dir / "summary.json").write_text(
-              json.dumps(report, indent=2) + "\n", encoding="utf-8"
-          )
-
-          check_count = "unavailable" if check_findings is None else str(check_findings)
-          format_count = "unavailable" if format_findings is None else str(format_findings)
-          summary = "\n".join(
-              [
-                  "## FR-20261025-ruff-advisory-lint-rollout: Workspace pilot",
-                  "",
-                  f"- Repository: `{report['repository']}`",
-                  f"- Scanned commit: `{report['commit']}`",
-                  f"- Ruff: `{report['ruff_version']}`",
-                  f"- Config revision: `ruff.toml` SHA-256 `{config_sha256}`",
-                  f"- Scope: {report['scan_scope']}",
-                  f"- Elapsed: {elapsed_seconds:.3f} seconds",
-                  f"- Findings: `ruff check` {check_count}; `ruff format --check` {format_count}",
-                  "- Advisory only: findings and Ruff command errors do not gate CI.",
-                  "",
-              ]
-          )
-          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-          if summary_path:
-            with open(summary_path, "a", encoding="utf-8") as summary_file:
-              summary_file.write(summary)
-          print(summary)
-          PY
+          if mkdir -p "$RUFF_ADVISORY_LOCAL_DIR" "$RUFF_ADVISORY_CI_DIR"; then
+            if python tools/ruff_ci_advisory.py \
+              --config-path ruff.toml \
+              --local-output-dir "$RUFF_ADVISORY_LOCAL_DIR" \
+              --ci-output-dir "$RUFF_ADVISORY_CI_DIR" \
+              --step-summary "$GITHUB_STEP_SUMMARY" \
+              > "$RUFF_ADVISORY_LOCAL_DIR/ruff-advisory-helper.stdout.txt" \
+              2> "$RUFF_ADVISORY_LOCAL_DIR/ruff-advisory-helper.stderr.txt"; then
+              :
+            else
+              echo "Advisory report generation failed; CI remains advisory." >&2
+            fi
+          else
+            echo "Advisory output directories unavailable; CI remains advisory." >&2
+          fi
 
       - name: Audit dependencies
         run: python tools/audit_workspace_requirements.py requirements.txt
@@ -249,6 +176,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ruff-advisory-workspace-${{ github.run_id }}-${{ github.run_attempt }}
-          path: tmp/ruff-advisory/
+          path: tmp/ruff-advisory-ci/${{ github.run_id }}-${{ github.run_attempt }}/summary.json
           if-no-files-found: warn
           retention-days: 30
