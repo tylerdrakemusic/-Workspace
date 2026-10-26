@@ -111,6 +111,50 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest
 
+      - name: Install pinned Ruff for advisory checks
+        env:
+          RUFF_ADVISORY_LOCAL_DIR: tmp/ruff-advisory-local/${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          install_status=1
+          if mkdir -p "$RUFF_ADVISORY_LOCAL_DIR"; then
+            if python -m pip install --disable-pip-version-check ruff==0.17.2 \
+                > "$RUFF_ADVISORY_LOCAL_DIR/ruff-install.stdout.txt" 2> "$RUFF_ADVISORY_LOCAL_DIR/ruff-install.stderr.txt"; then
+              install_status=0
+              echo "Pinned Ruff installed."
+            else
+              install_status=$?
+              echo "Pinned Ruff install failed; the advisory report will show a generic tool error." >&2
+            fi
+          else
+            echo "Ruff installation skipped; local advisory output is unavailable." >&2
+          fi
+          if [[ -d "$RUFF_ADVISORY_LOCAL_DIR" ]]; then
+            printf '%s\n' "$install_status" > "$RUFF_ADVISORY_LOCAL_DIR/ruff-install.exit-code" || echo "Could not persist Ruff install status locally." >&2
+          fi
+          printf 'RUFF_INSTALL_EXIT_CODE=%s\n' "$install_status" >> "$GITHUB_ENV" || echo "Could not export Ruff install status; CI remains advisory." >&2
+
+      - name: Run advisory Ruff checks
+        if: always()
+        env:
+          RUFF_ADVISORY_LOCAL_DIR: tmp/ruff-advisory-local/${{ github.run_id }}-${{ github.run_attempt }}
+          RUFF_ADVISORY_CI_DIR: tmp/ruff-advisory-ci/${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          if mkdir -p "$RUFF_ADVISORY_LOCAL_DIR" "$RUFF_ADVISORY_CI_DIR"; then
+            if python tools/ruff_ci_advisory.py \
+              --config-path ruff.toml \
+              --local-output-dir "$RUFF_ADVISORY_LOCAL_DIR" \
+              --ci-output-dir "$RUFF_ADVISORY_CI_DIR" \
+              --step-summary "$GITHUB_STEP_SUMMARY" \
+              > "$RUFF_ADVISORY_LOCAL_DIR/ruff-advisory-helper.stdout.txt" \
+              2> "$RUFF_ADVISORY_LOCAL_DIR/ruff-advisory-helper.stderr.txt"; then
+              :
+            else
+              echo "Advisory report generation failed; CI remains advisory." >&2
+            fi
+          else
+            echo "Advisory output directories unavailable; CI remains advisory." >&2
+          fi
+
       - name: Audit dependencies
         run: python tools/audit_workspace_requirements.py requirements.txt
 
@@ -126,3 +170,12 @@ jobs:
         with:
           name: pytest-junit
           path: tmp/pytest-junit.xml
+
+      - name: Upload advisory Ruff report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-advisory-workspace-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ruff-advisory-ci/${{ github.run_id }}-${{ github.run_attempt }}/summary.json
+          if-no-files-found: warn
+          retention-days: 30

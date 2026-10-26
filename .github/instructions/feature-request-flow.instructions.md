@@ -264,6 +264,58 @@ functional QA, architecture review, and automated review without additional
 operator checkpoints. A failed required gate blocks only the work that depends
 on it.
 
+### Advisory Ruff Findings
+
+Ruff lint and format results are advisory evidence, not a required status
+check. Preserve existing required checks, including `test`; Ruff findings and
+command exit codes must not gate CI, and CI must not run Ruff autofixes.
+
+- **TDD implementation agents:** Compare Ruff findings with the files changed
+  by the active FR. Correct findings only in those files, keeping each change
+  focused on the finding. Do not edit untouched baseline files or perform
+  repository-wide cleanup; report those findings separately for triage. If a
+  correction would expand approved behavior or scope, report it instead of
+  expanding the FR. Before implementation, run both Ruff checks in the isolated
+  FR worktree with the repository's pinned Ruff version and config:
+  `ruff check --output-format=json .` and `ruff format --check --diff .`.
+  Nonzero exits caused by Ruff findings are expected diagnostic output and do
+  not interrupt the approved implementation or test workflow. Record actual
+  tool errors separately and report them; do not classify them as findings. If
+  the pin is not installed, invoke it in isolation (for example, with `uvx`) without
+  adding runtime dependencies. Save command output and a summary under the
+  ignored `tmp/ruff-advisory-local/`, including repository, HEAD, Ruff version,
+  config hash, scope, elapsed time, findings/counts, exit codes, and tool errors.
+  Include the full `ruff-check.json` diagnostics, `ruff-check.stderr.txt`,
+  `ruff-format.diff.txt` output, `ruff-format.stderr.txt`,
+  `ruff-version.stdout.txt`, `ruff-version.stderr.txt`, and `summary.json` with
+  versions, config hash, repository/HEAD, scope, elapsed time, counts, exit
+  codes, and errors.
+  After changes, rerun both checks over FR-touched Python files; resolve only
+  their findings, never autofix automatically, and leave unrelated baseline
+  files untouched. List unrelated baseline findings and paths separately, and
+  carry the local report path and result in the TDD handoff for QA/review. Local
+  results are agent feedback, not hosted CI: remote CI remains authoritative,
+  and its check and artifact contents must be inspected; upload metadata alone
+  does not prove artifact contents.
+- **QA:** Inspect the TDD local Ruff report directory and findings to verify
+  touched-file versus baseline classification. Separately verify that the
+  hosted required `test` check is green and the advisory Ruff artifact was
+  uploaded. When hosted contents are accessible, verify its repository,
+  commit, Ruff version, configuration revision, scan scope, elapsed time, and
+  finding counts. Report unrelated baseline findings separately from FR
+  results. If hosted artifact contents are inaccessible, state whether the
+  `test` status and upload metadata were verified and that the contents remain
+  unverified; do not infer artifact contents or their metadata from upload
+  metadata alone.
+- **Review:** Verify the required CI `test` evidence and inspect the advisory
+  Ruff artifact or summary when available. Separate findings in untouched
+  baseline files from in-scope findings. Advisory Ruff findings alone do not
+  justify requesting changes or blocking review. Report inaccessible or
+  incomplete artifact contents as an evidence limitation under the existing
+  acceptance criteria and gates. Review the local Ruff report carried in the
+  TDD handoff, classify findings as FR-touched or untouched baseline, and treat
+  its full local JSON/format diff as agent feedback rather than a hosted check.
+
 Create a draft PR early enough for remote CI to run alongside local validation
 when repository permissions allow it. A PR-creation permission failure is
 recorded and escalated, but does not stop local tests, QA, architecture review,

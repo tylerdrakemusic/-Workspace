@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T14:55:25.983042+00:00",
+  "generated_at": "2026-10-25T22:21:00.849479+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 74,
   "files": {
@@ -29,7 +29,7 @@
     ".github/instructions/agent-self-regen.instructions.md": "cbdfcd7dc3ecd1fbc5e1159e26c07916c1d481b1fc2ab3b63993a18e97070c59",
     ".github/instructions/bdd-workflow.instructions.md": "ac3f57f81c5c8f867a41ac7b21b10b12ee32fe59fdc98b130066291a67df83af",
     ".github/instructions/db-api-keys.instructions.md": "de69535095d8a7344ffe31e7e0da0d374aaf226f68af5278834005f2361955ae",
-    ".github/instructions/feature-request-flow.instructions.md": "abea189077fedc81a5f44b04878d168ea2a076e738bd7c3943495534e228cd76",
+    ".github/instructions/feature-request-flow.instructions.md": "cc49d75e5bfe27a98059440a1827ec8fc68637c14c7f70b5dd8e46d9f738b688",
     ".github/instructions/fr-cycle-timer.instructions.md": "6b8af2536c41182a5351153d88b9846a583fd5b5061ad46a2d94c1d2bc1496a9",
     ".github/instructions/hygiene-base.instructions.md": "76da7b6b329c0d290c966f9b87bcf73992717a2bb04551746eaa880d8e38d14c",
     ".github/instructions/orchestrator-cleanup.instructions.md": "c0fc3316e1f755d2753d32272919610aad15e0aa6f5606448bebdbce5af18f27",
