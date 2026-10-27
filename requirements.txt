@@ -6,11 +6,11 @@
 #     which imports src/utils/init_db.py (sqlcipher3 + python-dotenv at module load).
 #   - tests/test_fr_server.py imports src/utils/fr_server.py (stdlib only).
 #
-# pytest is also installed by the workflow's `pip install pytest` step,
-# but pinning here keeps local + CI in sync.
+# pytest-bdd 7.3 depends on pytest fixture-manager internals removed in 9.1.
+# Keep CI and local runs on the compatible pytest 9.0 series.
 
 pip-audit>=2.10.1,<3.0
-pytest>=9.0.3,<10.0
+pytest>=9.0.3,<9.1
 python-dotenv>=1.2.2,<2.0
 sqlcipher3-binary==0.6.0
 httpx>=0.27,<1.0

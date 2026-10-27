@@ -12,7 +12,14 @@ from pytest_bdd import given, scenarios, then, when
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 INSTALLER = PROJECT_ROOT / ".github" / "hooks" / "install-hooks.ps1"
 HOOK_SCRIPTS = PROJECT_ROOT / ".github" / "hooks" / "scripts"
-REPOSITORY_NAMES = ("⊕Workspace", "∞Life", "❤Music", "⟨ψ⟩Quantum", "👁AI-Manifest")
+REPOSITORY_NAMES = (
+    "⊕Workspace",
+    "∞Life",
+    "❤Music",
+    "⟨ψ⟩Quantum",
+    "👁AI-Manifest",
+    "ΣCapital",
+)
 scenarios("workspace_hook_path_resolution.feature")
 
 
@@ -111,7 +118,7 @@ def _configured_hooks(repo_path: Path) -> str | None:
 
 
 @given(
-    "a valid Workspace checkout with the canonical hook directory and five intended repositories",
+    "a valid Workspace checkout with the canonical hook directory and six intended repositories",
     target_fixture="hook_case",
 )
 def valid_workspace_checkout(tmp_path: Path) -> dict[str, Any]:
@@ -123,12 +130,12 @@ def run_hook_installer(hook_case: dict[str, Any]) -> None:
     hook_case["run"] = _run_installer(hook_case)
 
 
-@then("all five repositories use the existing canonical hook directory under that checkout")
+@then("all six repositories use the existing canonical hook directory under that checkout")
 def all_repositories_use_canonical_hooks(hook_case: dict[str, Any]) -> None:
     run = hook_case["run"]
     assert run.returncode == 0, run.stdout + run.stderr
     expected = str(hook_case["canonical_hooks"].resolve())
-    assert len(hook_case["repositories"]) == 5
+    assert len(hook_case["repositories"]) == 6
     for repo_path in hook_case["repositories"].values():
         configured = _configured_hooks(repo_path)
         assert configured is not None
@@ -166,7 +173,7 @@ def invalid_hooks_fail_before_configuration_changes(hook_case: dict[str, Any]) -
 
 
 @given(
-    "the canonical pre-commit hook is installed in the five intended repositories",
+    "the canonical pre-commit hook is installed in the six intended repositories",
     target_fixture="hook_case",
 )
 def installed_canonical_hook(tmp_path: Path) -> dict[str, Any]:

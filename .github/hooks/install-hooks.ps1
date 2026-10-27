@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
-# install-hooks.ps1 — Set core.hooksPath in all 5 workspace repos
+# install-hooks.ps1 — Set core.hooksPath in all 6 workspace repos
 # FR-20260513-hooks-setup
 #
 # Usage: pwsh -File .github\hooks\install-hooks.ps1 (from the Workspace checkout)
 #
 # Resolves the canonical .github/hooks/scripts directory from this checkout
-# and sets core.hooksPath in the five intended workspace repos.
+# and sets core.hooksPath in the six intended workspace repos.
 
 $ErrorActionPreference = "Stop"
 
@@ -23,13 +23,14 @@ $repos = @(
     [PSCustomObject]@{ Name = "∞Life";         Path = "f:\∞Life" },
     [PSCustomObject]@{ Name = "❤Music";        Path = "f:\❤Music" },
     [PSCustomObject]@{ Name = "⟨ψ⟩Quantum";   Path = "f:\⟨ψ⟩Quantum" },
-    [PSCustomObject]@{ Name = "👁AI-Manifest"; Path = "f:\👁AI-Manifest" }
+    [PSCustomObject]@{ Name = "👁AI-Manifest"; Path = "f:\👁AI-Manifest" },
+    [PSCustomObject]@{ Name = "ΣCapital";      Path = "f:\ΣCapital" }
 )
 
 Write-Host ""
 Write-Host "=== install-hooks.ps1 — FR-20260513-hooks-setup ===" -ForegroundColor Cyan
 Write-Host "    Setting core.hooksPath = $HOOKS_PATH"
-Write-Host "    in all 5 workspace repos"
+Write-Host "    in all 6 workspace repos"
 Write-Host ""
 
 $results = @()
