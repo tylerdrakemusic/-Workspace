@@ -17,8 +17,7 @@ graph LR
     Workspace --> Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
     Manifest -.->|"bounded read-only technical-doc allowlist"| Capital[Σ Capital technical docs<br/>parallel-test-execution.md<br/>shared-structured-logging.md<br/>no private financial paths or database access]
     Workspace --> Capital[Σ Capital]
-    Workspace -->|"runs checkout-relative shared hook installer"| HookInstaller[.github/hooks/install-hooks.ps1<br/>resolves shared hooks from this checkout]:::ws
-    HookInstaller -->|"sets core.hooksPath"| Workspace & Life & Music & Quantum & Manifest & Capital
+    Workspace -->|"checkout-relative shared installer sets core.hooksPath in six repos including Workspace"| Workspace & Life & Music & Quantum & Manifest & Capital
     Workspace --> WSDB[(workspace.db<br/>canonical TODO lifecycle storage)]
     Workspace --> WorkspaceCoord[⊕ workspace-coordination MCP<br/>ExecutionLifecycle API · fixed TODO lifecycle allowlist<br/>rejects arbitrary db/sql and generic state setter]
     WorkspaceCoord ==> WSDB
