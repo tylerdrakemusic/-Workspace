@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 import pytest
@@ -200,8 +200,28 @@ def _bash() -> str:
 
 def _git_bash_path(path: Path) -> str:
     resolved = path.resolve()
+    if not resolved.drive:
+        return resolved.as_posix()
     drive = resolved.drive[0].lower()
     return f"/{drive}/" + "/".join(resolved.parts[1:])
+
+
+@pytest.mark.parametrize(
+    ("resolved_path", "expected"),
+    [
+        (PurePosixPath("/home/runner/hooks/pre-commit"), "/home/runner/hooks/pre-commit"),
+        (PureWindowsPath("F:\\workspace\\hooks\\pre-commit"), "/f/workspace/hooks/pre-commit"),
+    ],
+)
+def test_git_bash_path_converts_windows_and_posix_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    resolved_path: PurePosixPath | PureWindowsPath,
+    expected: str,
+) -> None:
+    monkeypatch.setattr(Path, "resolve", lambda _: resolved_path)
+
+    assert _git_bash_path(tmp_path / "pre-commit") == expected
 
 
 @when("the installed pre-commit hook processes staged violations")
