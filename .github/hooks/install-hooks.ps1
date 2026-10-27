@@ -2,17 +2,24 @@
 # install-hooks.ps1 — Set core.hooksPath in all 5 workspace repos
 # FR-20260513-hooks-setup
 #
-# Usage: pwsh f:\⊕Workspace\.github\hooks\install-hooks.ps1
+# Usage: pwsh -File .github\hooks\install-hooks.ps1 (from the Workspace checkout)
 #
-# Sets git config core.hooksPath to f:/.github/hooks/scripts in each repo,
-# pointing all repos at the shared canonical hook directory.
+# Resolves the canonical .github/hooks/scripts directory from this checkout
+# and sets core.hooksPath in the five intended workspace repos.
 
 $ErrorActionPreference = "Stop"
 
-$HOOKS_PATH = "f:/.github/hooks/scripts"
+$WORKSPACE_ROOT = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
+$CANONICAL_HOOKS_DIR = Join-Path $WORKSPACE_ROOT ".github\hooks\scripts"
+if (-not (Test-Path -LiteralPath $CANONICAL_HOOKS_DIR -PathType Container)) {
+    Write-Host "[FAIL] Canonical hook directory is missing or invalid: $CANONICAL_HOOKS_DIR" -ForegroundColor Red
+    exit 1
+}
+
+$HOOKS_PATH = (Resolve-Path -LiteralPath $CANONICAL_HOOKS_DIR).Path.Replace("\", "/")
 
 $repos = @(
-    [PSCustomObject]@{ Name = "⊕Workspace";   Path = "f:\⊕Workspace" },
+    [PSCustomObject]@{ Name = "⊕Workspace";   Path = $WORKSPACE_ROOT },
     [PSCustomObject]@{ Name = "∞Life";         Path = "f:\∞Life" },
     [PSCustomObject]@{ Name = "❤Music";        Path = "f:\❤Music" },
     [PSCustomObject]@{ Name = "⟨ψ⟩Quantum";   Path = "f:\⟨ψ⟩Quantum" },
