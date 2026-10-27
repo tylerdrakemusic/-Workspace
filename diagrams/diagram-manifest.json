@@ -116,6 +116,17 @@
       }
     },
     {
+      "path": "diagrams/workspace-derived-repository-hooks.mmd",
+      "kind": "architecture-detail",
+      "renderer_risk": "low",
+      "fallback_risk": "low-medium",
+      "split_required": false,
+      "lineage": {
+        "parent": "diagrams/workspace-integrations.mmd",
+        "derived_views": []
+      }
+    },
+    {
       "path": "diagrams/workspace-derived-decision-metadata-implementation.mmd",
       "kind": "architecture-detail",
       "renderer_risk": "low",
@@ -216,7 +227,8 @@
         "parent": "diagrams/workspace-architecture.mmd",
         "derived_views": [
           "diagrams/workspace-derived-repository-voice.mmd",
-          "diagrams/workspace-derived-gmail-attachments.mmd"
+          "diagrams/workspace-derived-gmail-attachments.mmd",
+          "diagrams/workspace-derived-repository-hooks.mmd"
         ]
       }
     },

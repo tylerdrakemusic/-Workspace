@@ -1,7 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% is_derived_view=true
 %% Traceability.parent: diagrams/workspace-architecture.mmd
-%% Traceability.derived_views: diagrams/workspace-derived-repository-voice.mmd, diagrams/workspace-derived-gmail-attachments.mmd
+%% Traceability.derived_views: diagrams/workspace-derived-repository-voice.mmd, diagrams/workspace-derived-gmail-attachments.mmd, diagrams/workspace-derived-repository-hooks.mmd
 graph LR
     Music -->|tee_image_cascade only| Workspace
     Music -.->|"OpenAI tuple (openai, gpt-image-1, openai/images/generations), default off, enabled plus exact tuple allowlist required"| Workspace
@@ -17,6 +17,8 @@ graph LR
     Workspace --> Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
     Manifest -.->|"bounded read-only technical-doc allowlist"| Capital[Σ Capital technical docs<br/>parallel-test-execution.md<br/>shared-structured-logging.md<br/>no private financial paths or database access]
     Workspace --> Capital[Σ Capital]
+    Workspace -->|"runs checkout-relative shared hook installer"| HookInstaller[.github/hooks/install-hooks.ps1<br/>resolves shared hooks from this checkout]:::ws
+    HookInstaller -->|"sets core.hooksPath"| Workspace & Life & Music & Quantum & Manifest & Capital
     Workspace --> WSDB[(workspace.db<br/>canonical TODO lifecycle storage)]
     Workspace --> WorkspaceCoord[⊕ workspace-coordination MCP<br/>ExecutionLifecycle API · fixed TODO lifecycle allowlist<br/>rejects arbitrary db/sql and generic state setter]
     WorkspaceCoord ==> WSDB
