@@ -43,6 +43,7 @@ _TODO_ALLOWED_OPERATIONS = frozenset(
         "todo.heartbeat",
         "todo.fail",
         "todo.retry",
+        "todo.grant_retry_attempt",
         "todo.cancel",
         "todo.recover_stale",
         "todo.takeover",
@@ -62,6 +63,10 @@ _TODO_ARGUMENTS = {
     "todo.heartbeat": ({"todo_id", "worker_id", "lease_token"}, set()),
     "todo.fail": ({"todo_id", "worker_id", "lease_token", "error"}, set()),
     "todo.retry": ({"todo_id"}, set()),
+    "todo.grant_retry_attempt": (
+        {"todo_id", "actor", "approved", "reason"},
+        set(),
+    ),
     "todo.cancel": ({"todo_id", "worker_id", "lease_token"}, set()),
     "todo.recover_stale": (set(), set()),
     "todo.takeover": ({"todo_id", "worker_id", "approved"}, set()),
@@ -316,6 +321,26 @@ def _run_todo_operation(
                 _required_string(payload, "todo_id"), now, "bounded retry requested"
             )
             result = _record_payload(record)
+        elif operation == "todo.grant_retry_attempt":
+            actor = _required_string(payload, "actor")
+            reason = _required_string(payload, "reason")
+            if payload.get("approved") is not True:
+                raise PermissionError("manual retry grant requires explicit operator approval")
+            record = lifecycle.grant_retry_attempt(
+                todo_id=_required_string(payload, "todo_id"),
+                actor=actor,
+                approved=True,
+                reason=reason,
+                now=now,
+            )
+            result = _record_payload(record)
+            result["retry_grant"] = {
+                "actor": actor.strip(),
+                "reason": reason.strip(),
+                "attempt_from": record.attempt,
+                "attempt_to": record.attempt + 1,
+                "granted_at": now,
+            }
         elif operation == "todo.cancel":
             record = lifecycle.cancel(
                 _required_string(payload, "todo_id"),
@@ -515,6 +540,15 @@ def todo_fail(todo_id: str, worker_id: str, lease_token: str, error: str) -> str
 def todo_retry(todo_id: str) -> str:
     """Queue a failed or stale TODO when its persisted retry budget allows."""
     return invoke_coordination("todo.retry", {"todo_id": todo_id})
+
+
+@mcp.tool()
+def todo_grant_retry_attempt(todo_id: str, actor: str, approved: bool, reason: str) -> str:
+    """Queue one exhausted failed TODO attempt with operator approval and an audit reason."""
+    return invoke_coordination(
+        "todo.grant_retry_attempt",
+        {"todo_id": todo_id, "actor": actor, "approved": approved, "reason": reason},
+    )
 
 
 @mcp.tool()
