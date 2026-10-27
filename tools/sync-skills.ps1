@@ -7,6 +7,8 @@ param(
     [switch]$ApproveReviewedUpdates,
     [string[]]$ReviewedSkills,
     [string]$ReviewRationale,
+    [string]$RestorePinnedTarget,
+    [string]$RestoreRationale,
     [string]$ConfigPath,
     [string]$ManifestPath
 )
@@ -139,6 +141,246 @@ function Remove-PinnedSource {
         & git -C $RepositoryPath worktree remove --force $WorktreePath 2>$null | Out-Null
         Remove-Item -Recurse -Force $WorktreePath -ErrorAction SilentlyContinue
     }
+}
+
+function Assert-NoReparsePointsInPath {
+    param(
+        [string]$RootPath,
+        [string]$Path,
+        [string]$Description
+    )
+
+    $directorySeparator = [IO.Path]::DirectorySeparatorChar
+    $alternateSeparator = [IO.Path]::AltDirectorySeparatorChar
+    $separatorChars = [char[]]@($directorySeparator, $alternateSeparator)
+    $rootFullPath = [IO.Path]::GetFullPath($RootPath).TrimEnd($separatorChars)
+    $targetFullPath = [IO.Path]::GetFullPath($Path)
+    $pathComparison = if ($directorySeparator -eq '\') {
+        [StringComparison]::OrdinalIgnoreCase
+    } else {
+        [StringComparison]::Ordinal
+    }
+    $rootPrefix = $rootFullPath + $directorySeparator
+    if (
+        $targetFullPath -ne $rootFullPath -and
+        -not $targetFullPath.StartsWith($rootPrefix, $pathComparison)
+    ) {
+        throw "$Description is outside the configured workspace root"
+    }
+
+    $rootItem = Get-Item -LiteralPath $rootFullPath -Force
+    if ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+        throw "Configured workspace root is a reparse point: $rootFullPath"
+    }
+    $relativePath = if ($targetFullPath -eq $rootFullPath) {
+        ""
+    } else {
+        $targetFullPath.Substring($rootPrefix.Length)
+    }
+    $currentPath = $rootFullPath
+    foreach ($component in ($relativePath -split '[\\/]')) {
+        if (-not $component) { continue }
+        $currentPath = Join-Path $currentPath $component
+        if (Test-Path -LiteralPath $currentPath) {
+            $item = Get-Item -LiteralPath $currentPath -Force
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "$Description path contains a reparse point: $currentPath"
+            }
+        }
+    }
+}
+
+function Invoke-PinnedTargetRestore {
+    if ([string]::IsNullOrWhiteSpace($RestorePinnedTarget)) {
+        throw "Pinned target restoration requires one named skill"
+    }
+    if ([string]::IsNullOrWhiteSpace($RestoreRationale)) {
+        throw "Pinned target restoration requires a non-empty rationale"
+    }
+    if (
+        $ApproveProtectedSync -or $ApproveReviewedUpdates -or
+        $null -ne $ReviewedSkills -or -not [string]::IsNullOrWhiteSpace($ReviewRationale)
+    ) {
+        throw "Pinned target restoration cannot be combined with another sync mode"
+    }
+    if (
+        $RestorePinnedTarget -notmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$' -or
+        $RestorePinnedTarget.Contains("\") -or
+        @($RestorePinnedTarget.Split('/')).Where({ $_ -in @("", ".", "..") }).Count -gt 0
+    ) {
+        throw "Pinned target restoration requires a configured skill name, not a path"
+    }
+
+    $canonicalConfigPath = Join-Path $configRoot "tools\skill-sync-config.json"
+    $canonicalManifestPath = Join-Path $configRoot ".github\!!☾⛧security\agent-manifest.json"
+    $canonicalDestination = Join-Path $configRoot ".github\skills"
+    $canonicalScriptDir = Join-Path $configRoot "tools"
+    if (
+        [IO.Path]::GetFullPath($configPath) -ne [IO.Path]::GetFullPath($canonicalConfigPath) -or
+        [IO.Path]::GetFullPath($manifestPath) -ne [IO.Path]::GetFullPath($canonicalManifestPath) -or
+        [IO.Path]::GetFullPath($repoRoot) -ne [IO.Path]::GetFullPath($configRoot) -or
+        [IO.Path]::GetFullPath($destination) -ne [IO.Path]::GetFullPath($canonicalDestination) -or
+        [IO.Path]::GetFullPath($scriptDir) -ne [IO.Path]::GetFullPath($canonicalScriptDir)
+    ) {
+        throw "Pinned target restoration requires the canonical workspace paths"
+    }
+
+    Assert-NoReparsePointsInPath $configRoot $configPath "Sync config"
+    Assert-NoReparsePointsInPath $configRoot $manifestPath "Agent manifest"
+
+    $rawConfig = Get-Content -Raw -LiteralPath $configPath | ConvertFrom-Json
+    $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+    if ($null -eq $manifest.files) {
+        throw "Pinned target restoration requires an existing manifest files map"
+    }
+
+    $mappingMatches = [System.Collections.Generic.List[object]]::new()
+    foreach ($candidateRepo in $config.repos) {
+        if ($candidateRepo.provenance -cne "external-source") { continue }
+        foreach ($candidateMapping in $candidateRepo.mappings) {
+            if ($candidateMapping.skill -ceq $RestorePinnedTarget) {
+                $null = $mappingMatches.Add([pscustomobject]@{
+                    Repo = $candidateRepo
+                    Mapping = $candidateMapping
+                })
+            }
+        }
+    }
+    if ($mappingMatches.Count -ne 1) {
+        throw "Pinned target '$RestorePinnedTarget' must name exactly one external-source mapping"
+    }
+
+    $repo = $mappingMatches[0].Repo
+    $mapping = $mappingMatches[0].Mapping
+    $rawRepos = @($rawConfig.repos | Where-Object { $_.name -ceq $repo.name })
+    if ($rawRepos.Count -ne 1) {
+        throw "Pinned source repository '$($repo.name)' is ambiguous in the sync config"
+    }
+    $rawRepo = $rawRepos[0]
+    if (
+        $rawRepo.provenance -cne "external-source" -or
+        @($rawRepo.skills).Count -ne 1 -or
+        $rawRepo.skills[0] -cne $RestorePinnedTarget -or
+        @($repo.mappings).Count -ne 1
+    ) {
+        throw "Pinned target '$RestorePinnedTarget' must have one exact external mapping"
+    }
+
+    $hasCommit = $rawRepo.PSObject.Properties.Name -contains "pinned_commit"
+    $hasSha = $rawRepo.PSObject.Properties.Name -contains "sha256"
+    $pinnedCommit = [string]$rawRepo.pinned_commit
+    $pinnedSha = [string]$rawRepo.sha256
+    if (
+        -not $hasCommit -or -not $hasSha -or
+        $pinnedCommit -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$' -or
+        $pinnedSha -notmatch '^[0-9a-fA-F]{64}$' -or
+        [string]$repo.pinned_commit -cne $pinnedCommit -or
+        ([string]$repo.sha256).ToLowerInvariant() -cne $pinnedSha.ToLowerInvariant()
+    ) {
+        throw "Pinned source '$($repo.name)' must have a complete, matching existing pin pair"
+    }
+
+    $sourceRelativePath = [string]$mapping.source_relative_path
+    if (
+        [IO.Path]::IsPathRooted($sourceRelativePath) -or
+        $sourceRelativePath.Contains("\") -or
+        @($sourceRelativePath.Split('/')).Where({ $_ -in @("", ".", "..") }).Count -gt 0
+    ) {
+        throw "Pinned source path must be a normalized repository-relative path"
+    }
+
+    $expectedTarget = Join-Path $canonicalDestination ($RestorePinnedTarget.Replace('/', '\') + "\SKILL.md")
+    $targetPath = [IO.Path]::GetFullPath($mapping.target)
+    if ($targetPath -ne [IO.Path]::GetFullPath($expectedTarget)) {
+        throw "Pinned target mapping does not resolve to the canonical skill target"
+    }
+    if (-not (Test-Path -LiteralPath $targetPath -PathType Leaf)) {
+        throw "Pinned target '$RestorePinnedTarget' must already exist"
+    }
+    Assert-NoReparsePointsInPath $configRoot $targetPath "Pinned target"
+
+    $manifestKey = $targetPath.Substring(
+        [IO.Path]::GetFullPath($configRoot).TrimEnd([IO.Path]::DirectorySeparatorChar).Length + 1
+    ).Replace('\', '/')
+    $manifestEntries = @($manifest.files.PSObject.Properties | Where-Object { $_.Name -ceq $manifestKey })
+    if ($manifestEntries.Count -ne 1) {
+        throw "Pinned target '$manifestKey' must have exactly one existing manifest entry"
+    }
+    $manifestHash = [string]$manifestEntries[0].Value
+    if (
+        $manifestHash -notmatch '^[0-9a-fA-F]{64}$' -or
+        $manifestHash.ToLowerInvariant() -cne $pinnedSha.ToLowerInvariant()
+    ) {
+        throw "Existing manifest hash does not match the configured pinned SHA-256 for '$manifestKey'"
+    }
+    $installedHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($installedHash -ceq $manifestHash.ToLowerInvariant()) {
+        throw "Pinned target '$manifestKey' already matches its existing manifest hash"
+    }
+
+    $repositoryPath = [string]$repo.path
+    $commitReference = "$pinnedCommit^{commit}"
+    & git -C $repositoryPath cat-file -e $commitReference 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Pinned commit $pinnedCommit is unavailable in $repositoryPath"
+    }
+    $blobReference = "$pinnedCommit`:$sourceRelativePath"
+    & git -C $repositoryPath cat-file -e $blobReference 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Pinned source $sourceRelativePath is unavailable at commit $pinnedCommit"
+    }
+    $treeOutput = @(& git -C $repositoryPath ls-tree -r $pinnedCommit -- $sourceRelativePath 2>&1)
+    if ($LASTEXITCODE -ne 0 -or @($treeOutput).Count -ne 1 -or $treeOutput[0] -notmatch '^(100644|100755) blob [0-9a-f]{40,64}\t') {
+        throw "Pinned source must be one regular Git blob at the configured path"
+    }
+
+    $blobHashScript = "import hashlib,subprocess,sys; result=subprocess.run(['git','-C',sys.argv[1],'cat-file','blob',sys.argv[2]+':'+sys.argv[3]],check=True,capture_output=True); print(hashlib.sha256(result.stdout).hexdigest())"
+    $blobHashOutput = & $pythonExecutable -c $blobHashScript $repositoryPath $pinnedCommit $sourceRelativePath 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to hash configured pinned Git blob: $($blobHashOutput -join ' ')"
+    }
+    $blobHash = ($blobHashOutput -join [Environment]::NewLine).Trim().ToLowerInvariant()
+    if ($blobHash -cne $pinnedSha.ToLowerInvariant()) {
+        throw "Configured SHA-256 does not match the existing pinned Git blob SHA-256"
+    }
+
+    $temporaryPath = Join-Path (Split-Path -Parent $targetPath) (".restore-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+    $backupPath = Join-Path (Split-Path -Parent $targetPath) (".restore-backup-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+    try {
+        $blobArgs = @(
+            "--write-pinned-git-blob",
+            $repositoryPath,
+            $pinnedCommit,
+            $sourceRelativePath,
+            "--output",
+            $temporaryPath,
+            "--root",
+            $configRoot
+        )
+        $blobOutput = & $pythonExecutable $manifestUpdater @blobArgs 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "Pinned Git blob materialization failed: $($blobOutput -join ' ')"
+        }
+        $temporaryHash = (Get-FileHash -LiteralPath $temporaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($temporaryHash -cne $pinnedSha.ToLowerInvariant()) {
+            throw "Materialized pinned Git blob does not match the configured SHA-256"
+        }
+        [IO.File]::Replace($temporaryPath, $targetPath, $backupPath)
+        $restoredHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($restoredHash -cne $pinnedSha.ToLowerInvariant()) {
+            [IO.File]::Replace($backupPath, $targetPath, $temporaryPath)
+            throw "Restored pinned target failed post-replacement SHA-256 verification"
+        }
+    } finally {
+        if (Test-Path -LiteralPath $temporaryPath) {
+            Remove-Item -LiteralPath $temporaryPath -Force
+        }
+        if (Test-Path -LiteralPath $backupPath) {
+            Remove-Item -LiteralPath $backupPath -Force
+        }
+    }
+
+    Write-Host "Restored pinned skill '$RestorePinnedTarget' to $pinnedSha. Rationale: $($RestoreRationale.Trim())"
 }
 
 function Invoke-ReviewedSkillSync {
@@ -336,6 +578,14 @@ function Invoke-ReviewedSkillSync {
             Remove-PinnedSource $pinnedSource.RepositoryPath $pinnedSource.Worktree
         }
     }
+}
+
+if (
+    $PSBoundParameters.ContainsKey("RestorePinnedTarget") -or
+    $PSBoundParameters.ContainsKey("RestoreRationale")
+) {
+    Invoke-PinnedTargetRestore
+    exit 0
 }
 
 if ($ApproveReviewedUpdates) {
