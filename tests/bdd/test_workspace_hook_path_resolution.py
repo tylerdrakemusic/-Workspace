@@ -224,6 +224,26 @@ def test_git_bash_path_converts_windows_and_posix_paths(
     assert _git_bash_path(tmp_path / "pre-commit") == expected
 
 
+def test_precommit_entrypoint_is_tracked_executable() -> None:
+    result = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(PROJECT_ROOT),
+            "ls-files",
+            "--stage",
+            "--",
+            ".github/hooks/scripts/pre-commit",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    assert result.stdout.startswith("100755 "), result.stdout
+
+
 @when("the installed pre-commit hook processes staged violations")
 def run_existing_safeguards(hook_case: dict[str, Any]) -> None:
     hook_path = hook_case["canonical_hooks"]
