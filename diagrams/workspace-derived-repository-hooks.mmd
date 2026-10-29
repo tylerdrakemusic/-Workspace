@@ -1,0 +1,53 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-integrations.mmd
+graph LR
+    Installer[/.github/hooks/install-hooks.ps1/]:::ws
+    WorkspaceRoot[Workspace checkout root<br/>resolved from $PSScriptRoot/../..]:::ws
+    HooksCandidate[.github/hooks/scripts<br/>joined from checkout root]:::ws
+    DirectoryGate{path exists and is a directory?}:::state
+    CanonicalHooks[Resolved canonical hook path<br/>normalized for Git]:::ws
+    InstallAbort[exit 1<br/>no repository config writes]:::state
+
+    Installer -->|"resolve checkout root from script location"| WorkspaceRoot
+    WorkspaceRoot -->|"Join-Path .github/hooks/scripts"| HooksCandidate
+    HooksCandidate -->|"Test-Path -PathType Container"| DirectoryGate
+    DirectoryGate -->|"valid: Resolve-Path and normalize before writes"| CanonicalHooks
+    DirectoryGate -->|"missing or invalid: exit before config writes"| InstallAbort
+
+    subgraph Targets["Six repository targets"]
+        RepoWorkspace[⊕ Workspace]
+        RepoLife[∞ Life]
+        RepoMusic[❤ Music]
+        RepoQuantum[⟨ψ⟩ Quantum]
+        RepoManifest[👁 AI-Manifest]
+        RepoCapital[Σ Capital]
+    end
+
+    CanonicalHooks -->|"if repo exists: set core.hooksPath and verify read-back"| RepoWorkspace
+    CanonicalHooks -->|"if repo exists: set core.hooksPath and verify read-back"| RepoLife
+    CanonicalHooks -->|"if repo exists: set core.hooksPath and verify read-back"| RepoMusic
+    CanonicalHooks -->|"if repo exists: set core.hooksPath and verify read-back"| RepoQuantum
+    CanonicalHooks -->|"if repo exists: set core.hooksPath and verify read-back"| RepoManifest
+    CanonicalHooks -->|"if repo exists: set core.hooksPath and verify read-back"| RepoCapital
+
+    CanonicalHooks -->|"shared directory selected by core.hooksPath"| PreCommit[shared pre-commit entrypoint]:::ws
+    PreCommit --> WorktreeGuard[reject staged .worktrees/ paths]:::ws
+    PreCommit --> SecretScan[scan added staged lines for secret patterns]:::ws
+    PreCommit --> LifeGate{repository is ∞Life?}:::state
+    LifeGate -->|"yes: run private-data audit"| PrivateDataAudit[block staged health, genomic, database, and private-key paths]:::ws
+
+    class RepoWorkspace ws
+    class RepoLife life
+    class RepoMusic music
+    class RepoQuantum quantum
+    class RepoManifest manifest
+    class RepoCapital capital
+
+classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8
+classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
+classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
+classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
