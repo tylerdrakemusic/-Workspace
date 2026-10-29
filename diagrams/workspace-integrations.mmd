@@ -1,7 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 %% is_derived_view=true
 %% Traceability.parent: diagrams/workspace-architecture.mmd
-%% Traceability.derived_views: diagrams/workspace-derived-repository-voice.mmd, diagrams/workspace-derived-gmail-attachments.mmd
+%% Traceability.derived_views: diagrams/workspace-derived-repository-voice.mmd, diagrams/workspace-derived-gmail-attachments.mmd, diagrams/workspace-derived-repository-hooks.mmd
 graph LR
     Music -->|tee_image_cascade only| Workspace
     Music -.->|"OpenAI tuple (openai, gpt-image-1, openai/images/generations), default off, enabled plus exact tuple allowlist required"| Workspace
@@ -17,6 +17,7 @@ graph LR
     Workspace --> Manifest[👁 AI-Manifest<br/>discover_todos.py: explicit Capital discovery]
     Manifest -.->|"bounded read-only technical-doc allowlist"| Capital[Σ Capital technical docs<br/>parallel-test-execution.md<br/>shared-structured-logging.md<br/>no private financial paths or database access]
     Workspace --> Capital[Σ Capital]
+    Workspace -->|"checkout-relative shared installer sets core.hooksPath in six repos including Workspace"| Workspace & Life & Music & Quantum & Manifest & Capital
     Workspace --> WSDB[(workspace.db<br/>canonical TODO lifecycle storage)]
     Workspace --> WorkspaceCoord[⊕ workspace-coordination MCP<br/>ExecutionLifecycle API · fixed TODO lifecycle allowlist<br/>rejects arbitrary db/sql and generic state setter]
     WorkspaceCoord ==> WSDB
@@ -67,7 +68,9 @@ classDef music    fill:#3a1a24,stroke:#d47a8f,color:#f8d0dc
 classDef quantum  fill:#251a3a,stroke:#a07adf,color:#e8d0f8
 classDef manifest fill:#3a2e1a,stroke:#d4a96a,color:#f8ead0
 classDef ws       fill:#1a3a30,stroke:#6ad4b4,color:#d0f8ee
+classDef capital  fill:#1a3a1a,stroke:#6ad46a,color:#d0f8d0
 classDef tyler    fill:#2a1a3a,stroke:#9e4aff,color:#fff
 classDef ext      fill:#3a2020,stroke:#ff7a7a,color:#ffd0d0
 classDef db       fill:#3a3010,stroke:#d4c050,color:#f8f0c0
 classDef state    fill:#1a1a1a,stroke:#888888,color:#cccccc
+class Capital capital
