@@ -15,6 +15,10 @@ stateDiagram-v2
     note right of TODO_RUNTIME
         todo_retry, todo_recover_stale, and approved todo_takeover use the same
         fixed workspace-coordination MCP allowlist and server policy.
+        todo.grant_retry_attempt is in the fixed allowlist and requires explicit
+        approval, a non-empty actor, and a non-empty reason. It accepts FAILED
+        only after retry exhaustion, once per TODO, and rejects STALE, CLAIMED,
+        and RUNNING. Existing todo_retry transitions remain budget-bounded.
         Arbitrary database and SQL arguments are rejected.
     end note
 
@@ -31,6 +35,7 @@ stateDiagram-v2
         RUNNING --> CANCELLED: valid cancellation
         FAILED --> QUEUED: explicit retry and budget remains
         STALE --> QUEUED: explicit retry and budget remains
+        FAILED --> QUEUED: one-time operator-approved grant after exhaustion, reason required
         FAILED --> [*]: retry budget exhausted
         STALE --> [*]: retry budget exhausted
         COMPLETED --> [*]
