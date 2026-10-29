@@ -1,7 +1,7 @@
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
 graph LR
     Python[Python 3.11<br/>C:\\G\\python.exe] --> SQLCipher[sqlcipher3<br/>encrypted SQLite]
-    Python --> Pytest[pytest + pytest-bdd<br/>Given/When/Then feature scenarios]
+    Python --> Pytest[pytest &gt;= 9.0.3, &lt; 9.1<br/>pytest-bdd &gt;= 7.3, &lt; 8.0<br/>7.3 fixture-manager internals were removed in pytest 9.1]
     Python --> Flask[Flask<br/>portal servers]
     Python --> Playwright[playwright<br/>portal checks]
     Python --> Dotenv[python-dotenv]
