@@ -109,3 +109,25 @@ def test_mypy_findings_are_reported_with_metadata_without_gating_ci(
         path.read_text(encoding="utf-8") for path in local_dir.iterdir() if path.is_file()
     )
     assert finding_output in local_output
+
+
+def test_missing_mypy_reports_unavailable_findings_and_check_error(tmp_path: Path) -> None:
+    helper = importlib.import_module("tools.mypy_ci_advisory")
+    config_path = tmp_path / "mypy.ini"
+    config_path.write_text("[mypy]\n", encoding="utf-8")
+    check_result = helper.CommandResult(1, stderr="No module named mypy")
+
+    report = helper._build_report(
+        config_path=config_path,
+        scope=["src/utils/roadmap_parsing.py"],
+        repository="tylerdrakemusic/-Workspace",
+        commit="1234567890abcdef1234567890abcdef12345678",
+        elapsed_seconds=0.1,
+        installation_exit_code=1,
+        version_result=helper.CommandResult(1, stderr="No module named mypy"),
+        check_result=check_result,
+    )
+
+    assert helper._finding_count(check_result.stdout, check_result.returncode) is None
+    assert report["finding_count"] is None
+    assert report["tool_errors"]["mypy_check"] is True
