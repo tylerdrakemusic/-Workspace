@@ -96,6 +96,10 @@ def _build_report(
         config_hash = None
     safe_repository = repository if REPOSITORY_PATTERN.fullmatch(repository) else "local"
     safe_commit = commit if COMMIT_PATTERN.fullmatch(commit) else "unavailable"
+    finding_count = _finding_count(check_result.stdout, check_result.returncode)
+    check_ok = check_result.returncode == 0 or (
+        check_result.returncode == 1 and finding_count is not None and finding_count > 0
+    )
 
     return {
         "repository": safe_repository,
@@ -104,7 +108,7 @@ def _build_report(
         "configuration": {"path": config_path.name, "sha256": config_hash},
         "scan_scope": scope,
         "elapsed_seconds": round(elapsed_seconds, 3),
-        "finding_count": _finding_count(check_result.stdout, check_result.returncode),
+        "finding_count": finding_count if check_ok else None,
         "command_exit_codes": {
             "mypy_install": installation_exit_code,
             "mypy_version": version_result.returncode,
@@ -113,7 +117,7 @@ def _build_report(
         "tool_errors": {
             "mypy_install": installation_exit_code not in (None, 0),
             "mypy_version": not version_ok,
-            "mypy_check": check_result.returncode not in (0, 1),
+            "mypy_check": not check_ok,
         },
     }
 
