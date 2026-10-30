@@ -212,9 +212,14 @@ def test_existing_lifecycle_schema_is_migrated_without_validating_old_rows() -> 
 
     lifecycle = ExecutionLifecycle(connection)
     record = lifecycle.get("todo-legacy")
+    grant_table = connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        ("todo_execution_retry_grants",),
+    ).fetchone()
 
     assert record.validated_handoff is False
     assert record.handoff_evidence is None
+    assert grant_table is not None
     assert lifecycle.events("todo-legacy")[0]["reason"] == "legacy event"
     lifecycle_columns = {
         row[1]: row[3]
@@ -231,6 +236,9 @@ def test_existing_lifecycle_schema_is_migrated_without_validating_old_rows() -> 
     migrated_again = ExecutionLifecycle(connection)
     assert migrated_again.get("todo-legacy") == record
     assert len(migrated_again.events("todo-legacy")) == 1
+    assert connection.execute(
+        "SELECT COUNT(*) FROM todo_execution_retry_grants"
+    ).fetchone()[0] == 0
     assert migrated_again.register_queued(
         todo_id="todo-after-migration",
         fr_id="FR-legacy",
@@ -391,6 +399,131 @@ def test_failure_retry_and_exhaustion_preserve_terminal_failure() -> None:
     with pytest.raises(RetryExhaustedError):
         lifecycle.retry("todo-1", 131.0, "budget exhausted")
     assert lifecycle.get("todo-1").state == "failed"
+
+
+def test_manual_retry_grant_is_one_time_audited_and_immutable() -> None:
+    lifecycle = make_lifecycle()
+    first = claim(lifecycle, retries=0)
+    lifecycle.fail("todo-1", "worker-a", first.lease_token, 110.0, "initial failure")
+
+    granted = lifecycle.grant_retry_attempt(
+        todo_id="todo-1",
+        actor="operator-1",
+        approved=True,
+        reason="Recover the blocked deliverable",
+        now=111.0,
+    )
+
+    assert granted.state == "queued"
+    assert granted.attempt == 1
+    assert granted.max_retries == 0
+    audit = lifecycle.connection.execute(
+        """SELECT actor, reason, attempt_from, attempt_to
+           FROM todo_execution_retry_grants WHERE todo_id = ?""",
+        ("todo-1",),
+    ).fetchone()
+    assert tuple(audit) == (
+        "operator-1",
+        "Recover the blocked deliverable",
+        1,
+        2,
+    )
+
+    with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+        lifecycle.connection.execute(
+            "UPDATE todo_execution_retry_grants SET reason = 'changed' WHERE todo_id = ?",
+            ("todo-1",),
+        )
+    lifecycle.connection.rollback()
+    with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+        lifecycle.connection.execute(
+            "DELETE FROM todo_execution_retry_grants WHERE todo_id = ?",
+            ("todo-1",),
+        )
+    lifecycle.connection.rollback()
+
+    second = claim(lifecycle, now=120.0, retries=0)
+    lifecycle.fail("todo-1", "worker-a", second.lease_token, 130.0, "added attempt failed")
+    before_record = lifecycle.get("todo-1")
+    before_events = tuple(tuple(event) for event in lifecycle.events("todo-1"))
+    before_audit = tuple(audit)
+
+    with pytest.raises(InvalidTransitionError, match="already used"):
+        lifecycle.grant_retry_attempt(
+            todo_id="todo-1",
+            actor="operator-1",
+            approved=True,
+            reason="Try again",
+            now=131.0,
+        )
+
+    assert lifecycle.get("todo-1") == before_record
+    assert tuple(tuple(event) for event in lifecycle.events("todo-1")) == before_events
+    assert (
+        tuple(
+            lifecycle.connection.execute(
+                "SELECT actor, reason, attempt_from, attempt_to "
+                "FROM todo_execution_retry_grants WHERE todo_id = ?",
+                ("todo-1",),
+            ).fetchone()
+        )
+        == before_audit
+    )
+
+
+@pytest.mark.parametrize("approved", [False, 1, "true", None])
+def test_manual_retry_grant_requires_literal_true_without_mutation(approved) -> None:
+    lifecycle = make_lifecycle()
+    record = claim(lifecycle, retries=0)
+    lifecycle.fail("todo-1", "worker-a", record.lease_token, 110.0, "initial failure")
+    before_record = lifecycle.get("todo-1")
+    before_events = tuple(tuple(event) for event in lifecycle.events("todo-1"))
+
+    with pytest.raises(PermissionError, match="explicit operator approval"):
+        lifecycle.grant_retry_attempt(
+            todo_id="todo-1",
+            actor="operator-1",
+            approved=approved,
+            reason="Recover the blocked deliverable",
+            now=111.0,
+        )
+
+    assert lifecycle.get("todo-1") == before_record
+    assert tuple(tuple(event) for event in lifecycle.events("todo-1")) == before_events
+    assert (
+        lifecycle.connection.execute(
+            "SELECT COUNT(*) FROM todo_execution_retry_grants WHERE todo_id = ?",
+            ("todo-1",),
+        ).fetchone()[0]
+        == 0
+    )
+
+
+def test_manual_retry_grant_rejects_failure_with_remaining_budget_without_mutation() -> None:
+    lifecycle = make_lifecycle()
+    record = claim(lifecycle, retries=1)
+    lifecycle.fail("todo-1", "worker-a", record.lease_token, 110.0, "initial failure")
+    before_record = lifecycle.get("todo-1")
+    before_events = tuple(tuple(event) for event in lifecycle.events("todo-1"))
+
+    with pytest.raises(InvalidTransitionError, match="exhausted retry budget"):
+        lifecycle.grant_retry_attempt(
+            todo_id="todo-1",
+            actor="operator-1",
+            approved=True,
+            reason="Recover the blocked deliverable",
+            now=111.0,
+        )
+
+    assert lifecycle.get("todo-1") == before_record
+    assert tuple(tuple(event) for event in lifecycle.events("todo-1")) == before_events
+    assert (
+        lifecycle.connection.execute(
+            "SELECT COUNT(*) FROM todo_execution_retry_grants WHERE todo_id = ?",
+            ("todo-1",),
+        ).fetchone()[0]
+        == 0
+    )
 
 
 def test_failed_attempt_cannot_be_reclaimed_when_retry_budget_is_exhausted() -> None:

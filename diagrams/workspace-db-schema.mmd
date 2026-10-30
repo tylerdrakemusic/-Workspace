@@ -153,6 +153,8 @@ erDiagram
     %% Source: src/utils/todo_execution_lifecycle.py :: ExecutionLifecycle._create_schema
     TODO_EXECUTION_LIFECYCLE ||--o{ TODO_EXECUTION_EVENTS : records
     TODO_EXECUTION_LIFECYCLE ||--o{ TODO_EXECUTION_STALE_RECOVERIES : recovers
+    %% Logical cardinality only; todo_id is UNIQUE, not a declared SQL FOREIGN KEY.
+    TODO_EXECUTION_LIFECYCLE ||--o| TODO_EXECUTION_RETRY_GRANTS : one_manual_grant
     TODO_EXECUTION_LIFECYCLE {
         text todo_id PK
         text fr_id
@@ -183,6 +185,15 @@ erDiagram
         real recovered_at
         text reason
         text error
+    }
+    TODO_EXECUTION_RETRY_GRANTS {
+        integer grant_id PK
+        text todo_id UK
+        text actor
+        text reason
+        integer attempt_from
+        integer attempt_to
+        real granted_at
     }
 
     AGENT_HANDOFF_ENVELOPES ||--o{ AGENT_HANDOFF_RESULTS : exchanges

@@ -114,6 +114,26 @@ class ExecutionLifecycle:
                 reason TEXT NOT NULL,
                 error TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS todo_execution_retry_grants (
+                grant_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                todo_id TEXT NOT NULL UNIQUE,
+                actor TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                attempt_from INTEGER NOT NULL,
+                attempt_to INTEGER NOT NULL,
+                granted_at REAL NOT NULL,
+                CHECK (attempt_to = attempt_from + 1)
+            );
+            CREATE TRIGGER IF NOT EXISTS todo_execution_retry_grants_no_update
+            BEFORE UPDATE ON todo_execution_retry_grants
+            BEGIN
+                SELECT RAISE(ABORT, 'manual retry grant history is immutable');
+            END;
+            CREATE TRIGGER IF NOT EXISTS todo_execution_retry_grants_no_delete
+            BEFORE DELETE ON todo_execution_retry_grants
+            BEGIN
+                SELECT RAISE(ABORT, 'manual retry grant history is immutable');
+            END;
             """
         )
         previous_row_factory = self.connection.row_factory
@@ -482,6 +502,66 @@ class ExecutionLifecycle:
         except Exception:
             if self.connection.in_transaction:
                 self.connection.commit()
+            raise
+
+    def grant_retry_attempt(
+        self,
+        *,
+        todo_id: str,
+        actor: str,
+        approved: bool,
+        reason: str,
+        now: float,
+    ) -> ExecutionRecord:
+        """Queue one exhausted failure under a single immutable operator grant."""
+        if approved is not True:
+            raise PermissionError("manual retry grant requires explicit operator approval")
+        if not isinstance(actor, str) or not actor.strip():
+            raise ValueError("actor must be a non-empty string")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("reason must be a non-empty string")
+        actor = actor.strip()
+        reason = reason.strip()
+
+        self.connection.execute("BEGIN IMMEDIATE")
+        try:
+            row = self._row(todo_id)
+            if row is None or row["state"] != "failed":
+                raise InvalidTransitionError("manual retry grant requires failed state")
+            if row["attempt"] <= row["max_retries"]:
+                raise InvalidTransitionError("manual retry grant requires exhausted retry budget")
+            prior_grant = self.connection.execute(
+                "SELECT 1 FROM todo_execution_retry_grants WHERE todo_id = ?",
+                (todo_id,),
+            ).fetchone()
+            if prior_grant is not None:
+                raise InvalidTransitionError("manual retry grant already used")
+
+            attempt_from = row["attempt"]
+            attempt_to = attempt_from + 1
+            self.connection.execute(
+                """INSERT INTO todo_execution_retry_grants
+                   (todo_id, actor, reason, attempt_from, attempt_to, granted_at)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (todo_id, actor, reason, attempt_from, attempt_to, now),
+            )
+            event_reason = (
+                f"manual retry grant by {actor}: {reason} (attempt {attempt_from} -> {attempt_to})"
+            )
+            record = self._update_in_transaction(
+                row,
+                "queued",
+                row["lease_expires_at"],
+                row["heartbeat_at"],
+                event_reason,
+                None,
+                now,
+            )
+            self.connection.commit()
+            return record
+        except Exception:
+            if self.connection.in_transaction:
+                self.connection.rollback()
             raise
 
     def cancel(

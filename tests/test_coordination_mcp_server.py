@@ -122,6 +122,10 @@ def test_todo_mcp_registry_exposes_only_fixed_lifecycle_inputs():
         "todo_heartbeat": ({"todo_id", "worker_id", "lease_token"}, {"todo_id", "worker_id", "lease_token"}),
         "todo_fail": ({"todo_id", "worker_id", "lease_token", "error"}, {"todo_id", "worker_id", "lease_token", "error"}),
         "todo_retry": ({"todo_id"}, {"todo_id"}),
+        "todo_grant_retry_attempt": (
+            {"todo_id", "actor", "approved", "reason"},
+            {"todo_id", "actor", "approved", "reason"},
+        ),
         "todo_cancel": ({"todo_id", "worker_id", "lease_token"}, {"todo_id", "worker_id", "lease_token"}),
         "todo_recover_stale": (set(), set()),
         "todo_takeover": ({"todo_id", "worker_id", "approved"}, {"todo_id", "worker_id", "approved"}),
@@ -561,6 +565,73 @@ def test_todo_stale_recovery_and_takeover_require_policy_and_approval(todo_conne
     assert resumed["lease_expires_at"] == 161.0
 
 
+def test_operator_approved_retry_grant_queues_exhausted_failure_with_audit(
+    todo_connection, monkeypatch
+):
+    from src.utils import coordination_mcp_server
+    from src.utils.todo_execution_lifecycle import ExecutionLifecycle
+
+    now = [100.0]
+    monkeypatch.setattr(coordination_mcp_server.time, "time", lambda: now[0])
+    lifecycle = ExecutionLifecycle(todo_connection)
+    lifecycle.register_queued(
+        todo_id="todo-manual-retry",
+        fr_id="FR-manual-retry",
+        now=90.0,
+        max_retries=0,
+        idempotency_key="dispatch-manual-retry",
+    )
+    claimed = lifecycle.claim(
+        todo_id="todo-manual-retry",
+        fr_id="FR-manual-retry",
+        worker_id="worker-manual-retry",
+        claim_id="claim-manual-retry",
+        lease_token="fixture-lease-manual-retry",
+        now=100.0,
+        lease_seconds=30,
+        max_retries=0,
+        idempotency_key="delivery-manual-retry",
+    )
+    lifecycle.fail(
+        "todo-manual-retry",
+        "worker-manual-retry",
+        claimed.lease_token,
+        110.0,
+        "attempt failed",
+    )
+
+    now[0] = 120.0
+    result = json.loads(
+        _invoke_todo(
+            coordination_mcp_server,
+            todo_connection,
+            _todo_config(max_retries=0),
+            "todo.grant_retry_attempt",
+            {
+                "todo_id": "todo-manual-retry",
+                "actor": "operator-1",
+                "approved": True,
+                "reason": "Recover the blocked deliverable",
+            },
+        )
+    )
+
+    assert result["state"] == "queued"
+    assert result["attempt"] == 1
+    assert result["max_retries"] == 0
+    audit = todo_connection.execute(
+        """SELECT actor, reason, attempt_from, attempt_to
+           FROM todo_execution_retry_grants WHERE todo_id = ?""",
+        ("todo-manual-retry",),
+    ).fetchone()
+    assert tuple(audit) == (
+        "operator-1",
+        "Recover the blocked deliverable",
+        1,
+        2,
+    )
+
+
 @pytest.mark.parametrize(
     ("max_parallel_per_fr", "global_worker_capacity", "pre_fr_capacity", "fr_ids"),
     [
@@ -645,6 +716,16 @@ def test_todo_takeover_enforces_server_policy_capacity(
         ("todo.claim", {"todo_id": "todo-x", "worker_id": "worker-a", "db": "production"}),
         ("todo.heartbeat", {"todo_id": "todo-x", "worker_id": "worker-a", "lease_token": "x", "sql": "UPDATE"}),
         ("todo.retry", {"todo_id": "todo-x", "max_retries": 100}),
+        (
+            "todo.grant_retry_attempt",
+            {
+                "todo_id": "todo-x",
+                "actor": "operator-1",
+                "approved": True,
+                "reason": "approved recovery",
+                "max_retries": 100,
+            },
+        ),
     ],
 )
 def test_todo_operations_reject_caller_controlled_policy_or_arbitrary_args(
