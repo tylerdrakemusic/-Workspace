@@ -7,6 +7,7 @@ import base64
 import binascii
 import ctypes
 import hmac
+import ntpath
 import json
 import os
 import re
@@ -46,6 +47,7 @@ SERVICE_PROBE_TIMEOUT_SECONDS = 3
 SERVICE_RECOVERY_BASE_DELAY_SECONDS = 30
 SERVICE_RECOVERY_MAX_DELAY_SECONDS = 300
 SERVICE_ATTENTION_FAILURE_THRESHOLD = 3
+PROCESS_START_TIME_TOLERANCE_TICKS = 100
 LOGON_TASK_NAME = "Workspace Portal Supervisor - AtLogOn"
 TASK_SCHEDULER_NAMESPACE = "http://schemas.microsoft.com/windows/2004/02/mit/task"
 TASK_PYTHON_PATH = r"C:\G\python.exe"
@@ -53,6 +55,284 @@ TASK_PYTHON_PATH = r"C:\G\python.exe"
 
 class ConfigurationError(ValueError):
     """Raised when the supervisor configuration is incomplete or invalid."""
+
+
+class ManagedProcessIdentityError(RuntimeError):
+    """Raised when a managed process cannot be tied to its recorded identity."""
+
+
+class ManagedProcessNotFound(ProcessLookupError):
+    """Raised when the recorded process no longer exists."""
+
+
+class _WindowsManagedProcess:
+    def __init__(
+        self,
+        pid: int,
+        handle: object,
+        start_time: int,
+        executable_path: str,
+        command_line: str,
+    ) -> None:
+        self.pid = pid
+        self.handle = handle
+        self.start_time = start_time
+        self.executable_path = executable_path
+        self.command_line = command_line
+
+    def terminate(self) -> None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel32.TerminateProcess.restype = wintypes.BOOL
+        if kernel32.TerminateProcess(self.handle, 1):
+            return
+        if kernel32.WaitForSingleObject(self.handle, 0) == 0:
+            return
+        error = ctypes.get_last_error()
+        raise OSError(error, ctypes.FormatError(error))
+
+    def wait(self, timeout: float) -> None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel32.WaitForSingleObject.restype = wintypes.DWORD
+        result = kernel32.WaitForSingleObject(self.handle, int(timeout * 1000))
+        if result == 258:
+            raise TimeoutError(f"process {self.pid} did not exit")
+        if result != 0:
+            error = ctypes.get_last_error()
+            raise OSError(error, ctypes.FormatError(error))
+
+    def close(self) -> None:
+        if self.handle:
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+            kernel32.CloseHandle.restype = wintypes.BOOL
+            kernel32.CloseHandle(self.handle)
+            self.handle = None
+
+
+def _process_start_time(handle: object) -> int:
+    class FileTime(ctypes.Structure):
+        _fields_ = [("low", wintypes.DWORD), ("high", wintypes.DWORD)]
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.GetProcessTimes.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(FileTime),
+        ctypes.POINTER(FileTime),
+        ctypes.POINTER(FileTime),
+        ctypes.POINTER(FileTime),
+    ]
+    kernel32.GetProcessTimes.restype = wintypes.BOOL
+    created = FileTime()
+    exited = FileTime()
+    kernel = FileTime()
+    user = FileTime()
+    if not kernel32.GetProcessTimes(
+        handle,
+        ctypes.byref(created),
+        ctypes.byref(exited),
+        ctypes.byref(kernel),
+        ctypes.byref(user),
+    ):
+        error = ctypes.get_last_error()
+        raise OSError(error, ctypes.FormatError(error))
+    return (created.high << 32) | created.low
+
+
+def _query_windows_process(pid: int) -> dict[str, object] | None:
+    script = (
+        f"$ownerProcess = Get-CimInstance -ClassName Win32_Process "
+        f"-Filter 'ProcessId = {pid}'; "
+        "if ($null -eq $ownerProcess) { exit 3 }; "
+        "$created = ([DateTime]$ownerProcess.CreationDate).ToUniversalTime().ToFileTimeUtc(); "
+        "[pscustomobject]@{pid=[int]$ownerProcess.ProcessId; "
+        "start_time=[Int64]$created; executable_path=[string]$ownerProcess.ExecutablePath; "
+        "command_line=[string]$ownerProcess.CommandLine} | ConvertTo-Json -Compress"
+    )
+    result = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+        shell=False,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    if result.returncode == 3:
+        return None
+    if result.returncode != 0:
+        raise ManagedProcessIdentityError("Windows process command query failed")
+    try:
+        payload = json.loads(result.stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise ManagedProcessIdentityError("Windows process command query was invalid") from exc
+    if not isinstance(payload, dict):
+        raise ManagedProcessIdentityError("Windows process command query was invalid")
+    return payload
+
+
+def _open_managed_process(pid: int) -> _WindowsManagedProcess | None:
+    if sys.platform != "win32":
+        raise ManagedProcessIdentityError("managed process verification requires Windows")
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    access = 0x0001 | 0x1000 | 0x00100000
+    handle = kernel32.OpenProcess(access, False, pid)
+    if not handle:
+        error = ctypes.get_last_error()
+        if error == 87:
+            return None
+        raise OSError(error, ctypes.FormatError(error))
+    try:
+        start_time = _process_start_time(handle)
+        capacity = wintypes.DWORD(32768)
+        executable = ctypes.create_unicode_buffer(capacity.value)
+        kernel32.QueryFullProcessImageNameW.argtypes = [
+            wintypes.HANDLE,
+            wintypes.DWORD,
+            wintypes.LPWSTR,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        kernel32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+        if not kernel32.QueryFullProcessImageNameW(
+            handle,
+            0,
+            executable,
+            ctypes.byref(capacity),
+        ):
+            error = ctypes.get_last_error()
+            raise OSError(error, ctypes.FormatError(error))
+        queried = _query_windows_process(pid)
+        if queried is None:
+            raise ManagedProcessNotFound(pid)
+        queried_start_time = int(queried.get("start_time", -1))
+        if (
+            int(queried.get("pid", -1)) != pid
+            or abs(queried_start_time - start_time) > PROCESS_START_TIME_TOLERANCE_TICKS
+        ):
+            raise ManagedProcessIdentityError("process identity changed while inspected")
+        command_line = str(queried.get("command_line") or "")
+        if not command_line:
+            raise ManagedProcessIdentityError("process command line is unavailable")
+        return _WindowsManagedProcess(
+            pid,
+            handle,
+            start_time,
+            executable.value,
+            command_line,
+        )
+    except Exception:
+        kernel32.CloseHandle(handle)
+        raise
+
+
+def _identity_value(identity: object, key: str) -> object | None:
+    if isinstance(identity, dict):
+        return identity.get(key)
+    return getattr(identity, key, None)
+
+
+def _windows_path_key(path: str, working_directory: str) -> str:
+    normalized = ntpath.normpath(path)
+    if not ntpath.isabs(normalized):
+        normalized = ntpath.join(working_directory, normalized)
+    return ntpath.normcase(ntpath.normpath(normalized))
+
+
+def _process_matches_config(
+    identity: object,
+    command: str,
+    working_directory: str,
+) -> bool:
+    executable_path = _identity_value(identity, "executable_path")
+    command_line = _identity_value(identity, "command_line")
+    if not isinstance(executable_path, str) or not isinstance(command_line, str):
+        return False
+    try:
+        expected = _launch_argv(command, working_directory)
+        actual = _windows_command_argv(command_line)
+    except (IndexError, OSError, ValueError):
+        return False
+    if len(actual) != len(expected):
+        return False
+    if _windows_path_key(executable_path, working_directory) != _windows_path_key(
+        expected[0], working_directory
+    ):
+        return False
+    for index, (expected_arg, actual_arg) in enumerate(zip(expected, actual)):
+        is_path = index == 0 or "\\" in expected_arg or "/" in expected_arg
+        if is_path:
+            if _windows_path_key(expected_arg, working_directory) != _windows_path_key(
+                actual_arg,
+                working_directory,
+            ):
+                return False
+        elif expected_arg != actual_arg:
+            return False
+    return True
+
+
+def _capture_managed_owner(
+    process: object,
+    service_name: str,
+    port: int,
+    command: str,
+    working_directory: str,
+    process_inspector: Callable[[int], object | None],
+) -> dict[str, object]:
+    pid = int(getattr(process, "pid"))
+    poll = getattr(process, "poll", None)
+    process_handle = getattr(process, "_handle", None)
+    if not callable(poll) or poll() is not None or process_handle is None:
+        raise ManagedProcessIdentityError("launched process handle is unavailable")
+    identity = process_inspector(pid)
+    if identity is None:
+        raise ManagedProcessIdentityError("launched process disappeared before verification")
+    try:
+        start_time = _identity_value(identity, "start_time")
+        if int(start_time) != _process_start_time(process_handle):
+            raise ManagedProcessIdentityError("launched process identity changed")
+        if int(_identity_value(identity, "pid")) != pid:
+            raise ManagedProcessIdentityError("launched process PID did not match")
+        if not _process_matches_config(identity, command, working_directory):
+            raise ManagedProcessIdentityError("launched process did not match configured command")
+        return {
+            "schema_version": 1,
+            "service_name": service_name,
+            "port": port,
+            "pid": pid,
+            "start_time": int(start_time),
+            "command": command,
+            "working_directory": working_directory,
+            "executable_path": str(_identity_value(identity, "executable_path")),
+        }
+    finally:
+        close = getattr(identity, "close", None)
+        if callable(close):
+            close()
+
+
+def _ownership_error(port: int, detail: str) -> RuntimeError:
+    return RuntimeError(
+        f"port {port} reclaim failed: ownership unverified; listener left untouched ({detail})"
+    )
+
+
+def _remove_verified_stale_owner(
+    metadata_path: Path | None,
+    owner_record: dict[str, object],
+) -> None:
+    if metadata_path is None or metadata_path.is_symlink():
+        return
+    try:
+        current_record = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    if current_record == owner_record:
+        metadata_path.unlink(missing_ok=True)
 
 
 def _windows_command_argv(command: str) -> list[str]:
@@ -97,6 +377,12 @@ def reclaim_port(
     run: Callable[..., object] = subprocess.run,
     require_managed_owner: bool = False,
     managed_process: object | None = None,
+    managed_owner: dict[str, object] | None = None,
+    service_name: str | None = None,
+    expected_command: str | None = None,
+    working_directory: str | None = None,
+    owner_metadata_path: Path | None = None,
+    process_inspector: Callable[[int], object | None] | None = None,
 ) -> list[int]:
     """Reclaim a listener, optionally requiring its live supervisor-owned process."""
     pattern = re.compile(
@@ -121,27 +407,104 @@ def reclaim_port(
 
     pids = listener_pids()
     if require_managed_owner:
-        managed_pid: int | None = None
-        process_active = False
-        if managed_process is not None:
-            try:
-                managed_pid = int(getattr(managed_process, "pid"))
-                poll = getattr(managed_process, "poll")
-                process_active = callable(poll) and poll() is None
-            except (AttributeError, TypeError, ValueError, OSError):
-                process_active = False
-        if pids and (not process_active or set(pids) != {managed_pid}):
-            raise RuntimeError(f"port {port} reclaim failed: ownership unverified")
-        if managed_pid is None or not process_active:
-            return []
+        if managed_owner is None:
+            if managed_process is not None:
+                if not service_name or not expected_command or not working_directory:
+                    raise _ownership_error(port, "managed child lacks service configuration")
+                try:
+                    managed_owner = _capture_managed_owner(
+                        managed_process,
+                        service_name,
+                        port,
+                        expected_command,
+                        working_directory,
+                        process_inspector or _open_managed_process,
+                    )
+                except Exception:
+                    raise _ownership_error(
+                        port,
+                        "live portal child could not be verified; inspect its command and owner metadata",
+                    ) from None
+            if managed_owner is None:
+                if pids:
+                    raise _ownership_error(
+                        port,
+                        "missing owner metadata; inspect the listener PID and restart the managed service",
+                    )
+                return []
+
+        if (
+            managed_owner.get("schema_version") != 1
+            or managed_owner.get("service_name") != service_name
+            or managed_owner.get("port") != port
+            or managed_owner.get("command") != expected_command
+            or managed_owner.get("working_directory") != working_directory
+        ):
+            raise _ownership_error(port, "owner metadata does not match service configuration")
         try:
-            managed_process.terminate()
-            managed_process.wait(timeout=5)
+            managed_pid = int(managed_owner["pid"])
+            recorded_start_time = int(managed_owner["start_time"])
+            recorded_executable = str(managed_owner["executable_path"])
+        except (KeyError, TypeError, ValueError):
+            raise _ownership_error(port, "owner metadata is incomplete; inspect its record") from None
+        if managed_pid <= 0 or recorded_start_time <= 0 or not expected_command or not working_directory:
+            raise _ownership_error(port, "owner metadata is incomplete; inspect its record")
+
+        if pids and set(pids) != {managed_pid}:
+            raise _ownership_error(port, "listener PID does not match the recorded owner")
+        inspector = process_inspector or _open_managed_process
+        try:
+            owner_process = inspector(managed_pid)
+        except (ManagedProcessNotFound, ProcessLookupError):
+            owner_process = None
         except Exception:
-            raise RuntimeError(f"port {port} reclaim failed: managed process stop failed") from None
+            raise _ownership_error(port, "could not verify owner process; inspect its metadata") from None
+        if owner_process is None:
+            _remove_verified_stale_owner(owner_metadata_path, managed_owner)
+            if pids:
+                raise _ownership_error(port, "recorded owner is absent; inspect the listener PID")
+            return []
+
+        try:
+            current_pid = int(_identity_value(owner_process, "pid"))
+            current_start_time = int(_identity_value(owner_process, "start_time"))
+        except (TypeError, ValueError):
+            close = getattr(owner_process, "close", None)
+            if callable(close):
+                close()
+            raise _ownership_error(port, "live process identity is incomplete; inspect its metadata") from None
+        if current_pid != managed_pid or current_start_time != recorded_start_time:
+            close = getattr(owner_process, "close", None)
+            if callable(close):
+                close()
+            _remove_verified_stale_owner(owner_metadata_path, managed_owner)
+            if pids:
+                raise _ownership_error(port, "PID reuse detected; inspect the listener before retrying")
+            return []
+        if (
+            _windows_path_key(str(_identity_value(owner_process, "executable_path") or ""), working_directory)
+            != _windows_path_key(recorded_executable, working_directory)
+            or not _process_matches_config(owner_process, expected_command, working_directory)
+        ):
+            close = getattr(owner_process, "close", None)
+            if callable(close):
+                close()
+            raise _ownership_error(port, "live process does not match configured command")
+        try:
+            owner_process.terminate()
+            owner_process.wait(timeout=5)
+        except Exception:
+            raise RuntimeError(
+                f"port {port} reclaim failed: verified owner stop failed; inspect process permissions"
+            ) from None
+        finally:
+            close = getattr(owner_process, "close", None)
+            if callable(close):
+                close()
+        _remove_verified_stale_owner(owner_metadata_path, managed_owner)
         remaining = listener_pids()
         if remaining:
-            raise RuntimeError(f"port {port} reclaim failed: managed listener remains")
+            raise _ownership_error(port, "another listener remains; inspect its PID")
         return [managed_pid]
 
     for pid in pids:
@@ -691,6 +1054,9 @@ class PortalSupervisor:
         launch_process: Callable[..., object],
         check_readiness: Callable[..., tuple[bool, str | None]],
         now: Callable[[], float],
+        managed_owner_root: Path | None = None,
+        managed_owner_capture: Callable[..., dict[str, object]] = _capture_managed_owner,
+        managed_process_inspector: Callable[[int], object | None] = _open_managed_process,
     ) -> None:
         self.config = config
         self.log_root = log_root
@@ -698,8 +1064,12 @@ class PortalSupervisor:
         self.launch_process = launch_process
         self.check_readiness = check_readiness
         self.now = now
+        self.managed_owner_root = managed_owner_root or log_root / "managed-owners"
+        self.managed_owner_capture = managed_owner_capture
+        self.managed_process_inspector = managed_process_inspector
         self.state: dict[str, dict[str, object]] = {}
         self._processes: dict[str, object] = {}
+        self._managed_owners: dict[str, dict[str, object]] = {}
         self._monitor_stop = threading.Event()
         self.current_generation: str | None = None
         self.generation_history: list[Path] = []
@@ -866,11 +1236,62 @@ class PortalSupervisor:
         if not service.get("require_managed_owner", False):
             self.reclaim_port(port)
             return
+        name = str(service["name"])
+        metadata_path = self.managed_owner_root / f"{port}.json"
+        owner_record = self._load_managed_owner(metadata_path, port)
+        if owner_record is None:
+            owner_record = self._managed_owners.get(name)
         self.reclaim_port(
             port,
             require_managed_owner=True,
-            managed_process=self._processes.get(str(service["name"])),
+            managed_process=self._processes.get(name),
+            managed_owner=owner_record,
+            service_name=name,
+            expected_command=str(service["cmd"]),
+            working_directory=str(service["working_directory"]),
+            owner_metadata_path=metadata_path,
+            process_inspector=self.managed_process_inspector,
         )
+        with self._state_lock:
+            self._processes.pop(name, None)
+            self._managed_owners.pop(name, None)
+
+    @staticmethod
+    def _load_managed_owner(
+        metadata_path: Path,
+        port: int,
+    ) -> dict[str, object] | None:
+        if not metadata_path.exists():
+            return None
+        if metadata_path.is_symlink():
+            raise _ownership_error(port, "owner metadata is a symlink; inspect the file")
+        try:
+            owner_record = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raise _ownership_error(port, "owner metadata is unreadable; inspect the file") from None
+        if not isinstance(owner_record, dict):
+            raise _ownership_error(port, "owner metadata is invalid; inspect the file")
+        return owner_record
+
+    def _write_managed_owner(
+        self,
+        metadata_path: Path,
+        owner_record: dict[str, object],
+    ) -> None:
+        self.managed_owner_root.mkdir(parents=True, exist_ok=True)
+        if self.managed_owner_root.is_symlink() or metadata_path.is_symlink():
+            raise OSError("managed owner metadata path must not be a symlink")
+        temporary_path = metadata_path.with_name(
+            f"{metadata_path.name}.{uuid4().hex}.tmp"
+        )
+        try:
+            temporary_path.write_text(
+                json.dumps(owner_record, sort_keys=True),
+                encoding="utf-8",
+            )
+            temporary_path.replace(metadata_path)
+        finally:
+            temporary_path.unlink(missing_ok=True)
 
     def _retry_service(self, service: dict[str, object]) -> None:
         name = str(service["name"])
@@ -1027,9 +1448,13 @@ class PortalSupervisor:
     ) -> None:
         port = int(service["port"])
         if service.get("require_managed_owner", False):
-            message = f"port {port} reclaim failed"
-            if "ownership unverified" in str(error).casefold():
-                message += ": ownership unverified"
+            message = str(error).strip()
+            if "ownership unverified" not in message.casefold():
+                detail = message or "inspect the managed owner metadata"
+                message = (
+                    f"port {port} reclaim failed: ownership unverified; "
+                    f"listener left untouched ({detail})"
+                )
         else:
             message = str(error).strip() or type(error).__name__
             prefix = f"port {port} reclaim failed"
@@ -1117,8 +1542,50 @@ class PortalSupervisor:
                     RuntimeError(f"port {port} reclaim failed: service unavailable"),
                 )
                 return
+            owner_record: dict[str, object] | None = None
+            if service.get("require_managed_owner", False):
+                try:
+                    owner_record = self.managed_owner_capture(
+                        process,
+                        name,
+                        port,
+                        command,
+                        working_directory,
+                        self.managed_process_inspector,
+                    )
+                    if (
+                        owner_record.get("schema_version") != 1
+                        or owner_record.get("service_name") != name
+                        or owner_record.get("port") != port
+                        or owner_record.get("pid") != int(getattr(process, "pid"))
+                        or owner_record.get("command") != command
+                        or owner_record.get("working_directory") != working_directory
+                        or int(owner_record.get("start_time", 0)) <= 0
+                        or not owner_record.get("executable_path")
+                    ):
+                        raise ManagedProcessIdentityError(
+                            "captured owner metadata did not match service configuration"
+                        )
+                    self._write_managed_owner(
+                        self.managed_owner_root / f"{port}.json",
+                        owner_record,
+                    )
+                except Exception as exc:
+                    detail = str(exc).strip().replace("\n", " ") or type(exc).__name__
+                    self._record_reclaim_failure(
+                        service,
+                        generation,
+                        prior_attempts + attempt,
+                        _ownership_error(
+                            port,
+                            f"launch identity check failed: {detail[:72]}",
+                        ),
+                    )
+                    return
             with self._state_lock:
                 self._processes[name] = process
+                if owner_record is not None:
+                    self._managed_owners[name] = owner_record
             started_at = self.now()
             with self._state_lock:
                 previous = self.state.get(name, {})

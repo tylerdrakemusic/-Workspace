@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import http.client
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -40,6 +41,31 @@ def _service(name: str, port: int) -> dict[str, object]:
         "readiness_url": f"http://127.0.0.1:{port}/health",
         "accepted_statuses": [200, 204],
         "enabled": True,
+    }
+
+
+def _managed_workout_service(port: int = 18770) -> dict[str, object]:
+    service = _service("Workout", port)
+    service["require_managed_owner"] = True
+    return service
+
+
+def _managed_owner_record(
+    service: dict[str, object],
+    *,
+    pid: int = 5770,
+    start_time: int = 577000,
+) -> dict[str, object]:
+    port = int(service["port"])
+    return {
+        "schema_version": 1,
+        "service_name": "Workout",
+        "port": port,
+        "pid": pid,
+        "start_time": start_time,
+        "command": service["cmd"],
+        "working_directory": service["working_directory"],
+        "executable_path": rf"C:\services\{port}\server-{port}.exe",
     }
 
 
@@ -1085,6 +1111,386 @@ def test_failed_reclaim_does_not_launch_or_adopt_stale_listener(tmp_path: Path) 
         "error": error,
     }
     assert len(error) <= 160
+
+
+def test_portal_started_workout_is_restartable_after_supervisor_recreation(
+    tmp_path: Path,
+) -> None:
+    service = _service("Workout", 18770)
+    service["require_managed_owner"] = True
+    process_ids = iter([5770, 5771])
+    listener_active = True
+    terminated: list[int] = []
+    executable_path = r"C:\services\18770\server-18770.exe"
+
+    def capture_owner(
+        process: object,
+        service_name: str,
+        port: int,
+        command: str,
+        working_directory: str,
+        _inspector: object,
+    ) -> dict[str, object]:
+        process_id = int(getattr(process, "pid"))
+        return {
+            "schema_version": 1,
+            "service_name": service_name,
+            "port": port,
+            "pid": process_id,
+            "start_time": process_id * 100,
+            "command": command,
+            "working_directory": working_directory,
+            "executable_path": executable_path,
+        }
+
+    def inspect_process(process_id: int) -> SimpleNamespace:
+        def terminate() -> None:
+            nonlocal listener_active
+            terminated.append(process_id)
+            listener_active = False
+
+        return SimpleNamespace(
+            pid=process_id,
+            start_time=process_id * 100,
+            executable_path=executable_path,
+            command_line=f'"{executable_path}" --serve',
+            terminate=terminate,
+            wait=lambda timeout: None,
+            close=lambda: None,
+        )
+
+    def launch(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        process_id = next(process_ids)
+
+        def terminate() -> None:
+            nonlocal listener_active
+            terminated.append(process_id)
+            listener_active = False
+
+        return SimpleNamespace(
+            pid=process_id,
+            poll=lambda: None,
+            terminate=terminate,
+            wait=lambda **_kwargs: None,
+        )
+
+    first_supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path,
+        reclaim_port=lambda _port, **_kwargs: None,
+        launch_process=launch,
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+        managed_owner_capture=capture_owner,
+    )
+    first_supervisor.restart_all()
+
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        assert command == ["netstat", "-ano", "-p", "tcp"]
+        listener = (
+            "  TCP    127.0.0.1:18770    0.0.0.0:0    LISTENING    5770\n"
+            if listener_active
+            else ""
+        )
+        return SimpleNamespace(returncode=0, stdout=listener, stderr="")
+
+    second_supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path,
+        reclaim_port=lambda port, **options: supervisor_module.reclaim_port(
+            port,
+            run=run,
+            **options,
+        ),
+        launch_process=launch,
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1001.0,
+        managed_owner_capture=capture_owner,
+        managed_process_inspector=inspect_process,
+    )
+
+    second_supervisor.restart_all()
+
+    assert terminated == [5770]
+    assert second_supervisor.state["Workout"]["pid"] == 5771
+    assert second_supervisor.state["Workout"]["readiness"] == "ready"
+    assert second_supervisor.state["Workout"]["error"] is None
+
+
+def test_real_portal_started_workout_process_is_verified_and_restarted(
+    tmp_path: Path,
+) -> None:
+    with socket.socket() as probe_socket:
+        probe_socket.bind(("127.0.0.1", 0))
+        port = int(probe_socket.getsockname()[1])
+    server_script = tmp_path / "workout_server.py"
+    server_script.write_text(
+        "from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+        "import sys\n"
+        "class Handler(BaseHTTPRequestHandler):\n"
+        "    def do_GET(self):\n"
+        "        self.send_response(200)\n"
+        "        self.end_headers()\n"
+        "        self.wfile.write(b'ready')\n"
+        "    def log_message(self, *_args):\n"
+        "        return\n"
+        "HTTPServer(('127.0.0.1', int(sys.argv[1])), Handler).serve_forever()\n",
+        encoding="utf-8",
+    )
+    service = {
+        "name": "Workout",
+        "port": port,
+        "cmd": f'"{sys.executable}" "{server_script}" {port}',
+        "working_directory": str(tmp_path),
+        "readiness_url": f"http://127.0.0.1:{port}/health",
+        "accepted_statuses": [200],
+        "enabled": True,
+        "require_managed_owner": True,
+    }
+    processes: list[subprocess.Popen[bytes]] = []
+
+    def launch(command: str, working_directory: str, stdout_path: Path, stderr_path: Path, **options: object) -> object:
+        process = supervisor_module.launch_process(
+            command,
+            working_directory,
+            stdout_path,
+            stderr_path,
+            **options,
+        )
+        processes.append(process)
+        return process
+
+    first_supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path / "logs",
+        reclaim_port=supervisor_module.reclaim_port,
+        launch_process=launch,
+        check_readiness=supervisor_module.check_http_readiness,
+        now=time.time,
+    )
+
+    try:
+        first_supervisor.restart_all()
+        assert first_supervisor.state["Workout"]["readiness"] == "ready", str(
+            first_supervisor.state["Workout"]
+        )
+        first_owner = json.loads(
+            (tmp_path / "logs" / "managed-owners" / f"{port}.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert first_owner["pid"] == processes[0].pid
+        assert first_owner["start_time"] > 0
+
+        second_supervisor = PortalSupervisor(
+            {"servers": [service]},
+            log_root=tmp_path / "logs",
+            reclaim_port=supervisor_module.reclaim_port,
+            launch_process=launch,
+            check_readiness=supervisor_module.check_http_readiness,
+            now=time.time,
+        )
+        second_supervisor.restart_all()
+
+        assert processes[0].poll() is not None
+        assert processes[1].poll() is None
+        assert second_supervisor.state["Workout"]["pid"] == processes[1].pid
+        assert second_supervisor.state["Workout"]["readiness"] == "ready"
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
+
+
+def test_missing_owner_metadata_leaves_listener_untouched_and_persists_diagnostic(
+    tmp_path: Path,
+) -> None:
+    service = _managed_workout_service()
+    commands: list[list[str]] = []
+    inspected: list[int] = []
+    launched: list[int] = []
+
+    def run(command: list[str], **_kwargs: object) -> SimpleNamespace:
+        commands.append(command)
+        return SimpleNamespace(
+            returncode=0,
+            stdout="  TCP    127.0.0.1:18770    0.0.0.0:0    LISTENING    9999\n",
+            stderr="",
+        )
+
+    def inspect_process(pid: int) -> None:
+        inspected.append(pid)
+        return None
+
+    supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path,
+        reclaim_port=lambda port, **options: supervisor_module.reclaim_port(
+            port,
+            run=run,
+            **options,
+        ),
+        launch_process=lambda *_args, **_kwargs: launched.append(1),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+        managed_process_inspector=inspect_process,
+    )
+
+    supervisor.restart_all()
+
+    error = str(supervisor.state["Workout"]["error"])
+    assert "missing owner metadata" in error
+    assert "listener left untouched" in error
+    assert commands == [["netstat", "-ano", "-p", "tcp"]]
+    assert inspected == []
+    assert launched == []
+
+
+def test_unverified_listener_does_not_match_or_delete_a_live_owner_record(
+    tmp_path: Path,
+) -> None:
+    service = _managed_workout_service()
+    owner_record = _managed_owner_record(service)
+    owner_path = tmp_path / "managed-owners" / "18770.json"
+    owner_path.parent.mkdir()
+    owner_path.write_text(json.dumps(owner_record), encoding="utf-8")
+    terminated: list[int] = []
+    launched: list[int] = []
+
+    def run(_command: list[str], **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            returncode=0,
+            stdout="  TCP    127.0.0.1:18770    0.0.0.0:0    LISTENING    9999\n",
+            stderr="",
+        )
+
+    supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path,
+        reclaim_port=lambda port, **options: supervisor_module.reclaim_port(
+            port,
+            run=run,
+            **options,
+        ),
+        launch_process=lambda *_args, **_kwargs: launched.append(1),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+        managed_process_inspector=lambda _pid: SimpleNamespace(
+            terminate=lambda: terminated.append(5770),
+        ),
+    )
+
+    supervisor.restart_all()
+
+    error = str(supervisor.state["Workout"]["error"])
+    assert "listener PID does not match the recorded owner" in error
+    assert owner_path.read_text(encoding="utf-8") == json.dumps(owner_record)
+    assert terminated == []
+    assert launched == []
+
+
+def test_stale_owner_metadata_does_not_authorize_a_reused_pid(
+    tmp_path: Path,
+) -> None:
+    service = _managed_workout_service()
+    owner_record = _managed_owner_record(service)
+    owner_path = tmp_path / "managed-owners" / "18770.json"
+    owner_path.parent.mkdir()
+    owner_path.write_text(json.dumps(owner_record), encoding="utf-8")
+    terminated: list[int] = []
+    launched: list[int] = []
+    executable_path = str(owner_record["executable_path"])
+
+    def run(_command: list[str], **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            returncode=0,
+            stdout="  TCP    127.0.0.1:18770    0.0.0.0:0    LISTENING    5770\n",
+            stderr="",
+        )
+
+    def inspect_process(pid: int) -> SimpleNamespace:
+        return SimpleNamespace(
+            pid=pid,
+            start_time=577001,
+            executable_path=executable_path,
+            command_line=f'"{executable_path}" --serve',
+            terminate=lambda: terminated.append(pid),
+            wait=lambda _timeout: None,
+            close=lambda: None,
+        )
+
+    supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path,
+        reclaim_port=lambda port, **options: supervisor_module.reclaim_port(
+            port,
+            run=run,
+            **options,
+        ),
+        launch_process=lambda *_args, **_kwargs: launched.append(1),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+        managed_process_inspector=inspect_process,
+    )
+
+    supervisor.restart_all()
+
+    error = str(supervisor.state["Workout"]["error"])
+    assert "PID reuse detected" in error
+    assert "listener left untouched" in error
+    assert not owner_path.exists()
+    assert terminated == []
+    assert launched == []
+
+
+def test_managed_owner_with_wrong_live_command_is_not_terminated(
+    tmp_path: Path,
+) -> None:
+    service = _managed_workout_service()
+    owner_record = _managed_owner_record(service)
+    owner_path = tmp_path / "managed-owners" / "18770.json"
+    owner_path.parent.mkdir()
+    owner_path.write_text(json.dumps(owner_record), encoding="utf-8")
+    terminated: list[int] = []
+    executable_path = str(owner_record["executable_path"])
+
+    def run(_command: list[str], **_kwargs: object) -> SimpleNamespace:
+        return SimpleNamespace(
+            returncode=0,
+            stdout="  TCP    127.0.0.1:18770    0.0.0.0:0    LISTENING    5770\n",
+            stderr="",
+        )
+
+    supervisor = PortalSupervisor(
+        {"servers": [service]},
+        log_root=tmp_path,
+        reclaim_port=lambda port, **options: supervisor_module.reclaim_port(
+            port,
+            run=run,
+            **options,
+        ),
+        launch_process=lambda *_args, **_kwargs: pytest.fail("unverified owner was launched over"),
+        check_readiness=lambda *_args: (True, None),
+        now=lambda: 1000.0,
+        managed_process_inspector=lambda pid: SimpleNamespace(
+            pid=pid,
+            start_time=577000,
+            executable_path=executable_path,
+            command_line=f'"{executable_path}" --unexpected',
+            terminate=lambda: terminated.append(pid),
+            wait=lambda _timeout: None,
+            close=lambda: None,
+        ),
+    )
+
+    supervisor.restart_all()
+
+    assert "live process does not match configured command" in str(
+        supervisor.state["Workout"]["error"]
+    )
+    assert owner_path.exists()
+    assert terminated == []
 
 
 def test_http_readiness_waits_for_a_configured_accepted_status() -> None:

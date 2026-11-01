@@ -96,6 +96,7 @@ def test_workspace_manifest_enumerates_workspace_owned_sources() -> None:
         "diagrams/workspace-derived-decision-metadata-implementation.mmd",
             "diagrams/workspace-derived-proof-write-concurrency.mmd",
         "diagrams/workspace-derived-services.mmd",
+        "diagrams/workspace-derived-services-process-ownership.mmd",
         "diagrams/workspace-derived-worktree-hygiene.mmd",
         "diagrams/workspace-derived-gmail-attachments.mmd",
         "diagrams/workspace-fr-flow.mmd",
