@@ -1217,6 +1217,10 @@ def test_portal_started_workout_is_restartable_after_supervisor_recreation(
     assert second_supervisor.state["Workout"]["error"] is None
 
 
+@pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="managed process handle verification requires Windows",
+)
 def test_real_portal_started_workout_process_is_verified_and_restarted(
     tmp_path: Path,
 ) -> None:
