@@ -89,6 +89,26 @@ def _build_supervisor(
     def reclaim(port: int, **options: object) -> None:
         reclaim_records.append((port, options))
 
+    def capture_owner(
+        process: object,
+        service_name: str,
+        port: int,
+        command: str,
+        working_directory: str,
+        _inspector: object,
+    ) -> dict[str, object]:
+        process_id = int(getattr(process, "pid"))
+        return {
+            "schema_version": 1,
+            "service_name": service_name,
+            "port": port,
+            "pid": process_id,
+            "start_time": process_id * 100,
+            "command": command,
+            "working_directory": working_directory,
+            "executable_path": r"C:\G\python.exe",
+        }
+
     return PortalSupervisor(
         {"servers": [_test_workout_service()]},
         log_root=tmp_path / "logs",
@@ -96,6 +116,7 @@ def _build_supervisor(
         launch_process=launch,
         check_readiness=readiness,
         now=now,
+        managed_owner_capture=capture_owner,
     )
 
 

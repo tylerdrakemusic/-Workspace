@@ -1,0 +1,38 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-derived-services.mmd
+%% Scope: verified Workout process ownership and fail-closed reclamation detail
+graph LR
+    Supervisor[⊕ portal_supervisor.py<br/>Workout recovery and retry]
+    Config[tools/portal_servers.json<br/>configured Workout command<br/>working directory and port]
+    OwnerRecord[(Persistent Workout ownership record<br/>PID · exact process start time<br/>executable path · configured command<br/>working directory · port)]
+    LiveInspection[Windows process inspection<br/>live PID · exact start time<br/>executable path · command line]
+    IdentityMatch{Recorded owner and configured<br/>process identity match?}
+    VerifiedOwner[Verified owned Workout process]
+    Terminate[Terminate verified owner only]
+    VerifyStopped{Listener absent after stop?}
+    Restart[Restart configured Workout command]
+    FailClosed[Actionable ownership diagnostic<br/>unknown / stale / mismatched owner<br/>listener left untouched]
+
+    OwnerRecord -->|read before reclaim| Supervisor
+    Config -->|expected service identity| IdentityMatch
+    Supervisor -->|inspect recorded PID| LiveInspection
+    OwnerRecord --> IdentityMatch
+    LiveInspection --> IdentityMatch
+    IdentityMatch -->|exact match| VerifiedOwner
+    VerifiedOwner --> Terminate
+    Terminate --> VerifyStopped
+    VerifyStopped -->|yes| Restart
+    VerifyStopped -->|no or verification failed| FailClosed
+    IdentityMatch -->|missing / stale / mismatched| FailClosed
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff
+
+class Supervisor,Config,LiveInspection,VerifiedOwner,Terminate,Restart ws
+class OwnerRecord db
+class IdentityMatch,VerifyStopped,FailClosed state
