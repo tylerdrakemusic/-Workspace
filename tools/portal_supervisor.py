@@ -146,9 +146,11 @@ def _query_windows_process(pid: int) -> dict[str, object] | None:
         f"-Filter 'ProcessId = {pid}'; "
         "if ($null -eq $ownerProcess) { exit 3 }; "
         "$created = ([DateTime]$ownerProcess.CreationDate).ToUniversalTime().ToFileTimeUtc(); "
-        "[pscustomobject]@{pid=[int]$ownerProcess.ProcessId; "
+        "$json = [pscustomobject]@{pid=[int]$ownerProcess.ProcessId; "
         "start_time=[Int64]$created; executable_path=[string]$ownerProcess.ExecutablePath; "
-        "command_line=[string]$ownerProcess.CommandLine} | ConvertTo-Json -Compress"
+        "command_line=[string]$ownerProcess.CommandLine} | ConvertTo-Json -Compress; "
+        "$bytes = [System.Text.Encoding]::UTF8.GetBytes($json); "
+        "[Convert]::ToBase64String($bytes)"
     )
     result = subprocess.run(
         ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
@@ -165,8 +167,9 @@ def _query_windows_process(pid: int) -> dict[str, object] | None:
     if result.returncode != 0:
         raise ManagedProcessIdentityError("Windows process command query failed")
     try:
-        payload = json.loads(result.stdout)
-    except (TypeError, json.JSONDecodeError) as exc:
+        json_bytes = base64.b64decode(result.stdout.strip(), validate=True)
+        payload = json.loads(json_bytes.decode("utf-8"))
+    except (binascii.Error, TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ManagedProcessIdentityError("Windows process command query was invalid") from exc
     if not isinstance(payload, dict):
         raise ManagedProcessIdentityError("Windows process command query was invalid")
