@@ -1227,7 +1227,9 @@ def test_real_portal_started_workout_process_is_verified_and_restarted(
     with socket.socket() as probe_socket:
         probe_socket.bind(("127.0.0.1", 0))
         port = int(probe_socket.getsockname()[1])
-    server_script = tmp_path / "workout_server.py"
+    server_directory = tmp_path / "∞Life"
+    server_directory.mkdir()
+    server_script = server_directory / "workout_server.py"
     server_script.write_text(
         "from http.server import BaseHTTPRequestHandler, HTTPServer\n"
         "import sys\n"
@@ -1245,7 +1247,7 @@ def test_real_portal_started_workout_process_is_verified_and_restarted(
         "name": "Workout",
         "port": port,
         "cmd": f'"{sys.executable}" "{server_script}" {port}',
-        "working_directory": str(tmp_path),
+        "working_directory": str(server_directory),
         "readiness_url": f"http://127.0.0.1:{port}/health",
         "accepted_statuses": [200],
         "enabled": True,
