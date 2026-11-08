@@ -1,9 +1,10 @@
 #Requires -Version 5.1
-# sync-skills.ps1 — git pull each skill repo and copy registered SKILL.md files
-# into .github/skills/. Driven by skill-sync-config.json.
+# sync-skills.ps1 — copy registered SKILL.md files into .github/skills/.
+# External source refresh requires -RefreshExternalSources.
 
 param(
     [switch]$ApproveProtectedSync,
+    [switch]$RefreshExternalSources,
     [switch]$ApproveReviewedUpdates,
     [switch]$InstallReviewedAdaptations,
     [string[]]$ReviewedSkills,
@@ -308,7 +309,7 @@ function Invoke-PinnedTargetRestore {
         throw "Pinned target restoration requires a non-empty rationale"
     }
     if (
-        $ApproveProtectedSync -or $ApproveReviewedUpdates -or
+        $ApproveProtectedSync -or $RefreshExternalSources -or $ApproveReviewedUpdates -or
         $null -ne $ReviewedSkills -or -not [string]::IsNullOrWhiteSpace($ReviewRationale)
     ) {
         throw "Pinned target restoration cannot be combined with another sync mode"
@@ -1216,6 +1217,9 @@ if (
 }
 
 if ($ApproveReviewedUpdates) {
+    if ($RefreshExternalSources) {
+        throw "External source refresh must run separately from reviewed skill updates"
+    }
     Invoke-ReviewedSkillSync
     exit 0
 }
@@ -1242,6 +1246,11 @@ Write-Log "=== skill-sync start ==="
 
 foreach ($repo in $config.repos) {
     Write-Log "--- $($repo.name) ---"
+
+    if (-not $RefreshExternalSources) {
+        Write-Log "Skipping source refresh; use -RefreshExternalSources to clone or pull"
+        continue
+    }
 
     # Clone if not present, otherwise pull (skip if remote is null — shared path)
     $repoPath = $repo.path

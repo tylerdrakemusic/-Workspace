@@ -814,7 +814,10 @@ def preflight_sync_config(config_path: Path) -> dict[str, Any]:
         if isinstance(environment_name, str) and environment_name in os.environ:
             continue
         source_root = Path(resolved_repo["path"])
-        if not source_root.is_dir():
+        if (
+            not source_root.is_dir()
+            and raw_repo.get("source_policy", "required") != "optional"
+        ):
             raise _SkillSyncPathViolation(
                 f"Canonical source root for {raw_repo['name']} is missing: {source_root}"
             )
