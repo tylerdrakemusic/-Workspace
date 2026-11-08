@@ -43,6 +43,20 @@ function Get-SyncPreflight {
     }
 }
 
+function Get-ReviewedTextSha256 {
+    param([string]$Path)
+
+    $output = & $pythonExecutable $manifestUpdater --sha256-reviewed-text $Path 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to hash reviewed text file '$Path': $($output -join ' ')"
+    }
+    $digest = ($output -join [Environment]::NewLine).Trim().ToLowerInvariant()
+    if ($digest -notmatch '^[0-9a-f]{64}$') {
+        throw "Reviewed text hashing returned an invalid SHA-256 digest for '$Path'"
+    }
+    return $digest
+}
+
 $config = Get-SyncPreflight
 $configRoot = $config.workspace_root
 $logFile = $config.log_file
@@ -596,12 +610,12 @@ function Invoke-ReviewedSkillSync {
                 if (-not (Test-Path -LiteralPath $adaptationSource -PathType Leaf)) {
                     throw "Reviewed skill adaptation source is missing: $skill"
                 }
-                $actualAdaptationHash = (Get-FileHash -LiteralPath $adaptationSource -Algorithm SHA256).Hash.ToLowerInvariant()
+                $actualAdaptationHash = Get-ReviewedTextSha256 -Path $adaptationSource
                 if ($actualAdaptationHash -cne $adaptationHash) {
                     throw "Reviewed skill adaptation source hash mismatch: $skill"
                 }
                 $source = $adaptationSource
-                $newHash = $adaptationHash
+                $newHash = (Get-FileHash -LiteralPath $adaptationSource -Algorithm SHA256).Hash.ToLowerInvariant()
             }
 
             if (-not (Test-Path $source -PathType Leaf)) {
@@ -712,7 +726,7 @@ function Invoke-ReviewedSkillSync {
                         $reviewedAdaptationBaseline = (
                             $acceptedBaselines -contains "reviewed-project-owned-adaptation" -and
                             $reviewedAdaptationHash -match '^[0-9a-f]{64}$' -and
-                            $baselineHash -eq $reviewedAdaptationHash -and
+                            (Get-ReviewedTextSha256 -Path $companionTarget) -eq $reviewedAdaptationHash -and
                             $baselineHash -ne $companionHash
                         )
                         if (-not ($approvedSourceBaseline -or $reviewedAdaptationBaseline)) {
@@ -740,12 +754,12 @@ function Invoke-ReviewedSkillSync {
                         if (-not (Test-Path -LiteralPath $adaptationSource -PathType Leaf)) {
                             throw "Reviewed adaptation source is missing: $targetRelative"
                         }
-                        $actualAdaptationHash = (Get-FileHash -LiteralPath $adaptationSource -Algorithm SHA256).Hash.ToLowerInvariant()
+                        $actualAdaptationHash = Get-ReviewedTextSha256 -Path $adaptationSource
                         if ($actualAdaptationHash -cne $adaptationHash) {
                             throw "Reviewed adaptation source hash mismatch: $targetRelative"
                         }
                         $syncCompanionSource = $adaptationSource
-                        $companionHash = $adaptationHash
+                        $companionHash = (Get-FileHash -LiteralPath $adaptationSource -Algorithm SHA256).Hash.ToLowerInvariant()
                     }
 
                     $null = $syncPlan.Add([pscustomobject]@{

@@ -351,7 +351,7 @@ def _preflight_companion_entries(config: dict[str, Any]) -> list[dict[str, Any]]
                     raise _SkillSyncPathViolation(
                         f"Reviewed adaptation source for {description} is missing"
                     )
-                if sha256_file(adaptation_path) != reviewed_adaptation_sha256.lower():
+                if sha256_text_file(adaptation_path) != reviewed_adaptation_sha256.lower():
                     raise _SkillSyncPathViolation(
                         f"Reviewed adaptation source for {description} does not match its SHA-256 baseline"
                     )
@@ -740,7 +740,7 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
                 raise _SkillSyncPathViolation(
                     f"Reviewed skill adaptation source for {item['skill']} is missing"
                 )
-            if sha256_file(adaptation_source) != adaptation_hash.lower():
+            if sha256_text_file(adaptation_source) != adaptation_hash.lower():
                 raise _SkillSyncPathViolation(
                     f"Reviewed skill adaptation source for {item['skill']} does not match its SHA-256 baseline"
                 )
@@ -974,7 +974,8 @@ def verify_skill_integrity(
             and manifest_hash is not None
             and target_hash == manifest_hash
             and isinstance(item.get("reviewed_adaptation_sha256"), str)
-            and target_hash == item["reviewed_adaptation_sha256"]
+            and sha256_text_file(target)
+            == item["reviewed_adaptation_sha256"].lower()
         )
 
         if target_hash is None or manifest_hash is None:
@@ -1054,7 +1055,7 @@ def verify_skill_integrity(
                 status = (
                     "reviewed_project_owned_adaptation"
                     if reviewed_hash is not None
-                    and target_hash == reviewed_hash.lower()
+                    and sha256_text_file(target) == reviewed_hash.lower()
                     else "integrity_failure"
                 )
             else:
@@ -1080,6 +1081,12 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def sha256_text_file(path: Path) -> str:
+    """Return the SHA-256 of UTF-8 text after universal newline normalization."""
+    normalized_text = path.read_text(encoding="utf-8")
+    return hashlib.sha256(normalized_text.encode("utf-8")).hexdigest()
 
 
 def pinned_git_blob_sha256(
@@ -1552,6 +1559,13 @@ if __name__ == "__main__":
         parser.add_argument("--root", type=Path, required=True)
         args = parser.parse_args()
         print(_confined_path(args.confine_path, args.root, "Source"))
+    elif "--sha256-reviewed-text" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--sha256-reviewed-text", type=Path, required=True)
+        args = parser.parse_args()
+        print(sha256_text_file(args.sha256_reviewed_text))
     elif "--preflight-sync-config" in sys.argv:
         import argparse
 

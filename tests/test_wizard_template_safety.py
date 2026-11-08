@@ -214,7 +214,7 @@ def test_write_env_rejects_repository_env_through_script_symlink(
         '  ln -s "$BASH_SOURCE" "$caller_repository/probe.sh"\n'
         f'  if ACTUAL_REPOSITORY={shlex.quote(_bash_path(repository))} '
         f'CALLER_REPOSITORY="$caller_repository" ENV_FILE={shlex.quote(env_file)} '
-        'SYMLINK_PROBE=1 "$caller_repository/probe.sh"; then\n'
+        'SYMLINK_PROBE=1 bash "$caller_repository/probe.sh"; then\n'
         '    printf "unsafe-write\\n"\n'
         '    exit 20\n'
         '  fi\n'

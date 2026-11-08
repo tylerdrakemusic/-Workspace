@@ -158,9 +158,7 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
         "BLADER_HUMANIZER_ROOT",
         "SUPERPOWERS_ROOT",
     ):
-        monkeypatch.setenv(
-            environment_name, str(tmp_path / "missing-external" / environment_name)
-        )
+        monkeypatch.delenv(environment_name, raising=False)
     for watched_dir in ("agents", "instructions", "skills"):
         shutil.copytree(
             WORKTREE_ROOT / ".github" / watched_dir,
@@ -184,9 +182,10 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
         for key in manifest["files"]
         if key.startswith(".github/skills/")
     }
-    config = json.loads(
-        (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
+    shutil.copy2(
+        WORKTREE_ROOT / "tools" / "skill-sync-config.json", config_path
     )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
     config["repos"] = [
         {**repo, "skills": [skill for skill in repo["skills"] if skill in manifest_skills]}
         for repo in config["repos"]

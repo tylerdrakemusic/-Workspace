@@ -247,11 +247,11 @@
       "reviewed_skill_adaptations": {
         "thinking-and-docs/before-building": {
           "source_relative_path": "tools/skill-sync-adaptations/davidondrej/before-building/SKILL.md",
-          "sha256": "044e0de5f653013e8292d1c123ae18e2d9ec8cecba1f89f6b221be356d03d1e0"
+          "sha256": "8d9d7443e2c42274f7ed67774f4d51c09ed749eacfdcfecb65612d0d07928e28"
         },
         "thinking-and-docs/decisions": {
           "source_relative_path": "tools/skill-sync-adaptations/davidondrej/decisions/SKILL.md",
-          "sha256": "13c090cadb491a2dd1a36abff3fc8f1404e6e6b20399b0477ab086be6181d866"
+          "sha256": "eae6811daaf7d80058eff3e304556df846cf937cc899f314b00629a725b315a2"
         }
       }
     },

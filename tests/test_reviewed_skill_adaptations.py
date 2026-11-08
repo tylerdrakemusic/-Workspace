@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / ".github" / "!!☾⛧security"))
@@ -62,7 +63,9 @@ def _workspace_with_adaptation(
     adaptation_source = workspace_root / adaptation_relative_path
     adaptation_source.parent.mkdir(parents=True, exist_ok=True)
     adaptation_source.write_text("reviewed manual-only adaptation\n", encoding="utf-8")
-    adaptation_hash = hashlib.sha256(adaptation_source.read_bytes()).hexdigest()
+    adaptation_hash = hashlib.sha256(
+        adaptation_source.read_text(encoding="utf-8").encode("utf-8")
+    ).hexdigest()
 
     config_path = workspace_root / "tools" / "skill-sync-config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -203,7 +206,9 @@ def test_integrity_verifier_accepts_only_manifest_matched_reviewed_adaptation(
             {
                 "file_count": 1,
                 "files": {
-                    ".github/skills/example/SKILL.md": adaptation_hash,
+                    ".github/skills/example/SKILL.md": hashlib.sha256(
+                        target_path.read_bytes()
+                    ).hexdigest(),
                 },
             }
         ),
@@ -216,6 +221,71 @@ def test_integrity_verifier_accepts_only_manifest_matched_reviewed_adaptation(
     assert [entry.status for entry in result.entries] == [
         "reviewed_project_owned_adaptation"
     ]
+
+
+@pytest.mark.parametrize(
+    ("source_newline", "target_newline"),
+    [(b"\n", b"\r\n"), (b"\r\n", b"\n")],
+)
+def test_reviewed_adaptation_hash_is_line_ending_portable_and_manual_only(
+    tmp_path: Path, source_newline: bytes, target_newline: bytes
+) -> None:
+    config_path, adaptation_source, _ = _workspace_with_adaptation(tmp_path)
+    canonical_text = (
+        "---\n"
+        "name: example\n"
+        "user-invocable: true\n"
+        "disable-model-invocation: true\n"
+        "description: Manual-only adaptation.\n"
+        "---\n"
+        "\n"
+        "Reviewed body.\n"
+    )
+    canonical_bytes = canonical_text.encode("utf-8")
+    portable_hash = hashlib.sha256(canonical_bytes).hexdigest()
+    adaptation_source.write_bytes(canonical_bytes.replace(b"\n", source_newline))
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["reviewed_skill_adaptations"]["example"]["sha256"] = (
+        portable_hash
+    )
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    preflight = preflight_sync_config(config_path)
+    assert preflight["repos"][0]["mappings"][0]["reviewed_adaptation_sha256"] == (
+        portable_hash
+    )
+
+    workspace_root = config_path.parent.parent
+    target_path = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    target_path.parent.mkdir(parents=True)
+    target_bytes = canonical_bytes.replace(b"\n", target_newline)
+    target_path.write_bytes(target_bytes)
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "files": {
+                    ".github/skills/example/SKILL.md": hashlib.sha256(
+                        target_bytes
+                    ).hexdigest()
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert result.hard_findings == []
+    assert [entry.status for entry in result.entries] == [
+        "reviewed_project_owned_adaptation"
+    ]
+    _, _, metadata_and_body = canonical_text.partition("---\n")
+    metadata_text, _, _ = metadata_and_body.partition("\n---\n")
+    metadata = yaml.safe_load(metadata_text)
+    assert metadata["user-invocable"] is True
+    assert metadata["disable-model-invocation"] is True
 
 
 def test_manifest_update_rejects_target_changed_from_reviewed_hash(
@@ -334,7 +404,9 @@ def _reviewed_sync_workspace(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
                                     "tools/skill-sync-adaptations/example/SKILL.md"
                                 ),
                                 "sha256": hashlib.sha256(
-                                    adaptation_source.read_bytes()
+                                    adaptation_source.read_text(
+                                        encoding="utf-8"
+                                    ).encode("utf-8")
                                 ).hexdigest(),
                             }
                         },

@@ -76,4 +76,5 @@ def test_sync_config_pins_only_the_two_reviewed_adaptations() -> None:
     assert set(adaptations) == {"thinking-and-docs/before-building", "thinking-and-docs/decisions"}
     for skill, adaptation in adaptations.items():
         staged_path = PROJECT_ROOT / adaptation["source_relative_path"]
-        assert adaptation["sha256"] == hashlib.sha256(staged_path.read_bytes()).hexdigest()
+        canonical_text = staged_path.read_text(encoding="utf-8").encode("utf-8")
+        assert adaptation["sha256"] == hashlib.sha256(canonical_text).hexdigest()
