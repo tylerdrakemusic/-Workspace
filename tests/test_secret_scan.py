@@ -128,7 +128,9 @@ def test_reviewed_hardening_patterns_adaptation_is_pinned_and_scans_clean(
     )
     adaptation_path = workspace_root / adaptation_relative
     adaptation_bytes = adaptation_path.read_bytes()
-    adaptation_hash = hashlib.sha256(adaptation_bytes).hexdigest()
+    canonical_adaptation_bytes = adaptation_bytes.replace(b"\r\n", b"\n")
+    canonical_adaptation_bytes = canonical_adaptation_bytes.replace(b"\r", b"\n")
+    adaptation_hash = hashlib.sha256(canonical_adaptation_bytes).hexdigest()
     contract = companion["hash_contract"]
     assert contract["accepted_baselines"] == ["reviewed-project-owned-adaptation"]
     assert contract["reviewed_adaptation_sha256"] == adaptation_hash
@@ -143,8 +145,13 @@ def test_reviewed_hardening_patterns_adaptation_is_pinned_and_scans_clean(
             / "agent-manifest.json"
         ).read_text(encoding="utf-8")
     )
-    assert hashlib.sha256(target_path.read_bytes()).hexdigest() == adaptation_hash
-    assert manifest["files"][target_relative] == adaptation_hash
+    canonical_target_bytes = target_path.read_bytes().replace(b"\r\n", b"\n")
+    canonical_target_bytes = canonical_target_bytes.replace(b"\r", b"\n")
+    assert hashlib.sha256(canonical_target_bytes).hexdigest() == adaptation_hash
+    assert (
+        manifest["files"][target_relative]
+        == hashlib.sha256(canonical_target_bytes).hexdigest()
+    )
 
     repository_root = tmp_path / "scanner-fixture"
     staged_file = repository_root / "references" / "hardening-patterns.md"

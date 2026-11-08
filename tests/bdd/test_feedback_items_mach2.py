@@ -369,11 +369,26 @@ def _prepare_integrity_project(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
 
     target_file = project_root / ".github" / "skills" / "example" / "SKILL.md"
     target_file.parent.mkdir(parents=True)
-    source_file = project_root / "external-sources" / "skills" / "example" / "SKILL.md"
+    source_root = project_root / "external-sources"
+    source_file = source_root / "skills" / "example" / "SKILL.md"
     source_file.parent.mkdir(parents=True)
     source_content = "# External source fixture\n"
-    source_file.write_text(source_content, encoding="utf-8")
-    target_file.write_text(source_content, encoding="utf-8")
+    source_file.write_bytes(source_content.encode("utf-8"))
+    target_file.write_bytes(source_content.encode("utf-8"))
+    git = ["git", "-C", str(source_root)]
+    subprocess.run([*git, "init"], check=True, capture_output=True)
+    subprocess.run([*git, "config", "core.autocrlf", "false"], check=True)
+    subprocess.run([*git, "config", "user.name", "Integrity Test"], check=True)
+    subprocess.run(
+        [*git, "config", "user.email", "integrity-test@example.test"],
+        check=True,
+    )
+    subprocess.run([*git, "add", "--all"], check=True, capture_output=True)
+    subprocess.run(
+        [*git, "commit", "-m", "Add clean external source"],
+        check=True,
+        capture_output=True,
+    )
 
     tools_dir = project_root / "tools"
     tools_dir.mkdir()
@@ -434,6 +449,7 @@ def verify_clean_and_mismatched_project(
     subprocess.CompletedProcess[str],
 ]:
     project_root, _, source_file, _ = integrity_project
+    git = ["git", "-C", str(project_root / "external-sources")]
     gate_script = PROJECT_ROOT / "src" / "utils" / "prewrite_security_gate.py"
     verifier_script = project_root / ".github" / "!!☾⛧security" / "update_manifest.py"
 
@@ -455,7 +471,13 @@ def verify_clean_and_mismatched_project(
         check=False,
         timeout=10,
     )
-    source_file.write_text("# Confirmed upstream source drift\n", encoding="utf-8")
+    source_file.write_bytes(b"# Confirmed upstream source drift\n")
+    subprocess.run([*git, "add", "skills/example/SKILL.md"], check=True)
+    subprocess.run(
+        [*git, "commit", "-m", "Confirm upstream source drift"],
+        check=True,
+        capture_output=True,
+    )
     canonical_mismatch = subprocess.run(
         [sys.executable, str(verifier_script), "--verify"],
         cwd=project_root,

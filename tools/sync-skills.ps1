@@ -57,6 +57,42 @@ function Get-ReviewedTextSha256 {
     return $digest
 }
 
+function Resolve-UnpinnedSource {
+    param(
+        [string]$RepositoryPath,
+        [string]$SourceRelativePath,
+        [System.Collections.Generic.List[string]]$MaterializedSources
+    )
+
+    $temporaryRoot = $configRoot
+    $outputPath = Join-Path $temporaryRoot (".skill-sync-head-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+    $blobArgs = @(
+        "--write-head-git-blob",
+        $RepositoryPath,
+        $SourceRelativePath,
+        "--output",
+        $outputPath,
+        "--root",
+        $temporaryRoot
+    )
+    $blobOutput = & $pythonExecutable $manifestUpdater @blobArgs 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
+            Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
+        }
+        throw "Unable to resolve clean current-HEAD source '$SourceRelativePath': $($blobOutput -join ' ')"
+    }
+    $digest = ($blobOutput -join [Environment]::NewLine).Trim().ToLowerInvariant()
+    if ($digest -notmatch '^[0-9a-f]{64}$' -or -not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
+        if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
+            Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
+        }
+        throw "Current-HEAD source materialization returned an invalid result for '$SourceRelativePath'"
+    }
+    $null = $MaterializedSources.Add($outputPath)
+    return [pscustomobject]@{ Path = $outputPath; Hash = $digest }
+}
+
 $config = Get-SyncPreflight
 $configRoot = $config.workspace_root
 $logFile = $config.log_file
@@ -503,6 +539,7 @@ function Invoke-ReviewedSkillSync {
 
     $syncPlan = [System.Collections.Generic.List[object]]::new()
     $pinnedSources = [System.Collections.Generic.List[object]]::new()
+    $materializedSources = [System.Collections.Generic.List[string]]::new()
     $stagedWrites = [System.Collections.Generic.List[object]]::new()
     $createdDirectories = [System.Collections.Generic.List[string]]::new()
     $hasReviewedSkillAdaptation = $false
@@ -588,6 +625,15 @@ function Invoke-ReviewedSkillSync {
                 $rawRepo.pinned_commit = $newCommit
                 $rawRepo.sha256 = $newHash
                 $configChanged = $true
+            }
+
+            if (-not $hasCommit -and -not $hasSha) {
+                $headSource = Resolve-UnpinnedSource `
+                    $repo.path `
+                    $mapping.source_relative_path `
+                    $materializedSources
+                $source = $headSource.Path
+                $newHash = $headSource.Hash
             }
 
             if ($mapping.reviewed_adaptation_source) {
@@ -701,8 +747,17 @@ function Invoke-ReviewedSkillSync {
                         $companionTarget `
                         "Reviewed companion target '$targetRelative'"
 
-                    $companionHash = (Get-FileHash -LiteralPath $companionSource -Algorithm SHA256).Hash.ToLowerInvariant()
                     $syncCompanionSource = $companionSource
+                    if ($companionRepo.provenance -ceq "external-source") {
+                        $headCompanion = Resolve-UnpinnedSource `
+                            $companionRepo.path `
+                            $companion.source_relative_path `
+                            $materializedSources
+                        $syncCompanionSource = $headCompanion.Path
+                        $companionHash = $headCompanion.Hash
+                    } else {
+                        $companionHash = (Get-FileHash -LiteralPath $companionSource -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }
                     $companionManifestEntry = $manifest.files.PSObject.Properties[$targetRelative]
                     $acceptedBaselines = @($companion.hash_contract.accepted_baselines)
                     $targetExists = Test-Path -LiteralPath $companionTarget -PathType Leaf
@@ -1140,6 +1195,11 @@ function Invoke-ReviewedSkillSync {
         }
         foreach ($pinnedSource in $pinnedSources) {
             Remove-PinnedSource $pinnedSource.RepositoryPath $pinnedSource.Worktree
+        }
+        foreach ($materializedSource in $materializedSources) {
+            if (Test-Path -LiteralPath $materializedSource -PathType Leaf) {
+                Remove-Item -LiteralPath $materializedSource -Force -ErrorAction SilentlyContinue
+            }
         }
         if ($rollbackErrors.Count -gt 0) {
             throw "Reviewed sync rollback was incomplete: $($rollbackErrors -join '; ')"

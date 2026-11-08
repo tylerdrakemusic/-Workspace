@@ -48,6 +48,23 @@ def test_code_review_mutation_experiment_guidance_is_authorized_and_isolated() -
     assert "restore the file from a copy" not in review_tests
 
 
+def _commit_external_source(repo_root: Path) -> None:
+    git = ["git", "-C", str(repo_root)]
+    subprocess.run([*git, "init"], check=True, capture_output=True)
+    subprocess.run([*git, "config", "core.autocrlf", "false"], check=True)
+    subprocess.run([*git, "config", "user.name", "Reviewed Adaptation Test"], check=True)
+    subprocess.run(
+        [*git, "config", "user.email", "reviewed-adaptation@example.test"],
+        check=True,
+    )
+    subprocess.run([*git, "add", "--all"], check=True, capture_output=True)
+    subprocess.run(
+        [*git, "commit", "-m", "Add external skill source"],
+        check=True,
+        capture_output=True,
+    )
+
+
 def _workspace_with_adaptation(
     tmp_path: Path,
     *,
@@ -59,6 +76,7 @@ def _workspace_with_adaptation(
     skill_source = source_root / "skills" / "example" / "SKILL.md"
     skill_source.parent.mkdir(parents=True)
     skill_source.write_text("upstream skill\n", encoding="utf-8")
+    _commit_external_source(source_root)
 
     adaptation_source = workspace_root / adaptation_relative_path
     adaptation_source.parent.mkdir(parents=True, exist_ok=True)
@@ -288,6 +306,35 @@ def test_reviewed_adaptation_hash_is_line_ending_portable_and_manual_only(
     assert metadata["disable-model-invocation"] is True
 
 
+def test_reviewed_adaptation_target_non_eol_change_is_integrity_failure(
+    tmp_path: Path,
+) -> None:
+    config_path, _, _ = _workspace_with_adaptation(tmp_path)
+    workspace_root = config_path.parent.parent
+    target_path = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    target_path.parent.mkdir(parents=True)
+    target_path.write_bytes(b"reviewed manual-only adaptation changed\n")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "files": {
+                    ".github/skills/example/SKILL.md": hashlib.sha256(
+                        target_path.read_bytes()
+                    ).hexdigest(),
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert [entry.status for entry in result.entries] == ["integrity_failure"]
+    assert len(result.hard_findings) == 1
+
+
 def test_manifest_update_rejects_target_changed_from_reviewed_hash(
     tmp_path: Path,
 ) -> None:
@@ -352,6 +399,7 @@ def _reviewed_sync_workspace(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     skill_source = source_root / "skills" / "example" / "SKILL.md"
     skill_source.parent.mkdir(parents=True)
     skill_source.write_text("upstream baseline\n", encoding="utf-8")
+    _commit_external_source(source_root)
 
     target_path = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
     target_path.parent.mkdir(parents=True)

@@ -802,7 +802,22 @@ def _preflight_skill_entries(config: dict[str, Any]) -> list[dict[str, Any]]:
 
 def preflight_sync_config(config_path: Path) -> dict[str, Any]:
     """Return a resolved sync plan after validating every source and target."""
+    raw_config = json.loads(config_path.read_text(encoding="utf-8"))
     config = resolve_sync_config(config_path)
+    for raw_repo, resolved_repo in zip(
+        raw_config["repos"], config["repos"], strict=True
+    ):
+        path_spec = raw_repo.get("path")
+        if not isinstance(path_spec, dict) or "worktree_sibling" not in path_spec:
+            continue
+        environment_name = path_spec.get("env")
+        if isinstance(environment_name, str) and environment_name in os.environ:
+            continue
+        source_root = Path(resolved_repo["path"])
+        if not source_root.is_dir():
+            raise _SkillSyncPathViolation(
+                f"Canonical source root for {raw_repo['name']} is missing: {source_root}"
+            )
     entries = _preflight_skill_entries(config)
     companion_entries = _preflight_companion_entries(config)
     resolved = dict(config)
@@ -838,8 +853,27 @@ def preflight_sync_config(config_path: Path) -> dict[str, Any]:
 def _resolve_path(value: Any, root: Path, description: str) -> Path:
     if isinstance(value, dict):
         environment_name = value.get("env")
-        if environment_name and (environment_value := os.environ.get(environment_name)):
+        if environment_name and environment_name in os.environ:
+            environment_value = os.environ[environment_name]
+            if not environment_value.strip():
+                raise _SkillSyncPathViolation(
+                    f"Configured environment override {environment_name} is empty"
+                )
             value = environment_value
+        elif "worktree_sibling" in value:
+            sibling = value["worktree_sibling"]
+            if (
+                not isinstance(sibling, str)
+                or not sibling
+                or sibling in {".", ".."}
+                or "/" in sibling
+                or "\\" in sibling
+            ):
+                raise _SkillSyncPathViolation(
+                    f"Configured worktree sibling must be a directory name: {sibling!r}"
+                )
+            worktree_root = root.parent if root.parent.name == ".worktrees" else root / ".worktrees"
+            value = worktree_root / sibling
         else:
             value = value.get("relative", ".")
     path = Path(value)
@@ -918,6 +952,7 @@ def verify_skill_integrity(
         target_key = item["manifest_key"]
         manifest_hash = manifest_files.get(target_key)
         target_hash = sha256_file(target) if target.exists() else None
+        source_integrity_error = False
         pinned_commit = item["pinned_commit"]
         pinned_sha256 = item["pinned_sha256"]
         pin_configured = bool(
@@ -943,7 +978,19 @@ def verify_skill_integrity(
             source_hash = None
             pinned_blob_matches = False
         else:
-            source_hash = sha256_file(source) if source.exists() else None
+            if item["provenance"] == "external-source" and source.exists():
+                try:
+                    source_blob = read_head_git_blob(
+                        Path(item["repository_path"]), source
+                    )
+                except (OSError, ValueError):
+                    source_hash = None
+                    source_integrity_error = True
+                else:
+                    source_hash = hashlib.sha256(source_blob).hexdigest()
+            else:
+                source_hash = sha256_file(source) if source.is_file() else None
+                source_integrity_error = source.exists() and not source.is_file()
             pinned_blob_matches = True
         pinned_source_matches = validate_pinned_source(
             Path(item["repository_path"]), pinned_commit
@@ -986,6 +1033,8 @@ def verify_skill_integrity(
             or (not pinned_source_matches and not quarantine_source_update)
         ):
             status = "integrity_failure"
+        elif source_integrity_error:
+            status = "integrity_failure"
         elif (
             item["source_policy"] == "optional"
             and not Path(item["repository_path"]).exists()
@@ -1002,7 +1051,11 @@ def verify_skill_integrity(
         elif target_hash == source_hash:
             status = "source_match"
         elif target_hash == manifest_hash:
-            status = "local_customization"
+            status = (
+                "integrity_failure"
+                if item.get("reviewed_adaptation_sha256")
+                else "local_customization"
+            )
         else:
             status = "integrity_failure"
 
@@ -1019,7 +1072,21 @@ def verify_skill_integrity(
 
     for item in _preflight_companion_entries(config):
         source = Path(item["source"])
-        source_hash = sha256_file(source) if source.is_file() else None
+        repository = config["repos"][item["repo_index"]]
+        source_integrity_error = False
+        if source.is_file() and repository.get("provenance", "external-source") == "external-source":
+            try:
+                source_blob = read_head_git_blob(
+                    Path(item["repository_path"]), source
+                )
+            except (OSError, ValueError):
+                source_hash = None
+                source_integrity_error = True
+            else:
+                source_hash = hashlib.sha256(source_blob).hexdigest()
+        else:
+            source_hash = sha256_file(source) if source.is_file() else None
+            source_integrity_error = source.exists() and not source.is_file()
         for target_key, target_value in zip(
             item["target_relative_paths"], item["targets"], strict=True
         ):
@@ -1031,6 +1098,8 @@ def verify_skill_integrity(
             if target_hash is None or manifest_hash is None:
                 status = "integrity_failure"
             elif target_hash != manifest_hash:
+                status = "integrity_failure"
+            elif source_integrity_error:
                 status = "integrity_failure"
             elif source_hash is None:
                 status = (
@@ -1147,6 +1216,63 @@ def _read_pinned_git_blob(
     return result.stdout
 
 
+def _normalize_git_checkout_line_endings(content: bytes) -> bytes:
+    return content.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def read_head_git_blob(repository_path: Path, source_path: Path) -> bytes:
+    """Return a clean external source's exact HEAD blob bytes."""
+    repository = repository_path.resolve()
+    source = source_path.resolve()
+    try:
+        source_relative_path = source.relative_to(repository).as_posix()
+    except ValueError as exc:
+        raise ValueError("Git blob source is outside its repository") from exc
+    relative_path = _repository_relative_git_path(source_relative_path)
+    if not (repository / ".git").exists():
+        raise ValueError(f"Git source repository is unavailable: {repository}")
+    try:
+        metadata = source.lstat()
+    except OSError as exc:
+        raise ValueError(f"Git source file is unavailable: {source}") from exc
+    if not stat.S_ISREG(metadata.st_mode):
+        raise ValueError(f"Git source must be a regular file: {source}")
+
+    tree_result = subprocess.run(
+        ["git", "-C", str(repository), "ls-tree", "-z", "HEAD", "--", relative_path],
+        check=False,
+        capture_output=True,
+    )
+    records = tree_result.stdout.split(b"\0") if tree_result.returncode == 0 else []
+    records = [record for record in records if record]
+    if len(records) != 1 or b"\t" not in records[0]:
+        raise ValueError(f"Git HEAD source is unavailable: HEAD:{relative_path}")
+    entry_metadata, entry_path = records[0].split(b"\t", 1)
+    fields = entry_metadata.split(b" ")
+    if (
+        len(fields) != 3
+        or fields[0] not in {b"100644", b"100755"}
+        or fields[1] != b"blob"
+        or entry_path != relative_path.encode("utf-8")
+    ):
+        raise ValueError(f"Git HEAD source is not a regular file: HEAD:{relative_path}")
+
+    blob = _read_pinned_git_blob(repository, "HEAD", relative_path)
+    if blob is None:
+        raise ValueError(f"Git HEAD source is unavailable: HEAD:{relative_path}")
+    try:
+        blob.decode("utf-8")
+        working_tree_content = source.read_bytes()
+        working_tree_content.decode("utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ValueError(f"Git source is not readable UTF-8 text: {source}") from exc
+    if _normalize_git_checkout_line_endings(working_tree_content) != (
+        _normalize_git_checkout_line_endings(blob)
+    ):
+        raise ValueError(f"Git source has non-EOL working-tree edits: {source}")
+    return blob
+
+
 def write_pinned_git_blob(
     repository_path: Path,
     pinned_commit: str,
@@ -1174,6 +1300,34 @@ def write_pinned_git_blob(
     if output.is_dir():
         raise ValueError(f"Pinned blob output is not a file: {output}")
     output.write_bytes(blob)
+    return hashlib.sha256(blob).hexdigest()
+
+
+def write_head_git_blob(
+    repository_path: Path,
+    source_relative_path: str,
+    output_path: Path,
+    output_root: Path,
+) -> str:
+    """Materialize a clean current-HEAD blob outside its source repository."""
+    relative_path = _repository_relative_git_path(source_relative_path)
+    blob = read_head_git_blob(
+        repository_path, Path(repository_path) / Path(relative_path)
+    )
+    root = output_root.resolve()
+    if not root.is_dir():
+        raise ValueError("Git blob output root must be an existing directory")
+    output = _confined_path(output_path, root, "Git blob output")
+    if output == root:
+        raise ValueError("Git blob output must be a file under the output root")
+    _reject_path_reparse_components(output, "Git blob output")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _reject_path_reparse_components(output, "Git blob output")
+    try:
+        with output.open("xb") as stream:
+            stream.write(blob)
+    except FileExistsError as exc:
+        raise ValueError(f"Git blob output already exists: {output}") from exc
     return hashlib.sha256(blob).hexdigest()
 
 
@@ -1282,6 +1436,60 @@ def _update_manifest_entries_locked(
     return _write_manifest_atomically(
         manifest_path, manifest, expected_hash=original_manifest_hash
     )
+
+
+def reconcile_eol_expanded_manifest_entries(
+    manifest_path: Path,
+    repo_root: Path,
+    expected_manifest_hash: str,
+) -> tuple[list[str], str]:
+    """Reconcile only skill hashes proven to be CRLF-expanded HEAD blobs."""
+    root = repo_root.resolve()
+    current_manifest_hash = sha256_file(manifest_path)
+    if current_manifest_hash != expected_manifest_hash:
+        raise ValueError("Agent manifest changed after migration preflight")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    files = manifest.get("files")
+    if not isinstance(files, dict):
+        raise ValueError("Agent manifest files map is invalid")
+
+    migration_paths: list[Path] = []
+    expected_file_hashes: dict[Path, str] = {}
+    migrated_keys: list[str] = []
+    for key, stored_hash in files.items():
+        if not isinstance(key, str) or not key.startswith(".github/skills/"):
+            continue
+        relative_path = PurePosixPath(key)
+        if relative_path.as_posix() != key or any(
+            part in {"", ".", ".."} for part in key.split("/")
+        ):
+            continue
+        target = root.joinpath(*relative_path.parts)
+        try:
+            target = _confined_path(target, root, "Manifest migration target")
+            blob = read_head_git_blob(root, target)
+        except (OSError, ValueError):
+            continue
+        if b"\r" in blob:
+            continue
+        blob_hash = hashlib.sha256(blob).hexdigest()
+        expanded_hash = hashlib.sha256(blob.replace(b"\n", b"\r\n")).hexdigest()
+        if stored_hash != expanded_hash or stored_hash == blob_hash:
+            continue
+        migration_paths.append(target)
+        expected_file_hashes[target] = blob_hash
+        migrated_keys.append(key)
+
+    if not migration_paths:
+        return [], current_manifest_hash
+    updated_manifest_hash = update_manifest_entries(
+        manifest_path,
+        migration_paths,
+        root,
+        expected_manifest_hash,
+        expected_file_hashes,
+    )
+    return migrated_keys, updated_manifest_hash
 
 
 def _repo_root(repo_root: Path | None = None) -> Path:
@@ -1573,6 +1781,40 @@ if __name__ == "__main__":
         parser.add_argument("--preflight-sync-config", type=Path, required=True)
         args = parser.parse_args()
         print(json.dumps(preflight_sync_config(args.preflight_sync_config), ensure_ascii=False))
+    elif "--write-head-git-blob" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--write-head-git-blob",
+            nargs=2,
+            required=True,
+            metavar=("REPOSITORY", "SOURCE_RELATIVE_PATH"),
+        )
+        parser.add_argument("--output", type=Path, required=True)
+        parser.add_argument("--root", type=Path, required=True)
+        args = parser.parse_args()
+        repository, source_relative_path = args.write_head_git_blob
+        digest = write_head_git_blob(
+            Path(repository), source_relative_path, args.output, args.root
+        )
+        print(digest)
+    elif "--reconcile-eol-expanded-manifest" in sys.argv:
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--reconcile-eol-expanded-manifest", action="store_true")
+        parser.add_argument("--manifest", type=Path, required=True)
+        parser.add_argument("--repo-root", type=Path, required=True)
+        parser.add_argument("--expected-manifest-hash", required=True)
+        args = parser.parse_args()
+        migrated_keys, manifest_hash = reconcile_eol_expanded_manifest_entries(
+            args.manifest, args.repo_root, args.expected_manifest_hash
+        )
+        print(f"Manifest entries reconciled: {len(migrated_keys)}")
+        for key in migrated_keys:
+            print(f"RECONCILED_PATH={key}")
+        print(f"MANIFEST_SHA256={manifest_hash}")
     elif "--update-files" in sys.argv:
         import argparse
 

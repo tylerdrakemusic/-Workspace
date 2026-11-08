@@ -44,6 +44,16 @@ def _commit_source(
 
     staged_file = source_file
     if not include_source:
+        subprocess.run(
+            [
+                *git,
+                "rm",
+                "--cached",
+                source_file.relative_to(source_root).as_posix(),
+            ],
+            check=True,
+            capture_output=True,
+        )
         staged_file = source_root / "skills" / "other" / "SKILL.md"
         staged_file.parent.mkdir(parents=True)
         staged_file.write_bytes(b"different pinned path\n")
@@ -55,7 +65,9 @@ def _commit_source(
             [*git, "add", relative_extra_path], check=True, capture_output=True
         )
     subprocess.run(
-        [*git, "commit", "-m", "pinned source"], check=True, capture_output=True
+        [*git, "commit", "--allow-empty", "-m", "pinned source"],
+        check=True,
+        capture_output=True,
     )
     return subprocess.run(
         [*git, "rev-parse", "HEAD"],
@@ -359,6 +371,7 @@ def reviewed_skill_revision_with_old_pin(
     unrelated_content = b"unchanged unpinned skill\n"
     unrelated_source.parent.mkdir(parents=True)
     unrelated_source.write_bytes(unrelated_content)
+    _commit_source(unrelated_root, unrelated_source)
 
     destination = workspace_root / ".github" / "skills"
     selected_target = destination / "reviewed" / "SKILL.md"
@@ -510,6 +523,7 @@ def reviewed_skill_revision_with_crlf_worktree(
     unrelated_content = b"unchanged unpinned skill\n"
     unrelated_source.parent.mkdir(parents=True)
     unrelated_source.write_bytes(unrelated_content)
+    _commit_source(unrelated_root, unrelated_source)
 
     destination = workspace_root / ".github" / "skills"
     selected_target = destination / "reviewed" / "SKILL.md"
