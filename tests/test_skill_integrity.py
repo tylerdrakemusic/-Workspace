@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import errno
+import base64
 import hashlib
 import json
 import os
+import runpy
 import shutil
+import stat
 import subprocess
 import sys
+import threading
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -160,6 +165,58 @@ def _write_skill_fixture(
     return config_path, target_file, manifest_path
 
 
+def _write_companion_config_fixture(
+    tmp_path: Path,
+    *,
+    source_relative_path: str = "guides/check.md",
+    target_relative_paths: list[str] | None = None,
+) -> tuple[Path, Path, Path]:
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "source"
+    source_root.mkdir(parents=True)
+    source_file = source_root / "guides" / "check.md"
+    source_file.parent.mkdir()
+    source_file.write_text("approved companion\n", encoding="utf-8")
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    targets = target_relative_paths or [
+        ".github/skills/example/references/check.md"
+    ]
+    config_path.write_text(
+        json.dumps(
+            {
+                "destination": {"relative": ".github/skills"},
+                "repos": [
+                    {
+                        "name": "external-skills",
+                        "path": str(source_root),
+                        "skill_root": "skills",
+                        "skills": [],
+                        "companions": [
+                            {
+                                "source_relative_path": source_relative_path,
+                                "target_relative_paths": targets,
+                                "identity": "external-skills:guides/check.md",
+                                "consumers": ["example"],
+                                "required": True,
+                                "hash_contract": {
+                                    "algorithm": "sha256",
+                                    "accepted_baselines": [
+                                        "approved-source",
+                                        "reviewed-project-owned-adaptation",
+                                    ],
+                                },
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return config_path, workspace_root, source_root
+
+
 def _write_quarantine_fixture(tmp_path: Path) -> tuple[Path, Path, Path, str, str]:
     source_root = tmp_path / "external-source"
     source_file = source_root / "skills" / "example" / "SKILL.md"
@@ -205,7 +262,7 @@ def _write_quarantine_fixture(tmp_path: Path) -> tuple[Path, Path, Path, str, st
         encoding="utf-8",
     )
     config_path = workspace_root / "tools" / "skill-sync-config.json"
-    config_path.parent.mkdir(parents=True)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(
         json.dumps(
             {
@@ -255,6 +312,30 @@ def _run_quarantine_gate(workspace_root: Path) -> subprocess.CompletedProcess[st
     )
 
 
+def test_strict_prewrite_gate_fails_closed_when_verifier_cannot_start(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail_verifier(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        raise FileNotFoundError("simulated verifier startup failure")
+
+    monkeypatch.setattr(subprocess, "run", fail_verifier)
+
+    result = run_prewrite_security_gate(tmp_path, strict=True)
+
+    assert result == 1
+
+
+def test_strict_prewrite_gate_rejects_incomplete_zero_exit_verification(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def incomplete_verifier(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(args=[], returncode=0, stdout="partial output", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", incomplete_verifier)
+
+    assert run_prewrite_security_gate(tmp_path, strict=True) == 1
+
+
 def test_source_match_is_authorized(tmp_path: Path) -> None:
     config_path, target_file, manifest_path = _write_skill_fixture(
         tmp_path,
@@ -268,6 +349,25 @@ def test_source_match_is_authorized(tmp_path: Path) -> None:
     assert result.hard_findings == []
     assert result.entries[0].status == "source_match"
     assert result.entries[0].target == str(target_file)
+
+
+def test_build_manifest_rejects_watched_symlink_before_hashing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    skills_dir = repo_root / ".github" / "skills" / "example"
+    skills_dir.mkdir(parents=True)
+    watched_file = skills_dir / "unexpected.md"
+    watched_file.write_text("external file contents\n", encoding="utf-8")
+    original_is_symlink = Path.is_symlink
+
+    def report_symlink(path: Path) -> bool:
+        return path == watched_file or original_is_symlink(path)
+
+    monkeypatch.setattr(Path, "is_symlink", report_symlink)
+
+    with pytest.raises(ValueError, match="(?i)(symlink|reparse)"):
+        update_manifest.build_manifest(repo_root)
 
 
 @pytest.mark.parametrize("uppercase_sha", [False, True], ids=["lowercase", "uppercase"])
@@ -516,18 +616,72 @@ def test_approved_sync_updates_only_the_affected_manifest_entry(tmp_path: Path) 
         manifest_text="old baseline\n",
     )
 
-    update_manifest_entries(
+    manifest_hash = update_manifest_entries(
         manifest_path,
         [target_file],
         repo_root=tmp_path / "workspace",
     )
 
+    assert manifest_hash == _sha256(manifest_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["files"][".github/skills/example/SKILL.md"] == _sha256(target_file)
     assert manifest["files"][".github/skills/unrelated/SKILL.md"] == "preserve-this-hash"
     result = verify_skill_integrity(config_path, manifest_path)
     assert result.hard_findings == []
     assert result.entries[0].status == "source_match"
+
+
+def test_manifest_update_replace_failure_preserves_original_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, target_file, manifest_path = _write_skill_fixture(
+        tmp_path,
+        source_text="approved source\n",
+        target_text="approved source\n",
+        manifest_text="trusted manifest baseline\n",
+    )
+    original_manifest = manifest_path.read_bytes()
+
+    def fail_replace(source: Path, target: Path) -> None:
+        raise OSError("simulated atomic replace failure")
+
+    monkeypatch.setattr(update_manifest.os, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="simulated atomic replace failure"):
+        update_manifest_entries(
+            manifest_path,
+            [target_file],
+            repo_root=tmp_path / "workspace",
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
+    assert not list(manifest_path.parent.glob(".agent-manifest-*.tmp"))
+
+
+def test_initial_manifest_generation_is_atomic_on_replace_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    github_dir = repo_root / ".github"
+    for directory in ("agents", "instructions", "skills", "!!☾⛧security"):
+        (github_dir / directory).mkdir(parents=True, exist_ok=True)
+    script_path = github_dir / "!!☾⛧security" / "update_manifest.py"
+    shutil.copy2(PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py", script_path)
+    manifest_path = github_dir / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.write_bytes(b"trusted manifest bytes\n")
+    original_manifest = manifest_path.read_bytes()
+    monkeypatch.setattr(sys, "argv", [str(script_path)])
+
+    def fail_replace(source: str | os.PathLike[str], target: str | os.PathLike[str]) -> None:
+        raise OSError("simulated manifest replace failure")
+
+    monkeypatch.setattr(update_manifest.os, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="simulated manifest replace failure"):
+        runpy.run_path(str(script_path), run_name="__main__")
+
+    assert manifest_path.read_bytes() == original_manifest
+    assert list(manifest_path.parent.glob("*.tmp")) == []
 
 
 def test_reviewed_manifest_reconciliation_changes_only_named_watched_paths(
@@ -594,6 +748,315 @@ def test_reviewed_manifest_reconciliation_changes_only_named_watched_paths(
         unrelated_key: unrelated_hash,
     }
     verify_manifest(repo_root)
+
+
+def test_reviewed_manifest_reconciliation_is_atomic_on_replace_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    agent_file = repo_root / ".github" / "agents" / "overseer.agent.md"
+    agent_file.parent.mkdir(parents=True)
+    agent_file.write_text("reviewed agent revision\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/agents/overseer.agent.md": "old-hash"}}),
+        encoding="utf-8",
+    )
+    original_manifest = manifest_path.read_bytes()
+
+    def fail_replace(source: str | os.PathLike[str], target: str | os.PathLike[str]) -> None:
+        raise OSError("simulated atomic replace failure")
+
+    monkeypatch.setattr(update_manifest.os, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="simulated atomic replace failure"):
+        update_manifest.reconcile_reviewed_manifest_entries(
+            manifest_path, [agent_file], repo_root=repo_root
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
+    assert list(manifest_path.parent.glob("*.tmp")) == []
+
+
+def test_reviewed_manifest_reconciliation_refuses_concurrent_manifest_change(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    agent_file = repo_root / ".github" / "agents" / "overseer.agent.md"
+    agent_file.parent.mkdir(parents=True)
+    agent_file.write_text("reviewed agent revision\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/agents/overseer.agent.md": "old-hash"}}),
+        encoding="utf-8",
+    )
+    concurrent_manifest = json.dumps(
+        {"files": {"unrelated": "concurrent-writer-hash"}}
+    ).encode("utf-8")
+    original_dumps = json.dumps
+
+    def write_concurrent_manifest(value: object, *args: object, **kwargs: object) -> str:
+        serialized = original_dumps(value, *args, **kwargs)
+        manifest_path.write_bytes(concurrent_manifest)
+        return serialized
+
+    monkeypatch.setattr(update_manifest.json, "dumps", write_concurrent_manifest)
+
+    with pytest.raises(ValueError, match="(?i)manifest changed during"):
+        update_manifest.reconcile_reviewed_manifest_entries(
+            manifest_path, [agent_file], repo_root=repo_root
+        )
+
+    assert manifest_path.read_bytes() == concurrent_manifest
+    assert list(manifest_path.parent.glob("*.tmp")) == []
+
+
+def test_manifest_update_apis_serialize_concurrent_read_modify_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    agent_file = repo_root / ".github" / "agents" / "overseer.agent.md"
+    agent_file.parent.mkdir(parents=True)
+    agent_file.write_text("reviewed agent revision\n", encoding="utf-8")
+    instruction_file = repo_root / ".github" / "instructions" / "new.instructions.md"
+    instruction_file.parent.mkdir(parents=True)
+    instruction_file.write_text("reviewed instruction\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(json.dumps({"files": {}}), encoding="utf-8")
+
+    first_serialized = threading.Event()
+    second_started = threading.Event()
+    second_serialized = threading.Event()
+    release_first = threading.Event()
+    count_lock = threading.Lock()
+    serialization_count = 0
+    original_dumps = json.dumps
+    errors: list[BaseException] = []
+
+    def controlled_dumps(value: object, *args: object, **kwargs: object) -> str:
+        nonlocal serialization_count
+        serialized = original_dumps(value, *args, **kwargs)
+        with count_lock:
+            serialization_count += 1
+            call_number = serialization_count
+        if call_number == 1:
+            first_serialized.set()
+            if not release_first.wait(5):
+                raise TimeoutError("first writer was not released")
+        else:
+            second_serialized.set()
+        return serialized
+
+    monkeypatch.setattr(update_manifest.json, "dumps", controlled_dumps)
+
+    def reconcile_first() -> None:
+        try:
+            update_manifest.reconcile_reviewed_manifest_entries(
+                manifest_path, [agent_file], repo_root=repo_root
+            )
+        except BaseException as error:
+            errors.append(error)
+
+    def update_second() -> None:
+        try:
+            second_started.set()
+            update_manifest.update_manifest_entries(
+                manifest_path, [instruction_file], repo_root=repo_root
+            )
+        except BaseException as error:
+            errors.append(error)
+
+    first_writer = threading.Thread(target=reconcile_first)
+    second_writer = threading.Thread(target=update_second)
+    first_writer.start()
+    assert first_serialized.wait(3), "first writer did not reach manifest serialization"
+    second_writer.start()
+    assert second_started.wait(3), "second writer did not start"
+    second_entered_manifest_write = second_serialized.wait(1)
+    release_first.set()
+    first_writer.join(5)
+    second_writer.join(5)
+
+    assert not first_writer.is_alive()
+    assert not second_writer.is_alive()
+    assert not second_entered_manifest_write
+    assert errors == []
+    files = json.loads(manifest_path.read_text(encoding="utf-8"))["files"]
+    assert files == {
+        ".github/agents/overseer.agent.md": _sha256(agent_file),
+        ".github/instructions/new.instructions.md": _sha256(instruction_file),
+    }
+
+
+@pytest.mark.parametrize("concurrent_update", [False, True])
+def test_locked_manifest_restore_preserves_concurrent_writer(
+    tmp_path: Path, concurrent_update: bool
+) -> None:
+    repo_root = tmp_path / "workspace"
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    original_bytes = json.dumps({"files": {"original": "trusted"}}).encode("utf-8")
+    written_bytes = json.dumps(
+        {"files": {"original": "trusted", "reviewed": "updated"}}
+    ).encode("utf-8")
+    concurrent_bytes = json.dumps(
+        {"files": {"original": "trusted", "other-writer": "preserve"}}
+    ).encode("utf-8")
+    manifest_path.write_bytes(concurrent_bytes if concurrent_update else written_bytes)
+    backup_path = manifest_path.parent / ".skill-sync-manifest-backup-test.tmp"
+    backup_path.write_bytes(original_bytes)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py"),
+            "--restore-manifest-backup",
+            str(backup_path),
+            "--expected-current-hash",
+            hashlib.sha256(written_bytes).hexdigest(),
+            "--expected-original-hash",
+            hashlib.sha256(original_bytes).hexdigest(),
+            "--manifest",
+            str(manifest_path),
+            "--repo-root",
+            str(repo_root),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    if concurrent_update:
+        assert result.returncode != 0
+        assert manifest_path.read_bytes() == concurrent_bytes
+        assert backup_path.read_bytes() == original_bytes
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert manifest_path.read_bytes() == original_bytes
+        assert not backup_path.exists()
+
+
+def test_locked_manifest_restore_falls_back_when_hardlinks_are_unsupported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    original_bytes = json.dumps({"files": {"original": "trusted"}}).encode("utf-8")
+    written_bytes = json.dumps(
+        {"files": {"original": "trusted", "reviewed": "updated"}}
+    ).encode("utf-8")
+    manifest_path.write_bytes(written_bytes)
+    backup_path = manifest_path.parent / ".skill-sync-manifest-backup-no-hardlinks.tmp"
+    backup_path.write_bytes(original_bytes)
+
+    def unsupported_hardlink(
+        source: str | os.PathLike[str], destination: str | os.PathLike[str]
+    ) -> None:
+        error = OSError("hard links are unsupported")
+        error.winerror = 1
+        raise error
+
+    monkeypatch.setattr(update_manifest.os, "link", unsupported_hardlink)
+
+    restored_hash = update_manifest.restore_manifest_backup(
+        manifest_path,
+        backup_path,
+        hashlib.sha256(original_bytes).hexdigest(),
+        hashlib.sha256(written_bytes).hexdigest(),
+        repo_root,
+    )
+
+    assert restored_hash == hashlib.sha256(original_bytes).hexdigest()
+    assert manifest_path.read_bytes() == original_bytes
+    assert not backup_path.exists()
+    assert not list(manifest_path.parent.glob(".agent-manifest-restore-*.tmp"))
+    assert not list(manifest_path.parent.glob(".agent-manifest-current-*.tmp"))
+
+
+def test_locked_manifest_restore_preserves_writer_arriving_during_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    original_bytes = json.dumps({"files": {"original": "trusted"}}).encode("utf-8")
+    written_bytes = json.dumps(
+        {"files": {"original": "trusted", "reviewed": "updated"}}
+    ).encode("utf-8")
+    concurrent_bytes = json.dumps(
+        {"files": {"original": "trusted", "late-writer": "preserve"}}
+    ).encode("utf-8")
+    manifest_path.write_bytes(written_bytes)
+    backup_path = manifest_path.parent / ".skill-sync-manifest-backup-race.tmp"
+    backup_path.write_bytes(original_bytes)
+    original_replace = update_manifest.os.replace
+
+    def inject_concurrent_writer(
+        source: str | os.PathLike[str], destination: str | os.PathLike[str]
+    ) -> None:
+        source_path = Path(source)
+        destination_path = Path(destination)
+        if destination_path == manifest_path:
+            manifest_path.write_bytes(concurrent_bytes)
+            original_replace(source_path, destination_path)
+            return
+        original_replace(source_path, destination_path)
+        if source_path == manifest_path:
+            manifest_path.write_bytes(concurrent_bytes)
+
+    monkeypatch.setattr(update_manifest.os, "replace", inject_concurrent_writer)
+
+    with pytest.raises(ValueError, match="(?i)(concurrent|changed|preserv)"):
+        update_manifest.restore_manifest_backup(
+            manifest_path,
+            backup_path,
+            hashlib.sha256(original_bytes).hexdigest(),
+            hashlib.sha256(written_bytes).hexdigest(),
+            repo_root,
+        )
+
+    assert manifest_path.read_bytes() == concurrent_bytes
+    assert backup_path.read_bytes() == original_bytes
+
+
+def test_reviewed_manifest_reconciliation_rejects_reparse_components(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "workspace"
+    agent_file = repo_root / ".github" / "agents" / "overseer.agent.md"
+    agent_file.parent.mkdir(parents=True)
+    agent_file.write_text("reviewed agent revision\n", encoding="utf-8")
+    manifest_path = repo_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/agents/overseer.agent.md": "old-hash"}}),
+        encoding="utf-8",
+    )
+    original_manifest = manifest_path.read_bytes()
+    reparse_component = agent_file.parent
+    original_lstat = Path.lstat
+
+    def report_reparse(path: Path, *args: object, **kwargs: object) -> os.stat_result | SimpleNamespace:
+        if path == reparse_component:
+            return SimpleNamespace(
+                st_mode=stat.S_IFDIR,
+                st_file_attributes=getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400),
+            )
+        return original_lstat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "lstat", report_reparse)
+
+    with pytest.raises(ValueError, match="(?i)(reparse|symbolic link)"):
+        update_manifest.reconcile_reviewed_manifest_entries(
+            manifest_path, [agent_file], repo_root=repo_root
+        )
+
+    assert manifest_path.read_bytes() == original_manifest
 
 
 def test_reviewed_manifest_reconciliation_cannot_write_to_sync_config(
@@ -822,6 +1285,657 @@ def test_reviewed_sync_updates_unpinned_external_skill_without_adding_pin(
             b"reviewed unpinned source update\n"
         ).hexdigest()
     }
+
+
+@pytest.mark.parametrize(
+    "sync_case",
+    [
+        "success",
+        "late-gate-failure",
+        "required-source-missing",
+        "required-source-missing-optional-repo",
+        "modified-target",
+        "unexpected-target",
+        "missing-target",
+        "adaptation-only-new-target",
+        "adaptation-only-source-matching-target",
+        "adaptation-only-reviewed-target",
+        "reviewed-adaptation-install",
+        "reviewed-adaptation-install-without-approval",
+    ],
+)
+def test_reviewed_sync_installs_only_selected_allowlisted_companion(
+    tmp_path: Path, sync_case: str
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    is_adaptation_install = sync_case in {
+        "reviewed-adaptation-install",
+        "reviewed-adaptation-install-without-approval",
+    }
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "external-source"
+    skill_source = source_root / "skills" / "example" / "SKILL.md"
+    skill_source.parent.mkdir(parents=True)
+    skill_source.write_bytes(b"reviewed skill update\n")
+    unselected_skill_source = source_root / "skills" / "unselected" / "SKILL.md"
+    unselected_skill_source.parent.mkdir(parents=True)
+    unselected_skill_source.write_bytes(b"unchanged unselected skill\n")
+    companion_source = source_root / "guides" / "check.md"
+    companion_source.parent.mkdir(parents=True)
+    companion_source.write_bytes(b"reviewed companion\n")
+    (companion_source.parent / "unreviewed.md").write_bytes(b"not allowlisted\n")
+
+    skill_target = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    skill_target.parent.mkdir(parents=True)
+    skill_target.write_bytes(b"trusted installed skill\n")
+    unselected_skill_target = workspace_root / ".github" / "skills" / "unselected" / "SKILL.md"
+    unselected_skill_target.parent.mkdir(parents=True)
+    unselected_skill_target.write_bytes(b"unchanged unselected skill\n")
+    unrelated_target = workspace_root / ".github" / "skills" / "unrelated" / "SKILL.md"
+    unrelated_target.parent.mkdir(parents=True)
+    unrelated_target.write_bytes(b"unrelated installed skill\n")
+    companion_target = (
+        workspace_root
+        / ".github"
+        / "skills"
+        / "example"
+        / "references"
+        / "check.md"
+    )
+    reviewed_adaptation_source = (
+        workspace_root
+        / "tools"
+        / "skill-sync-adaptations"
+        / "wizard"
+        / "template.sh"
+    )
+    if is_adaptation_install:
+        reviewed_adaptation_source.parent.mkdir(parents=True)
+        reviewed_adaptation_source.write_bytes(b"reviewed project adaptation\n")
+    unselected_companion_target = (
+        workspace_root
+        / ".github"
+        / "skills"
+        / "unselected"
+        / "references"
+        / "check.md"
+    )
+    if sync_case in {
+        "modified-target",
+        "unexpected-target",
+        "adaptation-only-source-matching-target",
+            "adaptation-only-reviewed-target",
+    }:
+        companion_target.parent.mkdir(parents=True)
+        companion_target.write_bytes(
+            companion_source.read_bytes()
+            if sync_case == "adaptation-only-source-matching-target"
+                else b"reviewed project adaptation\n"
+                if sync_case == "adaptation-only-reviewed-target"
+            else b"unexpected companion target\n"
+        )
+    if sync_case in {
+        "required-source-missing",
+        "required-source-missing-optional-repo",
+    }:
+        companion_source.unlink()
+
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_files = {
+        ".github/skills/example/SKILL.md": _sha256(skill_target),
+        ".github/skills/unselected/SKILL.md": _sha256(unselected_skill_target),
+        ".github/skills/unrelated/SKILL.md": _sha256(unrelated_target),
+    }
+    if sync_case in {
+        "modified-target",
+        "missing-target",
+        "adaptation-only-source-matching-target",
+            "adaptation-only-reviewed-target",
+    }:
+        manifest_files[
+            ".github/skills/example/references/check.md"
+            ] = (
+                _sha256(companion_target)
+                if sync_case == "adaptation-only-reviewed-target"
+                else _sha256(companion_source)
+            )
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "file_count": len(manifest_files),
+                "files": manifest_files,
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [
+                    {
+                        "name": "external-source",
+                        "path": str(source_root),
+                        "remote": None,
+                        "skill_root": "skills",
+                        "provenance": "external-source",
+                        "source_policy": (
+                            "optional"
+                            if sync_case == "required-source-missing-optional-repo"
+                            else "required"
+                        ),
+                        "skills": ["example", "unselected"],
+                        "companions": [
+                            {
+                                "source_relative_path": "guides/check.md",
+                                    "target_relative_paths": (
+                                        [".github/skills/example/references/check.md"]
+                                        if sync_case in {
+                                            "success",
+                                            "adaptation-only-reviewed-target",
+                                            "reviewed-adaptation-install",
+                                            "reviewed-adaptation-install-without-approval",
+                                        }
+                                        else [
+                                            ".github/skills/example/references/check.md",
+                                            ".github/skills/unselected/references/check.md",
+                                        ]
+                                    ),
+                                "identity": "external-source:guides/check.md",
+                                    "consumers": (
+                                        ["example"]
+                                        if sync_case in {
+                                            "success",
+                                            "adaptation-only-reviewed-target",
+                                            "reviewed-adaptation-install",
+                                            "reviewed-adaptation-install-without-approval",
+                                        }
+                                        else ["example", "unselected"]
+                                    ),
+                                "hash_contract": {
+                                    "algorithm": "sha256",
+                                    "accepted_baselines": [
+                                        *(
+                                            ["reviewed-project-owned-adaptation"]
+                                            if sync_case in {
+                                                "adaptation-only-new-target",
+                                                "adaptation-only-source-matching-target",
+                                                "adaptation-only-reviewed-target",
+                                                "reviewed-adaptation-install",
+                                                "reviewed-adaptation-install-without-approval",
+                                            }
+                                            else [
+                                                "approved-source",
+                                                "reviewed-project-owned-adaptation",
+                                            ]
+                                        ),
+                                    ],
+                                        "reviewed_adaptation_sha256": (
+                                            _sha256(
+                                                reviewed_adaptation_source
+                                                if is_adaptation_install
+                                                else companion_target
+                                            )
+                                            if sync_case
+                                            in {
+                                                "adaptation-only-reviewed-target",
+                                                "reviewed-adaptation-install",
+                                                "reviewed-adaptation-install-without-approval",
+                                            }
+                                            else None
+                                        ),
+                                },
+                                "required": True,
+                                **(
+                                    {
+                                        "reviewed_adaptation_source_relative_path": (
+                                            "tools/skill-sync-adaptations/wizard/template.sh"
+                                        )
+                                    }
+                                    if is_adaptation_install
+                                    else {}
+                                ),
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (workspace_root / ".github" / "agents").mkdir(parents=True)
+    instructions_dir = workspace_root / ".github" / "instructions"
+    instructions_dir.mkdir(parents=True)
+    if sync_case == "late-gate-failure":
+        (instructions_dir / "unreviewed.instructions.md").write_bytes(
+            b"late gate failure fixture\n"
+        )
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py",
+        manifest_path.parent / "update_manifest.py",
+    )
+    original_config = config_path.read_bytes()
+    original_manifest = manifest_path.read_bytes()
+    original_skill_target = skill_target.read_bytes()
+    original_companion_target = (
+        companion_target.read_bytes() if companion_target.exists() else None
+    )
+
+    sync_arguments = [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveReviewedUpdates",
+                "-ReviewedSkills",
+                "example",
+            "-ReviewRationale",
+            "Reviewed the companion source and target mapping.",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ]
+    if sync_case == "reviewed-adaptation-install":
+        sync_arguments.append("-InstallReviewedAdaptations")
+    result = subprocess.run(
+        sync_arguments,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+
+    if sync_case not in {
+        "success",
+        "adaptation-only-reviewed-target",
+        "reviewed-adaptation-install",
+    }:
+        assert result.returncode != 0, result.stdout + result.stderr
+        if sync_case == "reviewed-adaptation-install-without-approval":
+            assert "InstallReviewedAdaptations" in result.stdout + result.stderr
+        assert skill_target.read_bytes() == original_skill_target
+        if companion_target.exists():
+            assert companion_target.read_bytes() == original_companion_target
+        else:
+            assert original_companion_target is None
+        assert manifest_path.read_bytes() == original_manifest
+        assert config_path.read_bytes() == original_config
+        if sync_case == "late-gate-failure":
+            assert not companion_target.parent.exists()
+        return
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert skill_target.read_bytes() == skill_source.read_bytes()
+    expected_companion = (
+        b"reviewed project adaptation\n"
+        if sync_case in {
+            "adaptation-only-reviewed-target",
+            "reviewed-adaptation-install",
+        }
+        else companion_source.read_bytes()
+    )
+    assert companion_target.read_bytes() == expected_companion
+    assert unselected_skill_target.read_bytes() == unselected_skill_source.read_bytes()
+    assert not unselected_companion_target.exists()
+    assert not (companion_target.parent / "unreviewed.md").exists()
+    files = json.loads(manifest_path.read_text(encoding="utf-8"))["files"]
+    expected_files = {
+        ".github/skills/example/SKILL.md": _sha256(skill_source),
+        ".github/skills/example/references/check.md": hashlib.sha256(
+            expected_companion
+        ).hexdigest(),
+        ".github/skills/unselected/SKILL.md": _sha256(unselected_skill_target),
+        ".github/skills/unrelated/SKILL.md": _sha256(unrelated_target),
+    }
+    assert files == expected_files
+
+
+@pytest.mark.parametrize(
+    (
+        "target_existed",
+        "delete_target",
+        "race_target_after_hash",
+    ),
+    [
+        (False, False, False),
+        (True, False, False),
+        (True, True, False),
+        (True, False, True),
+    ],
+)
+def test_reviewed_sync_rollback_preserves_concurrent_companion_change(
+    tmp_path: Path,
+    target_existed: bool,
+    delete_target: bool,
+    race_target_after_hash: bool,
+) -> None:
+    if shutil.which("pwsh") is None:
+        pytest.skip("PowerShell is unavailable; Python contract tests remain portable")
+
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "external-source"
+    skill_source = source_root / "skills" / "example" / "SKILL.md"
+    skill_source.parent.mkdir(parents=True)
+    skill_source.write_bytes(b"reviewed skill update\n")
+    companion_source = source_root / "guides" / "check.md"
+    companion_source.parent.mkdir(parents=True)
+    companion_source.write_bytes(b"reviewed companion\n")
+
+    skill_target = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    skill_target.parent.mkdir(parents=True)
+    skill_target.write_bytes(b"trusted installed skill\n")
+    companion_target = skill_target.parent / "references" / "check.md"
+    original_companion = None
+    if target_existed:
+        companion_target.parent.mkdir(parents=True)
+        companion_target.write_bytes(companion_source.read_bytes())
+        original_companion = companion_target.read_bytes()
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    original_manifest = {
+        "file_count": 1,
+        "files": {".github/skills/example/SKILL.md": _sha256(skill_target)},
+    }
+    if target_existed:
+        original_manifest["file_count"] = 2
+        original_manifest["files"][
+            ".github/skills/example/references/check.md"
+        ] = _sha256(companion_target)
+    manifest_path.write_text(json.dumps(original_manifest), encoding="utf-8")
+    original_manifest_bytes = manifest_path.read_bytes()
+
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [
+                    {
+                        "name": "external-source",
+                        "path": str(source_root),
+                        "remote": None,
+                        "skill_root": "skills",
+                        "provenance": "external-source",
+                        "source_policy": "required",
+                        "skills": ["example"],
+                        "companions": [
+                            {
+                                "source_relative_path": "guides/check.md",
+                                "target_relative_paths": [
+                                    ".github/skills/example/references/check.md"
+                                ],
+                                "identity": "external-source:guides/check.md",
+                                "consumers": ["example"],
+                                "hash_contract": {
+                                    "algorithm": "sha256",
+                                    "accepted_baselines": ["approved-source"],
+                                },
+                                "required": True,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    tools_dir = workspace_root / "tools"
+    security_dir = manifest_path.parent
+    scripts_dir = workspace_root / "src" / "utils"
+    scripts_dir.mkdir(parents=True)
+    shutil.copy2(PROJECT_ROOT / "tools" / "sync-skills.ps1", tools_dir)
+    shutil.copy2(
+        PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py",
+        security_dir / "update_manifest.py",
+    )
+    (workspace_root / ".github" / "agents").mkdir(parents=True)
+    (workspace_root / ".github" / "instructions").mkdir(parents=True)
+    gate_action = (
+        "target.unlink()\n"
+        if delete_target
+        else (
+            "(root / '.skill-sync-race-after-hash').write_text('ready', encoding='utf-8')\n"
+            if race_target_after_hash
+            else "target.write_bytes(b'concurrent occupant\\n')\n"
+        )
+    )
+    (scripts_dir / "prewrite_security_gate.py").write_text(
+        "import sys\n"
+        "from pathlib import Path\n"
+        "root = Path(sys.argv[sys.argv.index('--repo-root') + 1])\n"
+        "target = root / '.github' / 'skills' / 'example' / 'references' / 'check.md'\n"
+        f"{gate_action}"
+        "raise SystemExit(1)\n",
+        encoding="utf-8",
+    )
+    original_config = config_path.read_bytes()
+    original_skill = skill_target.read_bytes()
+    sync_script = tools_dir / "sync-skills.ps1"
+    sync_environment = {
+        **os.environ,
+        "PYTHON_EXECUTABLE": sys.executable,
+        "PYTHONUTF8": "1",
+    }
+    if race_target_after_hash:
+        wrapper_path = tools_dir / "sync-skills-race.ps1"
+        wrapper_path.write_text(
+            "$targetPath = [IO.Path]::GetFullPath($env:SKILL_SYNC_RACE_TARGET)\n"
+            "$markerPath = [IO.Path]::GetFullPath($env:SKILL_SYNC_RACE_MARKER)\n"
+            "function Get-FileHash {\n"
+            "    param([string]$LiteralPath, [string]$Path, [string]$Algorithm = 'SHA256')\n"
+            "    $requestedPath = if ($LiteralPath) { $LiteralPath } else { $Path }\n"
+            "    $result = Microsoft.PowerShell.Utility\\Get-FileHash -LiteralPath $requestedPath -Algorithm $Algorithm\n"
+            "    if (Test-Path -LiteralPath $markerPath -PathType Leaf) {\n"
+            "        Remove-Item -LiteralPath $markerPath -Force\n"
+            "        [IO.File]::WriteAllBytes($targetPath, [Text.Encoding]::UTF8.GetBytes('concurrent occupant'))\n"
+            "    }\n"
+            "    return $result\n"
+            "}\n"
+            "& $env:SKILL_SYNC_SCRIPT @args\n"
+            "exit $LASTEXITCODE\n",
+            encoding="utf-8",
+        )
+        sync_script = wrapper_path
+        sync_environment.update(
+            {
+                "SKILL_SYNC_SCRIPT": str(tools_dir / "sync-skills.ps1"),
+                "SKILL_SYNC_RACE_TARGET": str(companion_target),
+                "SKILL_SYNC_RACE_MARKER": str(
+                    workspace_root / ".skill-sync-race-after-hash"
+                ),
+            }
+        )
+
+    result = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-File",
+            str(sync_script),
+            "-ApproveReviewedUpdates",
+            "-ReviewedSkills",
+            "example",
+            "-ReviewRationale",
+            "Reviewed the companion source and target mapping.",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=sync_environment,
+    )
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    if delete_target:
+        assert not companion_target.exists(), result.stdout + result.stderr
+    elif race_target_after_hash:
+        assert companion_target.read_bytes() == b"concurrent occupant"
+    else:
+        assert companion_target.exists(), result.stdout + result.stderr
+        assert companion_target.read_bytes() == b"concurrent occupant\n"
+    if target_existed:
+        backup_files = list(companion_target.parent.glob(".skill-sync-backup-*.tmp"))
+        assert any(backup.read_bytes() == original_companion for backup in backup_files)
+    assert skill_target.read_bytes() == original_skill
+    assert manifest_path.read_bytes() == original_manifest_bytes
+    assert config_path.read_bytes() == original_config
+
+
+@pytest.mark.parametrize(
+    "concurrent_action", ["before-update", "update", "delete"]
+)
+def test_reviewed_sync_rollback_preserves_concurrent_manifest_change(
+    tmp_path: Path, concurrent_action: str
+) -> None:
+    powershell = shutil.which("pwsh") or shutil.which("powershell.exe")
+    if powershell is None:
+        pytest.skip("PowerShell is unavailable; Python restore contract remains covered")
+
+    workspace_root = tmp_path / "workspace"
+    source_root = tmp_path / "external-source"
+    skill_source = source_root / "skills" / "example" / "SKILL.md"
+    skill_source.parent.mkdir(parents=True)
+    skill_source.write_bytes(b"reviewed skill update\n")
+    companion_source = source_root / "guides" / "check.md"
+    companion_source.parent.mkdir(parents=True)
+    companion_source.write_bytes(b"reviewed companion\n")
+
+    skill_target = workspace_root / ".github" / "skills" / "example" / "SKILL.md"
+    skill_target.parent.mkdir(parents=True)
+    skill_target.write_bytes(b"trusted installed skill\n")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    original_manifest = {
+        "file_count": 1,
+        "files": {".github/skills/example/SKILL.md": _sha256(skill_target)},
+    }
+    manifest_path.write_text(json.dumps(original_manifest), encoding="utf-8")
+    config_path = workspace_root / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [
+                    {
+                        "name": "external-source",
+                        "path": str(source_root),
+                        "remote": None,
+                        "skill_root": "skills",
+                        "provenance": "external-source",
+                        "source_policy": "required",
+                        "skills": ["example"],
+                        "companions": [
+                            {
+                                "source_relative_path": "guides/check.md",
+                                "target_relative_paths": [
+                                    ".github/skills/example/references/check.md"
+                                ],
+                                "identity": "external-source:guides/check.md",
+                                "consumers": ["example"],
+                                "hash_contract": {
+                                    "algorithm": "sha256",
+                                    "accepted_baselines": ["approved-source"],
+                                },
+                                "required": True,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    tools_dir = workspace_root / "tools"
+    security_dir = manifest_path.parent
+    scripts_dir = workspace_root / "src" / "utils"
+    scripts_dir.mkdir(parents=True)
+    shutil.copy2(PROJECT_ROOT / "tools" / "sync-skills.ps1", tools_dir)
+    real_updater = PROJECT_ROOT / ".github" / "!!☾⛧security" / "update_manifest.py"
+    wrapper = (
+        "import json, runpy, sys\n"
+        "from pathlib import Path\n"
+        f"real_updater = {str(real_updater)!r}\n"
+        f"concurrent_action = {concurrent_action!r}\n"
+        "arguments = sys.argv[1:]\n"
+        "def apply_concurrent_change(manifest_path):\n"
+        "    if concurrent_action == 'delete':\n"
+        "        Path(manifest_path).unlink()\n"
+        "        return\n"
+        "    manifest = json.loads(open(manifest_path, encoding='utf-8').read())\n"
+        "    manifest['files']['.github/skills/concurrent-writer.txt'] = 'preserve-me'\n"
+        "    open(manifest_path, 'w', encoding='utf-8').write(json.dumps(manifest))\n"
+        "if '--update-files' in arguments and concurrent_action == 'before-update':\n"
+        "    manifest_path = arguments[arguments.index('--manifest') + 1]\n"
+        "    apply_concurrent_change(manifest_path)\n"
+        "sys.argv = [real_updater, *arguments]\n"
+        "runpy.run_path(real_updater, run_name='__main__')\n"
+        "if '--update-files' in arguments and concurrent_action != 'before-update':\n"
+        "    manifest_path = arguments[arguments.index('--manifest') + 1]\n"
+        "    apply_concurrent_change(manifest_path)\n"
+    )
+    (security_dir / "update_manifest.py").write_text(wrapper, encoding="utf-8")
+    (workspace_root / ".github" / "agents").mkdir(parents=True)
+    (workspace_root / ".github" / "instructions").mkdir(parents=True)
+    (scripts_dir / "prewrite_security_gate.py").write_text(
+        "raise SystemExit(1)\n", encoding="utf-8"
+    )
+    original_skill = skill_target.read_bytes()
+    backup_pattern = ".skill-sync-manifest-backup-*.tmp"
+
+    result = subprocess.run(
+        [
+            powershell,
+            "-NoProfile",
+            "-File",
+            str(tools_dir / "sync-skills.ps1"),
+            "-ApproveReviewedUpdates",
+            "-ReviewedSkills",
+            "example",
+            "-ReviewRationale",
+            "Reviewed the companion source and target mapping.",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert skill_target.read_bytes() == original_skill
+    if concurrent_action == "delete":
+        assert not manifest_path.exists()
+    else:
+        files = json.loads(manifest_path.read_text(encoding="utf-8"))["files"]
+        assert files[".github/skills/concurrent-writer.txt"] == "preserve-me"
+    backup_files = list(manifest_path.parent.glob(backup_pattern))
+    assert backup_files
+    assert any(backup.read_bytes() == json.dumps(original_manifest).encode("utf-8") for backup in backup_files)
 
 
 def test_reviewed_sync_rejects_noncanonical_manifest_before_target_write(
@@ -1168,9 +2282,501 @@ def test_sync_preflights_all_mappings_before_writing_any_target(
     escaped_target = manifest_path.parent.parent / "escape" / "SKILL.md"
     output = run.stdout + run.stderr
     assert run.returncode != 0
-    assert "target for external-skills path resolves outside configured root" in output.lower()
+    assert "skill mapping must be a normalized relative path" in output.lower()
     assert target_file.read_text(encoding="utf-8") == "local customization\n"
     assert not escaped_target.exists()
+
+
+def test_sync_preflight_resolves_companion_inventory_without_writing(
+    tmp_path: Path,
+) -> None:
+    config_path, workspace_root, source_root = _write_companion_config_fixture(
+        tmp_path
+    )
+
+    plan = update_manifest.preflight_sync_config(config_path)
+
+    companion = plan["repos"][0]["companions"][0]
+    assert companion["source"] == str(source_root / "guides" / "check.md")
+    assert companion["source_relative_path"] == "guides/check.md"
+    assert companion["identity"] == "external-skills:guides/check.md"
+    assert companion["consumers"] == ["example"]
+    assert companion["hash_contract"] == {
+        "algorithm": "sha256",
+        "accepted_baselines": [
+            "approved-source",
+            "reviewed-project-owned-adaptation",
+        ],
+    }
+    assert companion["target_relative_paths"] == [
+        ".github/skills/example/references/check.md"
+    ]
+    assert companion["targets"] == [
+        str(
+            workspace_root
+            / ".github"
+            / "skills"
+            / "example"
+            / "references"
+            / "check.md"
+        )
+    ]
+    assert not Path(companion["targets"][0]).exists()
+
+
+def test_sync_preflight_preserves_shared_companion_fanout_targets(
+    tmp_path: Path,
+) -> None:
+    shared_targets = [
+        ".github/skills/example/references/check.md",
+        ".github/skills/second-consumer/references/check.md",
+    ]
+    config_path, workspace_root, source_root = _write_companion_config_fixture(
+        tmp_path, target_relative_paths=shared_targets
+    )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["companions"][0]["consumers"] = [
+        "example",
+        "second-consumer",
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    plan = update_manifest.preflight_sync_config(config_path)
+
+    companion = plan["repos"][0]["companions"][0]
+    assert companion["source"] == str(source_root / "guides" / "check.md")
+    assert companion["target_relative_paths"] == shared_targets
+    assert companion["targets"] == [
+        str(workspace_root / ".github" / "skills" / "example" / "references" / "check.md"),
+        str(
+            workspace_root
+            / ".github"
+            / "skills"
+            / "second-consumer"
+            / "references"
+            / "check.md"
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("source_relative_path", "target_relative_paths"),
+    [
+        ("../outside.md", [".github/skills/example/references/check.md"]),
+        ("guides/check.md", [".github/skills/../outside.md"]),
+        ("guides/check.md", ["C:/outside.md"]),
+    ],
+)
+def test_sync_preflight_rejects_companion_path_traversal(
+    tmp_path: Path,
+    source_relative_path: str,
+    target_relative_paths: list[str],
+) -> None:
+    config_path, _, _ = _write_companion_config_fixture(
+        tmp_path,
+        source_relative_path=source_relative_path,
+        target_relative_paths=target_relative_paths,
+    )
+
+    with pytest.raises(ValueError, match="(?i)companion"):
+        update_manifest.preflight_sync_config(config_path)
+
+
+@pytest.mark.parametrize("duplicate", ["identity", "target"])
+def test_sync_preflight_rejects_duplicate_companion_mappings(
+    tmp_path: Path, duplicate: str
+) -> None:
+    config_path, _, source_root = _write_companion_config_fixture(tmp_path)
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    original = config["repos"][0]["companions"][0]
+    second = json.loads(json.dumps(original))
+    if duplicate == "target":
+        second["source_relative_path"] = "guides/second.md"
+        second["identity"] = "external-skills:guides/second.md"
+        (source_root / "guides" / "second.md").write_bytes(b"second companion\n")
+    config["repos"][0]["companions"].append(second)
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="(?i)duplicate"):
+        update_manifest.preflight_sync_config(config_path)
+
+
+@pytest.mark.parametrize("side", ["source", "target"])
+def test_sync_preflight_rejects_companion_symlink_components(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    side: str,
+) -> None:
+    config_path, workspace_root, source_root = _write_companion_config_fixture(
+        tmp_path
+    )
+    if side == "source":
+        symlink_component = source_root / "guides"
+    else:
+        symlink_component = workspace_root / ".github" / "skills" / "example"
+        symlink_component.mkdir(parents=True)
+
+    original_is_symlink = Path.is_symlink
+
+    def report_symlink(path: Path) -> bool:
+        return path == symlink_component or original_is_symlink(path)
+
+    monkeypatch.setattr(Path, "is_symlink", report_symlink)
+
+    with pytest.raises(ValueError, match="(?i)companion.*(symlink|reparse)"):
+        update_manifest.preflight_sync_config(config_path)
+
+
+def test_sync_preflight_rejects_companion_source_root_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path, _, source_root = _write_companion_config_fixture(tmp_path)
+    original_is_symlink = Path.is_symlink
+
+    def report_symlink(path: Path) -> bool:
+        return path == source_root or original_is_symlink(path)
+
+    monkeypatch.setattr(Path, "is_symlink", report_symlink)
+
+    with pytest.raises(ValueError, match="(?i)companion.*source.*(symlink|reparse)"):
+        update_manifest.preflight_sync_config(config_path)
+
+
+@pytest.mark.parametrize("side", ["workspace", "target"])
+def test_sync_preflight_rejects_companion_root_reparse_points(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, side: str
+) -> None:
+    config_path, workspace_root, _ = _write_companion_config_fixture(tmp_path)
+    symlink_root = (
+        workspace_root
+        if side == "workspace"
+        else workspace_root / ".github" / "skills"
+    )
+    if side == "target":
+        symlink_root.mkdir(parents=True)
+    original_is_symlink = Path.is_symlink
+
+    def report_symlink(path: Path) -> bool:
+        return path == symlink_root or original_is_symlink(path)
+
+    monkeypatch.setattr(Path, "is_symlink", report_symlink)
+
+    with pytest.raises(ValueError, match="(?i)(workspace root|companion target root).*(symlink|reparse)"):
+        update_manifest.preflight_sync_config(config_path)
+
+
+def test_powershell_sync_rejects_reparse_point_in_root_ancestor(
+    tmp_path: Path,
+) -> None:
+    powershell = shutil.which("pwsh") or shutil.which("powershell.exe")
+    if powershell is None:
+        pytest.skip("PowerShell is unavailable; Python root confinement remains covered")
+
+    root = tmp_path / "workspace"
+    target_path = root / ".github" / "skills" / "example" / "file.md"
+
+    sync_script = (PROJECT_ROOT / "tools" / "sync-skills.ps1").read_text(
+        encoding="utf-8"
+    )
+    function_start = sync_script.index("function Assert-NoReparsePointsInPath {")
+    function_end = sync_script.index("\nfunction Invoke-PinnedTargetRestore {", function_start)
+    function_text = sync_script[function_start:function_end]
+    encoded_function = base64.b64encode(
+        function_text.encode("utf-16-le")
+    ).decode("ascii")
+    root_literal = "'" + str(root).replace("'", "''") + "'"
+    target_literal = "'" + str(target_path).replace("'", "''") + "'"
+    command = (
+        f"$functionText = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('{encoded_function}')); "
+        f"$rootPath = [IO.Path]::GetFullPath({root_literal}); "
+        "$ancestorPath = Split-Path -Parent $rootPath; "
+        "function Get-Item { param([string]$LiteralPath, [switch]$Force); "
+        "if ($LiteralPath -eq $rootPath) { return [pscustomobject]@{ Attributes = [IO.FileAttributes]::Directory } }; "
+        "if ($LiteralPath -eq $ancestorPath) { return [pscustomobject]@{ Attributes = [IO.FileAttributes]::ReparsePoint } }; "
+        "throw \"Unexpected Get-Item path: $LiteralPath\" }; "
+        "Invoke-Expression $functionText; "
+        f"Assert-NoReparsePointsInPath -RootPath $rootPath -Path {target_literal} -Description 'test'"
+    )
+    result = subprocess.run(
+        [
+            powershell,
+            "-NoProfile",
+            "-Command",
+            command,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "reparse point" in (result.stdout + result.stderr).lower()
+
+
+def test_configured_companion_inventory_has_exact_sources_targets_and_hash_contracts() -> None:
+    config_path = PROJECT_ROOT / "tools" / "skill-sync-config.json"
+    raw_config = json.loads(config_path.read_text(encoding="utf-8"))
+    records = [
+        (repo["name"], companion)
+        for repo in raw_config["repos"]
+        for companion in repo.get("companions", [])
+    ]
+    expected_mappings = [
+        ("mp-skills-engineering", "skills/engineering/tdd/tests.md", [".github/skills/tdd/tests.md"], ["tdd"]),
+        ("mp-skills-engineering", "skills/engineering/tdd/mocking.md", [".github/skills/tdd/mocking.md"], ["tdd"]),
+        ("mp-skills-engineering", "skills/engineering/prototype/LOGIC.md", [".github/skills/prototype/LOGIC.md"], ["prototype"]),
+        ("mp-skills-engineering", "skills/engineering/prototype/UI.md", [".github/skills/prototype/UI.md"], ["prototype"]),
+        ("mp-skills-engineering", "skills/engineering/wizard/template.sh", [".github/skills/wizard/template.sh"], ["wizard"]),
+        ("mp-skills-productivity", "skills/productivity/teach/MISSION-FORMAT.md", [".github/skills/teach/MISSION-FORMAT.md"], ["teach"]),
+        ("mp-skills-productivity", "skills/productivity/teach/RESOURCES-FORMAT.md", [".github/skills/teach/RESOURCES-FORMAT.md"], ["teach"]),
+        ("mp-skills-productivity", "skills/productivity/teach/LEARNING-RECORD-FORMAT.md", [".github/skills/teach/LEARNING-RECORD-FORMAT.md"], ["teach"]),
+        (
+            "addyosmani-agent-skills",
+            "references/definition-of-done.md",
+            [
+                ".github/skills/incremental-implementation/references/definition-of-done.md",
+                ".github/skills/planning-and-task-breakdown/references/definition-of-done.md",
+            ],
+            ["incremental-implementation", "planning-and-task-breakdown"],
+        ),
+        (
+            "addyosmani-agent-skills",
+            "references/orchestration-patterns.md",
+            [".github/skills/doubt-driven-development/references/orchestration-patterns.md"],
+            ["doubt-driven-development"],
+        ),
+        (
+            "addyosmani-agent-skills",
+            "references/security-checklist.md",
+            [
+                ".github/skills/code-review-and-quality/references/security-checklist.md",
+                ".github/skills/security-and-hardening/references/security-checklist.md",
+            ],
+            ["code-review-and-quality", "security-and-hardening"],
+        ),
+        (
+            "addyosmani-agent-skills",
+            "references/performance-checklist.md",
+            [".github/skills/code-review-and-quality/references/performance-checklist.md"],
+            ["code-review-and-quality"],
+        ),
+        (
+            "addyosmani-agent-skills",
+            "skills/security-and-hardening/references/hardening-patterns.md",
+            [".github/skills/security-and-hardening/references/hardening-patterns.md"],
+            ["security-and-hardening"],
+        ),
+        (
+            "addyosmani-agent-skills",
+            "references/observability-checklist.md",
+            [".github/skills/observability-and-instrumentation/references/observability-checklist.md"],
+            ["observability-and-instrumentation"],
+        ),
+    ]
+    actual_mappings = [
+        (
+            repo_name,
+            companion["source_relative_path"],
+            companion["target_relative_paths"],
+            companion["consumers"],
+        )
+        for repo_name, companion in records
+    ]
+
+    assert len(records) == 14
+    assert actual_mappings == expected_mappings
+    assert len(
+        {
+            (repo_name, companion["source_relative_path"])
+            for repo_name, companion in records
+        }
+    ) == 14
+    assert len({companion["identity"] for _, companion in records}) == 14
+    assert all(companion["required"] is True for _, companion in records)
+    assert all(
+        companion["hash_contract"]["algorithm"] == "sha256"
+        and companion["hash_contract"]["accepted_baselines"]
+        for _, companion in records
+    )
+    assert all(
+        target.startswith(".github/skills/")
+        for _, companion in records
+        for target in companion["target_relative_paths"]
+    )
+    wizard = next(
+        companion
+        for repo_name, companion in records
+        if repo_name == "mp-skills-engineering"
+        and companion["source_relative_path"]
+        == "skills/engineering/wizard/template.sh"
+    )
+    assert wizard["hash_contract"]["accepted_baselines"] == [
+        "reviewed-project-owned-adaptation"
+    ]
+    assert wizard["required_constraints"] == [
+        "user-terminal-or-environment-only",
+        "no-repository-env-files",
+        "no-model-context-or-logs",
+    ]
+
+
+def test_manifest_tracks_allowlisted_shell_companion(tmp_path: Path) -> None:
+    target = tmp_path / ".github" / "skills" / "wizard" / "template.sh"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"printf 'reviewed fixture'\n")
+    source_root = tmp_path / "wizard-source"
+    source_root.mkdir()
+    (source_root / "template.sh").write_bytes(b"approved source\n")
+    config_path = tmp_path / "tools" / "skill-sync-config.json"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "workspace_root": {"relative": "."},
+                "destination": {"relative": ".github/skills"},
+                "log_file": {"relative": "logs/skill-sync.log"},
+                "repos": [
+                    {
+                        "name": "reviewed-wizard",
+                        "path": str(source_root),
+                        "skill_root": ".",
+                        "skills": [],
+                        "companions": [
+                            {
+                                "source_relative_path": "template.sh",
+                                "target_relative_paths": [
+                                    ".github/skills/wizard/template.sh"
+                                ],
+                                "identity": "reviewed-wizard:template.sh",
+                                "consumers": ["wizard"],
+                                "required": True,
+                                "hash_contract": {
+                                    "algorithm": "sha256",
+                                    "accepted_baselines": [
+                                        "reviewed-project-owned-adaptation"
+                                    ],
+                                },
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    outside_root = tmp_path / "outside.sh"
+    outside_root.write_bytes(b"unapproved shell content\n")
+    unapproved_shell = tmp_path / ".github" / "skills" / "unapproved" / "script.sh"
+    unapproved_shell.parent.mkdir(parents=True)
+    unapproved_shell.write_bytes(b"unconfigured shell content\n")
+    unapproved_link = unapproved_shell.parent / "linked.sh"
+    try:
+        unapproved_link.symlink_to(outside_root)
+    except OSError:
+        pass
+
+    manifest = update_manifest.build_manifest(tmp_path)
+
+    assert manifest["files"] == {
+        ".github/skills/wizard/template.sh": hashlib.sha256(
+            b"printf 'reviewed fixture'\n"
+        ).hexdigest()
+    }
+
+
+def test_companion_integrity_reports_source_match(tmp_path: Path) -> None:
+    config_path, workspace_root, source_root = _write_companion_config_fixture(tmp_path)
+    source = source_root / "guides" / "check.md"
+    source.write_bytes(b"approved companion\n")
+    target = workspace_root / ".github" / "skills" / "example" / "references" / "check.md"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"approved companion\n")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/skills/example/references/check.md": _sha256(target)}}),
+        encoding="utf-8",
+    )
+    assert source.read_bytes() == target.read_bytes()
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert [(entry.target, entry.status) for entry in result.entries] == [
+        (str(target), "source_match")
+    ]
+    assert result.hard_findings == []
+
+
+def test_companion_integrity_rejects_missing_required_target(
+    tmp_path: Path,
+) -> None:
+    config_path, workspace_root, _ = _write_companion_config_fixture(tmp_path)
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(json.dumps({"files": {}}), encoding="utf-8")
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert len(result.hard_findings) == 1
+    assert result.hard_findings[0].status == "integrity_failure"
+
+
+def test_companion_integrity_rejects_source_match_for_adaptation_only_policy(
+    tmp_path: Path,
+) -> None:
+    config_path, workspace_root, source_root = _write_companion_config_fixture(tmp_path)
+    source = source_root / "guides" / "check.md"
+    source.write_bytes(b"upstream companion\n")
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["companions"][0]["hash_contract"]["accepted_baselines"] = [
+        "reviewed-project-owned-adaptation"
+    ]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    target = workspace_root / ".github" / "skills" / "example" / "references" / "check.md"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(source.read_bytes())
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/skills/example/references/check.md": _sha256(target)}}),
+        encoding="utf-8",
+    )
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert result.entries[0].status == "integrity_failure"
+    assert result.hard_findings == result.entries
+
+
+def test_companion_integrity_accepts_exact_reviewed_adaptation_hash(
+    tmp_path: Path,
+) -> None:
+    config_path, workspace_root, source_root = _write_companion_config_fixture(tmp_path)
+    source = source_root / "guides" / "check.md"
+    source.write_bytes(b"upstream companion\n")
+    target = workspace_root / ".github" / "skills" / "example" / "references" / "check.md"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"reviewed adapted companion\n")
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["companions"][0]["hash_contract"].update(
+        {
+            "accepted_baselines": ["reviewed-project-owned-adaptation"],
+            "reviewed_adaptation_sha256": _sha256(target),
+        }
+    )
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    manifest_path = workspace_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"files": {".github/skills/example/references/check.md": _sha256(target)}}),
+        encoding="utf-8",
+    )
+
+    result = verify_skill_integrity(config_path, manifest_path)
+
+    assert result.hard_findings == []
+    assert result.entries[0].status == "reviewed_project_owned_adaptation"
 
 
 @pytest.mark.parametrize("log_target", ["destination_subtree", "mapped_skill"])
@@ -1827,7 +3433,9 @@ def test_integrity_verification_rejects_target_link_outside_destination(
     target_link.rmdir()
     _create_directory_link_or_skip(target_link, outside_target)
 
-    with pytest.raises(ValueError, match="(?i)target.*outside"):
+    with pytest.raises(
+        ValueError, match="(?i)(target.*outside|path contains a symlink or reparse point)"
+    ):
         verify_skill_integrity(config_path, manifest_path)
 
 

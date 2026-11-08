@@ -14,6 +14,7 @@ _SOURCE_DRIFT_MARKER = "SOURCE DRIFT (approval required)"
 def run_prewrite_security_gate(
     repo_root: Path,
     quarantined_external_skills: list[str] | None = None,
+    strict: bool = False,
 ) -> int:
     """Return 1 for confirmed integrity findings, otherwise allow with operational warnings."""
     verifier = repo_root / ".github" / "!!☾⛧security" / "update_manifest.py"
@@ -35,13 +36,13 @@ def run_prewrite_security_gate(
             f"WARNING: integrity verifier could not start; allowing write: {error}",
             file=sys.stderr,
         )
-        return 0
+        return 1 if strict else 0
     except subprocess.TimeoutExpired:
         print(
             "WARNING: integrity verifier timed out; allowing write",
             file=sys.stderr,
         )
-        return 0
+        return 1 if strict else 0
 
     if result.stdout:
         print(result.stdout, end="")
@@ -50,7 +51,15 @@ def run_prewrite_security_gate(
 
     verifier_completed = _VERIFIER_COMPLETE_MARKER in result.stdout
     confirmed_source_drift = _SOURCE_DRIFT_MARKER in result.stdout
-    if confirmed_source_drift or (verifier_completed and result.returncode == 2):
+    confirmed_path_policy_failure = (
+        "SKILL SYNC PATH POLICY:" in result.stdout
+        or "INVALID QUARANTINE REQUEST:" in result.stdout
+    )
+    if (
+        confirmed_source_drift
+        or confirmed_path_policy_failure
+        or (verifier_completed and result.returncode == 2)
+    ):
         print(
             "BLOCKED: canonical integrity verification found an unapproved mismatch.",
             file=sys.stderr,
@@ -62,7 +71,7 @@ def run_prewrite_security_gate(
             "WARNING: canonical integrity verification did not complete cleanly; allowing write",
             file=sys.stderr,
         )
-        return 0
+        return 1 if strict else 0
 
     print("INTEGRITY_OK: canonical verifier passed.")
     return 0
@@ -80,9 +89,14 @@ def main() -> int:
         action="append",
         default=[],
     )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Fail closed when integrity verification cannot complete cleanly",
+    )
     args = parser.parse_args()
     return run_prewrite_security_gate(
-        args.repo_root.resolve(), args.quarantine_external_skill
+        args.repo_root.resolve(), args.quarantine_external_skill, strict=args.strict
     )
 
 

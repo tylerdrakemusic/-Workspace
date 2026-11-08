@@ -1,6 +1,7 @@
 ---
 name: before-building
-description: Fire the moment the user proposes a build. Instantly surface the 1-3 consequential choices hidden in their idea. Can also be invoked with /before-building.
+description: Surface consequential choices in a proposed build. Invoke manually with /before-building.
+user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -10,7 +10,71 @@
       "skill_root": "skills/engineering",
       "provenance": "external-source",
       "source_policy": "optional",
-      "skills": ["tdd", "prototype", "wizard"]
+      "skills": ["tdd", "prototype", "wizard"],
+      "companions": [
+        {
+          "source_relative_path": "skills/engineering/tdd/tests.md",
+          "target_relative_paths": [".github/skills/tdd/tests.md"],
+          "identity": "mp-skills-engineering:skills/engineering/tdd/tests.md",
+          "consumers": ["tdd"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/engineering/tdd/mocking.md",
+          "target_relative_paths": [".github/skills/tdd/mocking.md"],
+          "identity": "mp-skills-engineering:skills/engineering/tdd/mocking.md",
+          "consumers": ["tdd"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/engineering/prototype/LOGIC.md",
+          "target_relative_paths": [".github/skills/prototype/LOGIC.md"],
+          "identity": "mp-skills-engineering:skills/engineering/prototype/LOGIC.md",
+          "consumers": ["prototype"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/engineering/prototype/UI.md",
+          "target_relative_paths": [".github/skills/prototype/UI.md"],
+          "identity": "mp-skills-engineering:skills/engineering/prototype/UI.md",
+          "consumers": ["prototype"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/engineering/wizard/template.sh",
+          "target_relative_paths": [".github/skills/wizard/template.sh"],
+          "identity": "mp-skills-engineering:skills/engineering/wizard/template.sh",
+          "consumers": ["wizard"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["reviewed-project-owned-adaptation"],
+            "reviewed_adaptation_sha256": "47917bd1f1200ce094142bc6c9a6b20365371cc827671649b06b117458307606"
+          },
+          "reviewed_adaptation_source_relative_path": "tools/skill-sync-adaptations/wizard/template.sh",
+          "required_constraints": [
+            "user-terminal-or-environment-only",
+            "no-repository-env-files",
+            "no-model-context-or-logs"
+          ]
+        }
+      ]
     },
     {
       "name": "mp-skills-productivity",
@@ -19,7 +83,42 @@
       "skill_root": "skills/productivity",
       "provenance": "external-source",
       "source_policy": "optional",
-      "skills": ["wait-what", "to-questionnaire", "teach", "handoff"]
+      "skills": ["wait-what", "to-questionnaire", "teach", "handoff"],
+      "companions": [
+        {
+          "source_relative_path": "skills/productivity/teach/MISSION-FORMAT.md",
+          "target_relative_paths": [".github/skills/teach/MISSION-FORMAT.md"],
+          "identity": "mp-skills-productivity:skills/productivity/teach/MISSION-FORMAT.md",
+          "consumers": ["teach"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/productivity/teach/RESOURCES-FORMAT.md",
+          "target_relative_paths": [".github/skills/teach/RESOURCES-FORMAT.md"],
+          "identity": "mp-skills-productivity:skills/productivity/teach/RESOURCES-FORMAT.md",
+          "consumers": ["teach"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/productivity/teach/LEARNING-RECORD-FORMAT.md",
+          "target_relative_paths": [".github/skills/teach/LEARNING-RECORD-FORMAT.md"],
+          "identity": "mp-skills-productivity:skills/productivity/teach/LEARNING-RECORD-FORMAT.md",
+          "consumers": ["teach"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        }
+      ]
     },
     {
       "name": "addyosmani-agent-skills",
@@ -41,6 +140,88 @@
         "debugging-and-error-recovery",
         "documentation-and-adrs",
         "observability-and-instrumentation"
+      ],
+      "reviewed_skill_adaptations": {
+        "code-review-and-quality": {
+          "source_relative_path": "tools/skill-sync-adaptations/addyosmani/code-review-and-quality/SKILL.md",
+          "sha256": "f1ac76f16f901d7f35782bfaa68f91b1130f1f87f4913941f7f0498031f68848"
+        }
+      },
+      "companions": [
+        {
+          "source_relative_path": "references/definition-of-done.md",
+          "target_relative_paths": [
+            ".github/skills/incremental-implementation/references/definition-of-done.md",
+            ".github/skills/planning-and-task-breakdown/references/definition-of-done.md"
+          ],
+          "identity": "addyosmani-agent-skills:references/definition-of-done.md",
+          "consumers": ["incremental-implementation", "planning-and-task-breakdown"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "references/orchestration-patterns.md",
+          "target_relative_paths": [".github/skills/doubt-driven-development/references/orchestration-patterns.md"],
+          "identity": "addyosmani-agent-skills:references/orchestration-patterns.md",
+          "consumers": ["doubt-driven-development"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "references/security-checklist.md",
+          "target_relative_paths": [
+            ".github/skills/code-review-and-quality/references/security-checklist.md",
+            ".github/skills/security-and-hardening/references/security-checklist.md"
+          ],
+          "identity": "addyosmani-agent-skills:references/security-checklist.md",
+          "consumers": ["code-review-and-quality", "security-and-hardening"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "references/performance-checklist.md",
+          "target_relative_paths": [".github/skills/code-review-and-quality/references/performance-checklist.md"],
+          "identity": "addyosmani-agent-skills:references/performance-checklist.md",
+          "consumers": ["code-review-and-quality"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        },
+        {
+          "source_relative_path": "skills/security-and-hardening/references/hardening-patterns.md",
+          "target_relative_paths": [".github/skills/security-and-hardening/references/hardening-patterns.md"],
+          "identity": "addyosmani-agent-skills:skills/security-and-hardening/references/hardening-patterns.md",
+          "consumers": ["security-and-hardening"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["reviewed-project-owned-adaptation"],
+            "reviewed_adaptation_sha256": "006c60c4dc3e6a083ddc61ca012e04d100b27c3392b67bfe90356cd4d7416b92"
+          },
+          "reviewed_adaptation_source_relative_path": "tools/skill-sync-adaptations/addyosmani/hardening-patterns.md"
+        },
+        {
+          "source_relative_path": "references/observability-checklist.md",
+          "target_relative_paths": [".github/skills/observability-and-instrumentation/references/observability-checklist.md"],
+          "identity": "addyosmani-agent-skills:references/observability-checklist.md",
+          "consumers": ["observability-and-instrumentation"],
+          "required": true,
+          "hash_contract": {
+            "algorithm": "sha256",
+            "accepted_baselines": ["approved-source", "reviewed-project-owned-adaptation"]
+          }
+        }
       ]
     },
     {
@@ -62,7 +243,17 @@
       "skills": [
         "thinking-and-docs/before-building",
         "thinking-and-docs/decisions"
-      ]
+      ],
+      "reviewed_skill_adaptations": {
+        "thinking-and-docs/before-building": {
+          "source_relative_path": "tools/skill-sync-adaptations/davidondrej/before-building/SKILL.md",
+          "sha256": "8d9d7443e2c42274f7ed67774f4d51c09ed749eacfdcfecb65612d0d07928e28"
+        },
+        "thinking-and-docs/decisions": {
+          "source_relative_path": "tools/skill-sync-adaptations/davidondrej/decisions/SKILL.md",
+          "sha256": "eae6811daaf7d80058eff3e304556df846cf937cc899f314b00629a725b315a2"
+        }
+      }
     },
     {
       "name": "humanizer",

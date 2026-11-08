@@ -1,0 +1,65 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a2e3a', 'primaryTextColor': '#d0ecf8', 'edgeLabelBackground': '#0f1318', 'lineColor': '#4a7a9a'}}}%%
+%% is_derived_view=true
+%% Traceability.parent: diagrams/workspace-command-guard-security.mmd
+graph LR
+    Reviewer([⊕ reviewer]):::ws
+    ReviewedSync[/tools/sync-skills.ps1<br/>-ApproveReviewedUpdates/]
+    Selection[Unique explicit -ReviewedSkills selection<br/>-InstallReviewedAdaptations when installing an adaptation]
+    Config[tools/skill-sync-config.json<br/>governed companion inventory]:::ws
+    EngineeringInventory[mp-skills-engineering, 5 required identities<br/>mp-skills-engineering:skills/engineering/tdd/tests.md<br/>tdd → .github/skills/tdd/tests.md<br/>mp-skills-engineering:skills/engineering/tdd/mocking.md<br/>tdd → .github/skills/tdd/mocking.md<br/>mp-skills-engineering:skills/engineering/prototype/LOGIC.md<br/>prototype → .github/skills/prototype/LOGIC.md<br/>mp-skills-engineering:skills/engineering/prototype/UI.md<br/>prototype → .github/skills/prototype/UI.md<br/>mp-skills-engineering:skills/engineering/wizard/template.sh<br/>wizard → .github/skills/wizard/template.sh]:::ext
+    ProductivityInventory[mp-skills-productivity, 3 required identities<br/>mp-skills-productivity:skills/productivity/teach/MISSION-FORMAT.md<br/>teach → .github/skills/teach/MISSION-FORMAT.md<br/>mp-skills-productivity:skills/productivity/teach/RESOURCES-FORMAT.md<br/>teach → .github/skills/teach/RESOURCES-FORMAT.md<br/>mp-skills-productivity:skills/productivity/teach/LEARNING-RECORD-FORMAT.md<br/>teach → .github/skills/teach/LEARNING-RECORD-FORMAT.md]:::ext
+    AddyInventory[addyosmani-agent-skills, 6 required identities<br/>addyosmani-agent-skills:references/definition-of-done.md<br/>incremental-implementation → .github/skills/incremental-implementation/references/definition-of-done.md<br/>planning-and-task-breakdown → .github/skills/planning-and-task-breakdown/references/definition-of-done.md<br/>addyosmani-agent-skills:references/orchestration-patterns.md<br/>doubt-driven-development → .github/skills/doubt-driven-development/references/orchestration-patterns.md<br/>addyosmani-agent-skills:references/security-checklist.md<br/>code-review-and-quality → .github/skills/code-review-and-quality/references/security-checklist.md<br/>security-and-hardening → .github/skills/security-and-hardening/references/security-checklist.md<br/>addyosmani-agent-skills:references/performance-checklist.md<br/>code-review-and-quality → .github/skills/code-review-and-quality/references/performance-checklist.md<br/>addyosmani-agent-skills:skills/security-and-hardening/references/hardening-patterns.md<br/>security-and-hardening → .github/skills/security-and-hardening/references/hardening-patterns.md<br/>addyosmani-agent-skills:references/observability-checklist.md<br/>observability-and-instrumentation → .github/skills/observability-and-instrumentation/references/observability-checklist.md]:::ext
+    InventoryCheck[Normalized paths; unique identity equals repository:path<br/>consumer list aligns exact target list]:::ws
+    ConsumerMatch{Declared consumer matches<br/>explicitly selected skill?}
+    SelectedPlan[Selected skill and matching companions<br/>14 identities, 16 governed targets]:::ws
+    SkipUnselected[Unselected companion omitted]:::state
+    PathInputs[Configured external source and optional<br/>reviewed project-owned adaptation paths]:::ws
+    PathGate{Source confined to configured repository root<br/>target is exact consumer mapping beneath selected skill destination<br/>reject symlink or reparse components?}:::state
+    HashEvidence[External source SHA-256<br/>reviewed adaptation file must match configured adaptation SHA-256]:::ws
+    ExistingBaseline[Existing target is regular and matches manifest hash<br/>target and manifest entry both exist or both are absent]:::db
+    BaselineDecision{Manifest baseline matches approved source hash<br/>or reviewed adaptation hash?}:::state
+    PreserveAdaptation[Keep existing matching project-owned adaptation<br/>out of the write plan]:::ws
+    AdaptationApproval{New adaptation-only target has explicit<br/>reviewed selection and install flag?}:::state
+    CandidatePlan[Eligible external source or verified adaptation]:::ws
+    StageAndVerify[Stage every planned target before any replacement<br/>verify staged SHA-256]:::ws
+    CommitTargets[Recheck target path and old hash<br/>replace or create with rollback backup]:::ws
+    ManifestUpdate[/update_manifest.py --update-files<br/>expected manifest hash + per-target hashes under write lock/]:::ws
+    StrictPrewrite[/prewrite_security_gate.py --strict<br/>runs update_manifest.py --verify/]:::ws
+    GateResult{Verifier completed with exit 0?}:::state
+    SyncSuccess[Reviewed sync succeeds]:::ws
+    SyncFailure[Prewrite or transaction failure]:::state
+    Rollback[Only on failure: restore committed targets in reverse order<br/>restore attempted manifest write only when its current hash matches<br/>the expected written hash; otherwise preserve concurrent edits and backup]:::ws
+
+    Reviewer --> ReviewedSync --> Selection; ReviewedSync --> Config
+    Config --> EngineeringInventory & ProductivityInventory & AddyInventory
+    Config --> InventoryCheck; EngineeringInventory --> InventoryCheck; ProductivityInventory --> InventoryCheck; AddyInventory --> InventoryCheck
+    Selection --> ConsumerMatch; InventoryCheck --> ConsumerMatch
+    ConsumerMatch -->|yes| SelectedPlan; ConsumerMatch -->|no| SkipUnselected
+    SelectedPlan --> PathGate; PathInputs --> PathGate; PathGate -->|pass| HashEvidence; PathGate -->|fail closed| SyncFailure
+    HashEvidence --> BaselineDecision; ExistingBaseline --> BaselineDecision
+    BaselineDecision -->|approved source baseline| CandidatePlan; BaselineDecision -->|existing reviewed adaptation baseline| PreserveAdaptation; BaselineDecision -->|new adaptation-only target| AdaptationApproval
+    AdaptationApproval -->|explicit install and verified adaptation hash| CandidatePlan; AdaptationApproval -->|no| SyncFailure
+    CandidatePlan --> StageAndVerify --> CommitTargets --> ManifestUpdate --> StrictPrewrite --> GateResult --> SyncSuccess
+    StageAndVerify -.->|stage hash mismatch| SyncFailure; CommitTargets -.->|write failure| SyncFailure; ManifestUpdate -.->|hash or transaction failure| SyncFailure; GateResult -->|strict verifier failed| SyncFailure
+    SyncFailure -->|sync not successful| Rollback
+
+    class Reviewer ws
+    class ReviewedSync,Config,InventoryCheck,SelectedPlan,PathInputs,HashEvidence,PreserveAdaptation,CandidatePlan,StageAndVerify,CommitTargets,ManifestUpdate,StrictPrewrite,SyncSuccess,Rollback ws
+    class EngineeringInventory,ProductivityInventory,AddyInventory ext
+    class ExistingBaseline db
+    class ConsumerMatch,SkipUnselected,PathGate,BaselineDecision,AdaptationApproval,GateResult,SyncFailure state
+
+    subgraph Legend["Legend"]
+        direction LR
+        L1[Workspace guard]:::ws
+        L2[External source]:::ext
+        L3[(Manifest baseline)]:::db
+        L4{Decision or boundary}:::state
+    end
+
+classDef tyler   fill:#3a1a52,stroke:#9e4aff,color:#fff
+classDef orch    fill:#1a3a52,stroke:#4a9eff,color:#fff
+classDef ws      fill:#2a4e3a,stroke:#4aff9e,color:#fff
+classDef ext     fill:#4e2a2a,stroke:#ff4a4a,color:#fff
+classDef db      fill:#4e4a2a,stroke:#ffe14a,color:#fff
+classDef state   fill:#1a1a1a,stroke:#888,color:#fff

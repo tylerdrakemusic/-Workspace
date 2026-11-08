@@ -5,6 +5,7 @@
 param(
     [switch]$ApproveProtectedSync,
     [switch]$ApproveReviewedUpdates,
+    [switch]$InstallReviewedAdaptations,
     [string[]]$ReviewedSkills,
     [string]$ReviewRationale,
     [string]$RestorePinnedTarget,
@@ -42,6 +43,20 @@ function Get-SyncPreflight {
     }
 }
 
+function Get-ReviewedTextSha256 {
+    param([string]$Path)
+
+    $output = & $pythonExecutable $manifestUpdater --sha256-reviewed-text $Path 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to hash reviewed text file '$Path': $($output -join ' ')"
+    }
+    $digest = ($output -join [Environment]::NewLine).Trim().ToLowerInvariant()
+    if ($digest -notmatch '^[0-9a-f]{64}$') {
+        throw "Reviewed text hashing returned an invalid SHA-256 digest for '$Path'"
+    }
+    return $digest
+}
+
 $config = Get-SyncPreflight
 $configRoot = $config.workspace_root
 $logFile = $config.log_file
@@ -67,6 +82,57 @@ function Write-Log {
         Add-Content -Path $logFile -Value $line -Encoding UTF8
     } else {
         $null = $script:logBuffer.Add($line)
+    }
+}
+
+function Restore-StagedWrite {
+    param([object]$StagedWrite)
+
+    $targetPath = [string]$StagedWrite.Target
+    $backupPath = [string]$StagedWrite.Backup
+    if (-not (Test-Path -LiteralPath $targetPath -PathType Leaf)) {
+        throw "Committed target disappeared before rollback: $targetPath"
+    }
+
+    $observedPath = Join-Path (Split-Path -Parent $targetPath) (".skill-sync-rollback-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+    [IO.File]::Move($targetPath, $observedPath)
+    try {
+        $observedHash = (Get-FileHash -LiteralPath $observedPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($observedHash -cne ([string]$StagedWrite.NewHash).ToLowerInvariant()) {
+            [IO.File]::Move($observedPath, $targetPath)
+            $observedPath = ""
+            throw "Preserved target changed by another writer: $targetPath"
+        }
+
+        if ($StagedWrite.TargetExisted) {
+            if (-not (Test-Path -LiteralPath $backupPath -PathType Leaf)) {
+                [IO.File]::Move($observedPath, $targetPath)
+                $observedPath = ""
+                throw "Original backup disappeared before rollback: $backupPath"
+            }
+            [IO.File]::Move($backupPath, $targetPath)
+        }
+
+        Remove-Item -LiteralPath $observedPath -Force
+        $observedPath = ""
+    } catch {
+        if ($observedPath -and (Test-Path -LiteralPath $observedPath -PathType Leaf)) {
+            if ($StagedWrite.TargetExisted -and
+                (Test-Path -LiteralPath $backupPath -PathType Leaf)) {
+                $StagedWrite.PreserveBackup = $true
+            }
+            if (-not (Test-Path -LiteralPath $targetPath)) {
+                try {
+                    [IO.File]::Move($observedPath, $targetPath)
+                    $observedPath = ""
+                } catch {
+                }
+            }
+            if ($observedPath) {
+                throw "Rollback failed; preserved current file at $observedPath and original backup at ${backupPath}: $($_.Exception.Message)"
+            }
+        }
+        throw
     }
 }
 
@@ -168,9 +234,17 @@ function Assert-NoReparsePointsInPath {
         throw "$Description is outside the configured workspace root"
     }
 
-    $rootItem = Get-Item -LiteralPath $rootFullPath -Force
-    if ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint) {
-        throw "Configured workspace root is a reparse point: $rootFullPath"
+    $currentRootPath = $rootFullPath
+    while ($currentRootPath) {
+        $rootItem = Get-Item -LiteralPath $currentRootPath -Force
+        if ($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw "Configured workspace root or ancestor is a reparse point: $currentRootPath"
+        }
+        $parentRootPath = Split-Path -Parent $currentRootPath
+        if (-not $parentRootPath -or $parentRootPath -eq $currentRootPath) {
+            break
+        }
+        $currentRootPath = $parentRootPath
     }
     $relativePath = if ($targetFullPath -eq $rootFullPath) {
         ""
@@ -429,7 +503,25 @@ function Invoke-ReviewedSkillSync {
 
     $syncPlan = [System.Collections.Generic.List[object]]::new()
     $pinnedSources = [System.Collections.Generic.List[object]]::new()
+    $stagedWrites = [System.Collections.Generic.List[object]]::new()
+    $createdDirectories = [System.Collections.Generic.List[string]]::new()
+    $hasReviewedSkillAdaptation = $false
     $configChanged = $false
+    $syncSucceeded = $false
+    $configWriteAttempted = $false
+    $manifestWriteAttempted = $false
+    $configWrittenHash = ""
+    $manifestWrittenHash = ""
+    $originalConfigBytes = [IO.File]::ReadAllBytes($configPath)
+    $originalManifestBytes = [IO.File]::ReadAllBytes($manifestPath)
+    $originalConfigHash = (Get-FileHash -LiteralPath $configPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $originalManifestHash = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $configBackupPath = ""
+    $configClaimPath = ""
+    $manifestBackupPath = ""
+    $configBackupCandidate = ""
+    $manifestBackupCandidate = ""
+    $configStageCandidate = ""
     try {
         foreach ($skill in $selectedSkills) {
             $reviewedMappings = [System.Collections.Generic.List[object]]::new()
@@ -498,6 +590,34 @@ function Invoke-ReviewedSkillSync {
                 $configChanged = $true
             }
 
+            if ($mapping.reviewed_adaptation_source) {
+                $hasReviewedSkillAdaptation = $true
+                if (-not $InstallReviewedAdaptations) {
+                    throw "Reviewed skill adaptation installation requires -InstallReviewedAdaptations and an explicit reviewed skill selection: $skill"
+                }
+                if ($hasCommit -or $hasSha) {
+                    throw "Reviewed skill adaptations cannot override pinned sources: $skill"
+                }
+                $adaptationSource = [string]$mapping.reviewed_adaptation_source
+                $adaptationHash = ([string]$mapping.reviewed_adaptation_sha256).ToLowerInvariant()
+                if (-not $adaptationSource -or $adaptationHash -notmatch '^[0-9a-f]{64}$') {
+                    throw "Reviewed skill adaptation requires a verified source and SHA-256 baseline: $skill"
+                }
+                Assert-NoReparsePointsInPath `
+                    $configRoot `
+                    $adaptationSource `
+                    "Reviewed skill adaptation '$skill'"
+                if (-not (Test-Path -LiteralPath $adaptationSource -PathType Leaf)) {
+                    throw "Reviewed skill adaptation source is missing: $skill"
+                }
+                $actualAdaptationHash = Get-ReviewedTextSha256 -Path $adaptationSource
+                if ($actualAdaptationHash -cne $adaptationHash) {
+                    throw "Reviewed skill adaptation source hash mismatch: $skill"
+                }
+                $source = $adaptationSource
+                $newHash = (Get-FileHash -LiteralPath $adaptationSource -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+
             if (-not (Test-Path $source -PathType Leaf)) {
                 throw "Reviewed source for '$skill' is missing: $source"
             }
@@ -534,7 +654,177 @@ function Invoke-ReviewedSkillSync {
                 NewCommit = $newCommit
                 OldHash = [string]$manifestEntry.Value
                 NewHash = if ($newHash) { $newHash } else { (Get-FileHash -Path $source -Algorithm SHA256).Hash.ToLowerInvariant() }
+                IsCompanion = $false
             })
+
+            foreach ($companionRepo in $config.repos) {
+                if ($companionRepo.provenance -cne "external-source") { continue }
+                foreach ($companion in $companionRepo.companions) {
+                    $consumerIndex = [Array]::IndexOf(
+                        [string[]]@($companion.consumers),
+                        [string]$skill
+                    )
+                    if ($consumerIndex -lt 0) { continue }
+
+                    $companionSource = [IO.Path]::GetFullPath([string]$companion.source)
+                    $targetRelative = [string]$companion.target_relative_paths[$consumerIndex]
+                    $companionTarget = [IO.Path]::GetFullPath([string]$companion.targets[$consumerIndex])
+                    $expectedTarget = [IO.Path]::GetFullPath(
+                        (Join-Path $configRoot ($targetRelative.Replace('/', '\')))
+                    )
+                    $expectedPrefix = [IO.Path]::GetFullPath(
+                        (Join-Path $destination ($skill + '\'))
+                    )
+                    $pathComparison = if ([IO.Path]::DirectorySeparatorChar -eq '\') {
+                        [StringComparison]::OrdinalIgnoreCase
+                    } else {
+                        [StringComparison]::Ordinal
+                    }
+                    if (
+                        $companionTarget -ne $expectedTarget -or
+                        -not $companionTarget.StartsWith($expectedPrefix, $pathComparison)
+                    ) {
+                        throw "Reviewed companion target for '$skill' is outside its exact consumer mapping"
+                    }
+
+                    $sourcePolicy = [string]$companionRepo.source_policy
+                    if (-not (Test-Path -LiteralPath $companionSource -PathType Leaf)) {
+                        if ($sourcePolicy -eq "optional" -and $companion.required -eq $false) { continue }
+                        throw "Reviewed required companion source is missing: $($companion.identity)"
+                    }
+                    Assert-NoReparsePointsInPath `
+                        $companionRepo.path `
+                        $companionSource `
+                        "Reviewed companion source '$($companion.identity)'"
+                    Assert-NoReparsePointsInPath `
+                        $configRoot `
+                        $companionTarget `
+                        "Reviewed companion target '$targetRelative'"
+
+                    $companionHash = (Get-FileHash -LiteralPath $companionSource -Algorithm SHA256).Hash.ToLowerInvariant()
+                    $syncCompanionSource = $companionSource
+                    $companionManifestEntry = $manifest.files.PSObject.Properties[$targetRelative]
+                    $acceptedBaselines = @($companion.hash_contract.accepted_baselines)
+                    $targetExists = Test-Path -LiteralPath $companionTarget -PathType Leaf
+                    if ((Test-Path -LiteralPath $companionTarget) -and -not $targetExists) {
+                        throw "Reviewed companion target is not a regular file: $targetRelative"
+                    }
+                    if ($targetExists) {
+                        if ($null -eq $companionManifestEntry) {
+                            throw "Reviewed companion target is unexpected without a manifest baseline: $targetRelative"
+                        }
+                        $installedHash = (Get-FileHash -LiteralPath $companionTarget -Algorithm SHA256).Hash.ToLowerInvariant()
+                        $baselineHash = ([string]$companionManifestEntry.Value).ToLowerInvariant()
+                        if ($installedHash -ne $baselineHash) {
+                            throw "Reviewed companion target no longer matches its manifest baseline: $targetRelative"
+                        }
+                        $approvedSourceBaseline = (
+                            $acceptedBaselines -contains "approved-source" -and
+                            $baselineHash -eq $companionHash
+                        )
+                        $reviewedAdaptationHash = ([string]$companion.hash_contract.reviewed_adaptation_sha256).ToLowerInvariant()
+                        $reviewedAdaptationBaseline = (
+                            $acceptedBaselines -contains "reviewed-project-owned-adaptation" -and
+                            $reviewedAdaptationHash -match '^[0-9a-f]{64}$' -and
+                            (Get-ReviewedTextSha256 -Path $companionTarget) -eq $reviewedAdaptationHash -and
+                            $baselineHash -ne $companionHash
+                        )
+                        if (-not ($approvedSourceBaseline -or $reviewedAdaptationBaseline)) {
+                            throw "Reviewed companion target does not match an allowed prior baseline: $targetRelative"
+                        }
+                        if ($reviewedAdaptationBaseline -and -not $approvedSourceBaseline) {
+                            Write-Log "Preserving reviewed companion adaptation: $targetRelative"
+                            continue
+                        }
+                    } elseif ($null -ne $companionManifestEntry) {
+                        throw "Reviewed companion target is missing but remains in the manifest: $targetRelative"
+                    } elseif ($acceptedBaselines -notcontains "approved-source") {
+                        if (-not $InstallReviewedAdaptations) {
+                            throw "Reviewed adaptation installation requires -InstallReviewedAdaptations and an explicit reviewed skill selection: $targetRelative"
+                        }
+                        $adaptationSource = [string]$companion.reviewed_adaptation_source
+                        $adaptationHash = ([string]$companion.hash_contract.reviewed_adaptation_sha256).ToLowerInvariant()
+                        if (-not $adaptationSource -or $adaptationHash -notmatch '^[0-9a-f]{64}$') {
+                            throw "New reviewed companion target requires a verified reviewed-adaptation source: $targetRelative"
+                        }
+                        Assert-NoReparsePointsInPath `
+                            $configRoot `
+                            $adaptationSource `
+                            "Reviewed adaptation source '$targetRelative'"
+                        if (-not (Test-Path -LiteralPath $adaptationSource -PathType Leaf)) {
+                            throw "Reviewed adaptation source is missing: $targetRelative"
+                        }
+                        $actualAdaptationHash = Get-ReviewedTextSha256 -Path $adaptationSource
+                        if ($actualAdaptationHash -cne $adaptationHash) {
+                            throw "Reviewed adaptation source hash mismatch: $targetRelative"
+                        }
+                        $syncCompanionSource = $adaptationSource
+                        $companionHash = (Get-FileHash -LiteralPath $adaptationSource -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }
+
+                    $null = $syncPlan.Add([pscustomobject]@{
+                        Skill = $skill
+                        RepositoryName = $companionRepo.name
+                        Source = $syncCompanionSource
+                        Target = $companionTarget
+                        ManifestKey = $targetRelative
+                        OldCommit = ""
+                        NewCommit = ""
+                        OldHash = if ($null -ne $companionManifestEntry) { [string]$companionManifestEntry.Value } else { "" }
+                        NewHash = $companionHash
+                        IsCompanion = $true
+                    })
+                }
+            }
+        }
+
+        if ($configChanged -and $hasReviewedSkillAdaptation) {
+            throw "Reviewed adaptations and pinned source config updates require a separate reviewed sync"
+        }
+
+        $plannedTargets = @($syncPlan | ForEach-Object { $_.Target })
+        if ($plannedTargets.Count -ne @($plannedTargets | Select-Object -Unique).Count) {
+            throw "Reviewed sync plan contains duplicate target mappings"
+        }
+
+        foreach ($item in $syncPlan) {
+            $targetParent = Split-Path -Parent $item.Target
+            $missingDirectories = [System.Collections.Generic.List[string]]::new()
+            $directoryCursor = $targetParent
+            while (-not (Test-Path -LiteralPath $directoryCursor -PathType Container)) {
+                $null = $missingDirectories.Add($directoryCursor)
+                $nextDirectory = Split-Path -Parent $directoryCursor
+                if (-not $nextDirectory -or $nextDirectory -eq $directoryCursor) {
+                    throw "Reviewed target parent could not be created: $targetParent"
+                }
+                $directoryCursor = $nextDirectory
+            }
+            $missingDirectories.Reverse()
+            foreach ($directory in $missingDirectories) {
+                New-Item -ItemType Directory -Path $directory | Out-Null
+                $null = $createdDirectories.Add($directory)
+            }
+
+            Assert-NoReparsePointsInPath $configRoot $item.Target "Reviewed target '$($item.ManifestKey)'"
+            $stagePath = Join-Path $targetParent (".skill-sync-stage-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+            $backupPath = Join-Path $targetParent (".skill-sync-backup-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+            $targetExists = Test-Path -LiteralPath $item.Target -PathType Leaf
+            $stagedWrite = [pscustomobject]@{
+                Target = $item.Target
+                Stage = $stagePath
+                Backup = $backupPath
+                TargetExisted = $targetExists
+                OldHash = $item.OldHash
+                NewHash = $item.NewHash
+                Committed = $false
+                PreserveBackup = $false
+            }
+            $null = $stagedWrites.Add($stagedWrite)
+            Copy-Item -LiteralPath $item.Source -Destination $stagePath
+            $stagedHash = (Get-FileHash -LiteralPath $stagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($stagedHash -cne ([string]$item.NewHash).ToLowerInvariant()) {
+                throw "Staged reviewed source failed SHA-256 verification: $($item.ManifestKey)"
+            }
         }
 
         New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
@@ -545,37 +835,314 @@ function Invoke-ReviewedSkillSync {
         $script:logReady = $true
 
         Write-Log "Reviewed skill update rationale: $($ReviewRationale.Trim())"
+        $manifestBackupCandidate = Join-Path (Split-Path -Parent $manifestPath) (".skill-sync-manifest-backup-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+        [IO.File]::WriteAllBytes($manifestBackupCandidate, $originalManifestBytes)
+        $manifestBackupHash = (Get-FileHash -LiteralPath $manifestBackupCandidate -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($manifestBackupHash -cne $originalManifestHash) {
+            throw "Manifest backup failed byte-for-byte verification"
+        }
+        $manifestBackupPath = $manifestBackupCandidate
         if ($configChanged) {
+            $configBackupCandidate = Join-Path (Split-Path -Parent $configPath) (".skill-sync-config-backup-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+            [IO.File]::WriteAllBytes($configBackupCandidate, $originalConfigBytes)
+            $configBackupHash = (Get-FileHash -LiteralPath $configBackupCandidate -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($configBackupHash -cne $originalConfigHash) {
+                throw "Sync config backup failed byte-for-byte verification"
+            }
+            $configBackupPath = $configBackupCandidate
+            $currentConfigHash = (Get-FileHash -LiteralPath $configPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($currentConfigHash -cne $originalConfigHash) {
+                throw "Sync config changed after reviewed preflight"
+            }
             $configJson = ConvertTo-Json -InputObject $rawConfig -Depth 100
+            $configStageCandidate = Join-Path (Split-Path -Parent $configPath) (".skill-sync-config-stage-" + [Guid]::NewGuid().ToString("N") + ".tmp")
             [IO.File]::WriteAllText(
-                $configPath,
+                $configStageCandidate,
                 $configJson + [Environment]::NewLine,
                 [Text.UTF8Encoding]::new($false)
             )
+            $stagedConfigHash = (Get-FileHash -LiteralPath $configStageCandidate -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (-not $stagedConfigHash) {
+                throw "Staged sync config failed SHA-256 verification"
+            }
+            $currentConfigHash = (Get-FileHash -LiteralPath $configPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($currentConfigHash -cne $originalConfigHash) {
+                throw "Sync config changed after reviewed preflight"
+            }
+            $configClaimPath = Join-Path (Split-Path -Parent $configPath) (".skill-sync-config-claim-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+            try {
+                [IO.File]::Move($configPath, $configClaimPath)
+                $claimedConfigHash = (Get-FileHash -LiteralPath $configClaimPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            } catch {
+                $claimError = $_.Exception.Message
+                if ($configClaimPath -and (Test-Path -LiteralPath $configClaimPath -PathType Leaf)) {
+                    if (Test-Path -LiteralPath $configPath) {
+                        $configBackupPath = $configClaimPath
+                        $configBackupCandidate = $configClaimPath
+                        throw "Unable to validate claimed sync config; canonical path is occupied and original bytes are preserved at ${configClaimPath}: $claimError"
+                    }
+                    try {
+                        [IO.File]::Move($configClaimPath, $configPath)
+                        $configClaimPath = ""
+                        $configBackupPath = ""
+                    } catch {
+                        $restoreError = $_.Exception.Message
+                        $configBackupPath = $configClaimPath
+                        $configBackupCandidate = $configClaimPath
+                        throw "Unable to restore claimed sync config; original bytes are preserved at ${configClaimPath}: $restoreError"
+                    }
+                }
+                throw "Unable to validate claimed sync config; original bytes were restored: $claimError"
+            }
+            if ($claimedConfigHash -cne $originalConfigHash) {
+                if (Test-Path -LiteralPath $configPath) {
+                    $configBackupPath = $configClaimPath
+                    $configBackupCandidate = $configClaimPath
+                    throw "Sync config changed after reviewed preflight; concurrent bytes remain at $configPath and the original config is preserved at $configClaimPath"
+                }
+                try {
+                    [IO.File]::Move($configClaimPath, $configPath)
+                    $configClaimPath = ""
+                    $configBackupPath = ""
+                } catch {
+                    $restoreError = $_.Exception.Message
+                    $configBackupPath = $configClaimPath
+                    $configBackupCandidate = $configClaimPath
+                    throw "Sync config hash mismatch; original config restore failed and bytes are preserved at ${configClaimPath}: $restoreError"
+                }
+                throw "Sync config hash mismatch; original config restored at $configPath"
+            }
+            try {
+                [IO.File]::Move($configStageCandidate, $configPath)
+            } catch {
+                if (-not (Test-Path -LiteralPath $configPath)) {
+                    try {
+                        [IO.File]::Move($configClaimPath, $configPath)
+                        $configClaimPath = ""
+                        $configBackupPath = ""
+                    } catch {
+                        $restoreError = $_.Exception.Message
+                        $configBackupPath = $configClaimPath
+                        $configBackupCandidate = $configClaimPath
+                        throw "Concurrent config writer blocked restoration; original config is preserved at ${configClaimPath}: $restoreError"
+                    }
+                    throw "Concurrent sync config writer appeared; original config restored at $configPath"
+                } else {
+                    $configBackupPath = $configClaimPath
+                    $configBackupCandidate = $configClaimPath
+                    throw "Concurrent sync config writer appeared; competing bytes remain at $configPath and the original config is preserved at $configClaimPath"
+                }
+            }
+            $configStageCandidate = ""
+            $configWrittenHash = $stagedConfigHash
+            $configWriteAttempted = $true
+            Remove-Item -LiteralPath $configClaimPath -Force
+            $configClaimPath = ""
+            $observedConfigHash = (Get-FileHash -LiteralPath $configPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($observedConfigHash -cne $stagedConfigHash) {
+                throw "Sync config changed during reviewed write; concurrent edit preserved"
+            }
         }
-        foreach ($item in $syncPlan) {
-            Copy-Item $item.Source $item.Target -Force
-            Write-Log "Reviewed update: $($item.Skill); commit $($item.OldCommit) -> $($item.NewCommit); hash $($item.OldHash) -> $($item.NewHash)"
+        for ($index = 0; $index -lt $syncPlan.Count; $index++) {
+            $item = $syncPlan[$index]
+            $stagedWrite = $stagedWrites[$index]
+            Assert-NoReparsePointsInPath $configRoot $item.Target "Reviewed target '$($item.ManifestKey)'"
+            if ($stagedWrite.TargetExisted) {
+                if (-not (Test-Path -LiteralPath $item.Target -PathType Leaf)) {
+                    throw "Reviewed target disappeared after preflight: $($item.ManifestKey)"
+                }
+                $currentHash = (Get-FileHash -LiteralPath $item.Target -Algorithm SHA256).Hash.ToLowerInvariant()
+                if ($currentHash -cne ([string]$item.OldHash).ToLowerInvariant()) {
+                    throw "Reviewed target changed after preflight: $($item.ManifestKey)"
+                }
+                [IO.File]::Replace($stagedWrite.Stage, $item.Target, $stagedWrite.Backup)
+            } else {
+                if (Test-Path -LiteralPath $item.Target) {
+                    throw "Reviewed target appeared after preflight: $($item.ManifestKey)"
+                }
+                [IO.File]::Move($stagedWrite.Stage, $item.Target)
+            }
+            $stagedWrite.Committed = $true
+            if ($item.IsCompanion) {
+                Write-Log "Reviewed companion update: $($item.ManifestKey); hash $($item.OldHash) -> $($item.NewHash)"
+            } else {
+                Write-Log "Reviewed update: $($item.Skill); commit $($item.OldCommit) -> $($item.NewCommit); hash $($item.OldHash) -> $($item.NewHash)"
+            }
         }
 
-        $manifestArgs = @("--update-files") + @($syncPlan | ForEach-Object { $_.Target }) + @("--manifest", $manifestPath, "--repo-root", $repoRoot)
+        foreach ($item in $syncPlan) {
+            Assert-NoReparsePointsInPath $configRoot $item.Target "Reviewed target '$($item.ManifestKey)'"
+            if (-not (Test-Path -LiteralPath $item.Target -PathType Leaf)) {
+                throw "Reviewed target disappeared before manifest update: $($item.ManifestKey)"
+            }
+            $finalTargetHash = (Get-FileHash -LiteralPath $item.Target -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($finalTargetHash -cne ([string]$item.NewHash).ToLowerInvariant()) {
+                throw "Reviewed target changed before manifest update: $($item.ManifestKey)"
+            }
+        }
+
+        $currentManifestHash = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($currentManifestHash -cne $originalManifestHash) {
+            throw "Agent manifest changed after reviewed preflight"
+        }
+        $manifestArgs = @("--update-files") + @($syncPlan | ForEach-Object { $_.Target }) + @("--manifest", $manifestPath, "--repo-root", $repoRoot, "--expected-manifest-hash", $originalManifestHash)
+        foreach ($item in $syncPlan) {
+            $manifestArgs += @("--expected-file-hash", $item.Target, ([string]$item.NewHash).ToLowerInvariant())
+        }
+        $manifestWriteAttempted = $true
         $manifestOutput = & $pythonExecutable $manifestUpdater @manifestArgs 2>&1
         $manifestExitCode = $LASTEXITCODE
         $manifestOutput | ForEach-Object { Write-Log $_ }
         if ($manifestExitCode -ne 0) {
             throw "Reviewed skill manifest update failed"
         }
+        $manifestHashLines = @(
+            $manifestOutput | ForEach-Object {
+                if ([string]$_ -match '^MANIFEST_SHA256=([0-9a-f]{64})$') {
+                    $Matches[1]
+                }
+            } | Where-Object { $_ }
+        )
+        if ($manifestHashLines.Count -ne 1) {
+            throw "Reviewed manifest updater did not return one transaction hash"
+        }
+        $manifestWrittenHash = ([string]$manifestHashLines[0]).ToLowerInvariant()
 
         $prewriteGate = Join-Path (Split-Path $scriptDir -Parent) "src\utils\prewrite_security_gate.py"
-        $gateOutput = & $pythonExecutable $prewriteGate --repo-root $repoRoot 2>&1
+        $gateOutput = & $pythonExecutable $prewriteGate --repo-root $repoRoot --strict 2>&1
         $gateExitCode = $LASTEXITCODE
         $gateOutput | ForEach-Object { Write-Log $_ }
         if ($gateExitCode -ne 0) {
             throw "Reviewed skill update did not pass the prewrite security gate"
         }
+        $syncSucceeded = $true
     } finally {
+        $rollbackErrors = [System.Collections.Generic.List[string]]::new()
+        if (-not $syncSucceeded) {
+            for ($index = $stagedWrites.Count - 1; $index -ge 0; $index--) {
+                $stagedWrite = $stagedWrites[$index]
+                try {
+                    if ($stagedWrite.Committed) {
+                        Restore-StagedWrite $stagedWrite
+                    }
+                } catch {
+                    if ($stagedWrite.TargetExisted -and
+                        (Test-Path -LiteralPath $stagedWrite.Backup -PathType Leaf)) {
+                        $stagedWrite.PreserveBackup = $true
+                        $null = $rollbackErrors.Add(
+                            "Rollback failed; original backup preserved at $($stagedWrite.Backup): $($_.Exception.Message)"
+                        )
+                    } else {
+                        $null = $rollbackErrors.Add($_.Exception.Message)
+                    }
+                }
+            }
+
+            foreach ($backup in @(
+                [pscustomobject]@{
+                    Path = $manifestBackupPath
+                    Target = $manifestPath
+                    WriteAttempted = $manifestWriteAttempted
+                    OriginalHash = $originalManifestHash
+                    WrittenHash = $manifestWrittenHash
+                },
+                [pscustomobject]@{
+                    Path = $configBackupPath
+                    Target = $configPath
+                    WriteAttempted = $configWriteAttempted
+                    OriginalHash = $originalConfigHash
+                    WrittenHash = $configWrittenHash
+                }
+            )) {
+                if (-not $backup.WriteAttempted -or -not $backup.Path -or -not (Test-Path -LiteralPath $backup.Path -PathType Leaf)) { continue }
+                try {
+                    if (Test-Path -LiteralPath $backup.Target -PathType Leaf) {
+                        $currentHash = (Get-FileHash -LiteralPath $backup.Target -Algorithm SHA256).Hash.ToLowerInvariant()
+                        if ($backup.Target -ceq $manifestPath) {
+                            $restoreArgs = @(
+                                "--restore-manifest-backup", $backup.Path,
+                                "--expected-original-hash", $backup.OriginalHash,
+                                "--expected-current-hash", $backup.WrittenHash,
+                                "--manifest", $backup.Target,
+                                "--repo-root", $repoRoot
+                            )
+                            $restoreOutput = & $pythonExecutable $manifestUpdater @restoreArgs 2>&1
+                            $restoreExitCode = $LASTEXITCODE
+                            $restoreOutput | ForEach-Object { Write-Log $_ }
+                            if ($restoreExitCode -ne 0) {
+                                $null = $rollbackErrors.Add(
+                                    "Locked manifest rollback failed; backup preserved at $($backup.Path)"
+                                )
+                            }
+                            continue
+                        }
+                        if ($currentHash -ceq $backup.OriginalHash) { continue }
+                        if ($backup.WrittenHash -and $currentHash -cne $backup.WrittenHash) {
+                            $null = $rollbackErrors.Add(
+                                "Preserved concurrently changed file and backup at $($backup.Path)"
+                            )
+                            continue
+                        }
+                        $discardPath = Join-Path (Split-Path -Parent $backup.Target) (".skill-sync-discard-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+                        [IO.File]::Replace($backup.Path, $backup.Target, $discardPath)
+                        Remove-Item -LiteralPath $discardPath -Force -ErrorAction SilentlyContinue
+                    } else {
+                        if ($backup.Target -ceq $manifestPath) {
+                            $null = $rollbackErrors.Add(
+                                "Manifest was removed by another writer; preserved backup at $($backup.Path)"
+                            )
+                            continue
+                        }
+                        [IO.File]::Move($backup.Path, $backup.Target)
+                    }
+                } catch {
+                    $null = $rollbackErrors.Add($_.Exception.Message)
+                }
+            }
+        }
+
+        foreach ($stagedWrite in $stagedWrites) {
+            foreach ($temporaryPath in @($stagedWrite.Stage, $stagedWrite.Backup)) {
+                if ($temporaryPath -eq $stagedWrite.Backup -and $stagedWrite.PreserveBackup) {
+                    continue
+                }
+                if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
+                    Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        if ($syncSucceeded) {
+            foreach ($temporaryPath in @($manifestBackupPath, $configBackupPath, $manifestBackupCandidate, $configBackupCandidate, $configStageCandidate)) {
+                if ($temporaryPath -and (Test-Path -LiteralPath $temporaryPath -PathType Leaf)) {
+                    Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+        } else {
+            foreach ($candidatePath in @($manifestBackupCandidate, $configBackupCandidate, $configStageCandidate)) {
+                if (
+                    $candidatePath -and
+                    $candidatePath -ne $manifestBackupPath -and
+                    $candidatePath -ne $configBackupPath -and
+                    (Test-Path -LiteralPath $candidatePath -PathType Leaf)
+                ) {
+                    Remove-Item -LiteralPath $candidatePath -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        if (-not $syncSucceeded) {
+            for ($index = $createdDirectories.Count - 1; $index -ge 0; $index--) {
+                $directory = $createdDirectories[$index]
+                if ((Test-Path -LiteralPath $directory -PathType Container) -and
+                    @(Get-ChildItem -LiteralPath $directory -Force -ErrorAction SilentlyContinue).Count -eq 0) {
+                    Remove-Item -LiteralPath $directory -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
         foreach ($pinnedSource in $pinnedSources) {
             Remove-PinnedSource $pinnedSource.RepositoryPath $pinnedSource.Worktree
+        }
+        if ($rollbackErrors.Count -gt 0) {
+            throw "Reviewed sync rollback was incomplete: $($rollbackErrors -join '; ')"
         }
     }
 }
@@ -591,6 +1158,24 @@ if (
 if ($ApproveReviewedUpdates) {
     Invoke-ReviewedSkillSync
     exit 0
+}
+
+if ($InstallReviewedAdaptations) {
+    throw "Reviewed adaptation installation requires -ApproveReviewedUpdates, -ReviewedSkills, and -ReviewRationale"
+}
+$reviewedAdaptationMappings = @(
+    $config.repos | ForEach-Object { $_.mappings } |
+        Where-Object { $_.reviewed_adaptation_source }
+)
+$unapprovedAdaptationWrites = @(
+    $reviewedAdaptationMappings | Where-Object {
+        $ApproveProtectedSync -or
+        -not (Test-Path -LiteralPath $_.target -PathType Leaf)
+    }
+)
+if ($unapprovedAdaptationWrites.Count -gt 0) {
+    $adaptedNames = ($unapprovedAdaptationWrites | ForEach-Object { $_.skill }) -join ", "
+    throw "Reviewed skill adaptations cannot be written through ordinary sync; use approved C7 reviewed sync for: $adaptedNames"
 }
 
 Write-Log "=== skill-sync start ==="

@@ -54,6 +54,42 @@ def test_block_diagnostics_do_not_disclose_matched_pattern(tmp_path: Path) -> No
     sys.platform != "win32" or shutil.which("pwsh") is None,
     reason="Windows DPAPI and PowerShell 7 are required",
 )
+def test_guard_blocks_git_reset_without_disclosing_rule(tmp_path: Path) -> None:
+    repository_root = Path(__file__).resolve().parents[1]
+    guard_script = repository_root / "tools" / "deny-dangerous.ps1"
+    patterns_file = tmp_path / "rules.txt"
+    protected_file = tmp_path / "rules.dpapi"
+    blocked_pattern = r"git\s+reset\s+--hard"
+    patterns_file.write_text(blocked_pattern + "\n", encoding="utf-8")
+
+    encrypted = _run_guard(
+        guard_script,
+        "-Maintenance",
+        "-PlaintextPatternsFile",
+        str(patterns_file),
+        "-PatternsFile",
+        str(protected_file),
+    )
+    result = _run_guard(
+        guard_script,
+        "-Command",
+        "git reset --hard HEAD",
+        "-PatternsFile",
+        str(protected_file),
+    )
+
+    assert encrypted.returncode == 0, encrypted.stderr
+    assert result.returncode == 2
+    output = result.stdout + result.stderr
+    assert "Command guard blocked a dangerous command" in output
+    assert blocked_pattern not in output
+    assert "git reset --hard HEAD" not in output
+
+
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("pwsh") is None,
+    reason="Windows DPAPI and PowerShell 7 are required",
+)
 def test_maintenance_encrypts_rules_and_runtime_preserves_regex_behavior(tmp_path: Path) -> None:
     repository_root = Path(__file__).resolve().parents[1]
     guard_script = repository_root / "tools" / "deny-dangerous.ps1"

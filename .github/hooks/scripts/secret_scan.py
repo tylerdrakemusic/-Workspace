@@ -29,7 +29,13 @@ SKIP_PATH_PATTERNS = re.compile(r'(test_|fixture|\.example|sample|\.env\.example
 
 
 def redact(value: str) -> str:
-    return value[:4] + "..." if len(value) > 4 else "****"
+    return "[REDACTED]"
+
+
+def redact_sensitive_text(value: str) -> str:
+    for _, pattern in PATTERNS:
+        value = pattern.sub("[REDACTED]", value)
+    return value
 
 
 def main() -> int:
@@ -38,7 +44,7 @@ def main() -> int:
         capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     if result.returncode != 0:
-        print(f"[secret_scan] git diff failed: {result.stderr}", file=sys.stderr)
+        print("[secret_scan] git diff failed; staged changes could not be inspected.", file=sys.stderr)
         return 1
 
     diff = result.stdout
@@ -61,8 +67,9 @@ def main() -> int:
             for name, pattern in PATTERNS:
                 m = pattern.search(added_line)
                 if m:
+                    safe_file = redact_sensitive_text(current_file)
                     violations.append(
-                        f"  [{name}] in {current_file}: ...{redact(m.group(0))}..."
+                        f"  [{name}] in {safe_file}: ...{redact(m.group(0))}..."
                     )
 
     if violations:
@@ -72,7 +79,7 @@ def main() -> int:
         for v in violations:
             print(v)
         print("")
-        print("   To bypass (only if false positive): git commit --no-verify")
+        print("   If this is a false positive, request explicit per-task approval before bypassing the hook.")
         print("")
         return 1
 

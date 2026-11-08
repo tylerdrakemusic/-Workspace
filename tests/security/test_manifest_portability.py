@@ -22,7 +22,9 @@ def load_manifest_module():
     return module
 
 
-def test_manifest_keys_are_stable_across_checkout_roots(tmp_path: Path) -> None:
+def test_manifest_keys_are_stable_across_checkout_roots(
+    tmp_path: Path, monkeypatch
+) -> None:
     module = load_manifest_module()
     clone_root = tmp_path / "clone"
     for watched_dir in ("agents", "instructions", "skills"):
@@ -31,7 +33,20 @@ def test_manifest_keys_are_stable_across_checkout_roots(tmp_path: Path) -> None:
             clone_root / ".github" / watched_dir,
         )
 
+    clone_tools = clone_root / "tools"
+    clone_tools.mkdir(parents=True)
+    shutil.copy2(
+        WORKTREE_ROOT / "tools" / "skill-sync-config.json",
+        clone_tools / "skill-sync-config.json",
+    )
+    shutil.copytree(
+        WORKTREE_ROOT / "tools" / "skill-sync-adaptations",
+        clone_tools / "skill-sync-adaptations",
+    )
+
+    monkeypatch.setenv("WORKSPACE_ROOT", str(WORKTREE_ROOT))
     worktree_manifest = module.build_manifest(WORKTREE_ROOT)
+    monkeypatch.setenv("WORKSPACE_ROOT", str(clone_root))
     clone_manifest = module.build_manifest(clone_root)
 
     assert worktree_manifest["files"] == clone_manifest["files"]
@@ -143,9 +158,7 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
         "BLADER_HUMANIZER_ROOT",
         "SUPERPOWERS_ROOT",
     ):
-        monkeypatch.setenv(
-            environment_name, str(tmp_path / "missing-external" / environment_name)
-        )
+        monkeypatch.delenv(environment_name, raising=False)
     for watched_dir in ("agents", "instructions", "skills"):
         shutil.copytree(
             WORKTREE_ROOT / ".github" / watched_dir,
@@ -154,6 +167,10 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
 
     config_path = clone_root / "tools" / "skill-sync-config.json"
     config_path.parent.mkdir(parents=True)
+    shutil.copytree(
+        WORKTREE_ROOT / "tools" / "skill-sync-adaptations",
+        config_path.parent / "skill-sync-adaptations",
+    )
     manifest_path = clone_root / ".github" / "!!☾⛧security" / "agent-manifest.json"
     manifest_path.parent.mkdir(parents=True)
     manifest = module.build_manifest(clone_root)
@@ -165,13 +182,16 @@ def test_verify_blocks_missing_pinned_source_in_clean_checkout(
         for key in manifest["files"]
         if key.startswith(".github/skills/")
     }
-    config = json.loads(
-        (WORKTREE_ROOT / "tools" / "skill-sync-config.json").read_text(encoding="utf-8")
+    shutil.copy2(
+        WORKTREE_ROOT / "tools" / "skill-sync-config.json", config_path
     )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
     config["repos"] = [
         {**repo, "skills": [skill for skill in repo["skills"] if skill in manifest_skills]}
         for repo in config["repos"]
     ]
+    for repo in config["repos"]:
+        repo["companions"] = []
     config["repos"] = [repo for repo in config["repos"] if repo["skills"]]
     config_path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
 
