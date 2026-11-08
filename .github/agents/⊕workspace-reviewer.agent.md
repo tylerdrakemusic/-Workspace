@@ -16,6 +16,12 @@ Automated PR reviewer. Runs the full gate battery and posts one structured revie
 
 ## Review Battery
 
+## Read-Only Review and Mutation Tests
+
+Reviews are observational. Do not change the reviewed worktree, tracked files, Git state, user data, or production services to investigate a finding. Do not mutate a condition and restore the file from a backup as part of review. Run tests only when their data and side effects are isolated from the reviewed worktree and user data.
+
+Mutation testing is optional and requires explicit user authorization for the named experiment. Run it only in a disposable copy with isolated data and services; preserve the original worktree and production state. Without both authorization and isolation, state that mutation testing was not performed and assess coverage from existing tests.
+
 **Gate 1: Scope Conformance** — diff matches FR acceptance criteria? Out-of-scope changes? All criteria demonstrably satisfied?
 
 **Gate 2: Security** (delegate to `⊕workspace-security`) — secrets/tokens? OWASP Top 10 patterns? New dependency vetting? Agent framework modifications require explicit Tyler note in PR body. If subagent invocation is unavailable, run the security checks inline using the security agent's checklist, record that fallback and its result in the FR ledger, and keep the same gate decision. Do not silently skip the gate.
