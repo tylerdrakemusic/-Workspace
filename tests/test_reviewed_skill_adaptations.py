@@ -22,6 +22,31 @@ from update_manifest import (
 )
 
 
+def test_code_review_mutation_experiment_guidance_is_authorized_and_isolated() -> None:
+    """Checks guidance text only; it does not prove real-agent compliance."""
+    skill_path = (
+        PROJECT_ROOT
+        / ".github"
+        / "skills"
+        / "code-review-and-quality"
+        / "SKILL.md"
+    )
+    skill_text = skill_path.read_text(encoding="utf-8")
+    review_tests = " ".join(
+        skill_text.split("### Step 2: Review the Tests First", 1)[1]
+        .split("### Step 3: Review the Implementation", 1)[0]
+        .split()
+    )
+
+    assert "Do not mutate source worktrees during review." in review_tests
+    assert "explicit per-task authorization" in review_tests
+    assert "disposable isolated copy" in review_tests
+    assert "isolated data and services" in review_tests
+    assert "record the experiment as unperformed" in review_tests
+    assert "Invert one condition" not in review_tests
+    assert "restore the file from a copy" not in review_tests
+
+
 def _workspace_with_adaptation(
     tmp_path: Path,
     *,

@@ -141,6 +141,12 @@
         "documentation-and-adrs",
         "observability-and-instrumentation"
       ],
+      "reviewed_skill_adaptations": {
+        "code-review-and-quality": {
+          "source_relative_path": "tools/skill-sync-adaptations/addyosmani/code-review-and-quality/SKILL.md",
+          "sha256": "f1ac76f16f901d7f35782bfaa68f91b1130f1f87f4913941f7f0498031f68848"
+        }
+      },
       "companions": [
         {
           "source_relative_path": "references/definition-of-done.md",

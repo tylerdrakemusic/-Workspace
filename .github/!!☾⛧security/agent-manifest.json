@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T03:46:35.285739+00:00",
+  "generated_at": "2026-11-08T05:31:41.435000+00:00",
   "generated_by": "update_manifest.py",
   "file_count": 91,
   "files": {
@@ -40,7 +40,7 @@
     ".github/instructions/testing-base.instructions.md": "035ab270b6dc851cfa6a97498d6c984b854a2067e5f3e1bab40c800083d7a144",
     ".github/skills/agent-orchestration/git-worktree/SKILL.md": "451fc4dd1e6e3d91fffd1d6eab5a83929719e927f41c0a7e0df113122b4bd10c",
     ".github/skills/before-building/SKILL.md": "e0f8bab04973e6f97e7cec61b19e6af82fde467996b4566ecdc7ee30f2db7b0d",
-    ".github/skills/code-review-and-quality/SKILL.md": "2db1e850379f255fd3091ef278cde24cd6c7d2ba23e360cc52ea522c40d4396e",
+    ".github/skills/code-review-and-quality/SKILL.md": "f1ac76f16f901d7f35782bfaa68f91b1130f1f87f4913941f7f0498031f68848",
     ".github/skills/context-engineering/SKILL.md": "8b736cb9e55b82b265ab6ff78349c0e826e8a6df550deddf665b7fb3ff858b63",
     ".github/skills/debugging-and-error-recovery/SKILL.md": "21f3960f5d7ae2cc95c40896545004dbbcbbd752ea65fc2d53962554d4174220",
     ".github/skills/decisions/SKILL.md": "02ffb776a30fe9f7fd13377a5773e7fa2f657f90baa5a990836311f7bfd33f08",
