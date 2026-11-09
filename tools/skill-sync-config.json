@@ -5,7 +5,7 @@
   "repos": [
     {
       "name": "mp-skills-engineering",
-      "path": {"relative": "../mp-skills", "env": "MP_SKILLS_ROOT"},
+      "path": {"worktree_sibling": "mp-skills", "env": "MP_SKILLS_ROOT"},
       "remote": "https://github.com/mattpocock/skills",
       "skill_root": "skills/engineering",
       "provenance": "external-source",
@@ -78,7 +78,7 @@
     },
     {
       "name": "mp-skills-productivity",
-      "path": {"relative": "../mp-skills", "env": "MP_SKILLS_ROOT"},
+      "path": {"worktree_sibling": "mp-skills", "env": "MP_SKILLS_ROOT"},
       "remote": null,
       "skill_root": "skills/productivity",
       "provenance": "external-source",

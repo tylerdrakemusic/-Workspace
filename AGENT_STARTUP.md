@@ -110,7 +110,12 @@ Sync external skill repositories only with explicit operator approval:
 Set-Location F:\superpowers
 git fetch origin
 git merge --ff-only origin/main
-f:\⊕Workspace\tools\sync-skills.ps1 -ApproveProtectedSync
+f:\⊕Workspace\tools\sync-skills.ps1 -RefreshExternalSources -ApproveProtectedSync
 ```
 
-The scheduled sync omits `-ApproveProtectedSync` and skips protected files.
+Omit `-RefreshExternalSources` to use existing local checkouts without cloning
+or pulling. `-ApproveProtectedSync` approves overwriting existing protected
+skills; it does not refresh sources by itself.
+
+The scheduled sync uses existing local source checkouts, omits both switches,
+and does not fetch external repositories or overwrite existing protected skills.

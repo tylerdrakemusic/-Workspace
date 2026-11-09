@@ -96,6 +96,14 @@ def test_copied_sync_config_resolves_from_relocated_checkout(tmp_path: Path, mon
     shutil.copy2(WORKTREE_ROOT / "tools" / "skill-sync-config.json", config_path)
     superpowers_root = clone_root / "external" / "superpowers"
     superpowers_root.mkdir(parents=True)
+    for source_root_variable in (
+        "MP_SKILLS_ROOT",
+        "ADDYOSMANI_AGENT_SKILLS_ROOT",
+        "ANDREJ_KARPATHY_SKILLS_ROOT",
+        "DAVIDONDREJ_SKILLS_ROOT",
+        "BLADER_HUMANIZER_ROOT",
+    ):
+        monkeypatch.delenv(source_root_variable, raising=False)
     monkeypatch.setenv("WORKSPACE_ROOT", str(clone_root))
     monkeypatch.setenv("SUPERPOWERS_ROOT", str(superpowers_root))
 

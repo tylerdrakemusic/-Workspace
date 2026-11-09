@@ -1,9 +1,10 @@
 #Requires -Version 5.1
-# sync-skills.ps1 — git pull each skill repo and copy registered SKILL.md files
-# into .github/skills/. Driven by skill-sync-config.json.
+# sync-skills.ps1 — copy registered SKILL.md files into .github/skills/.
+# External source refresh requires -RefreshExternalSources.
 
 param(
     [switch]$ApproveProtectedSync,
+    [switch]$RefreshExternalSources,
     [switch]$ApproveReviewedUpdates,
     [switch]$InstallReviewedAdaptations,
     [string[]]$ReviewedSkills,
@@ -55,6 +56,42 @@ function Get-ReviewedTextSha256 {
         throw "Reviewed text hashing returned an invalid SHA-256 digest for '$Path'"
     }
     return $digest
+}
+
+function Resolve-UnpinnedSource {
+    param(
+        [string]$RepositoryPath,
+        [string]$SourceRelativePath,
+        [System.Collections.Generic.List[string]]$MaterializedSources
+    )
+
+    $temporaryRoot = $configRoot
+    $outputPath = Join-Path $temporaryRoot (".skill-sync-head-" + [Guid]::NewGuid().ToString("N") + ".tmp")
+    $blobArgs = @(
+        "--write-head-git-blob",
+        $RepositoryPath,
+        $SourceRelativePath,
+        "--output",
+        $outputPath,
+        "--root",
+        $temporaryRoot
+    )
+    $blobOutput = & $pythonExecutable $manifestUpdater @blobArgs 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
+            Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
+        }
+        throw "Unable to resolve clean current-HEAD source '$SourceRelativePath': $($blobOutput -join ' ')"
+    }
+    $digest = ($blobOutput -join [Environment]::NewLine).Trim().ToLowerInvariant()
+    if ($digest -notmatch '^[0-9a-f]{64}$' -or -not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
+        if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
+            Remove-Item -LiteralPath $outputPath -Force -ErrorAction SilentlyContinue
+        }
+        throw "Current-HEAD source materialization returned an invalid result for '$SourceRelativePath'"
+    }
+    $null = $MaterializedSources.Add($outputPath)
+    return [pscustomobject]@{ Path = $outputPath; Hash = $digest }
 }
 
 $config = Get-SyncPreflight
@@ -272,7 +309,7 @@ function Invoke-PinnedTargetRestore {
         throw "Pinned target restoration requires a non-empty rationale"
     }
     if (
-        $ApproveProtectedSync -or $ApproveReviewedUpdates -or
+        $ApproveProtectedSync -or $RefreshExternalSources -or $ApproveReviewedUpdates -or
         $null -ne $ReviewedSkills -or -not [string]::IsNullOrWhiteSpace($ReviewRationale)
     ) {
         throw "Pinned target restoration cannot be combined with another sync mode"
@@ -503,6 +540,7 @@ function Invoke-ReviewedSkillSync {
 
     $syncPlan = [System.Collections.Generic.List[object]]::new()
     $pinnedSources = [System.Collections.Generic.List[object]]::new()
+    $materializedSources = [System.Collections.Generic.List[string]]::new()
     $stagedWrites = [System.Collections.Generic.List[object]]::new()
     $createdDirectories = [System.Collections.Generic.List[string]]::new()
     $hasReviewedSkillAdaptation = $false
@@ -588,6 +626,15 @@ function Invoke-ReviewedSkillSync {
                 $rawRepo.pinned_commit = $newCommit
                 $rawRepo.sha256 = $newHash
                 $configChanged = $true
+            }
+
+            if (-not $hasCommit -and -not $hasSha) {
+                $headSource = Resolve-UnpinnedSource `
+                    $repo.path `
+                    $mapping.source_relative_path `
+                    $materializedSources
+                $source = $headSource.Path
+                $newHash = $headSource.Hash
             }
 
             if ($mapping.reviewed_adaptation_source) {
@@ -701,8 +748,17 @@ function Invoke-ReviewedSkillSync {
                         $companionTarget `
                         "Reviewed companion target '$targetRelative'"
 
-                    $companionHash = (Get-FileHash -LiteralPath $companionSource -Algorithm SHA256).Hash.ToLowerInvariant()
                     $syncCompanionSource = $companionSource
+                    if ($companionRepo.provenance -ceq "external-source") {
+                        $headCompanion = Resolve-UnpinnedSource `
+                            $companionRepo.path `
+                            $companion.source_relative_path `
+                            $materializedSources
+                        $syncCompanionSource = $headCompanion.Path
+                        $companionHash = $headCompanion.Hash
+                    } else {
+                        $companionHash = (Get-FileHash -LiteralPath $companionSource -Algorithm SHA256).Hash.ToLowerInvariant()
+                    }
                     $companionManifestEntry = $manifest.files.PSObject.Properties[$targetRelative]
                     $acceptedBaselines = @($companion.hash_contract.accepted_baselines)
                     $targetExists = Test-Path -LiteralPath $companionTarget -PathType Leaf
@@ -1141,6 +1197,11 @@ function Invoke-ReviewedSkillSync {
         foreach ($pinnedSource in $pinnedSources) {
             Remove-PinnedSource $pinnedSource.RepositoryPath $pinnedSource.Worktree
         }
+        foreach ($materializedSource in $materializedSources) {
+            if (Test-Path -LiteralPath $materializedSource -PathType Leaf) {
+                Remove-Item -LiteralPath $materializedSource -Force -ErrorAction SilentlyContinue
+            }
+        }
         if ($rollbackErrors.Count -gt 0) {
             throw "Reviewed sync rollback was incomplete: $($rollbackErrors -join '; ')"
         }
@@ -1156,6 +1217,9 @@ if (
 }
 
 if ($ApproveReviewedUpdates) {
+    if ($RefreshExternalSources) {
+        throw "External source refresh must run separately from reviewed skill updates"
+    }
     Invoke-ReviewedSkillSync
     exit 0
 }
@@ -1182,6 +1246,11 @@ Write-Log "=== skill-sync start ==="
 
 foreach ($repo in $config.repos) {
     Write-Log "--- $($repo.name) ---"
+
+    if (-not $RefreshExternalSources) {
+        Write-Log "Skipping source refresh; use -RefreshExternalSources to clone or pull"
+        continue
+    }
 
     # Clone if not present, otherwise pull (skip if remote is null — shared path)
     $repoPath = $repo.path

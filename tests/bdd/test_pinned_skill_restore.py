@@ -66,6 +66,11 @@ def _make_restore_fixture(root: Path, invalid: str | None = None) -> dict[str, A
     other_source = other_source_root / "skills" / "other" / "SKILL.md"
     other_source.parent.mkdir(parents=True)
     other_source.write_bytes(b"unreviewed external update\n")
+    _git(other_source_root, "init")
+    _git(other_source_root, "config", "user.email", "restore-test@example.test")
+    _git(other_source_root, "config", "user.name", "Pinned Restore Test")
+    _git(other_source_root, "add", "skills/other/SKILL.md")
+    _git(other_source_root, "commit", "-m", "Unreviewed source update")
     target_file = skills_dir / "humanizer" / "SKILL.md"
     target_file.write_bytes(b"drifted installed target\n")
     other_target = skills_dir / "other" / "SKILL.md"
