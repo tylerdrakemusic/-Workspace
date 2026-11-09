@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-08T19:38:23.491627+00:00",
+  "generated_at": "2026-11-09T03:17:38.539683+00:00",
   "generated_by": "update_manifest.py",
-  "file_count": 91,
+  "file_count": 92,
   "files": {
     ".github/agents/⊕workspace-architecture-beautifier.agent.md": "62bf946891acf7eb661cb72607882780cfaa53cd98cd8486c4ee831efa5c2453",
     ".github/agents/⊕workspace-architecture-reviewer-light.agent.md": "5d0127dbacb2903513b584caedc403873feffb0658ef049cda3eefe5027df1bb",
@@ -93,6 +93,7 @@
     ".github/skills/code-review-and-quality/references/performance-checklist.md": "fffc38b8f3b328a973aab8b1a2efdd72b65710d8f4b57f28f8374ddae7f8a88b",
     ".github/skills/security-and-hardening/references/security-checklist.md": "37774056502fe8970dcd2fd27dca5fa31f2a55232649fc3056c89c3af7d62755",
     ".github/skills/security-and-hardening/references/hardening-patterns.md": "006c60c4dc3e6a083ddc61ca012e04d100b27c3392b67bfe90356cd4d7416b92",
-    ".github/skills/observability-and-instrumentation/references/observability-checklist.md": "25fcd0e854596a5ab6f11b002050d245bf78f5ae0fcbd1df699b89451ae0e1e8"
+    ".github/skills/observability-and-instrumentation/references/observability-checklist.md": "25fcd0e854596a5ab6f11b002050d245bf78f5ae0fcbd1df699b89451ae0e1e8",
+    ".github/skills/test-driven-development/writing-good-tests.md": "51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1"
   }
 }
