@@ -892,10 +892,17 @@ def test_mp_skill_source_environment_override_takes_precedence(
 def test_missing_optional_canonical_mp_root_does_not_fall_back_to_stale_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    powershell = shutil.which("pwsh") or shutil.which("powershell")
+    if powershell is None:
+        pytest.skip("PowerShell is required to exercise ordinary skill sync")
+
     monkeypatch.delenv("MP_SKILLS_ROOT", raising=False)
     workspace_root = tmp_path / "workspace"
     canonical_root = workspace_root / ".worktrees" / "mp-skills"
     stale_root = workspace_root.parent / "mp-skills"
+    stale_skill = stale_root / "skills" / "example" / "SKILL.md"
+    stale_skill.parent.mkdir(parents=True)
+    stale_skill.write_bytes(b"stale skill\n")
     stale_companion = stale_root / "guides" / "check.md"
     stale_companion.parent.mkdir(parents=True)
     stale_companion.write_bytes(b"approved companion\n")
@@ -943,6 +950,9 @@ def test_missing_optional_canonical_mp_root_does_not_fall_back_to_stale_root(
             }
         ],
     )
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["repos"][0]["remote"] = None
+    config_path.write_text(json.dumps(config), encoding="utf-8")
 
     plan = preflight_sync_config(config_path)
     resolved_repo = plan["repos"][0]
@@ -960,6 +970,38 @@ def test_missing_optional_canonical_mp_root_does_not_fall_back_to_stale_root(
     assert manifest_path.read_bytes() == original_manifest
     assert stale_companion.read_bytes() == b"approved companion\n"
     assert not (workspace_root / "logs" / "skill-sync.log").exists()
+
+    result = subprocess.run(
+        [
+            powershell,
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(PROJECT_ROOT / "tools" / "sync-skills.ps1"),
+            "-ApproveProtectedSync",
+            "-ConfigPath",
+            str(config_path),
+            "-ManifestPath",
+            str(manifest_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHON_EXECUTABLE": sys.executable, "PYTHONUTF8": "1"},
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Skipping source refresh" in result.stdout
+    assert "not found" in result.stdout
+    assert str(canonical_root) in result.stdout
+    assert str(stale_root) not in result.stdout
+    assert not canonical_root.exists()
+    assert target_path.read_bytes() == original_target
+    assert companion_target.read_bytes() == stale_companion.read_bytes()
+    assert manifest_path.read_bytes() == original_manifest
+    assert stale_skill.read_bytes() == b"stale skill\n"
 
 
 def test_skill_and_adaptation_checkout_uses_lf_with_autocrlf_true(
