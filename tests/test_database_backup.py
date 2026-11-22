@@ -196,6 +196,68 @@ def test_backup_removes_invalid_generation_when_failure_audit_cannot_be_written(
     assert validate_backup(prior.manifest_path) is True
 
 
+def test_backup_surfaces_failed_partial_generation_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_root = tmp_path / "sources"
+    source_root.mkdir()
+    source = source_root / "workspace.db"
+    source.write_bytes(b"synthetic-encrypted-database")
+    destination_root = tmp_path / "external"
+    destination = LocalVolumeDestination(destination_root, "approved-volume", provision=True)
+    monkeypatch.setenv("WORKSPACE_BACKUP_MANIFEST_KEY", "test-manifest-key")
+
+    prior = DatabaseBackup(
+        manifest=_manifest(),
+        source_root=source_root,
+        destination=destination,
+        expected_destination_identity="approved-volume",
+        now=lambda: "2026-08-16T12:00:00Z",
+    ).run()
+
+    failed_generation = "20260816T120100Z"
+    failed_generation_root = destination_root / "generations" / failed_generation
+    original_replace = database_backup_module.os.replace
+    original_rmtree = database_backup_module.shutil.rmtree
+
+    def replace_and_corrupt_published_file(
+        source_path: str | os.PathLike[str], target_path: str | os.PathLike[str]
+    ) -> None:
+        original_replace(source_path, target_path)
+        target = Path(target_path)
+        if target.name == "manifest.json" and target.parent.name == failed_generation:
+            (target.parent / source.name).write_bytes(b"invalid published artifact")
+
+    def fail_partial_generation_removal(
+        path: str | os.PathLike[str], *args: object, **kwargs: object
+    ) -> None:
+        if Path(path) == failed_generation_root:
+            raise PermissionError("generation cleanup blocked")
+        original_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(database_backup_module.os, "replace", replace_and_corrupt_published_file)
+    monkeypatch.setattr(database_backup_module.shutil, "rmtree", fail_partial_generation_removal)
+
+    with pytest.raises(BackupError, match="failed backup generation cleanup"):
+        DatabaseBackup(
+            manifest=_manifest(),
+            source_root=source_root,
+            destination=destination,
+            expected_destination_identity="approved-volume",
+            now=lambda: "2026-08-16T12:01:00Z",
+        ).run()
+
+    assert failed_generation_root.is_dir()
+    assert not (failed_generation_root / "manifest.json").exists()
+    assert validate_backup(prior.manifest_path) is True
+    audit_path = destination_root / "backup-audit.jsonl"
+    records = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]
+    assert [record["generation"] for record in records if record["event"] == "backup"] == [
+        prior.generation
+    ]
+    assert not any(record["event"] == "backup_attempt" for record in records)
+
+
 def test_backup_skips_malformed_retained_generation_during_pruning(tmp_path: Path) -> None:
     source = tmp_path / "workspace.db"
     source.write_bytes(b"database-bytes")

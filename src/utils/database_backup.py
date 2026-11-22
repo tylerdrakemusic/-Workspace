@@ -586,8 +586,16 @@ class DatabaseBackup:
                 raise BackupError("published backup manifest validation failed") from error
         except Exception as error:
             if generation_created:
-                (generation_root / "manifest.json").unlink(missing_ok=True)
-                shutil.rmtree(generation_root, ignore_errors=True)
+                try:
+                    (generation_root / "manifest.json").unlink(missing_ok=True)
+                    if generation_root.exists():
+                        shutil.rmtree(generation_root)
+                    if generation_root.exists():
+                        raise OSError("partial backup generation remains")
+                except OSError as cleanup_error:
+                    raise BackupError(
+                        "failed backup generation cleanup; failure evidence was not recorded"
+                    ) from cleanup_error
             if publication_started:
                 record_backup_attempt(
                     audit_path,
