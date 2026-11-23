@@ -20,6 +20,31 @@ graph LR
     LifeWorkoutPlanner(["∞life-workout-planner"]):::life
     LifeOrch -->|routes workout planning| LifeWorkoutPlanner
 
+    subgraph AgentInventory["⊕ Workspace agent inventory"]
+        direction TB
+        AgentArchitectureBeautifier(["⊕workspace-architecture-beautifier"]):::ws
+        AgentArchitectureReviewer(["⊕workspace-architecture-reviewer"]):::ws
+        AgentArchitectureReviewerLight(["⊕workspace-architecture-reviewer-light"]):::ws
+        AgentBenchAnalyzer(["⊕workspace-bench-analyzer"]):::ws
+        AgentCI(["⊕workspace-ci"]):::ws
+        AgentDashboards(["⊕workspace-dashboards"]):::ws
+        AgentDiscovery(["⊕workspace-discovery"]):::ws
+        AgentDoer(["⊕workspace-doer"]):::ws
+        AgentGenQEE(["⊕workspace-gen-qee"]):::ws
+        AgentHygiene(["⊕workspace-hygiene"]):::ws
+        AgentIntake(["⊕workspace-intake"]):::ws
+        AgentProtector(["⊕workspace-protector"]):::ws
+        AgentQA(["⊕workspace-qa"]):::ws
+        AgentQAHeavy(["⊕workspace-qa-heavy"]):::ws
+        AgentQALight(["⊕workspace-qa-light"]):::ws
+        AgentReviewerHeavy(["⊕workspace-reviewer-heavy"]):::ws
+        AgentReviewerLight(["⊕workspace-reviewer-light"]):::ws
+        AgentSecurity(["⊕workspace-security"]):::ws
+        AgentTDDHeavy(["⊕workspace-tdd-heavy"]):::ws
+        AgentTDDLight(["⊕workspace-tdd-light"]):::ws
+        AgentTDDStandard(["⊕workspace-tdd-standard"]):::ws
+    end
+
     class Tyler tyler
 
 classDef life     fill:#1a2e3a,stroke:#6ab4d4,color:#d0ecf8

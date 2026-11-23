@@ -125,6 +125,9 @@ def test_scheduled_life_root_action_resolves_redacted_manifest_key(
         destination.write_bytes(source.read_bytes())
 
     monkeypatch.setattr(database_backup_module, "_copy_sqlcipher_database", copy_test_database)
+    monkeypatch.setattr(
+        database_backup_module, "_validate_sqlcipher_database", lambda *args, **kwargs: None
+    )
 
     result = backup_runner.run_scheduled_backups(
         manifest_path=manifest_path,

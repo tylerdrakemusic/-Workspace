@@ -303,6 +303,34 @@ def _copy_sqlcipher_database(
             destination.unlink(missing_ok=True)
 
 
+def _validate_sqlcipher_database(
+    database_path: Path, key_env: str, key_format: str = "literal"
+) -> None:
+    """Verify that an encrypted database opens and passes full page checks."""
+    try:
+        import sqlcipher3
+    except ImportError as error:  # pragma: no cover - dependency is deployment-specific
+        raise BackupError("SQLCipher backup support is unavailable") from error
+
+    connection = None
+    try:
+        connection = sqlcipher3.connect(str(database_path))
+        _configure_sqlcipher_connection(connection, key_env, key_format=key_format)
+        connection.execute("SELECT name FROM sqlite_master LIMIT 1").fetchone()
+        cipher_results = connection.execute("PRAGMA cipher_integrity_check").fetchall()
+        if cipher_results not in ([], [("ok",)]):
+            raise BackupError("SQLCipher page integrity validation failed")
+        if connection.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
+            raise BackupError("SQLCipher database integrity validation failed")
+    except BackupError:
+        raise
+    except Exception as error:  # noqa: BLE001 - normalize driver details
+        raise BackupError("SQLCipher database validation failed") from error
+    finally:
+        if connection is not None:
+            connection.close()
+
+
 def _redacted_target_id(restore_root: Path) -> str:
     digest = hashlib.sha256(str(restore_root.resolve()).encode("utf-8")).hexdigest()[:16]
     return f"restore-{digest}"
@@ -444,6 +472,9 @@ class DatabaseBackup:
         temporary_root.mkdir(parents=True)
         files: list[dict[str, str]] = []
         audit_path = self._destination.path() / "backup-audit.jsonl"
+        generation_created = False
+        publication_started = False
+        verification_database_id: str | None = None
         try:
             for entry in entries:
                 if not entry.get("backup_allowed", False):
@@ -466,6 +497,7 @@ class DatabaseBackup:
                             _copy_sqlcipher_database(
                                 source, target, key_env, key_format=key_format
                             )
+                        _validate_sqlcipher_database(target, key_env, key_format)
                     except BackupError as error:
                         record_backup_attempt(
                             audit_path, 1, error, database_id=database_id
@@ -510,7 +542,68 @@ class DatabaseBackup:
                 ).hexdigest(),
             }
             manifest_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-            os.replace(temporary_root, generation_root)
+            generation_root.mkdir(parents=True)
+            generation_created = True
+            publication_started = True
+            for file_entry in files:
+                relative_path = str(file_entry["relative_path"])
+                staged_path = _contained_path(temporary_root, relative_path)
+                published_path = _contained_path(generation_root, relative_path)
+                published_path.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(staged_path, published_path)
+
+            databases_by_path = {
+                str(entry["path"]): entry
+                for entry in entries
+                if entry.get("backup_allowed", False)
+            }
+            for file_entry in files:
+                relative_path = str(file_entry["relative_path"])
+                database = databases_by_path[relative_path]
+                verification_database_id = str(database.get("id", ""))
+                published_path = _contained_path(generation_root, relative_path)
+                if (
+                    not published_path.is_file()
+                    or _sha256(published_path) != file_entry["sha256"]
+                ):
+                    raise BackupError("published backup artifact hash validation failed")
+                if database.get("encryption") == "sqlcipher":
+                    key_env = database.get("key_env")
+                    if not isinstance(key_env, str) or not key_env:
+                        raise BackupError("SQLCipher database key metadata is missing")
+                    _validate_sqlcipher_database(
+                        published_path,
+                        key_env,
+                        str(database.get("key_format", "literal")),
+                    )
+
+            final_manifest = generation_root / "manifest.json"
+            os.replace(manifest_path, final_manifest)
+            verification_database_id = None
+            try:
+                validate_backup(final_manifest)
+            except (BackupError, OSError, TypeError, ValueError, KeyError) as error:
+                raise BackupError("published backup manifest validation failed") from error
+        except Exception as error:
+            if generation_created:
+                try:
+                    (generation_root / "manifest.json").unlink(missing_ok=True)
+                    if generation_root.exists():
+                        shutil.rmtree(generation_root)
+                    if generation_root.exists():
+                        raise OSError("partial backup generation remains")
+                except OSError as cleanup_error:
+                    raise BackupError(
+                        "failed backup generation cleanup; failure evidence was not recorded"
+                    ) from cleanup_error
+            if publication_started:
+                record_backup_attempt(
+                    audit_path,
+                    1,
+                    error,
+                    database_id=verification_database_id,
+                )
+            raise
         finally:
             if temporary_root.exists():
                 shutil.rmtree(temporary_root)
