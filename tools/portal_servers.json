@@ -112,7 +112,7 @@
                         "accepted_statuses":  [200],
                         "monitor_health":  true,
                         "require_managed_owner":  true,
-                        "log_output":  false,
+                        "log_output":  true,
                         "enabled":  true
                     }
                 ]

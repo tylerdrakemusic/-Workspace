@@ -181,13 +181,13 @@ def workout_contract_is_primary_checkout(
     assert service["accepted_statuses"] == [200]
     assert service["monitor_health"] is True
     assert service["require_managed_owner"] is True
-    assert service["log_output"] is False
+    assert service["log_output"] is True
     launch_options = workout_contract["launch_options"]
     assert launch_options["argv"] == argv
-    assert launch_options["stdout"] == subprocess.DEVNULL
-    assert launch_options["stderr"] == subprocess.DEVNULL
-    assert workout_contract["stdout_path"].exists() is False
-    assert workout_contract["stderr_path"].exists() is False
+    assert Path(launch_options["stdout"].name) == workout_contract["stdout_path"]
+    assert Path(launch_options["stderr"].name) == workout_contract["stderr_path"]
+    assert workout_contract["stdout_path"].is_file() is True
+    assert workout_contract["stderr_path"].is_file() is True
 
 
 @then("the existing Music service remains registered on port 8765")
