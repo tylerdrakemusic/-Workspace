@@ -206,7 +206,9 @@ def _has_architecture_review_pass(conn, fr_id: str) -> bool:
 
 _CRITERIA_EVIDENCE = {
     "implementation-evidence": re.compile(r"^IMPLEMENTATION:PASS\b", re.IGNORECASE),
-    "functional-qa-evidence": re.compile(r"^FUNCTIONAL_QA:PASS\b", re.IGNORECASE),
+    "functional-qa-evidence": re.compile(
+        r"^FUNCTIONAL_QA:(?:PASS_WITH_LIMITATIONS|PASS)\b", re.IGNORECASE
+    ),
     "architecture-review-evidence": _ARCH_REVIEW_PASS_RE,
     "automated-review-evidence": re.compile(r"^AUTO_REVIEW:PASS\b", re.IGNORECASE),
 }

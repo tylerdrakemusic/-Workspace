@@ -17,7 +17,9 @@ Automated PR reviewer for **light-complexity** feature requests.
 **Uniform proof bar:** Light tier changes have the same proof requirement as
 every other tier. Verify one complete, durable proof artifact for every FR
 acceptance criterion, including test, command, database, file, and UI evidence
-where the criterion requires it. Missing proof is a hard review failure; model
-tier and file-count limits never relax this bar.
+where the criterion requires it. A criteria-bound `NOT_VERIFIED_HOST_LIMITATION`
+artifact is acceptable only for an eligible agent/skill behavior criterion
+under the standard reviewer contract; it is not proof that the criterion
+passed. Model tier and file-count limits never relax this bar.
 
 Inherit the full review protocol from `⊕workspace-reviewer.agent.md`. Run every gate. Post one structured review comment. Hard gates still block regardless of tier.

@@ -823,6 +823,64 @@ def _new_current_version_case(tmp_path: Path, name: str) -> dict[str, object]:
     return case
 
 
+@given(
+    "a current criteria version has passing implementation evidence",
+    target_fixture="host_limited_qa_case",
+)
+def current_criteria_with_implementation_evidence(tmp_path: Path) -> dict[str, object]:
+    case = _new_current_version_case(tmp_path, "host-limited-qa")
+    assert _run_cli(case, ["update-state", "FR-TEST-001", "BRANCHED"]) == 0
+    assert _run_cli(case, ["update-state", "FR-TEST-001", "IN_PROGRESS"]) == 0
+    assert _record_criteria_artifact(
+        case,
+        "implementation-evidence",
+        "IMPLEMENTATION:PASS",
+        version=case["current_version"],
+        criteria_hash=str(case["current_hash"]),
+    ) == 0
+    return case
+
+
+@when("QA records a host limitation for an agent-only criterion")
+def record_host_limited_qa_result(host_limited_qa_case: dict[str, object]) -> None:
+    case = host_limited_qa_case
+    case["qa_artifact_exit"] = _record_criteria_artifact(
+        case,
+        "functional-qa-evidence",
+        "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC2=NOT_VERIFIED_HOST_LIMITATION",
+        version=case["current_version"],
+        criteria_hash=str(case["current_hash"]),
+    )
+    case["qa_transition_exit"] = _run_cli(
+        case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+    )
+
+
+@then("the ledger accepts the limited QA outcome without labeling it PASS")
+def verify_host_limited_qa_result(host_limited_qa_case: dict[str, object]) -> None:
+    case = host_limited_qa_case
+    assert case["qa_artifact_exit"] == 0
+    assert case["qa_transition_exit"] == 0
+    with sqlite3.connect(str(case["database_path"])) as connection:
+        state = connection.execute(
+            "SELECT state FROM feature_requests WHERE id=?", ("FR-TEST-001",)
+        ).fetchone()[0]
+        evidence = connection.execute(
+            "SELECT label, criteria_version, criteria_hash FROM fr_artifacts "
+            "WHERE fr_id=? AND artifact_type='functional-qa-evidence' "
+            "ORDER BY id DESC LIMIT 1",
+            ("FR-TEST-001",),
+        ).fetchone()
+
+    assert state == "FUNCTIONAL_QA"
+    assert evidence[0] == (
+        "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC2=NOT_VERIFIED_HOST_LIMITATION"
+    )
+    assert "PASS_WITH_LIMITATIONS" in evidence[0]
+    assert evidence[1] == case["current_version"]
+    assert evidence[2] == case["current_hash"]
+
+
 def test_amendment_rejects_approval_from_non_intake_actor(tmp_path: Path) -> None:
     case = _new_amendment_case(tmp_path, "non-intake-approval")
     with sqlite3.connect(str(case["database_path"])) as connection:

@@ -28,3 +28,8 @@ Feature: Versioned FR acceptance criteria amendments
     Given an FR is CLOSED, ARCHIVED, MERGED, SOAKING, or SIGNED_OFF
     When amendment is attempted
     Then the operation is refused without mutation
+
+  Scenario: Host-limited QA evidence advances without claiming an agent behavior pass
+    Given a current criteria version has passing implementation evidence
+    When QA records a host limitation for an agent-only criterion
+    Then the ledger accepts the limited QA outcome without labeling it PASS
