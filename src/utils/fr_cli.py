@@ -212,6 +212,137 @@ _CRITERIA_EVIDENCE = {
     "architecture-review-evidence": _ARCH_REVIEW_PASS_RE,
     "automated-review-evidence": re.compile(r"^AUTO_REVIEW:PASS\b", re.IGNORECASE),
 }
+_LIMITED_QA_LABEL_RE = re.compile(
+    r"^FUNCTIONAL_QA:PASS_WITH_LIMITATIONS\b", re.IGNORECASE
+)
+
+
+def _validate_limited_qa_artifact(
+    fr_id: str,
+    criteria_version: int,
+    criteria_hash: str,
+    branch: str | None,
+    acceptance_criteria_json: str | None,
+    artifact_path: str | None,
+) -> bool:
+    if not artifact_path or not branch or not re.fullmatch(r"FR-[A-Za-z0-9-]+", fr_id):
+        return False
+    candidate = Path(artifact_path)
+    if not candidate.is_absolute():
+        return False
+    try:
+        evidence_path = candidate.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return False
+    if not evidence_path.is_file() or evidence_path.suffix.lower() != ".json":
+        return False
+
+    contained_in_fr_worktree = False
+    for project_root in PROJECT_ROOTS.values():
+        worktree_root = Path(project_root) / ".worktrees" / fr_id
+        try:
+            resolved_root = worktree_root.resolve(strict=True)
+            relative_path = evidence_path.relative_to(resolved_root)
+        except (OSError, RuntimeError, ValueError):
+            continue
+        if "proof" in {part.lower() for part in relative_path.parts[:-1]}:
+            contained_in_fr_worktree = True
+            break
+    if not contained_in_fr_worktree:
+        return False
+
+    try:
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        accepted = json.loads(acceptance_criteria_json or "null")
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(evidence, dict) or not isinstance(accepted, dict):
+        return False
+    if (
+        evidence.get("schema_version") != 1
+        or evidence.get("artifact_type") != "functional_qa_evidence"
+        or evidence.get("fr_id") != fr_id
+        or evidence.get("criteria_version") != criteria_version
+        or evidence.get("criteria_hash") != criteria_hash
+        or evidence.get("branch") != branch
+        or evidence.get("decision") != "PASS_WITH_LIMITATIONS"
+    ):
+        return False
+
+    gate_checks = evidence.get("gate_checks")
+    if (
+        not isinstance(gate_checks, dict)
+        or gate_checks.get("deterministic_checks_passed") is not True
+        or gate_checks.get("security_checks_passed") is not True
+        or gate_checks.get("other_failures") != []
+    ):
+        return False
+
+    approved_scenarios = accepted.get("acceptance_criteria")
+    results = evidence.get("acceptance_criteria")
+    if not isinstance(approved_scenarios, list) or not approved_scenarios:
+        return False
+    if not isinstance(results, list) or len(results) != len(approved_scenarios):
+        return False
+
+    expected_ids = {f"AC{index}" for index in range(1, len(approved_scenarios) + 1)}
+    seen_ids: set[str] = set()
+    unverified_ids: set[str] = set()
+    for result in results:
+        if not isinstance(result, dict):
+            return False
+        criterion_id = result.get("id")
+        classification = result.get("classification")
+        outcome = result.get("result")
+        if (
+            not isinstance(criterion_id, str)
+            or criterion_id in seen_ids
+            or not isinstance(classification, str)
+            or not isinstance(outcome, str)
+            or classification not in {"deterministic", "agent_skill_behavior", "conditional"}
+        ):
+            return False
+        seen_ids.add(criterion_id)
+        if outcome == "PASS":
+            if not isinstance(result.get("evidence"), list) or not result["evidence"]:
+                return False
+        elif outcome == "NOT_VERIFIED_HOST_LIMITATION":
+            if classification != "agent_skill_behavior":
+                return False
+            if not isinstance(result.get("limitation"), str) or not result["limitation"].strip():
+                return False
+            unverified_ids.add(criterion_id)
+        elif outcome == "NOT_APPLICABLE":
+            if classification != "conditional":
+                return False
+            if not isinstance(result.get("rationale"), str) or not result["rationale"].strip():
+                return False
+        else:
+            return False
+
+        if classification == "deterministic" and outcome != "PASS":
+            return False
+        if classification == "agent_skill_behavior" and outcome not in {
+            "PASS", "NOT_VERIFIED_HOST_LIMITATION"
+        }:
+            return False
+        if classification == "conditional" and outcome not in {"PASS", "NOT_APPLICABLE"}:
+            return False
+
+    if seen_ids != expected_ids or not unverified_ids:
+        return False
+    unverified = evidence.get("unverified")
+    if not isinstance(unverified, list):
+        return False
+    unverified_records = {
+        item.get("criterion_id")
+        for item in unverified
+        if isinstance(item, dict)
+        and isinstance(item.get("criterion_id"), str)
+        and isinstance(item.get("reason"), str)
+        and item["reason"].strip()
+    }
+    return unverified_records == unverified_ids
 
 
 def _has_current_criteria_evidence(
@@ -220,6 +351,49 @@ def _has_current_criteria_evidence(
     columns = {
         row[1] for row in conn.execute("PRAGMA table_info(feature_requests)")
     }
+    if artifact_type == "functional-qa-evidence":
+        artifact_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(fr_artifacts)")
+        }
+        if not {"criteria_version", "criteria_hash"}.issubset(columns) or not {
+            "criteria_version", "criteria_hash", "path_or_url"
+        }.issubset(artifact_columns):
+            latest = conn.execute(
+                "SELECT label FROM fr_artifacts WHERE fr_id=? AND artifact_type=? "
+                "ORDER BY id DESC LIMIT 1",
+                (fr_id, artifact_type),
+            ).fetchone()
+            if latest and _LIMITED_QA_LABEL_RE.search(latest["label"] or ""):
+                return False
+        else:
+            fr = conn.execute(
+                "SELECT criteria_version, criteria_hash, branch, acceptance_criteria "
+                "FROM feature_requests WHERE id=?",
+                (fr_id,),
+            ).fetchone()
+            latest = conn.execute(
+                "SELECT label, path_or_url, criteria_version, criteria_hash "
+                "FROM fr_artifacts WHERE fr_id=? AND artifact_type=? "
+                "ORDER BY id DESC LIMIT 1",
+                (fr_id, artifact_type),
+            ).fetchone()
+            if latest and _LIMITED_QA_LABEL_RE.search(latest["label"] or ""):
+                if (
+                    not fr
+                    or not fr["criteria_version"]
+                    or not fr["criteria_hash"]
+                    or latest["criteria_version"] != fr["criteria_version"]
+                    or latest["criteria_hash"] != fr["criteria_hash"]
+                ):
+                    return False
+                return _validate_limited_qa_artifact(
+                    fr_id,
+                    int(fr["criteria_version"]),
+                    str(fr["criteria_hash"]),
+                    fr["branch"],
+                    fr["acceptance_criteria"],
+                    latest["path_or_url"],
+                )
     if not {"criteria_version", "criteria_hash"}.issubset(columns):
         return True
     fr = conn.execute(
@@ -235,9 +409,11 @@ def _has_current_criteria_evidence(
         return False
     rows = conn.execute(
         "SELECT label FROM fr_artifacts WHERE fr_id=? AND artifact_type=? "
-        "AND criteria_version=? AND criteria_hash=?",
+        "AND criteria_version=? AND criteria_hash=? ORDER BY id",
         (fr_id, artifact_type, fr["criteria_version"], fr["criteria_hash"]),
     ).fetchall()
+    if artifact_type == "functional-qa-evidence" and rows:
+        return bool(label_pattern.search(rows[-1]["label"] or ""))
     return any(label_pattern.search(row["label"] or "") for row in rows)
 
 

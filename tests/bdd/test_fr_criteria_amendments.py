@@ -259,20 +259,21 @@ def _record_criteria_artifact(
     *,
     version: int,
     criteria_hash: str,
+    path: str | None = None,
 ) -> int:
-    return _run_cli(
-        case,
-        [
-            "record-artifact",
-            "FR-TEST-001",
-            artifact_type,
-            label,
-            "--criteria-version",
-            str(version),
-            "--criteria-hash",
-            criteria_hash,
-        ],
-    )
+    arguments = [
+        "record-artifact",
+        "FR-TEST-001",
+        artifact_type,
+        label,
+        "--criteria-version",
+        str(version),
+        "--criteria-hash",
+        criteria_hash,
+    ]
+    if path:
+        arguments.extend(["--path", path])
+    return _run_cli(case, arguments)
 
 
 def _new_amendment_case(
@@ -827,8 +828,17 @@ def _new_current_version_case(tmp_path: Path, name: str) -> dict[str, object]:
     "a current criteria version has passing implementation evidence",
     target_fixture="host_limited_qa_case",
 )
-def current_criteria_with_implementation_evidence(tmp_path: Path) -> dict[str, object]:
+def current_criteria_with_implementation_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> dict[str, object]:
     case = _new_current_version_case(tmp_path, "host-limited-qa")
+    workspace_root = tmp_path / "workspace"
+    evidence_directory = (
+        workspace_root / ".worktrees" / "FR-TEST-001" / "workspace" / "proof"
+    )
+    evidence_directory.mkdir(parents=True)
+    monkeypatch.setitem(fr_cli.PROJECT_ROOTS, "⊕Workspace", workspace_root)
+    case["limitation_evidence_path"] = evidence_directory / "functional-qa.json"
     assert _run_cli(case, ["update-state", "FR-TEST-001", "BRANCHED"]) == 0
     assert _run_cli(case, ["update-state", "FR-TEST-001", "IN_PROGRESS"]) == 0
     assert _record_criteria_artifact(
@@ -841,15 +851,62 @@ def current_criteria_with_implementation_evidence(tmp_path: Path) -> dict[str, o
     return case
 
 
+def _write_limited_qa_evidence(
+    case: dict[str, object], *, classification: str, result: str,
+    path: Path | None = None,
+    gate_checks: dict[str, object] | None = None,
+) -> str:
+    evidence_path = path or case["limitation_evidence_path"]
+    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    reason = "Host has no isolated invocation adapter."
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "functional_qa_evidence",
+        "fr_id": "FR-TEST-001",
+        "criteria_version": case["current_version"],
+        "criteria_hash": case["current_hash"],
+        "branch": "feature/FR-TEST-001",
+        "decision": "PASS_WITH_LIMITATIONS",
+        "gate_checks": gate_checks
+        or {
+            "deterministic_checks_passed": True,
+            "security_checks_passed": True,
+            "other_failures": [],
+        },
+        "acceptance_criteria": [
+            {
+                "id": "AC1",
+                "classification": classification,
+                "result": result,
+                "evidence": ["isolated synthetic fixture evidence"],
+                "limitation": reason,
+            }
+        ],
+        "unverified": (
+            [{"criterion_id": "AC1", "reason": reason}]
+            if result == "NOT_VERIFIED_HOST_LIMITATION"
+            else []
+        ),
+    }
+    evidence_path.write_text(json.dumps(payload), encoding="utf-8")
+    return str(evidence_path)
+
+
 @when("QA records a host limitation for an agent-only criterion")
 def record_host_limited_qa_result(host_limited_qa_case: dict[str, object]) -> None:
     case = host_limited_qa_case
+    evidence_path = _write_limited_qa_evidence(
+        case,
+        classification="agent_skill_behavior",
+        result="NOT_VERIFIED_HOST_LIMITATION",
+    )
     case["qa_artifact_exit"] = _record_criteria_artifact(
         case,
         "functional-qa-evidence",
         "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC2=NOT_VERIFIED_HOST_LIMITATION",
         version=case["current_version"],
         criteria_hash=str(case["current_hash"]),
+        path=evidence_path,
     )
     case["qa_transition_exit"] = _run_cli(
         case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
@@ -866,7 +923,7 @@ def verify_host_limited_qa_result(host_limited_qa_case: dict[str, object]) -> No
             "SELECT state FROM feature_requests WHERE id=?", ("FR-TEST-001",)
         ).fetchone()[0]
         evidence = connection.execute(
-            "SELECT label, criteria_version, criteria_hash FROM fr_artifacts "
+            "SELECT label, path_or_url, criteria_version, criteria_hash FROM fr_artifacts "
             "WHERE fr_id=? AND artifact_type='functional-qa-evidence' "
             "ORDER BY id DESC LIMIT 1",
             ("FR-TEST-001",),
@@ -877,8 +934,194 @@ def verify_host_limited_qa_result(host_limited_qa_case: dict[str, object]) -> No
         "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC2=NOT_VERIFIED_HOST_LIMITATION"
     )
     assert "PASS_WITH_LIMITATIONS" in evidence[0]
-    assert evidence[1] == case["current_version"]
-    assert evidence[2] == case["current_hash"]
+    assert Path(evidence[1]).exists()
+    assert evidence[2] == case["current_version"]
+    assert evidence[3] == case["current_hash"]
+    stored = json.loads(Path(evidence[1]).read_text(encoding="utf-8"))
+    assert stored["gate_checks"] == {
+        "deterministic_checks_passed": True,
+        "security_checks_passed": True,
+        "other_failures": [],
+    }
+    assert stored["acceptance_criteria"][0]["classification"] == "agent_skill_behavior"
+    assert stored["acceptance_criteria"][0]["result"] == "NOT_VERIFIED_HOST_LIMITATION"
+
+
+@when("QA records a limited result without its limitation artifact")
+def record_limited_qa_without_structured_evidence(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    case["qa_artifact_exit"] = _record_criteria_artifact(
+        case,
+        "functional-qa-evidence",
+        "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC1=NOT_VERIFIED_HOST_LIMITATION",
+        version=case["current_version"],
+        criteria_hash=str(case["current_hash"]),
+    )
+    case["qa_transition_exit"] = _run_cli(
+        case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+    )
+
+
+@then("the ledger blocks Functional QA advancement")
+def verify_limited_qa_requires_structured_evidence(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    assert case["qa_artifact_exit"] == 0
+    assert case["qa_transition_exit"] != 0
+    assert _ledger_snapshot(case)[0] == "IN_PROGRESS"
+
+
+@when("QA links structured limitation evidence outside the FR proof worktree")
+def record_limited_evidence_outside_worktree(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    outside_path = Path(case["database_path"]).parent / "outside-evidence.json"
+    evidence_path = _write_limited_qa_evidence(
+        case,
+        classification="agent_skill_behavior",
+        result="NOT_VERIFIED_HOST_LIMITATION",
+        path=outside_path,
+    )
+    case["qa_artifact_exit"] = _record_criteria_artifact(
+        case,
+        "functional-qa-evidence",
+        "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC1=NOT_VERIFIED_HOST_LIMITATION",
+        version=case["current_version"],
+        criteria_hash=str(case["current_hash"]),
+        path=evidence_path,
+    )
+    case["qa_transition_exit"] = _run_cli(
+        case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+    )
+
+
+@when("the limitation artifact reports a failed security or other check")
+def record_limited_evidence_with_failed_gate(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    gate_checks = [
+        {
+            "deterministic_checks_passed": True,
+            "security_checks_passed": False,
+            "other_failures": [],
+        },
+        {
+            "deterministic_checks_passed": True,
+            "security_checks_passed": True,
+            "other_failures": ["an unrelated functional check failed"],
+        },
+    ]
+    outcomes: list[tuple[int, int]] = []
+    for checks in gate_checks:
+        evidence_path = _write_limited_qa_evidence(
+            case,
+            classification="agent_skill_behavior",
+            result="NOT_VERIFIED_HOST_LIMITATION",
+            gate_checks=checks,
+        )
+        artifact_exit = _record_criteria_artifact(
+            case,
+            "functional-qa-evidence",
+            "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC1=NOT_VERIFIED_HOST_LIMITATION",
+            version=case["current_version"],
+            criteria_hash=str(case["current_hash"]),
+            path=evidence_path,
+        )
+        transition_exit = _run_cli(
+            case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+        )
+        outcomes.append((artifact_exit, transition_exit))
+    case["failed_gate_outcomes"] = outcomes
+
+
+@then("the ledger blocks Functional QA advancement for failed checks")
+def verify_failed_limited_qa_gate_checks(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    assert all(artifact_exit == 0 for artifact_exit, _ in case["failed_gate_outcomes"])
+    assert all(transition_exit != 0 for _, transition_exit in case["failed_gate_outcomes"])
+    assert _ledger_snapshot(case)[0] == "IN_PROGRESS"
+
+
+@when("the limitation artifact has mismatched identity or malformed classification")
+def record_mismatched_limited_qa_evidence(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    invalid_values: list[tuple[str, object]] = [
+        ("fr_id", "FR-OTHER-001"),
+        ("criteria_version", 1),
+        ("criteria_hash", "0" * 64),
+        ("branch", "feature/another-fr"),
+        ("decision", "PASS"),
+        ("schema_version", 2),
+        ("classification", []),
+        ("result", {}),
+    ]
+    outcomes: list[tuple[int, int]] = []
+    for field, invalid_value in invalid_values:
+        evidence_path = Path(case["limitation_evidence_path"])
+        _write_limited_qa_evidence(
+            case,
+            classification="agent_skill_behavior",
+            result="NOT_VERIFIED_HOST_LIMITATION",
+        )
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+        if field in {"classification", "result"}:
+            payload["acceptance_criteria"][0][field] = invalid_value
+        else:
+            payload[field] = invalid_value
+        evidence_path.write_text(json.dumps(payload), encoding="utf-8")
+        artifact_exit = _record_criteria_artifact(
+            case,
+            "functional-qa-evidence",
+            "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC1=NOT_VERIFIED_HOST_LIMITATION",
+            version=case["current_version"],
+            criteria_hash=str(case["current_hash"]),
+            path=str(evidence_path),
+        )
+        transition_exit = _run_cli(
+            case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+        )
+        outcomes.append((artifact_exit, transition_exit))
+    case["invalid_identity_outcomes"] = outcomes
+
+
+@then("the ledger blocks Functional QA advancement for invalid evidence")
+def verify_mismatched_limited_qa_evidence_is_rejected(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    assert all(artifact_exit == 0 for artifact_exit, _ in case["invalid_identity_outcomes"])
+    assert all(transition_exit != 0 for _, transition_exit in case["invalid_identity_outcomes"])
+    assert _ledger_snapshot(case)[0] == "IN_PROGRESS"
+
+
+@when("QA marks a deterministic criterion as host-unverified")
+def record_deterministic_host_limitation(host_limited_qa_case: dict[str, object]) -> None:
+    case = host_limited_qa_case
+    evidence_path = _write_limited_qa_evidence(
+        case,
+        classification="deterministic",
+        result="NOT_VERIFIED_HOST_LIMITATION",
+    )
+    case["qa_artifact_exit"] = _record_criteria_artifact(
+        case,
+        "functional-qa-evidence",
+        "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC1=NOT_VERIFIED_HOST_LIMITATION",
+        version=case["current_version"],
+        criteria_hash=str(case["current_hash"]),
+        path=evidence_path,
+    )
+    case["qa_transition_exit"] = _run_cli(
+        case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+    )
 
 
 def test_amendment_rejects_approval_from_non_intake_actor(tmp_path: Path) -> None:

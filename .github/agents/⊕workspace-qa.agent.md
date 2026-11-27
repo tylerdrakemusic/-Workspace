@@ -54,6 +54,19 @@ host capability, why invocation was unsafe or unsupported, and what remains
 unverified. Do not invoke live tools or treat a stand-in, prompt-only mock, or
 agent-authored summary as actual behavior evidence.
 
+For `PASS_WITH_LIMITATIONS`, write the structured evidence as JSON under the
+FR worktree's `proof/` directory and record its path on the criteria-bound
+`functional-qa-evidence` artifact. Include `schema_version: 1`,
+`artifact_type: functional_qa_evidence`, FR ID, branch, criteria version/hash,
+decision, and `gate_checks` with deterministic/security passes and no other
+failures. Include one ordered `acceptance_criteria` result per approved
+criterion using `deterministic`, `agent_skill_behavior`, or `conditional`
+classification. Deterministic results must be `PASS`; only
+`agent_skill_behavior` may be `NOT_VERIFIED_HOST_LIMITATION`, with a non-empty
+limitation. Include an `unverified` entry with a reason for every such result
+and no others. The FR CLI rejects missing, stale, malformed, ineligible, or
+out-of-worktree limitation evidence.
+
 Report `PASS_WITH_LIMITATIONS` and advance to `ARCHITECTURE_REVIEW` only when
 all deterministic criteria pass, the remaining unverified criteria are
 agent/skill behavior blocked by this host limitation, and no other functional
