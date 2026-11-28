@@ -1061,8 +1061,10 @@ def record_mismatched_limited_qa_evidence(
         ("branch", "feature/another-fr"),
         ("decision", "PASS"),
         ("schema_version", 2),
+        ("schema_version", True),
         ("classification", []),
         ("result", {}),
+        ("unverified_reason", "a different limitation reason"),
     ]
     outcomes: list[tuple[int, int]] = []
     for field, invalid_value in invalid_values:
@@ -1075,6 +1077,8 @@ def record_mismatched_limited_qa_evidence(
         payload = json.loads(evidence_path.read_text(encoding="utf-8"))
         if field in {"classification", "result"}:
             payload["acceptance_criteria"][0][field] = invalid_value
+        elif field == "unverified_reason":
+            payload["unverified"][0]["reason"] = invalid_value
         else:
             payload[field] = invalid_value
         evidence_path.write_text(json.dumps(payload), encoding="utf-8")
@@ -1100,6 +1104,49 @@ def verify_mismatched_limited_qa_evidence_is_rejected(
     case = host_limited_qa_case
     assert all(artifact_exit == 0 for artifact_exit, _ in case["invalid_identity_outcomes"])
     assert all(transition_exit != 0 for _, transition_exit in case["invalid_identity_outcomes"])
+    assert _ledger_snapshot(case)[0] == "IN_PROGRESS"
+
+
+@when("the limitation artifact has a boolean schema version or mismatched reason")
+def record_malformed_schema_or_reason(host_limited_qa_case: dict[str, object]) -> None:
+    case = host_limited_qa_case
+    invalid_values = (("schema_version", True), ("unverified_reason", "not the criterion limitation"))
+    outcomes: list[tuple[int, int]] = []
+    for field, invalid_value in invalid_values:
+        evidence_path = Path(case["limitation_evidence_path"])
+        _write_limited_qa_evidence(
+            case,
+            classification="agent_skill_behavior",
+            result="NOT_VERIFIED_HOST_LIMITATION",
+        )
+        payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+        if field == "schema_version":
+            payload[field] = invalid_value
+        else:
+            payload["unverified"][0]["reason"] = invalid_value
+        evidence_path.write_text(json.dumps(payload), encoding="utf-8")
+        artifact_exit = _record_criteria_artifact(
+            case,
+            "functional-qa-evidence",
+            "FUNCTIONAL_QA:PASS_WITH_LIMITATIONS; AC1=NOT_VERIFIED_HOST_LIMITATION",
+            version=case["current_version"],
+            criteria_hash=str(case["current_hash"]),
+            path=str(evidence_path),
+        )
+        transition_exit = _run_cli(
+            case, ["update-state", "FR-TEST-001", "FUNCTIONAL_QA"]
+        )
+        outcomes.append((artifact_exit, transition_exit))
+    case["malformed_schema_reason_outcomes"] = outcomes
+
+
+@then("the ledger blocks Functional QA advancement for malformed proof")
+def verify_malformed_schema_or_reason_is_rejected(
+    host_limited_qa_case: dict[str, object],
+) -> None:
+    case = host_limited_qa_case
+    assert all(artifact_exit == 0 for artifact_exit, _ in case["malformed_schema_reason_outcomes"])
+    assert all(transition_exit != 0 for _, transition_exit in case["malformed_schema_reason_outcomes"])
     assert _ledger_snapshot(case)[0] == "IN_PROGRESS"
 
 

@@ -58,3 +58,8 @@ Feature: Versioned FR acceptance criteria amendments
     Given a current criteria version has passing implementation evidence
     When the limitation artifact has mismatched identity or malformed classification
     Then the ledger blocks Functional QA advancement for invalid evidence
+
+  Scenario: Limited QA rejects malformed schema versions and limitation reasons
+    Given a current criteria version has passing implementation evidence
+    When the limitation artifact has a boolean schema version or mismatched reason
+    Then the ledger blocks Functional QA advancement for malformed proof

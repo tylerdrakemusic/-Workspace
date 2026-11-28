@@ -259,7 +259,8 @@ def _validate_limited_qa_artifact(
     if not isinstance(evidence, dict) or not isinstance(accepted, dict):
         return False
     if (
-        evidence.get("schema_version") != 1
+        type(evidence.get("schema_version")) is not int
+        or evidence.get("schema_version") != 1
         or evidence.get("artifact_type") != "functional_qa_evidence"
         or evidence.get("fr_id") != fr_id
         or evidence.get("criteria_version") != criteria_version
@@ -287,7 +288,7 @@ def _validate_limited_qa_artifact(
 
     expected_ids = {f"AC{index}" for index in range(1, len(approved_scenarios) + 1)}
     seen_ids: set[str] = set()
-    unverified_ids: set[str] = set()
+    unverified_reasons: dict[str, str] = {}
     for result in results:
         if not isinstance(result, dict):
             return False
@@ -311,7 +312,7 @@ def _validate_limited_qa_artifact(
                 return False
             if not isinstance(result.get("limitation"), str) or not result["limitation"].strip():
                 return False
-            unverified_ids.add(criterion_id)
+            unverified_reasons[criterion_id] = result["limitation"]
         elif outcome == "NOT_APPLICABLE":
             if classification != "conditional":
                 return False
@@ -329,20 +330,26 @@ def _validate_limited_qa_artifact(
         if classification == "conditional" and outcome not in {"PASS", "NOT_APPLICABLE"}:
             return False
 
-    if seen_ids != expected_ids or not unverified_ids:
+    if seen_ids != expected_ids or not unverified_reasons:
         return False
     unverified = evidence.get("unverified")
-    if not isinstance(unverified, list):
+    if not isinstance(unverified, list) or len(unverified) != len(unverified_reasons):
         return False
-    unverified_records = {
-        item.get("criterion_id")
-        for item in unverified
-        if isinstance(item, dict)
-        and isinstance(item.get("criterion_id"), str)
-        and isinstance(item.get("reason"), str)
-        and item["reason"].strip()
-    }
-    return unverified_records == unverified_ids
+    unverified_records: dict[str, str] = {}
+    for item in unverified:
+        if not isinstance(item, dict):
+            return False
+        criterion_id = item.get("criterion_id")
+        reason = item.get("reason")
+        if (
+            not isinstance(criterion_id, str)
+            or criterion_id in unverified_records
+            or not isinstance(reason, str)
+            or not reason.strip()
+        ):
+            return False
+        unverified_records[criterion_id] = reason
+    return unverified_records == unverified_reasons
 
 
 def _has_current_criteria_evidence(
