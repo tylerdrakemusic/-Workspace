@@ -53,7 +53,7 @@ stateDiagram-v2
     CURRENT_HEAD_RECOMPUTE --> PARENT_JOIN_EVALUATION: single-repo compatibility uses parent branch/head
     CURRENT_HEAD_RECOMPUTE --> FUNCTIONAL_QA: PARENT_JOIN:PASS accepted
     CURRENT_HEAD_RECOMPUTE --> IN_PROGRESS: PARENT_JOIN:PASS blocked
-    FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS
+    FUNCTIONAL_QA --> ARCHITECTURE_REVIEW: QA PASS or PASS_WITH_LIMITATIONS when guarded
     FUNCTIONAL_QA --> IN_PROGRESS: QA FAIL / CHANGES_REQUESTED
     ARCHITECTURE_REVIEW --> DIAGRAM_REMEDIATION: STALE/MISSING → reject
     DIAGRAM_REMEDIATION --> ARCHITECTURE_REVIEW: beautifier updates → re-verify
@@ -63,8 +63,8 @@ stateDiagram-v2
     COST_GATE --> COST_ESTIMATED: every repository has an estimate
     COST_GATE --> COST_UNAVAILABLE: each unavailable outcome has per-repository reason/source
     COST_GATE --> MERGE_BLOCKED: any repository check fails or cost is NULL or pending
-    COST_ESTIMATED --> TYLER_APPROVED: one final approval for the complete reviewed linked PR set
-    COST_UNAVAILABLE --> TYLER_APPROVED: one final approval for the complete reviewed linked PR set
+    COST_ESTIMATED --> TYLER_APPROVED: Tyler accepts listed unverified criteria, if any
+    COST_UNAVAILABLE --> TYLER_APPROVED: Tyler accepts listed unverified criteria, if any
     TYLER_APPROVED --> MERGED: merge linked PRs, no second approval
     MERGE_BLOCKED --> COST_GATE: record each repository outcome
     MERGED --> SOAKING: post-merge soak window
@@ -78,30 +78,29 @@ stateDiagram-v2
         Final approval waits for every linked PR and review evidence.
     end note
 
+    note right of TYLER_APPROVED
+        Before TYLER_APPROVED, Tyler accepts each listed unverified
+        criterion or requests changes.
+    end note
+
     note right of FUNCTIONAL_QA
-        For criteria_version > 1, evidence requires fr_artifacts bound to the
-        exact current criteria_version and criteria_hash: implementation-evidence
-        and functional-qa-evidence before FUNCTIONAL_QA, architecture-review-
-        evidence before REVIEW_REQUESTED, automated-review-evidence before
-        AUTO_REVIEWED. Earlier-version evidence fails. For criteria_version > 1,
-        TYLER_APPROVED requires all four categories bound to the current version
-        and hash: implementation-evidence, functional-qa-evidence,
-        architecture-review-evidence, and automated-review-evidence.
-        Parent-join evidence is required before
-        TYLER_APPROVED, MERGED, SOAKING, and SIGNED_OFF.
-        Technical progression through FUNCTIONAL_QA,
-        ARCHITECTURE_REVIEW, REVIEW_REQUESTED, and
-        AUTO_REVIEWED remains available while child
-        TODO bookkeeping is incomplete. Child snapshots identify
-        repository and project. Each declared repository resolves
-        a trusted branch/head, then evidence is recomputed against
-        current heads. Missing, stale, or mismatched contracts fail
-        closed. Single-repo inputs retain the parent branch/head path.
-        Recompute accepts PARENT_JOIN:PASS only with fresh valid evidence.
-        Before FUNCTIONAL_QA, normal pytest and CI discover and pass all
-        executable feature scenarios for behavior-changing FRs.
-        Documentation, housekeeping, and behavior-neutral refactors
-        are exempt from the BDD scenario gate.
+        For criteria_version > 1, implementation and functional QA evidence
+        before FUNCTIONAL_QA, architecture evidence before REVIEW_REQUESTED,
+        and automated review evidence before AUTO_REVIEWED bind the current
+        criteria version/hash. TYLER_APPROVED requires all four current types.
+        Parent-join evidence is required before TYLER_APPROVED, MERGED, SOAKING,
+        SIGNED_OFF. Technical progression through QA and review continues with
+        incomplete child TODOs. Snapshots identify repository/project and resolve
+        trusted branch/heads; missing, stale, mismatched, or non-current evidence
+        fails closed. Single-repo inputs use the parent branch/head. Only fresh
+        valid evidence permits PARENT_JOIN:PASS.
+        Normal pytest/CI must discover and pass executable feature scenarios;
+        docs, housekeeping, and behavior-neutral refactors are exempt.
+        PASS_WITH_LIMITATIONS requires all deterministic/security checks to pass
+        and only agent/skill behavior to remain unverified due to unavailable
+        isolated host invocation. Mark NOT_VERIFIED_HOST_LIMITATION, never PASS
+        or CI evidence, and keep it visible through review and Tyler's decision.
+        No planner mock is available. Other failures follow QA FAIL to IN_PROGRESS.
         Recycled-light and bounded-fix rework paths are
         detailed in workspace-fr-flow-review-and-recycle.mmd.
     end note

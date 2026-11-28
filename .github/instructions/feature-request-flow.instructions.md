@@ -82,7 +82,7 @@ OPEN → TRIAGED → BRANCHED → IN_PROGRESS → FUNCTIONAL_QA → ARCHITECTURE
 | `BRANCHED` | Isolated branch + worktree created per repo after a recorded scope decision and, for behavior-changing FRs, persisted acceptance scenarios. CI attempts an early draft PR when permissions allow; a recorded permission failure does not block local implementation or review. Before delegating to implementation: sync `F:\superpowers` to latest main and refresh the local TDD skill copy (commands in `AGENT_STARTUP.md`). | ⊕workspace-ci |
 | `COMPLEXITY_ASSESSED` | Orchestrator runs `complexity_router.py` against the FR diff to select **light / standard / heavy** tier. Routes TDD, QA, and Review to the matching tiered agent. This is a protocol step, not a DB state — it happens within `IN_PROGRESS` setup. See **Complexity Assessment & Tier Routing** section below. | project orchestrator |
 | `IN_PROGRESS` | Implementation agent(s) writing code. **TDD gate required** — after COMPLEXITY_ASSESSED, delegate to `⊕workspace-tdd-<tier>` (not the TDD skill directly). The tiered TDD agent loads and follows the full TDD skill protocol. | project orchestrator |
-| `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; FAIL → `CHANGES_REQUESTED` with per-criterion failure details. Hard-blocking gate. | ⊕workspace-qa |
+| `FUNCTIONAL_QA` | Implementation complete. `⊕workspace-qa` derives a test plan from FR acceptance criteria + diff, executes functional tests (DB queries, CLI runs, script executions, Playwright for HTML-touching changes), and records proof artifacts. PASS → advances to `ARCHITECTURE_REVIEW`; `PASS_WITH_LIMITATIONS` may advance only under the BDD host-limitation rule, with an explicit `NOT_VERIFIED_HOST_LIMITATION` artifact; FAIL → `CHANGES_REQUESTED`. Deterministic and security failures remain hard blocks. | ⊕workspace-qa |
 | `ARCHITECTURE_REVIEW` | Implementation done. `⊕workspace-architecture-reviewer` scans the diff for architectural impact (new agents, integrations, deps, DB tables, cross-project wiring) and verifies the relevant `f:\⊕Workspace\diagrams\*.mmd` files were updated. STALE/MISSING diagrams hand off to `⊕workspace-architecture-beautifier`, then re-verify. Only PASS / PASS_WITH_UPDATES advances to `REVIEW_REQUESTED`. | ⊕workspace-architecture-reviewer |
 | `REVIEW_REQUESTED` | Implementation claims done, PR marked ready. **GitHub Actions `test` workflow auto-runs and gates merge** — see CI Gateway below. Playwright validation is handled by `⊕workspace-qa` during `FUNCTIONAL_QA` — the orchestrator does NOT run it separately before this state. | project orchestrator |
 | `AUTO_REVIEWED` | Automated review complete (alignment + security + tests + proof). Required `test` status check must be green before merge can be attempted. | ⊕workspace-reviewer |
@@ -348,6 +348,12 @@ required checks and the FR cost gate pass. CI must not request a second merge
 approval. A failed or pending check or cost gate keeps that repository PR
 ineligible and is reported without weakening the gate. Scope approval before
 branching and post-soak signoff after merge remain separate required gates.
+
+If functional QA reports `PASS_WITH_LIMITATIONS`, the unverified agent/skill
+criteria and their limitation artifacts must remain visible through architecture
+review and automated review. Before `TYLER_APPROVED`, Tyler must explicitly
+accept the listed unverified criteria or request changes. A limitation is not
+reported as a verified acceptance-criteria pass.
 
 ## Branch Naming
 

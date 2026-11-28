@@ -40,9 +40,9 @@ Mutation testing is optional and requires explicit user authorization for the na
 
 **Gate 4: Tests** — existing tests pass; new tests added for new behavior (or explicit rationale); coverage didn't regress.
 
-**Gate 4.5: Functional QA (HARD BLOCK)** — verify a QA PASS event exists in the FR ledger from `⊕workspace-qa`. Run `C:\G\python.exe f:\⊕Workspace\src\utils\fr_cli.py get <FR-ID>` and confirm a `state-transition` event with "QA PASS" in the summary. If absent → REQUEST_CHANGES: "Gate 4.5 failed — no Functional QA PASS recorded. Run `⊕workspace-qa` before marking REVIEW_REQUESTED."
+**Gate 4.5: Functional QA (HARD BLOCK)** — verify either a QA PASS or eligible QA PASS_WITH_LIMITATIONS event exists in the FR ledger from `⊕workspace-qa`. For PASS_WITH_LIMITATIONS, validate the criteria-bound JSON artifact, FR/branch/criteria identity, proof-worktree path, gate checks, complete criterion coverage, and classification of every NOT_VERIFIED result as agent/skill behavior. Confirm deterministic/security gates pass and no other failure exists. Carry all unverified criteria into the review and final approval report. Missing or ineligible evidence → REQUEST_CHANGES: "Gate 4.5 failed — no valid Functional QA outcome recorded. Run `⊕workspace-qa` before marking REVIEW_REQUESTED."
 
-**Gate 5: Proof-in-the-Pudding** — `proof_cli.py` artifacts exist and correspond to acceptance criteria. Missing proof for any criterion = automatic REQUEST_CHANGES.
+**Gate 5: Proof-in-the-Pudding** — `proof_cli.py` artifacts exist and correspond to acceptance criteria. Missing proof for a criterion is an automatic REQUEST_CHANGES unless it is an eligible agent/skill behavior criterion covered by a valid criteria-bound `NOT_VERIFIED_HOST_LIMITATION` JSON artifact. That artifact documents the limitation; it does not satisfy or pass the criterion.
 
 **Gate 6: Demo** — visible surfaces (dashboard, CLI, pipeline) must have a demo artifact (screenshot, generated file, CLI output, DB query).
 
@@ -66,9 +66,9 @@ evidence; local review does not authorize merging or replace a required remote
 check.
 
 ## Decision Logic
-- All gates pass → `APPROVE`
+- All gates pass → `APPROVE`; any eligible QA limitation must be stated prominently and remain for Tyler's decision
 - Any HIGH security finding OR failing test OR scope drift OR missing proof → `REQUEST_CHANGES`
-- `.worktrees/` or STALE architecture diagrams or missing QA PASS (Gate 4.5) or missing Playwright proof or dirty `tmp/` → `REQUEST_CHANGES` (hard block)
+- `.worktrees/` or STALE architecture diagrams or missing/invalid Functional QA outcome (Gate 4.5) or missing Playwright proof or dirty `tmp/` → `REQUEST_CHANGES` (hard block)
 - Minor nits only → `COMMENT`, Tyler decides
 
 ## GitHub Interaction
@@ -94,14 +94,15 @@ review per PR.
 | Architecture Diagrams | ✅/⚠️/❌ | ... |
 | Worktree Path Audit | ✅/⚠️/❌ | ... |
 | Tests | ✅/⚠️/❌ | ... |
-| Functional QA (Gate 4.5) | ✅/⚠️/❌ | ... |
+| Functional QA (Gate 4.5) | ✅/⚠️/❌ | PASS / PASS_WITH_LIMITATIONS; list every unverified criterion |
 | Proof-in-the-pudding | ✅/⚠️/❌ | ... |
 | Demo | ✅/⚠️/❌ | ... |
 | UI Validation (Playwright) | ✅/⚠️/❌/N/A | ... |
 
 ## Acceptance Criteria Check
 1. <criterion> — ✅ satisfied by <evidence>
-2. <criterion> — ❌ missing: <what>
+2. <criterion> — ⚠️ NOT_VERIFIED: <host limitation artifact and remaining uncertainty>
+3. <criterion> — ❌ missing: <what>
 
 ## Required Changes (if any)
 - [ ] ...

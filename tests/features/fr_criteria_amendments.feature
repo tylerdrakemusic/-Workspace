@@ -28,3 +28,38 @@ Feature: Versioned FR acceptance criteria amendments
     Given an FR is CLOSED, ARCHIVED, MERGED, SOAKING, or SIGNED_OFF
     When amendment is attempted
     Then the operation is refused without mutation
+
+  Scenario: Host-limited QA evidence advances without claiming an agent behavior pass
+    Given a current criteria version has passing implementation evidence
+    When QA records a host limitation for an agent-only criterion
+    Then the ledger accepts the limited QA outcome without labeling it PASS
+
+  Scenario: Limited QA is blocked without a structured limitation artifact
+    Given a current criteria version has passing implementation evidence
+    When QA records a limited result without its limitation artifact
+    Then the ledger blocks Functional QA advancement
+
+  Scenario: Limited QA cannot mark a deterministic criterion unverified
+    Given a current criteria version has passing implementation evidence
+    When QA marks a deterministic criterion as host-unverified
+    Then the ledger blocks Functional QA advancement
+
+  Scenario: Limited QA cannot read evidence outside the FR proof worktree
+    Given a current criteria version has passing implementation evidence
+    When QA links structured limitation evidence outside the FR proof worktree
+    Then the ledger blocks Functional QA advancement
+
+  Scenario: Limited QA cannot bypass failed security or functional checks
+    Given a current criteria version has passing implementation evidence
+    When the limitation artifact reports a failed security or other check
+    Then the ledger blocks Functional QA advancement for failed checks
+
+  Scenario: Limited QA requires well-formed current evidence identity
+    Given a current criteria version has passing implementation evidence
+    When the limitation artifact has mismatched identity or malformed classification
+    Then the ledger blocks Functional QA advancement for invalid evidence
+
+  Scenario: Limited QA rejects malformed schema versions and limitation reasons
+    Given a current criteria version has passing implementation evidence
+    When the limitation artifact has a boolean schema version or mismatched reason
+    Then the ledger blocks Functional QA advancement for malformed proof

@@ -16,10 +16,12 @@ Functional QA gate for **light-complexity** feature requests.
 
 > All gate logic, test-plan derivation, pass/fail criteria, proof recording, and state-transition commands are identical to the standard-tier QA agent (`⊕workspace-qa.agent.md`). This file scopes checks to lighter changes only.
 
-**Uniform proof bar:** For a light-tier FR, record and verify at least one
-durable proof artifact for every acceptance criterion before reporting PASS.
-The light tier does not reduce the proof requirement or permit criteria to be
-covered only by a summary claim.
+**Uniform proof bar:** For PASS, record and verify at least one durable PASS
+artifact for every acceptance criterion. For the standard QA agent's eligible
+`PASS_WITH_LIMITATIONS` outcome, every unverified agent/skill criterion needs
+its own structured `NOT_VERIFIED_HOST_LIMITATION` artifact. A limitation
+artifact is not a PASS proof, and the light tier does not reduce the evidence
+requirements for deterministic criteria.
 
 Inherit the full QA protocol from `⊕workspace-qa.agent.md`. Follow every section: Context Bootstrap → Test Plan Derivation → Execution → Pass/Fail Decision → QA Report → Registry Update.
 
